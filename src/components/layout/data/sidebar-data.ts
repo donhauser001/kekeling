@@ -19,21 +19,16 @@ import {
   Command,
   GalleryVerticalEnd,
   FolderOpen,
-  CircleUser,
   Briefcase,
-  Building2,
   Network,
   Tag,
   Layers,
-  Stethoscope,
   UserCheck,
-  HeartPulse,
   UserRound,
   LayoutList,
   Hospital,
   Tags,
   Award,
-  Store,
   PackageSearch,
   FolderTree,
   GitBranch,
@@ -69,165 +64,183 @@ export const sidebarData: SidebarData = {
   ],
   navGroups: [
     {
-      title: '常用功能',
+      title: '工作台',
       items: [
         {
           title: '控制台',
           url: '/',
           icon: LayoutDashboard,
         },
+      ],
+    },
+    {
+      title: '业务管理',
+      items: [
+        {
+          title: '订单管理',
+          url: '/orders',
+          icon: ClipboardList,
+        },
+        {
+          title: '服务管理',
+          url: '/services',
+          icon: PackageSearch,
+        },
+        {
+          title: '服务分类',
+          url: '/service-categories',
+          icon: FolderTree,
+        },
+        {
+          title: '流程管理',
+          url: '/workflows',
+          icon: GitBranch,
+        },
+        {
+          title: '价格政策',
+          url: '/pricing-policies',
+          icon: BadgePercent,
+        },
+        {
+          title: '接单设置',
+          url: '/order-settings',
+          icon: ClipboardCheck,
+        },
+      ],
+    },
+    {
+      title: '医疗资源',
+      items: [
+        {
+          title: '医师库',
+          url: '/doctors',
+          icon: UserRound,
+        },
+        {
+          title: '科室库',
+          url: '/departments',
+          icon: LayoutList,
+        },
+        {
+          title: '医院库',
+          url: '/hospitals',
+          icon: Hospital,
+        },
+        {
+          title: '标签云',
+          url: '/medical-tags',
+          icon: Tags,
+        },
+        {
+          title: '级别管理',
+          url: '/medical-levels',
+          icon: Award,
+        },
+      ],
+    },
+    {
+      title: '陪诊服务',
+      items: [
+        {
+          title: '人员管理',
+          url: '/escorts',
+          icon: UserCheck,
+        },
+        {
+          title: '人员分类',
+          url: '/escort-categories',
+          icon: Layers,
+        },
+        {
+          title: '人员标签',
+          url: '/escort-tags',
+          icon: Tag,
+        },
+      ],
+    },
+    {
+      title: '用户中心',
+      items: [
+        {
+          title: '用户管理',
+          url: '/users',
+          icon: Users,
+        },
+        {
+          title: '用户分类',
+          url: '/roles',
+          icon: Layers,
+        },
+        {
+          title: '用户标签',
+          url: '/tags',
+          icon: Tag,
+        },
+      ],
+    },
+    {
+      title: '人力资源',
+      items: [
+        {
+          title: '员工管理',
+          url: '/employees',
+          icon: Briefcase,
+        },
+        {
+          title: '岗位设置',
+          url: '/positions',
+          icon: Network,
+        },
+      ],
+    },
+    {
+      title: '系统管理',
+      items: [
         {
           title: '文件中心',
           url: '/files',
           icon: FolderOpen,
         },
         {
-          title: '用户中心',
-          icon: CircleUser,
+          title: '设置',
+          icon: Settings,
           items: [
             {
-              title: '用户管理',
-              url: '/users',
-              icon: Users,
+              title: '个人资料',
+              url: '/settings',
+              icon: UserCog,
             },
             {
-              title: '用户分类',
-              url: '/roles',
-              icon: Layers,
+              title: '账户设置',
+              url: '/settings/account',
+              icon: Wrench,
             },
             {
-              title: '用户标签',
-              url: '/tags',
-              icon: Tag,
+              title: '外观',
+              url: '/settings/appearance',
+              icon: Palette,
+            },
+            {
+              title: '通知',
+              url: '/settings/notifications',
+              icon: Bell,
+            },
+            {
+              title: '显示',
+              url: '/settings/display',
+              icon: Monitor,
             },
           ],
         },
         {
-          title: '陪诊员',
-          icon: Stethoscope,
-          items: [
-            {
-              title: '人员管理',
-              url: '/escorts',
-              icon: UserCheck,
-            },
-            {
-              title: '人员分类',
-              url: '/escort-categories',
-              icon: Layers,
-            },
-            {
-              title: '人员标签',
-              url: '/escort-tags',
-              icon: Tag,
-            },
-          ],
-        },
-        {
-          title: '医疗资源',
-          icon: HeartPulse,
-          items: [
-            {
-              title: '医师库',
-              url: '/doctors',
-              icon: UserRound,
-            },
-            {
-              title: '科室库',
-              url: '/departments',
-              icon: LayoutList,
-            },
-            {
-              title: '医院库',
-              url: '/hospitals',
-              icon: Hospital,
-            },
-            {
-              title: '标签云',
-              url: '/medical-tags',
-              icon: Tags,
-            },
-            {
-              title: '级别管理',
-              url: '/medical-levels',
-              icon: Award,
-            },
-          ],
-        },
-        {
-          title: '业务中心',
-          icon: Store,
-          items: [
-            {
-              title: '订单管理',
-              url: '/orders',
-              icon: ClipboardList,
-            },
-            {
-              title: '服务管理',
-              url: '/services',
-              icon: PackageSearch,
-            },
-            {
-              title: '服务分类',
-              url: '/service-categories',
-              icon: FolderTree,
-            },
-            {
-              title: '流程管理',
-              url: '/workflows',
-              icon: GitBranch,
-            },
-            {
-              title: '价格政策',
-              url: '/pricing-policies',
-              icon: BadgePercent,
-            },
-            {
-              title: '接单设置',
-              url: '/order-settings',
-              icon: ClipboardCheck,
-            },
-          ],
-        },
-        {
-          title: '人力资源',
-          icon: Building2,
-          items: [
-            {
-              title: '员工管理',
-              url: '/employees',
-              icon: Briefcase,
-            },
-            {
-              title: '岗位设置',
-              url: '/positions',
-              icon: Network,
-            },
-          ],
-        },
-        {
-          title: 'Clerk 认证',
-          icon: ClerkLogo,
-          items: [
-            {
-              title: '登录',
-              url: '/clerk/sign-in',
-            },
-            {
-              title: '注册',
-              url: '/clerk/sign-up',
-            },
-            {
-              title: '用户管理',
-              url: '/clerk/user-management',
-            },
-          ],
+          title: '帮助中心',
+          url: '/help-center',
+          icon: HelpCircle,
         },
       ],
     },
     {
-      title: '页面',
+      title: '演示页面',
       items: [
         {
           title: '认证',
@@ -286,46 +299,23 @@ export const sidebarData: SidebarData = {
             },
           ],
         },
-      ],
-    },
-    {
-      title: '其他',
-      items: [
         {
-          title: '设置',
-          icon: Settings,
+          title: 'Clerk 认证',
+          icon: ClerkLogo,
           items: [
             {
-              title: '个人资料',
-              url: '/settings',
-              icon: UserCog,
+              title: '登录',
+              url: '/clerk/sign-in',
             },
             {
-              title: '账户设置',
-              url: '/settings/account',
-              icon: Wrench,
+              title: '注册',
+              url: '/clerk/sign-up',
             },
             {
-              title: '外观',
-              url: '/settings/appearance',
-              icon: Palette,
-            },
-            {
-              title: '通知',
-              url: '/settings/notifications',
-              icon: Bell,
-            },
-            {
-              title: '显示',
-              url: '/settings/display',
-              icon: Monitor,
+              title: '用户管理',
+              url: '/clerk/user-management',
             },
           ],
-        },
-        {
-          title: '帮助中心',
-          url: '/help-center',
-          icon: HelpCircle,
         },
       ],
     },
