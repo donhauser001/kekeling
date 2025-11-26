@@ -72,12 +72,11 @@ function SidebarMenuLink({ item, href, useTwoColumns = false }: { item: NavLink;
         asChild
         isActive={checkIsActive(href, item)}
         tooltip={item.title}
-        className={useTwoColumns ? 'text-xs px-2 py-1.5' : ''}
       >
         <Link to={item.url} onClick={() => setOpenMobile(false)}>
-          {item.icon && <item.icon className={useTwoColumns ? 'h-3.5 w-3.5' : ''} />}
+          {item.icon && <item.icon />}
           <span className={useTwoColumns ? 'truncate' : ''}>{item.title}</span>
-          {item.badge && !useTwoColumns && <NavBadge>{item.badge}</NavBadge>}
+          {item.badge && <NavBadge>{item.badge}</NavBadge>}
         </Link>
       </SidebarMenuButton>
     </SidebarMenuItem>
@@ -102,11 +101,11 @@ function SidebarMenuCollapsible({
     >
       <SidebarMenuItem>
         <CollapsibleTrigger asChild>
-          <SidebarMenuButton tooltip={item.title} className={useTwoColumns ? 'text-xs px-2 py-1.5' : ''}>
-            {item.icon && <item.icon className={useTwoColumns ? 'h-3.5 w-3.5' : ''} />}
+          <SidebarMenuButton tooltip={item.title}>
+            {item.icon && <item.icon />}
             <span className={useTwoColumns ? 'truncate' : ''}>{item.title}</span>
-            {item.badge && !useTwoColumns && <NavBadge>{item.badge}</NavBadge>}
-            <ChevronRight className={`ms-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 rtl:rotate-180 ${useTwoColumns ? 'h-3.5 w-3.5' : ''}`} />
+            {item.badge && <NavBadge>{item.badge}</NavBadge>}
+            <ChevronRight className='ms-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 rtl:rotate-180' />
           </SidebarMenuButton>
         </CollapsibleTrigger>
         <CollapsibleContent className='CollapsibleContent'>
