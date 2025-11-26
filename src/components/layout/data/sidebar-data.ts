@@ -49,6 +49,14 @@ import {
   BookmarkIcon,
   Menu,
   Cog,
+  Smartphone,
+  Megaphone,
+  Image,
+  MonitorSmartphone,
+  MessageSquareText,
+  Send,
+  Search,
+  ToggleLeft,
 } from 'lucide-react'
 import { ClerkLogo } from '@/assets/clerk-logo'
 import { type SidebarData } from '../types'
@@ -196,6 +204,52 @@ export const sidebarData: SidebarData = {
               title: '用户标签',
               url: '/tags',
               icon: Tag,
+            },
+          ],
+        },
+        {
+          title: '产品中心',
+          icon: Smartphone,
+          items: [
+            {
+              title: '广告管理',
+              url: '/app/ads',
+              icon: Megaphone,
+            },
+            {
+              title: '轮播图管理',
+              url: '/app/banners',
+              icon: Image,
+            },
+            {
+              title: '启动页管理',
+              url: '/app/splash',
+              icon: MonitorSmartphone,
+            },
+            {
+              title: '弹窗管理',
+              url: '/app/popups',
+              icon: MessageSquareText,
+            },
+            {
+              title: '消息推送',
+              url: '/app/push',
+              icon: Send,
+            },
+            {
+              title: '版本管理',
+              url: '/app/versions',
+              icon: Tag,
+            },
+            {
+              title: '热门搜索',
+              url: '/app/hot-search',
+              icon: Search,
+            },
+            {
+              title: '开关配置',
+              url: '/app/switches',
+              icon: ToggleLeft,
             },
           ],
         },
