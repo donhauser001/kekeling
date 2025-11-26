@@ -24,6 +24,7 @@ import {
   CircleUser,
   Briefcase,
   Building2,
+  Network,
 } from 'lucide-react'
 import { ClerkLogo } from '@/assets/clerk-logo'
 import { type SidebarData } from '../types'
@@ -95,6 +96,11 @@ export const sidebarData: SidebarData = {
               title: '员工管理',
               url: '/employees',
               icon: Briefcase,
+            },
+            {
+              title: '岗位设置',
+              url: '/positions',
+              icon: Network,
             },
           ],
         },
