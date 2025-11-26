@@ -1,20 +1,13 @@
 import {
-  Construction,
   LayoutDashboard,
   Monitor,
-  Bug,
-  FileX,
   HelpCircle,
-  Lock,
   Bell,
   Palette,
-  ServerOff,
   Settings,
   Wrench,
   UserCog,
-  UserX,
   Users,
-  ShieldCheck,
   AudioWaveform,
   Command,
   GalleryVerticalEnd,
@@ -98,7 +91,6 @@ import {
   Lightbulb,
   HardDrive,
 } from 'lucide-react'
-import { ClerkLogo } from '@/assets/clerk-logo'
 import { type SidebarData } from '../types'
 
 export const sidebarData: SidebarData = {
@@ -659,86 +651,6 @@ export const sidebarData: SidebarData = {
           title: '帮助中心',
           url: '/help-center',
           icon: HelpCircle,
-        },
-      ],
-    },
-    {
-      title: '演示页面',
-      items: [
-        {
-          title: '认证',
-          icon: ShieldCheck,
-          items: [
-            {
-              title: '登录',
-              url: '/sign-in',
-            },
-            {
-              title: '登录 (双栏)',
-              url: '/sign-in-2',
-            },
-            {
-              title: '注册',
-              url: '/sign-up',
-            },
-            {
-              title: '忘记密码',
-              url: '/forgot-password',
-            },
-            {
-              title: '验证码',
-              url: '/otp',
-            },
-          ],
-        },
-        {
-          title: '错误页',
-          icon: Bug,
-          items: [
-            {
-              title: '未授权',
-              url: '/errors/unauthorized',
-              icon: Lock,
-            },
-            {
-              title: '禁止访问',
-              url: '/errors/forbidden',
-              icon: UserX,
-            },
-            {
-              title: '页面不存在',
-              url: '/errors/not-found',
-              icon: FileX,
-            },
-            {
-              title: '服务器错误',
-              url: '/errors/internal-server-error',
-              icon: ServerOff,
-            },
-            {
-              title: '系统维护',
-              url: '/errors/maintenance-error',
-              icon: Construction,
-            },
-          ],
-        },
-        {
-          title: 'Clerk 认证',
-          icon: ClerkLogo,
-          items: [
-            {
-              title: '登录',
-              url: '/clerk/sign-in',
-            },
-            {
-              title: '注册',
-              url: '/clerk/sign-up',
-            },
-            {
-              title: '用户管理',
-              url: '/clerk/user-management',
-            },
-          ],
         },
       ],
     },
