@@ -8,7 +8,6 @@ import {
     Pencil,
     Trash2,
     Phone,
-    MapPin,
     Calendar,
     Clock,
     User,
@@ -16,9 +15,12 @@ import {
     XCircle,
     AlertCircle,
     Loader2,
-    Filter,
     Download,
     RefreshCw,
+    TrendingUp,
+    ShoppingCart,
+    Banknote,
+    Activity,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -296,6 +298,11 @@ export function Orders() {
         refunded: orders.filter(o => o.status === 'refunded').length,
     }
 
+    // 计算统计数据
+    const todayOrders = orders.filter(o => o.createdAt.startsWith('2024-03-18')).length
+    const totalRevenue = orders.filter(o => o.status === 'completed').reduce((sum, o) => sum + o.paidAmount, 0)
+    const processingOrders = statusCounts.pending + statusCounts.accepted + statusCounts.in_progress
+
     const openDetailDialog = (order: Order) => {
         setSelectedOrder(order)
         setDetailDialogOpen(true)
@@ -332,56 +339,87 @@ export function Orders() {
                 </div>
 
                 {/* 统计卡片 */}
-                <div className='mb-6 grid gap-4 md:grid-cols-3 lg:grid-cols-6'>
-                    <Card className='cursor-pointer' onClick={() => setStatusFilter('all')}>
-                        <CardContent className='p-4'>
-                            <div className='text-muted-foreground text-sm'>全部订单</div>
-                            <div className='text-2xl font-bold'>{statusCounts.all}</div>
+                <div className='mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4'>
+                    {/* 今日订单 */}
+                    <Card>
+                        <CardContent className='p-6'>
+                            <div className='flex items-center justify-between'>
+                                <div>
+                                    <p className='text-muted-foreground text-sm font-medium'>今日订单</p>
+                                    <p className='text-3xl font-bold'>{todayOrders}</p>
+                                    <p className='text-muted-foreground mt-1 flex items-center gap-1 text-xs'>
+                                        <TrendingUp className='h-3 w-3 text-green-500' />
+                                        <span className='text-green-500'>+12%</span>
+                                        较昨日
+                                    </p>
+                                </div>
+                                <div className='flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30'>
+                                    <ShoppingCart className='h-6 w-6 text-blue-600' />
+                                </div>
+                            </div>
                         </CardContent>
                     </Card>
-                    <Card className='cursor-pointer' onClick={() => setStatusFilter('pending')}>
-                        <CardContent className='p-4'>
-                            <div className='flex items-center gap-1.5 text-sm text-yellow-600'>
-                                <Clock className='h-4 w-4' />
-                                待接单
+
+                    {/* 处理中 */}
+                    <Card>
+                        <CardContent className='p-6'>
+                            <div className='flex items-center justify-between'>
+                                <div>
+                                    <p className='text-muted-foreground text-sm font-medium'>处理中</p>
+                                    <p className='text-3xl font-bold'>{processingOrders}</p>
+                                    <div className='mt-2 flex gap-2'>
+                                        <Badge variant='outline' className='gap-1 text-xs text-yellow-600'>
+                                            <Clock className='h-3 w-3' />
+                                            {statusCounts.pending} 待接
+                                        </Badge>
+                                        <Badge variant='outline' className='gap-1 text-xs text-purple-600'>
+                                            <Activity className='h-3 w-3' />
+                                            {statusCounts.in_progress} 服务中
+                                        </Badge>
+                                    </div>
+                                </div>
+                                <div className='flex h-12 w-12 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900/30'>
+                                    <Loader2 className='h-6 w-6 text-orange-600' />
+                                </div>
                             </div>
-                            <div className='text-2xl font-bold'>{statusCounts.pending}</div>
                         </CardContent>
                     </Card>
-                    <Card className='cursor-pointer' onClick={() => setStatusFilter('accepted')}>
-                        <CardContent className='p-4'>
-                            <div className='flex items-center gap-1.5 text-sm text-blue-600'>
-                                <CheckCircle className='h-4 w-4' />
-                                已接单
+
+                    {/* 已完成 */}
+                    <Card>
+                        <CardContent className='p-6'>
+                            <div className='flex items-center justify-between'>
+                                <div>
+                                    <p className='text-muted-foreground text-sm font-medium'>已完成</p>
+                                    <p className='text-3xl font-bold'>{statusCounts.completed}</p>
+                                    <p className='text-muted-foreground mt-1 text-xs'>
+                                        完成率 <span className='font-medium text-green-500'>{Math.round(statusCounts.completed / statusCounts.all * 100)}%</span>
+                                    </p>
+                                </div>
+                                <div className='flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30'>
+                                    <CheckCircle className='h-6 w-6 text-green-600' />
+                                </div>
                             </div>
-                            <div className='text-2xl font-bold'>{statusCounts.accepted}</div>
                         </CardContent>
                     </Card>
-                    <Card className='cursor-pointer' onClick={() => setStatusFilter('in_progress')}>
-                        <CardContent className='p-4'>
-                            <div className='flex items-center gap-1.5 text-sm text-purple-600'>
-                                <Loader2 className='h-4 w-4' />
-                                服务中
+
+                    {/* 总收入 */}
+                    <Card>
+                        <CardContent className='p-6'>
+                            <div className='flex items-center justify-between'>
+                                <div>
+                                    <p className='text-muted-foreground text-sm font-medium'>总收入</p>
+                                    <p className='text-3xl font-bold'>¥{totalRevenue.toLocaleString()}</p>
+                                    <p className='text-muted-foreground mt-1 flex items-center gap-1 text-xs'>
+                                        <TrendingUp className='h-3 w-3 text-green-500' />
+                                        <span className='text-green-500'>+8.5%</span>
+                                        较上周
+                                    </p>
+                                </div>
+                                <div className='flex h-12 w-12 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/30'>
+                                    <Banknote className='h-6 w-6 text-purple-600' />
+                                </div>
                             </div>
-                            <div className='text-2xl font-bold'>{statusCounts.in_progress}</div>
-                        </CardContent>
-                    </Card>
-                    <Card className='cursor-pointer' onClick={() => setStatusFilter('completed')}>
-                        <CardContent className='p-4'>
-                            <div className='flex items-center gap-1.5 text-sm text-green-600'>
-                                <CheckCircle className='h-4 w-4' />
-                                已完成
-                            </div>
-                            <div className='text-2xl font-bold'>{statusCounts.completed}</div>
-                        </CardContent>
-                    </Card>
-                    <Card className='cursor-pointer' onClick={() => setStatusFilter('cancelled')}>
-                        <CardContent className='p-4'>
-                            <div className='flex items-center gap-1.5 text-sm text-gray-600'>
-                                <XCircle className='h-4 w-4' />
-                                已取消
-                            </div>
-                            <div className='text-2xl font-bold'>{statusCounts.cancelled}</div>
                         </CardContent>
                     </Card>
                 </div>
