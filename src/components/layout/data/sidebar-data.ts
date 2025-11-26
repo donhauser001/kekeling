@@ -24,7 +24,8 @@ import {
   Briefcase,
   Building2,
   Network,
-  Tags,
+  Tag,
+  Layers,
 } from 'lucide-react'
 import { ClerkLogo } from '@/assets/clerk-logo'
 import { type SidebarData } from '../types'
@@ -84,7 +85,12 @@ export const sidebarData: SidebarData = {
             {
               title: '用户分类',
               url: '/roles',
-              icon: Tags,
+              icon: Layers,
+            },
+            {
+              title: '用户标签',
+              url: '/tags',
+              icon: Tag,
             },
           ],
         },
