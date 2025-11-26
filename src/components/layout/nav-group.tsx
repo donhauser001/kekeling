@@ -36,24 +36,22 @@ import {
 export function NavGroup({ title, items }: NavGroupProps) {
   const { state, isMobile } = useSidebar()
   const href = useLocation({ select: (location) => location.href })
-  // 当主菜单项超过4个时使用两列布局
-  const useTwoColumns = items.length > 4 && state !== 'collapsed'
   return (
     <SidebarGroup>
       <SidebarGroupLabel>{title}</SidebarGroupLabel>
-      <SidebarMenu className={useTwoColumns ? 'grid grid-cols-2 gap-0.5' : ''}>
+      <SidebarMenu>
         {items.map((item) => {
           const key = `${item.title}-${item.url}`
 
           if (!item.items)
-            return <SidebarMenuLink key={key} item={item} href={href} useTwoColumns={useTwoColumns} />
+            return <SidebarMenuLink key={key} item={item} href={href} />
 
           if (state === 'collapsed' && !isMobile)
             return (
               <SidebarMenuCollapsedDropdown key={key} item={item} href={href} />
             )
 
-          return <SidebarMenuCollapsible key={key} item={item} href={href} useTwoColumns={useTwoColumns} />
+          return <SidebarMenuCollapsible key={key} item={item} href={href} />
         })}
       </SidebarMenu>
     </SidebarGroup>
@@ -64,7 +62,7 @@ function NavBadge({ children }: { children: ReactNode }) {
   return <Badge className='rounded-full px-1 py-0 text-xs'>{children}</Badge>
 }
 
-function SidebarMenuLink({ item, href, useTwoColumns = false }: { item: NavLink; href: string; useTwoColumns?: boolean }) {
+function SidebarMenuLink({ item, href }: { item: NavLink; href: string }) {
   const { setOpenMobile } = useSidebar()
   return (
     <SidebarMenuItem>
@@ -75,7 +73,7 @@ function SidebarMenuLink({ item, href, useTwoColumns = false }: { item: NavLink;
       >
         <Link to={item.url} onClick={() => setOpenMobile(false)}>
           {item.icon && <item.icon />}
-          <span className={useTwoColumns ? 'truncate' : ''}>{item.title}</span>
+          <span>{item.title}</span>
           {item.badge && <NavBadge>{item.badge}</NavBadge>}
         </Link>
       </SidebarMenuButton>
@@ -86,11 +84,9 @@ function SidebarMenuLink({ item, href, useTwoColumns = false }: { item: NavLink;
 function SidebarMenuCollapsible({
   item,
   href,
-  useTwoColumns = false,
 }: {
   item: NavCollapsible
   href: string
-  useTwoColumns?: boolean
 }) {
   const { setOpenMobile } = useSidebar()
   return (
@@ -103,13 +99,13 @@ function SidebarMenuCollapsible({
         <CollapsibleTrigger asChild>
           <SidebarMenuButton tooltip={item.title}>
             {item.icon && <item.icon />}
-            <span className={useTwoColumns ? 'truncate' : ''}>{item.title}</span>
+            <span>{item.title}</span>
             {item.badge && <NavBadge>{item.badge}</NavBadge>}
             <ChevronRight className='ms-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 rtl:rotate-180' />
           </SidebarMenuButton>
         </CollapsibleTrigger>
         <CollapsibleContent className='CollapsibleContent'>
-          <SidebarMenuSub className={useTwoColumns ? 'col-span-2' : ''}>
+          <SidebarMenuSub>
             {item.items.map((subItem) => (
               <SidebarMenuSubItem key={subItem.title}>
                 <SidebarMenuSubButton
