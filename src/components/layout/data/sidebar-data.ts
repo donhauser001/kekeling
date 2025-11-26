@@ -70,6 +70,33 @@ import {
   Brain,
   Library,
   SlidersHorizontal,
+  Wallet,
+  Receipt,
+  CreditCard,
+  FileCheck,
+  Banknote,
+  Gift,
+  Ticket,
+  Sparkles,
+  UserPlus,
+  Headphones,
+  TicketCheck,
+  MessageCircle,
+  AlertCircle,
+  Star,
+  Shield,
+  UserCog2,
+  KeyRound,
+  LayoutGrid,
+  Mail,
+  MessagesSquare,
+  Clock,
+  CalendarRange,
+  TrendingUp,
+  Bot,
+  History,
+  Lightbulb,
+  HardDrive,
 } from 'lucide-react'
 import { ClerkLogo } from '@/assets/clerk-logo'
 import { type SidebarData } from '../types'
@@ -221,6 +248,89 @@ export const sidebarData: SidebarData = {
           ],
         },
         {
+          title: '财务中心',
+          icon: Wallet,
+          items: [
+            {
+              title: '账单管理',
+              url: '/finance/bills',
+              icon: Receipt,
+            },
+            {
+              title: '收支明细',
+              url: '/finance/transactions',
+              icon: CreditCard,
+            },
+            {
+              title: '结算管理',
+              url: '/finance/settlements',
+              icon: FileCheck,
+            },
+            {
+              title: '发票管理',
+              url: '/finance/invoices',
+              icon: FileText,
+            },
+            {
+              title: '提现管理',
+              url: '/finance/withdrawals',
+              icon: Banknote,
+            },
+          ],
+        },
+        {
+          title: '营销中心',
+          icon: Gift,
+          items: [
+            {
+              title: '优惠券管理',
+              url: '/marketing/coupons',
+              icon: Ticket,
+            },
+            {
+              title: '活动管理',
+              url: '/marketing/campaigns',
+              icon: Sparkles,
+            },
+            {
+              title: '积分管理',
+              url: '/marketing/points',
+              icon: Award,
+            },
+            {
+              title: '邀请奖励',
+              url: '/marketing/referrals',
+              icon: UserPlus,
+            },
+          ],
+        },
+        {
+          title: '客服中心',
+          icon: Headphones,
+          items: [
+            {
+              title: '工单管理',
+              url: '/support/tickets',
+              icon: TicketCheck,
+            },
+            {
+              title: '在线客服',
+              url: '/support/chat',
+              icon: MessageCircle,
+            },
+            {
+              title: '投诉建议',
+              url: '/support/complaints',
+              icon: AlertCircle,
+            },
+            {
+              title: '评价管理',
+              url: '/support/reviews',
+              icon: Star,
+            },
+          ],
+        },
+        {
           title: '产品中心',
           icon: Smartphone,
           items: [
@@ -285,6 +395,21 @@ export const sidebarData: SidebarData = {
               url: '/positions',
               icon: Network,
             },
+            {
+              title: '考勤管理',
+              url: '/hr/attendance',
+              icon: Clock,
+            },
+            {
+              title: '排班管理',
+              url: '/hr/scheduling',
+              icon: CalendarRange,
+            },
+            {
+              title: '绩效管理',
+              url: '/hr/performance',
+              icon: TrendingUp,
+            },
           ],
         },
         {
@@ -339,6 +464,21 @@ export const sidebarData: SidebarData = {
               icon: Library,
             },
             {
+              title: 'AI客服',
+              url: '/ai/chatbot',
+              icon: Bot,
+            },
+            {
+              title: '对话记录',
+              url: '/ai/conversations',
+              icon: History,
+            },
+            {
+              title: '智能推荐',
+              url: '/ai/recommendations',
+              icon: Lightbulb,
+            },
+            {
               title: 'AI配置',
               url: '/ai/settings',
               icon: SlidersHorizontal,
@@ -356,8 +496,60 @@ export const sidebarData: SidebarData = {
           icon: FolderOpen,
         },
         {
-          title: '数据管理',
-          icon: Database,
+          title: '权限管理',
+          icon: Shield,
+          items: [
+            {
+              title: '管理员管理',
+              url: '/system/admins',
+              icon: UserCog2,
+            },
+            {
+              title: '角色管理',
+              url: '/system/roles',
+              icon: Users,
+            },
+            {
+              title: '权限配置',
+              url: '/system/permissions',
+              icon: KeyRound,
+            },
+            {
+              title: '菜单管理',
+              url: '/system/menus',
+              icon: LayoutGrid,
+            },
+          ],
+        },
+        {
+          title: '消息中心',
+          icon: MessagesSquare,
+          items: [
+            {
+              title: '系统通知',
+              url: '/message/notifications',
+              icon: Bell,
+            },
+            {
+              title: '消息模板',
+              url: '/message/templates',
+              icon: FileText,
+            },
+            {
+              title: '短信配置',
+              url: '/message/sms',
+              icon: MessageSquareText,
+            },
+            {
+              title: '邮件配置',
+              url: '/message/email',
+              icon: Mail,
+            },
+          ],
+        },
+        {
+          title: '数据维护',
+          icon: HardDrive,
           items: [
             {
               title: '数据导入',
