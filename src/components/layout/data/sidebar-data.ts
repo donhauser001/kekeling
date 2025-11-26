@@ -33,6 +33,12 @@ import {
   Hospital,
   Tags,
   Award,
+  Store,
+  PackageSearch,
+  FolderTree,
+  GitBranch,
+  BadgePercent,
+  ClipboardCheck,
 } from 'lucide-react'
 import { ClerkLogo } from '@/assets/clerk-logo'
 import { type SidebarData } from '../types'
@@ -144,6 +150,37 @@ export const sidebarData: SidebarData = {
               title: '级别管理',
               url: '/medical-levels',
               icon: Award,
+            },
+          ],
+        },
+        {
+          title: '业务中心',
+          icon: Store,
+          items: [
+            {
+              title: '服务管理',
+              url: '/services',
+              icon: PackageSearch,
+            },
+            {
+              title: '服务分类',
+              url: '/service-categories',
+              icon: FolderTree,
+            },
+            {
+              title: '流程管理',
+              url: '/workflows',
+              icon: GitBranch,
+            },
+            {
+              title: '价格政策',
+              url: '/pricing-policies',
+              icon: BadgePercent,
+            },
+            {
+              title: '接单设置',
+              url: '/order-settings',
+              icon: ClipboardCheck,
             },
           ],
         },

@@ -25,11 +25,16 @@ import { Route as authForgotPasswordRouteImport } from './routes/(auth)/forgot-p
 import { Route as ClerkAuthenticatedRouteRouteImport } from './routes/clerk/_authenticated/route'
 import { Route as ClerkauthRouteRouteImport } from './routes/clerk/(auth)/route'
 import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authenticated/settings/route'
+import { Route as AuthenticatedWorkflowsIndexRouteImport } from './routes/_authenticated/workflows/index'
 import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authenticated/users/index'
 import { Route as AuthenticatedTagsIndexRouteImport } from './routes/_authenticated/tags/index'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
+import { Route as AuthenticatedServicesIndexRouteImport } from './routes/_authenticated/services/index'
+import { Route as AuthenticatedServiceCategoriesIndexRouteImport } from './routes/_authenticated/service-categories/index'
 import { Route as AuthenticatedRolesIndexRouteImport } from './routes/_authenticated/roles/index'
+import { Route as AuthenticatedPricingPoliciesIndexRouteImport } from './routes/_authenticated/pricing-policies/index'
 import { Route as AuthenticatedPositionsIndexRouteImport } from './routes/_authenticated/positions/index'
+import { Route as AuthenticatedOrderSettingsIndexRouteImport } from './routes/_authenticated/order-settings/index'
 import { Route as AuthenticatedMedicalTagsIndexRouteImport } from './routes/_authenticated/medical-tags/index'
 import { Route as AuthenticatedMedicalLevelsIndexRouteImport } from './routes/_authenticated/medical-levels/index'
 import { Route as AuthenticatedHospitalsIndexRouteImport } from './routes/_authenticated/hospitals/index'
@@ -129,6 +134,12 @@ const AuthenticatedSettingsRouteRoute =
     path: '/settings',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedWorkflowsIndexRoute =
+  AuthenticatedWorkflowsIndexRouteImport.update({
+    id: '/workflows/',
+    path: '/workflows/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedUsersIndexRoute = AuthenticatedUsersIndexRouteImport.update({
   id: '/users/',
   path: '/users/',
@@ -145,15 +156,39 @@ const AuthenticatedSettingsIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any)
+const AuthenticatedServicesIndexRoute =
+  AuthenticatedServicesIndexRouteImport.update({
+    id: '/services/',
+    path: '/services/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedServiceCategoriesIndexRoute =
+  AuthenticatedServiceCategoriesIndexRouteImport.update({
+    id: '/service-categories/',
+    path: '/service-categories/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedRolesIndexRoute = AuthenticatedRolesIndexRouteImport.update({
   id: '/roles/',
   path: '/roles/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedPricingPoliciesIndexRoute =
+  AuthenticatedPricingPoliciesIndexRouteImport.update({
+    id: '/pricing-policies/',
+    path: '/pricing-policies/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedPositionsIndexRoute =
   AuthenticatedPositionsIndexRouteImport.update({
     id: '/positions/',
     path: '/positions/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOrderSettingsIndexRoute =
+  AuthenticatedOrderSettingsIndexRouteImport.update({
+    id: '/order-settings/',
+    path: '/order-settings/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedMedicalTagsIndexRoute =
@@ -307,11 +342,16 @@ export interface FileRoutesByFullPath {
   '/hospitals': typeof AuthenticatedHospitalsIndexRoute
   '/medical-levels': typeof AuthenticatedMedicalLevelsIndexRoute
   '/medical-tags': typeof AuthenticatedMedicalTagsIndexRoute
+  '/order-settings': typeof AuthenticatedOrderSettingsIndexRoute
   '/positions': typeof AuthenticatedPositionsIndexRoute
+  '/pricing-policies': typeof AuthenticatedPricingPoliciesIndexRoute
   '/roles': typeof AuthenticatedRolesIndexRoute
+  '/service-categories': typeof AuthenticatedServiceCategoriesIndexRoute
+  '/services': typeof AuthenticatedServicesIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/tags': typeof AuthenticatedTagsIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
+  '/workflows': typeof AuthenticatedWorkflowsIndexRoute
 }
 export interface FileRoutesByTo {
   '/clerk': typeof ClerkAuthenticatedRouteRouteWithChildren
@@ -346,11 +386,16 @@ export interface FileRoutesByTo {
   '/hospitals': typeof AuthenticatedHospitalsIndexRoute
   '/medical-levels': typeof AuthenticatedMedicalLevelsIndexRoute
   '/medical-tags': typeof AuthenticatedMedicalTagsIndexRoute
+  '/order-settings': typeof AuthenticatedOrderSettingsIndexRoute
   '/positions': typeof AuthenticatedPositionsIndexRoute
+  '/pricing-policies': typeof AuthenticatedPricingPoliciesIndexRoute
   '/roles': typeof AuthenticatedRolesIndexRoute
+  '/service-categories': typeof AuthenticatedServiceCategoriesIndexRoute
+  '/services': typeof AuthenticatedServicesIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/tags': typeof AuthenticatedTagsIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
+  '/workflows': typeof AuthenticatedWorkflowsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -390,11 +435,16 @@ export interface FileRoutesById {
   '/_authenticated/hospitals/': typeof AuthenticatedHospitalsIndexRoute
   '/_authenticated/medical-levels/': typeof AuthenticatedMedicalLevelsIndexRoute
   '/_authenticated/medical-tags/': typeof AuthenticatedMedicalTagsIndexRoute
+  '/_authenticated/order-settings/': typeof AuthenticatedOrderSettingsIndexRoute
   '/_authenticated/positions/': typeof AuthenticatedPositionsIndexRoute
+  '/_authenticated/pricing-policies/': typeof AuthenticatedPricingPoliciesIndexRoute
   '/_authenticated/roles/': typeof AuthenticatedRolesIndexRoute
+  '/_authenticated/service-categories/': typeof AuthenticatedServiceCategoriesIndexRoute
+  '/_authenticated/services/': typeof AuthenticatedServicesIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/tags/': typeof AuthenticatedTagsIndexRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
+  '/_authenticated/workflows/': typeof AuthenticatedWorkflowsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -432,11 +482,16 @@ export interface FileRouteTypes {
     | '/hospitals'
     | '/medical-levels'
     | '/medical-tags'
+    | '/order-settings'
     | '/positions'
+    | '/pricing-policies'
     | '/roles'
+    | '/service-categories'
+    | '/services'
     | '/settings/'
     | '/tags'
     | '/users'
+    | '/workflows'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/clerk'
@@ -471,11 +526,16 @@ export interface FileRouteTypes {
     | '/hospitals'
     | '/medical-levels'
     | '/medical-tags'
+    | '/order-settings'
     | '/positions'
+    | '/pricing-policies'
     | '/roles'
+    | '/service-categories'
+    | '/services'
     | '/settings'
     | '/tags'
     | '/users'
+    | '/workflows'
   id:
     | '__root__'
     | '/_authenticated'
@@ -514,11 +574,16 @@ export interface FileRouteTypes {
     | '/_authenticated/hospitals/'
     | '/_authenticated/medical-levels/'
     | '/_authenticated/medical-tags/'
+    | '/_authenticated/order-settings/'
     | '/_authenticated/positions/'
+    | '/_authenticated/pricing-policies/'
     | '/_authenticated/roles/'
+    | '/_authenticated/service-categories/'
+    | '/_authenticated/services/'
     | '/_authenticated/settings/'
     | '/_authenticated/tags/'
     | '/_authenticated/users/'
+    | '/_authenticated/workflows/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -650,6 +715,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsRouteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/workflows/': {
+      id: '/_authenticated/workflows/'
+      path: '/workflows'
+      fullPath: '/workflows'
+      preLoaderRoute: typeof AuthenticatedWorkflowsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/users/': {
       id: '/_authenticated/users/'
       path: '/users'
@@ -671,6 +743,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
       parentRoute: typeof AuthenticatedSettingsRouteRoute
     }
+    '/_authenticated/services/': {
+      id: '/_authenticated/services/'
+      path: '/services'
+      fullPath: '/services'
+      preLoaderRoute: typeof AuthenticatedServicesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/service-categories/': {
+      id: '/_authenticated/service-categories/'
+      path: '/service-categories'
+      fullPath: '/service-categories'
+      preLoaderRoute: typeof AuthenticatedServiceCategoriesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/roles/': {
       id: '/_authenticated/roles/'
       path: '/roles'
@@ -678,11 +764,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRolesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/pricing-policies/': {
+      id: '/_authenticated/pricing-policies/'
+      path: '/pricing-policies'
+      fullPath: '/pricing-policies'
+      preLoaderRoute: typeof AuthenticatedPricingPoliciesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/positions/': {
       id: '/_authenticated/positions/'
       path: '/positions'
       fullPath: '/positions'
       preLoaderRoute: typeof AuthenticatedPositionsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/order-settings/': {
+      id: '/_authenticated/order-settings/'
+      path: '/order-settings'
+      fullPath: '/order-settings'
+      preLoaderRoute: typeof AuthenticatedOrderSettingsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/medical-tags/': {
@@ -867,10 +967,15 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedHospitalsIndexRoute: typeof AuthenticatedHospitalsIndexRoute
   AuthenticatedMedicalLevelsIndexRoute: typeof AuthenticatedMedicalLevelsIndexRoute
   AuthenticatedMedicalTagsIndexRoute: typeof AuthenticatedMedicalTagsIndexRoute
+  AuthenticatedOrderSettingsIndexRoute: typeof AuthenticatedOrderSettingsIndexRoute
   AuthenticatedPositionsIndexRoute: typeof AuthenticatedPositionsIndexRoute
+  AuthenticatedPricingPoliciesIndexRoute: typeof AuthenticatedPricingPoliciesIndexRoute
   AuthenticatedRolesIndexRoute: typeof AuthenticatedRolesIndexRoute
+  AuthenticatedServiceCategoriesIndexRoute: typeof AuthenticatedServiceCategoriesIndexRoute
+  AuthenticatedServicesIndexRoute: typeof AuthenticatedServicesIndexRoute
   AuthenticatedTagsIndexRoute: typeof AuthenticatedTagsIndexRoute
   AuthenticatedUsersIndexRoute: typeof AuthenticatedUsersIndexRoute
+  AuthenticatedWorkflowsIndexRoute: typeof AuthenticatedWorkflowsIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -890,10 +995,17 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHospitalsIndexRoute: AuthenticatedHospitalsIndexRoute,
   AuthenticatedMedicalLevelsIndexRoute: AuthenticatedMedicalLevelsIndexRoute,
   AuthenticatedMedicalTagsIndexRoute: AuthenticatedMedicalTagsIndexRoute,
+  AuthenticatedOrderSettingsIndexRoute: AuthenticatedOrderSettingsIndexRoute,
   AuthenticatedPositionsIndexRoute: AuthenticatedPositionsIndexRoute,
+  AuthenticatedPricingPoliciesIndexRoute:
+    AuthenticatedPricingPoliciesIndexRoute,
   AuthenticatedRolesIndexRoute: AuthenticatedRolesIndexRoute,
+  AuthenticatedServiceCategoriesIndexRoute:
+    AuthenticatedServiceCategoriesIndexRoute,
+  AuthenticatedServicesIndexRoute: AuthenticatedServicesIndexRoute,
   AuthenticatedTagsIndexRoute: AuthenticatedTagsIndexRoute,
   AuthenticatedUsersIndexRoute: AuthenticatedUsersIndexRoute,
+  AuthenticatedWorkflowsIndexRoute: AuthenticatedWorkflowsIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
