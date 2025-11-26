@@ -57,6 +57,16 @@ import {
   Send,
   Search,
   ToggleLeft,
+  Database,
+  BarChart3,
+  FileSpreadsheet,
+  Upload,
+  Download,
+  DatabaseBackup,
+  BookOpen,
+  ScrollText,
+  LogIn,
+  Activity,
 } from 'lucide-react'
 import { ClerkLogo } from '@/assets/clerk-logo'
 import { type SidebarData } from '../types'
@@ -294,6 +304,56 @@ export const sidebarData: SidebarData = {
               icon: GitFork,
             },
           ],
+        },
+      ],
+    },
+    {
+      title: '数据管理',
+      items: [
+        {
+          title: '数据统计',
+          url: '/data/statistics',
+          icon: BarChart3,
+        },
+        {
+          title: '数据报表',
+          url: '/data/reports',
+          icon: FileSpreadsheet,
+        },
+        {
+          title: '数据导入',
+          url: '/data/import',
+          icon: Upload,
+        },
+        {
+          title: '数据导出',
+          url: '/data/export',
+          icon: Download,
+        },
+        {
+          title: '数据备份',
+          url: '/data/backup',
+          icon: DatabaseBackup,
+        },
+        {
+          title: '数据字典',
+          url: '/data/dictionary',
+          icon: BookOpen,
+        },
+        {
+          title: '操作日志',
+          url: '/data/operation-logs',
+          icon: ScrollText,
+        },
+        {
+          title: '登录日志',
+          url: '/data/login-logs',
+          icon: LogIn,
+        },
+        {
+          title: '系统日志',
+          url: '/data/system-logs',
+          icon: Activity,
         },
       ],
     },
