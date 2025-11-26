@@ -8,6 +8,8 @@ import {
     Users,
     Search as SearchIcon,
     X,
+    FolderPlus,
+    Layers,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -53,13 +55,19 @@ interface UserTag {
     createdAt: string
 }
 
-const tagCategories = [
-    { value: 'behavior', label: '行为标签' },
-    { value: 'value', label: '价值标签' },
-    { value: 'preference', label: '偏好标签' },
-    { value: 'lifecycle', label: '生命周期' },
-    { value: 'source', label: '来源标签' },
-    { value: 'custom', label: '自定义标签' },
+interface TagCategory {
+    value: string
+    label: string
+    color?: string
+}
+
+const initialTagCategories: TagCategory[] = [
+    { value: 'behavior', label: '行为标签', color: 'bg-green-500' },
+    { value: 'value', label: '价值标签', color: 'bg-amber-500' },
+    { value: 'preference', label: '偏好标签', color: 'bg-pink-500' },
+    { value: 'lifecycle', label: '生命周期', color: 'bg-emerald-500' },
+    { value: 'source', label: '来源标签', color: 'bg-violet-500' },
+    { value: 'custom', label: '自定义标签', color: 'bg-gray-500' },
 ]
 
 const colorOptions = [
@@ -119,8 +127,19 @@ const defaultFormData: TagFormData = {
     category: 'custom',
 }
 
+interface CategoryFormData {
+    label: string
+    color: string
+}
+
+const defaultCategoryFormData: CategoryFormData = {
+    label: '',
+    color: 'bg-blue-500',
+}
+
 export function Tags() {
     const [tags, setTags] = useState<UserTag[]>(initialTags)
+    const [tagCategories, setTagCategories] = useState<TagCategory[]>(initialTagCategories)
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
     const [searchTerm, setSearchTerm] = useState('')
 
@@ -130,6 +149,13 @@ export function Tags() {
     const [editingTag, setEditingTag] = useState<UserTag | null>(null)
     const [formData, setFormData] = useState<TagFormData>(defaultFormData)
     const [formErrors, setFormErrors] = useState<Record<string, string>>({})
+
+    // 分类表单对话框状态
+    const [categoryDialogOpen, setCategoryDialogOpen] = useState(false)
+    const [categoryDialogMode, setCategoryDialogMode] = useState<'create' | 'edit'>('create')
+    const [editingCategory, setEditingCategory] = useState<TagCategory | null>(null)
+    const [categoryFormData, setCategoryFormData] = useState<CategoryFormData>(defaultCategoryFormData)
+    const [categoryFormErrors, setCategoryFormErrors] = useState<Record<string, string>>({})
 
     // 筛选后的标签
     const filteredTags = tags.filter(tag => {
@@ -228,6 +254,77 @@ export function Tags() {
 
     const getCategoryLabel = (value: string) => tagCategories.find(c => c.value === value)?.label || value
 
+    // 打开新建分类对话框
+    const openCreateCategoryDialog = () => {
+        setCategoryDialogMode('create')
+        setCategoryFormData(defaultCategoryFormData)
+        setCategoryFormErrors({})
+        setCategoryDialogOpen(true)
+    }
+
+    // 打开编辑分类对话框
+    const openEditCategoryDialog = (category: TagCategory) => {
+        setCategoryDialogMode('edit')
+        setEditingCategory(category)
+        setCategoryFormData({
+            label: category.label,
+            color: category.color || 'bg-blue-500',
+        })
+        setCategoryFormErrors({})
+        setCategoryDialogOpen(true)
+    }
+
+    // 验证分类表单
+    const validateCategoryForm = (): boolean => {
+        const errors: Record<string, string> = {}
+
+        if (!categoryFormData.label.trim()) {
+            errors.label = '请输入分类名称'
+        } else if (categoryFormData.label.length > 10) {
+            errors.label = '分类名称不能超过10个字符'
+        } else if (categoryDialogMode === 'create' && tagCategories.some(c => c.label === categoryFormData.label)) {
+            errors.label = '分类名称已存在'
+        } else if (categoryDialogMode === 'edit' && tagCategories.some(c => c.label === categoryFormData.label && c.value !== editingCategory?.value)) {
+            errors.label = '分类名称已存在'
+        }
+
+        setCategoryFormErrors(errors)
+        return Object.keys(errors).length === 0
+    }
+
+    // 保存分类
+    const handleSaveCategory = () => {
+        if (!validateCategoryForm()) return
+
+        if (categoryDialogMode === 'create') {
+            const newCategory: TagCategory = {
+                value: categoryFormData.label.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now(),
+                label: categoryFormData.label,
+                color: categoryFormData.color,
+            }
+            setTagCategories([...tagCategories, newCategory])
+        } else if (editingCategory) {
+            setTagCategories(tagCategories.map(c =>
+                c.value === editingCategory.value
+                    ? { ...c, label: categoryFormData.label, color: categoryFormData.color }
+                    : c
+            ))
+        }
+
+        setCategoryDialogOpen(false)
+    }
+
+    // 删除分类
+    const handleDeleteCategory = (categoryValue: string) => {
+        // 检查是否有标签使用该分类
+        const hasTagsInCategory = tags.some(t => t.category === categoryValue)
+        if (hasTagsInCategory) {
+            alert('该分类下还有标签，无法删除')
+            return
+        }
+        setTagCategories(tagCategories.filter(c => c.value !== categoryValue))
+    }
+
     const getColorClasses = (bgColor: string) => {
         const color = colorOptions.find(c => c.value === bgColor)
         return {
@@ -253,10 +350,16 @@ export function Tags() {
                         <h1 className='text-2xl font-bold tracking-tight'>用户标签</h1>
                         <p className='text-muted-foreground'>管理用户标签，精细化用户运营</p>
                     </div>
-                    <Button onClick={openCreateDialog}>
-                        <Plus className='mr-2 h-4 w-4' />
-                        新建标签
-                    </Button>
+                    <div className='flex gap-2'>
+                        <Button variant='outline' onClick={openCreateCategoryDialog}>
+                            <FolderPlus className='mr-2 h-4 w-4' />
+                            新建分类
+                        </Button>
+                        <Button onClick={openCreateDialog}>
+                            <Plus className='mr-2 h-4 w-4' />
+                            新建标签
+                        </Button>
+                    </div>
                 </div>
 
                 {/* 统计卡片 */}
@@ -393,7 +496,12 @@ export function Tags() {
                             <div key={group.value}>
                                 <div className='mb-3 flex items-center justify-between'>
                                     <div className='flex items-center gap-2'>
-                                        <h3 className='font-semibold'>{group.label}</h3>
+                                        <div className='flex items-center gap-1.5'>
+                                            {group.color && (
+                                                <span className={cn('h-3 w-3 rounded-full', group.color)} />
+                                            )}
+                                            <h3 className='font-semibold'>{group.label}</h3>
+                                        </div>
                                         <Badge variant='secondary' className='text-xs'>
                                             {group.tags.length} 个标签
                                         </Badge>
@@ -401,6 +509,28 @@ export function Tags() {
                                             共 {group.totalUsers.toLocaleString()} 人
                                         </span>
                                     </div>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant='ghost' size='icon' className='h-7 w-7'>
+                                                <MoreHorizontal className='h-4 w-4' />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align='end'>
+                                            <DropdownMenuItem onClick={() => openEditCategoryDialog(group)}>
+                                                <Pencil className='mr-2 h-4 w-4' />
+                                                编辑分类
+                                            </DropdownMenuItem>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem
+                                                className='text-destructive'
+                                                onClick={() => handleDeleteCategory(group.value)}
+                                                disabled={group.tags.length > 0}
+                                            >
+                                                <Trash2 className='mr-2 h-4 w-4' />
+                                                删除分类
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
                                 </div>
                                 <div className='flex flex-wrap gap-2'>
                                     {group.tags.map(tag => {
@@ -573,6 +703,81 @@ export function Tags() {
                         </Button>
                         <Button onClick={handleSaveTag}>
                             {tagDialogMode === 'create' ? '创建标签' : '保存更改'}
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* 新建/编辑分类对话框 */}
+            <Dialog open={categoryDialogOpen} onOpenChange={setCategoryDialogOpen}>
+                <DialogContent className='max-w-sm'>
+                    <DialogHeader>
+                        <DialogTitle className='flex items-center gap-2'>
+                            <Layers className='h-5 w-5' />
+                            {categoryDialogMode === 'create' ? '新建分类' : '编辑分类'}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {categoryDialogMode === 'create'
+                                ? '创建一个新的标签分类'
+                                : '修改分类信息'}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className='space-y-4'>
+                        <div className='space-y-2'>
+                            <Label htmlFor='categoryLabel'>
+                                分类名称 <span className='text-destructive'>*</span>
+                            </Label>
+                            <Input
+                                id='categoryLabel'
+                                placeholder='请输入分类名称'
+                                value={categoryFormData.label}
+                                onChange={(e) => setCategoryFormData({ ...categoryFormData, label: e.target.value })}
+                                className={categoryFormErrors.label ? 'border-destructive' : ''}
+                                maxLength={10}
+                            />
+                            {categoryFormErrors.label && (
+                                <p className='text-destructive text-sm'>{categoryFormErrors.label}</p>
+                            )}
+                        </div>
+
+                        <div className='space-y-2'>
+                            <Label>分类颜色</Label>
+                            <div className='flex flex-wrap gap-2'>
+                                {colorOptions.map((color) => (
+                                    <button
+                                        key={color.value}
+                                        type='button'
+                                        className={cn(
+                                            'h-7 w-7 rounded-full transition-all',
+                                            color.value,
+                                            categoryFormData.color === color.value
+                                                ? 'ring-primary ring-2 ring-offset-2'
+                                                : 'hover:scale-110'
+                                        )}
+                                        onClick={() => setCategoryFormData({ ...categoryFormData, color: color.value })}
+                                        title={color.label}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* 预览 */}
+                        <div className='space-y-2'>
+                            <Label>预览效果</Label>
+                            <div className='bg-muted/50 flex items-center gap-2 rounded-md p-3'>
+                                <span className={cn('h-3 w-3 rounded-full', categoryFormData.color)} />
+                                <span className='font-medium'>{categoryFormData.label || '分类名称'}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className='flex justify-end gap-2 pt-4'>
+                        <Button variant='outline' onClick={() => setCategoryDialogOpen(false)}>
+                            取消
+                        </Button>
+                        <Button onClick={handleSaveCategory}>
+                            {categoryDialogMode === 'create' ? '创建分类' : '保存更改'}
                         </Button>
                     </div>
                 </DialogContent>
