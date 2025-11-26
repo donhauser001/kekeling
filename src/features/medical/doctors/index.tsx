@@ -204,7 +204,13 @@ export function Doctors() {
     const [doctors, setDoctors] = useState<Doctor[]>(initialDoctors)
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null)
-    const [viewMode, setViewMode] = useState<ViewMode>('grid')
+    const [viewMode, setViewMode] = useState<ViewMode>('list')
+
+    // 统计数据
+    const totalDoctors = doctors.length
+    const activeDoctors = doctors.filter(d => d.status === 'active').length
+    const totalConsults = doctors.reduce((sum, d) => sum + d.consultCount, 0)
+    const avgSatisfaction = Math.round(doctors.reduce((sum, d) => sum + d.satisfaction, 0) / doctors.length * 10) / 10
 
     // 表单对话框状态
     const [dialogOpen, setDialogOpen] = useState(false)
@@ -397,26 +403,26 @@ export function Doctors() {
 
     // 渲染列表视图
     const renderListView = () => (
-        <Card>
+        <div className='overflow-hidden rounded-md border'>
             <Table>
                 <TableHeader>
-                    <TableRow>
-                        <TableHead className='w-[200px]'>医师</TableHead>
-                        <TableHead>职称</TableHead>
-                        <TableHead>科室</TableHead>
-                        <TableHead>医院</TableHead>
-                        <TableHead>专长</TableHead>
-                        <TableHead>联系方式</TableHead>
-                        <TableHead>接诊数</TableHead>
-                        <TableHead>满意度</TableHead>
-                        <TableHead>状态</TableHead>
-                        <TableHead className='w-[50px]'></TableHead>
+                    <TableRow className='group/row'>
+                        <TableHead className='bg-background w-[200px]'>医师</TableHead>
+                        <TableHead className='bg-background'>职称</TableHead>
+                        <TableHead className='bg-background'>科室</TableHead>
+                        <TableHead className='bg-background'>医院</TableHead>
+                        <TableHead className='bg-background'>专长</TableHead>
+                        <TableHead className='bg-background'>联系方式</TableHead>
+                        <TableHead className='bg-background'>接诊数</TableHead>
+                        <TableHead className='bg-background'>满意度</TableHead>
+                        <TableHead className='bg-background'>状态</TableHead>
+                        <TableHead className='bg-background w-[50px]'></TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {filteredDoctors.map(doctor => (
-                        <TableRow key={doctor.id} className='group'>
-                            <TableCell>
+                        <TableRow key={doctor.id} className='group/row'>
+                            <TableCell className='bg-background group-hover/row:bg-muted'>
                                 <div className='flex items-center gap-3'>
                                     <Avatar className='h-9 w-9'>
                                         <AvatarFallback className='bg-primary/10 text-primary text-sm'>
@@ -426,16 +432,16 @@ export function Doctors() {
                                     <span className='font-medium'>{doctor.name}</span>
                                 </div>
                             </TableCell>
-                            <TableCell>{doctor.title}</TableCell>
-                            <TableCell>{doctor.department}</TableCell>
-                            <TableCell>
+                            <TableCell className='bg-background group-hover/row:bg-muted'>{doctor.title}</TableCell>
+                            <TableCell className='bg-background group-hover/row:bg-muted'>{doctor.department}</TableCell>
+                            <TableCell className='bg-background group-hover/row:bg-muted'>
                                 <div className='flex items-center gap-1.5'>
-                                    <span>{doctor.hospital}</span>
-                                    <Badge variant='outline' className='text-xs'>{doctor.level}</Badge>
+                                    <span className='truncate max-w-[120px]'>{doctor.hospital}</span>
+                                    <Badge variant='outline' className='text-xs shrink-0'>{doctor.level}</Badge>
                                 </div>
                             </TableCell>
-                            <TableCell>
-                                <div className='flex flex-wrap gap-1 max-w-[200px]'>
+                            <TableCell className='bg-background group-hover/row:bg-muted'>
+                                <div className='flex flex-wrap gap-1 max-w-[180px]'>
                                     {doctor.specialty.slice(0, 2).map(s => (
                                         <Badge key={s} variant='secondary' className='text-xs'>
                                             {s}
@@ -448,35 +454,33 @@ export function Doctors() {
                                     )}
                                 </div>
                             </TableCell>
-                            <TableCell>
-                                <div className='space-y-0.5 text-sm'>
-                                    <div className='text-muted-foreground flex items-center gap-1'>
-                                        <Phone className='h-3 w-3' />
-                                        {doctor.phone}
-                                    </div>
+                            <TableCell className='bg-background group-hover/row:bg-muted'>
+                                <div className='text-muted-foreground flex items-center gap-1 text-sm'>
+                                    <Phone className='h-3 w-3' />
+                                    {doctor.phone}
                                 </div>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className='bg-background group-hover/row:bg-muted'>
                                 <div className='text-muted-foreground flex items-center gap-1'>
                                     <CalendarCheck className='h-3.5 w-3.5' />
                                     {doctor.consultCount.toLocaleString()}
                                 </div>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className='bg-background group-hover/row:bg-muted'>
                                 <div className='flex items-center gap-1 text-amber-500'>
                                     <Star className='h-3.5 w-3.5 fill-current' />
                                     {doctor.satisfaction}%
                                 </div>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className='bg-background group-hover/row:bg-muted'>
                                 <Badge variant={doctor.status === 'active' ? 'default' : 'secondary'} className='text-xs'>
                                     {doctor.status === 'active' ? '在职' : '离职'}
                                 </Badge>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className='bg-background group-hover/row:bg-muted'>
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                        <Button variant='ghost' size='icon' className='h-8 w-8 opacity-0 group-hover:opacity-100'>
+                                        <Button variant='ghost' size='icon' className='h-8 w-8'>
                                             <MoreHorizontal className='h-4 w-4' />
                                         </Button>
                                     </DropdownMenuTrigger>
@@ -504,7 +508,7 @@ export function Doctors() {
                     ))}
                 </TableBody>
             </Table>
-        </Card>
+        </div>
     )
 
     return (
@@ -519,10 +523,10 @@ export function Doctors() {
                 </div>
             </Header>
 
-            <Main>
-                <div className='mb-6 flex items-center justify-between'>
+            <Main className='flex flex-1 flex-col gap-4 sm:gap-6'>
+                <div className='flex flex-wrap items-end justify-between gap-2'>
                     <div>
-                        <h1 className='text-2xl font-bold tracking-tight'>医师库</h1>
+                        <h2 className='text-2xl font-bold tracking-tight'>医师库</h2>
                         <p className='text-muted-foreground'>管理合作医师信息</p>
                     </div>
                     <Button onClick={openCreateDialog}>
@@ -531,8 +535,108 @@ export function Doctors() {
                     </Button>
                 </div>
 
+                {/* 统计卡片 */}
+                <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-4'>
+                    <Card>
+                        <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+                            <CardTitle className='text-sm font-medium'>医师总数</CardTitle>
+                            <svg
+                                xmlns='http://www.w3.org/2000/svg'
+                                viewBox='0 0 24 24'
+                                fill='none'
+                                stroke='currentColor'
+                                strokeLinecap='round'
+                                strokeLinejoin='round'
+                                strokeWidth='2'
+                                className='text-muted-foreground h-4 w-4'
+                            >
+                                <path d='M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2' />
+                                <circle cx='9' cy='7' r='4' />
+                                <path d='M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75' />
+                            </svg>
+                        </CardHeader>
+                        <CardContent>
+                            <div className='text-2xl font-bold'>{totalDoctors}</div>
+                            <p className='text-muted-foreground text-xs'>
+                                在职 {activeDoctors} 人
+                            </p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+                            <CardTitle className='text-sm font-medium'>在职医师</CardTitle>
+                            <svg
+                                xmlns='http://www.w3.org/2000/svg'
+                                viewBox='0 0 24 24'
+                                fill='none'
+                                stroke='currentColor'
+                                strokeLinecap='round'
+                                strokeLinejoin='round'
+                                strokeWidth='2'
+                                className='text-muted-foreground h-4 w-4'
+                            >
+                                <path d='M22 11.08V12a10 10 0 1 1-5.93-9.14' />
+                                <polyline points='22 4 12 14.01 9 11.01' />
+                            </svg>
+                        </CardHeader>
+                        <CardContent>
+                            <div className='text-2xl font-bold'>{activeDoctors}</div>
+                            <p className='text-muted-foreground text-xs'>
+                                占比 {Math.round(activeDoctors / totalDoctors * 100)}%
+                            </p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+                            <CardTitle className='text-sm font-medium'>累计接诊</CardTitle>
+                            <svg
+                                xmlns='http://www.w3.org/2000/svg'
+                                viewBox='0 0 24 24'
+                                fill='none'
+                                stroke='currentColor'
+                                strokeLinecap='round'
+                                strokeLinejoin='round'
+                                strokeWidth='2'
+                                className='text-muted-foreground h-4 w-4'
+                            >
+                                <rect width='20' height='14' x='2' y='5' rx='2' />
+                                <path d='M2 10h20' />
+                            </svg>
+                        </CardHeader>
+                        <CardContent>
+                            <div className='text-2xl font-bold'>{totalConsults.toLocaleString()}</div>
+                            <p className='text-muted-foreground text-xs'>
+                                较上月 +12.5%
+                            </p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+                            <CardTitle className='text-sm font-medium'>平均满意度</CardTitle>
+                            <svg
+                                xmlns='http://www.w3.org/2000/svg'
+                                viewBox='0 0 24 24'
+                                fill='none'
+                                stroke='currentColor'
+                                strokeLinecap='round'
+                                strokeLinejoin='round'
+                                strokeWidth='2'
+                                className='text-muted-foreground h-4 w-4'
+                            >
+                                <path d='M22 12h-4l-3 9L9 3l-3 9H2' />
+                            </svg>
+                        </CardHeader>
+                        <CardContent>
+                            <div className='text-2xl font-bold'>{avgSatisfaction}%</div>
+                            <p className='text-muted-foreground text-xs'>
+                                较上月 +0.3%
+                            </p>
+                        </CardContent>
+                    </Card>
+                </div>
+
                 {/* 搜索和筛选 */}
-                <div className='mb-6 flex flex-wrap items-center gap-4'>
+                <div className='flex flex-wrap items-center gap-4'>
                     <div className='relative flex-1 min-w-[200px] max-w-md'>
                         <SearchIcon className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
                         <Input
@@ -575,11 +679,11 @@ export function Doctors() {
                     <div className='ms-auto'>
                         <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
                             <TabsList className='h-9'>
-                                <TabsTrigger value='grid' className='px-2.5'>
-                                    <LayoutGrid className='h-4 w-4' />
-                                </TabsTrigger>
                                 <TabsTrigger value='list' className='px-2.5'>
                                     <List className='h-4 w-4' />
+                                </TabsTrigger>
+                                <TabsTrigger value='grid' className='px-2.5'>
+                                    <LayoutGrid className='h-4 w-4' />
                                 </TabsTrigger>
                             </TabsList>
                         </Tabs>
@@ -587,13 +691,15 @@ export function Doctors() {
                 </div>
 
                 {/* 医师列表 */}
-                {viewMode === 'grid' ? renderGridView() : renderListView()}
-
-                {filteredDoctors.length === 0 && (
-                    <div className='text-muted-foreground py-12 text-center'>
-                        暂无匹配的医师
-                    </div>
-                )}
+                <div className='flex flex-1 flex-col'>
+                    {viewMode === 'grid' ? renderGridView() : renderListView()}
+                    
+                    {filteredDoctors.length === 0 && (
+                        <div className='text-muted-foreground py-12 text-center'>
+                            暂无匹配的医师
+                        </div>
+                    )}
+                </div>
             </Main>
 
             {/* 新建/编辑对话框 */}
