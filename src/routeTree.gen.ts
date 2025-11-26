@@ -32,6 +32,9 @@ import { Route as AuthenticatedRolesIndexRouteImport } from './routes/_authentic
 import { Route as AuthenticatedPositionsIndexRouteImport } from './routes/_authenticated/positions/index'
 import { Route as AuthenticatedHelpCenterIndexRouteImport } from './routes/_authenticated/help-center/index'
 import { Route as AuthenticatedFilesIndexRouteImport } from './routes/_authenticated/files/index'
+import { Route as AuthenticatedEscortsIndexRouteImport } from './routes/_authenticated/escorts/index'
+import { Route as AuthenticatedEscortTagsIndexRouteImport } from './routes/_authenticated/escort-tags/index'
+import { Route as AuthenticatedEscortCategoriesIndexRouteImport } from './routes/_authenticated/escort-categories/index'
 import { Route as AuthenticatedEmployeesIndexRouteImport } from './routes/_authenticated/employees/index'
 import { Route as AuthenticatedChatsIndexRouteImport } from './routes/_authenticated/chats/index'
 import { Route as ClerkAuthenticatedUserManagementRouteImport } from './routes/clerk/_authenticated/user-management'
@@ -159,6 +162,24 @@ const AuthenticatedFilesIndexRoute = AuthenticatedFilesIndexRouteImport.update({
   path: '/files/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedEscortsIndexRoute =
+  AuthenticatedEscortsIndexRouteImport.update({
+    id: '/escorts/',
+    path: '/escorts/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedEscortTagsIndexRoute =
+  AuthenticatedEscortTagsIndexRouteImport.update({
+    id: '/escort-tags/',
+    path: '/escort-tags/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedEscortCategoriesIndexRoute =
+  AuthenticatedEscortCategoriesIndexRouteImport.update({
+    id: '/escort-categories/',
+    path: '/escort-categories/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedEmployeesIndexRoute =
   AuthenticatedEmployeesIndexRouteImport.update({
     id: '/employees/',
@@ -241,6 +262,9 @@ export interface FileRoutesByFullPath {
   '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
   '/chats': typeof AuthenticatedChatsIndexRoute
   '/employees': typeof AuthenticatedEmployeesIndexRoute
+  '/escort-categories': typeof AuthenticatedEscortCategoriesIndexRoute
+  '/escort-tags': typeof AuthenticatedEscortTagsIndexRoute
+  '/escorts': typeof AuthenticatedEscortsIndexRoute
   '/files': typeof AuthenticatedFilesIndexRoute
   '/help-center': typeof AuthenticatedHelpCenterIndexRoute
   '/positions': typeof AuthenticatedPositionsIndexRoute
@@ -272,6 +296,9 @@ export interface FileRoutesByTo {
   '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
   '/chats': typeof AuthenticatedChatsIndexRoute
   '/employees': typeof AuthenticatedEmployeesIndexRoute
+  '/escort-categories': typeof AuthenticatedEscortCategoriesIndexRoute
+  '/escort-tags': typeof AuthenticatedEscortTagsIndexRoute
+  '/escorts': typeof AuthenticatedEscortsIndexRoute
   '/files': typeof AuthenticatedFilesIndexRoute
   '/help-center': typeof AuthenticatedHelpCenterIndexRoute
   '/positions': typeof AuthenticatedPositionsIndexRoute
@@ -308,6 +335,9 @@ export interface FileRoutesById {
   '/clerk/_authenticated/user-management': typeof ClerkAuthenticatedUserManagementRoute
   '/_authenticated/chats/': typeof AuthenticatedChatsIndexRoute
   '/_authenticated/employees/': typeof AuthenticatedEmployeesIndexRoute
+  '/_authenticated/escort-categories/': typeof AuthenticatedEscortCategoriesIndexRoute
+  '/_authenticated/escort-tags/': typeof AuthenticatedEscortTagsIndexRoute
+  '/_authenticated/escorts/': typeof AuthenticatedEscortsIndexRoute
   '/_authenticated/files/': typeof AuthenticatedFilesIndexRoute
   '/_authenticated/help-center/': typeof AuthenticatedHelpCenterIndexRoute
   '/_authenticated/positions/': typeof AuthenticatedPositionsIndexRoute
@@ -342,6 +372,9 @@ export interface FileRouteTypes {
     | '/clerk/user-management'
     | '/chats'
     | '/employees'
+    | '/escort-categories'
+    | '/escort-tags'
+    | '/escorts'
     | '/files'
     | '/help-center'
     | '/positions'
@@ -373,6 +406,9 @@ export interface FileRouteTypes {
     | '/clerk/user-management'
     | '/chats'
     | '/employees'
+    | '/escort-categories'
+    | '/escort-tags'
+    | '/escorts'
     | '/files'
     | '/help-center'
     | '/positions'
@@ -408,6 +444,9 @@ export interface FileRouteTypes {
     | '/clerk/_authenticated/user-management'
     | '/_authenticated/chats/'
     | '/_authenticated/employees/'
+    | '/_authenticated/escort-categories/'
+    | '/_authenticated/escort-tags/'
+    | '/_authenticated/escorts/'
     | '/_authenticated/files/'
     | '/_authenticated/help-center/'
     | '/_authenticated/positions/'
@@ -595,6 +634,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFilesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/escorts/': {
+      id: '/_authenticated/escorts/'
+      path: '/escorts'
+      fullPath: '/escorts'
+      preLoaderRoute: typeof AuthenticatedEscortsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/escort-tags/': {
+      id: '/_authenticated/escort-tags/'
+      path: '/escort-tags'
+      fullPath: '/escort-tags'
+      preLoaderRoute: typeof AuthenticatedEscortTagsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/escort-categories/': {
+      id: '/_authenticated/escort-categories/'
+      path: '/escort-categories'
+      fullPath: '/escort-categories'
+      preLoaderRoute: typeof AuthenticatedEscortCategoriesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/employees/': {
       id: '/_authenticated/employees/'
       path: '/employees'
@@ -697,6 +757,9 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedErrorsErrorRoute: typeof AuthenticatedErrorsErrorRoute
   AuthenticatedChatsIndexRoute: typeof AuthenticatedChatsIndexRoute
   AuthenticatedEmployeesIndexRoute: typeof AuthenticatedEmployeesIndexRoute
+  AuthenticatedEscortCategoriesIndexRoute: typeof AuthenticatedEscortCategoriesIndexRoute
+  AuthenticatedEscortTagsIndexRoute: typeof AuthenticatedEscortTagsIndexRoute
+  AuthenticatedEscortsIndexRoute: typeof AuthenticatedEscortsIndexRoute
   AuthenticatedFilesIndexRoute: typeof AuthenticatedFilesIndexRoute
   AuthenticatedHelpCenterIndexRoute: typeof AuthenticatedHelpCenterIndexRoute
   AuthenticatedPositionsIndexRoute: typeof AuthenticatedPositionsIndexRoute
@@ -711,6 +774,10 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedErrorsErrorRoute: AuthenticatedErrorsErrorRoute,
   AuthenticatedChatsIndexRoute: AuthenticatedChatsIndexRoute,
   AuthenticatedEmployeesIndexRoute: AuthenticatedEmployeesIndexRoute,
+  AuthenticatedEscortCategoriesIndexRoute:
+    AuthenticatedEscortCategoriesIndexRoute,
+  AuthenticatedEscortTagsIndexRoute: AuthenticatedEscortTagsIndexRoute,
+  AuthenticatedEscortsIndexRoute: AuthenticatedEscortsIndexRoute,
   AuthenticatedFilesIndexRoute: AuthenticatedFilesIndexRoute,
   AuthenticatedHelpCenterIndexRoute: AuthenticatedHelpCenterIndexRoute,
   AuthenticatedPositionsIndexRoute: AuthenticatedPositionsIndexRoute,

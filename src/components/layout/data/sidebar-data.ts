@@ -25,6 +25,8 @@ import {
   Network,
   Tag,
   Layers,
+  Stethoscope,
+  UserCheck,
 } from 'lucide-react'
 import { ClerkLogo } from '@/assets/clerk-logo'
 import { type SidebarData } from '../types'
@@ -83,6 +85,27 @@ export const sidebarData: SidebarData = {
             {
               title: '用户标签',
               url: '/tags',
+              icon: Tag,
+            },
+          ],
+        },
+        {
+          title: '陪诊员',
+          icon: Stethoscope,
+          items: [
+            {
+              title: '人员管理',
+              url: '/escorts',
+              icon: UserCheck,
+            },
+            {
+              title: '人员分类',
+              url: '/escort-categories',
+              icon: Layers,
+            },
+            {
+              title: '人员标签',
+              url: '/escort-tags',
               icon: Tag,
             },
           ],
