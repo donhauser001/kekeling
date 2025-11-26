@@ -1,14 +1,5 @@
 # Shadcn 管理后台
 
-基于 Shadcn 和 Vite 打造的管理后台 UI，注重响应式设计和无障碍访问。
-
-![alt text](public/images/shadcn-admin.png)
-
-[![Sponsored by Clerk](https://img.shields.io/badge/Sponsored%20by-Clerk-5b6ee1?logo=clerk)](https://go.clerk.com/GttUAaK)
-
-我在工作和个人项目中创建了很多管理后台 UI，一直想做一套可复用的后台 UI 组件集合供未来项目使用，现在终于实现了。虽然我自己创建了一些自定义组件，但部分代码直接改编自 ShadcnUI 官方示例。
-
-> 注意：这不是一个起始项目（模板），未来可能会做一个。
 
 ## 功能特性
 
@@ -75,7 +66,7 @@
 克隆项目
 
 ```bash
-git clone https://github.com/satnaing/shadcn-admin.git
+git clone https://github.com/donhauser001/kekeling
 ```
 
 进入项目目录
@@ -95,20 +86,6 @@ pnpm install
 ```bash
 pnpm run dev
 ```
-
-## 赞助本项目 ❤️
-
-如果你觉得这个项目有帮助，或者在自己的工作中使用了它，欢迎[赞助我](https://github.com/sponsors/satnaing)以支持开发和维护。你也可以[请我喝杯咖啡](https://buymeacoffee.com/satnaing)。不用担心，每一分钱都有帮助。谢谢！🙏
-
-如有问题或赞助咨询，请随时联系 [satnaingdev@gmail.com](mailto:satnaingdev@gmail.com)。
-
-### 当前赞助商
-
-- [Clerk](https://go.clerk.com/GttUAaK) - 现代 Web 的身份认证和用户管理
-
-## 作者
-
-由 [@satnaing](https://github.com/satnaing) 用 🤍 打造
 
 ## 许可证
 
