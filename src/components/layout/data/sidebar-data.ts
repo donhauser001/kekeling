@@ -27,6 +27,12 @@ import {
   Layers,
   Stethoscope,
   UserCheck,
+  HeartPulse,
+  UserRound,
+  LayoutList,
+  Hospital,
+  Tags,
+  Award,
 } from 'lucide-react'
 import { ClerkLogo } from '@/assets/clerk-logo'
 import { type SidebarData } from '../types'
@@ -107,6 +113,37 @@ export const sidebarData: SidebarData = {
               title: '人员标签',
               url: '/escort-tags',
               icon: Tag,
+            },
+          ],
+        },
+        {
+          title: '医疗资源',
+          icon: HeartPulse,
+          items: [
+            {
+              title: '医师库',
+              url: '/doctors',
+              icon: UserRound,
+            },
+            {
+              title: '科室库',
+              url: '/departments',
+              icon: LayoutList,
+            },
+            {
+              title: '医院库',
+              url: '/hospitals',
+              icon: Hospital,
+            },
+            {
+              title: '标签云',
+              url: '/medical-tags',
+              icon: Tags,
+            },
+            {
+              title: '级别管理',
+              url: '/medical-levels',
+              icon: Award,
             },
           ],
         },

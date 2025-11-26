@@ -30,12 +30,17 @@ import { Route as AuthenticatedTagsIndexRouteImport } from './routes/_authentica
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
 import { Route as AuthenticatedRolesIndexRouteImport } from './routes/_authenticated/roles/index'
 import { Route as AuthenticatedPositionsIndexRouteImport } from './routes/_authenticated/positions/index'
+import { Route as AuthenticatedMedicalTagsIndexRouteImport } from './routes/_authenticated/medical-tags/index'
+import { Route as AuthenticatedMedicalLevelsIndexRouteImport } from './routes/_authenticated/medical-levels/index'
+import { Route as AuthenticatedHospitalsIndexRouteImport } from './routes/_authenticated/hospitals/index'
 import { Route as AuthenticatedHelpCenterIndexRouteImport } from './routes/_authenticated/help-center/index'
 import { Route as AuthenticatedFilesIndexRouteImport } from './routes/_authenticated/files/index'
 import { Route as AuthenticatedEscortsIndexRouteImport } from './routes/_authenticated/escorts/index'
 import { Route as AuthenticatedEscortTagsIndexRouteImport } from './routes/_authenticated/escort-tags/index'
 import { Route as AuthenticatedEscortCategoriesIndexRouteImport } from './routes/_authenticated/escort-categories/index'
 import { Route as AuthenticatedEmployeesIndexRouteImport } from './routes/_authenticated/employees/index'
+import { Route as AuthenticatedDoctorsIndexRouteImport } from './routes/_authenticated/doctors/index'
+import { Route as AuthenticatedDepartmentsIndexRouteImport } from './routes/_authenticated/departments/index'
 import { Route as AuthenticatedChatsIndexRouteImport } from './routes/_authenticated/chats/index'
 import { Route as ClerkAuthenticatedUserManagementRouteImport } from './routes/clerk/_authenticated/user-management'
 import { Route as ClerkauthSignUpRouteImport } from './routes/clerk/(auth)/sign-up'
@@ -151,6 +156,24 @@ const AuthenticatedPositionsIndexRoute =
     path: '/positions/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedMedicalTagsIndexRoute =
+  AuthenticatedMedicalTagsIndexRouteImport.update({
+    id: '/medical-tags/',
+    path: '/medical-tags/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedMedicalLevelsIndexRoute =
+  AuthenticatedMedicalLevelsIndexRouteImport.update({
+    id: '/medical-levels/',
+    path: '/medical-levels/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedHospitalsIndexRoute =
+  AuthenticatedHospitalsIndexRouteImport.update({
+    id: '/hospitals/',
+    path: '/hospitals/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedHelpCenterIndexRoute =
   AuthenticatedHelpCenterIndexRouteImport.update({
     id: '/help-center/',
@@ -184,6 +207,18 @@ const AuthenticatedEmployeesIndexRoute =
   AuthenticatedEmployeesIndexRouteImport.update({
     id: '/employees/',
     path: '/employees/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDoctorsIndexRoute =
+  AuthenticatedDoctorsIndexRouteImport.update({
+    id: '/doctors/',
+    path: '/doctors/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDepartmentsIndexRoute =
+  AuthenticatedDepartmentsIndexRouteImport.update({
+    id: '/departments/',
+    path: '/departments/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedChatsIndexRoute = AuthenticatedChatsIndexRouteImport.update({
@@ -261,12 +296,17 @@ export interface FileRoutesByFullPath {
   '/clerk/sign-up': typeof ClerkauthSignUpRoute
   '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
   '/chats': typeof AuthenticatedChatsIndexRoute
+  '/departments': typeof AuthenticatedDepartmentsIndexRoute
+  '/doctors': typeof AuthenticatedDoctorsIndexRoute
   '/employees': typeof AuthenticatedEmployeesIndexRoute
   '/escort-categories': typeof AuthenticatedEscortCategoriesIndexRoute
   '/escort-tags': typeof AuthenticatedEscortTagsIndexRoute
   '/escorts': typeof AuthenticatedEscortsIndexRoute
   '/files': typeof AuthenticatedFilesIndexRoute
   '/help-center': typeof AuthenticatedHelpCenterIndexRoute
+  '/hospitals': typeof AuthenticatedHospitalsIndexRoute
+  '/medical-levels': typeof AuthenticatedMedicalLevelsIndexRoute
+  '/medical-tags': typeof AuthenticatedMedicalTagsIndexRoute
   '/positions': typeof AuthenticatedPositionsIndexRoute
   '/roles': typeof AuthenticatedRolesIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
@@ -295,12 +335,17 @@ export interface FileRoutesByTo {
   '/clerk/sign-up': typeof ClerkauthSignUpRoute
   '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
   '/chats': typeof AuthenticatedChatsIndexRoute
+  '/departments': typeof AuthenticatedDepartmentsIndexRoute
+  '/doctors': typeof AuthenticatedDoctorsIndexRoute
   '/employees': typeof AuthenticatedEmployeesIndexRoute
   '/escort-categories': typeof AuthenticatedEscortCategoriesIndexRoute
   '/escort-tags': typeof AuthenticatedEscortTagsIndexRoute
   '/escorts': typeof AuthenticatedEscortsIndexRoute
   '/files': typeof AuthenticatedFilesIndexRoute
   '/help-center': typeof AuthenticatedHelpCenterIndexRoute
+  '/hospitals': typeof AuthenticatedHospitalsIndexRoute
+  '/medical-levels': typeof AuthenticatedMedicalLevelsIndexRoute
+  '/medical-tags': typeof AuthenticatedMedicalTagsIndexRoute
   '/positions': typeof AuthenticatedPositionsIndexRoute
   '/roles': typeof AuthenticatedRolesIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
@@ -334,12 +379,17 @@ export interface FileRoutesById {
   '/clerk/(auth)/sign-up': typeof ClerkauthSignUpRoute
   '/clerk/_authenticated/user-management': typeof ClerkAuthenticatedUserManagementRoute
   '/_authenticated/chats/': typeof AuthenticatedChatsIndexRoute
+  '/_authenticated/departments/': typeof AuthenticatedDepartmentsIndexRoute
+  '/_authenticated/doctors/': typeof AuthenticatedDoctorsIndexRoute
   '/_authenticated/employees/': typeof AuthenticatedEmployeesIndexRoute
   '/_authenticated/escort-categories/': typeof AuthenticatedEscortCategoriesIndexRoute
   '/_authenticated/escort-tags/': typeof AuthenticatedEscortTagsIndexRoute
   '/_authenticated/escorts/': typeof AuthenticatedEscortsIndexRoute
   '/_authenticated/files/': typeof AuthenticatedFilesIndexRoute
   '/_authenticated/help-center/': typeof AuthenticatedHelpCenterIndexRoute
+  '/_authenticated/hospitals/': typeof AuthenticatedHospitalsIndexRoute
+  '/_authenticated/medical-levels/': typeof AuthenticatedMedicalLevelsIndexRoute
+  '/_authenticated/medical-tags/': typeof AuthenticatedMedicalTagsIndexRoute
   '/_authenticated/positions/': typeof AuthenticatedPositionsIndexRoute
   '/_authenticated/roles/': typeof AuthenticatedRolesIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
@@ -371,12 +421,17 @@ export interface FileRouteTypes {
     | '/clerk/sign-up'
     | '/clerk/user-management'
     | '/chats'
+    | '/departments'
+    | '/doctors'
     | '/employees'
     | '/escort-categories'
     | '/escort-tags'
     | '/escorts'
     | '/files'
     | '/help-center'
+    | '/hospitals'
+    | '/medical-levels'
+    | '/medical-tags'
     | '/positions'
     | '/roles'
     | '/settings/'
@@ -405,12 +460,17 @@ export interface FileRouteTypes {
     | '/clerk/sign-up'
     | '/clerk/user-management'
     | '/chats'
+    | '/departments'
+    | '/doctors'
     | '/employees'
     | '/escort-categories'
     | '/escort-tags'
     | '/escorts'
     | '/files'
     | '/help-center'
+    | '/hospitals'
+    | '/medical-levels'
+    | '/medical-tags'
     | '/positions'
     | '/roles'
     | '/settings'
@@ -443,12 +503,17 @@ export interface FileRouteTypes {
     | '/clerk/(auth)/sign-up'
     | '/clerk/_authenticated/user-management'
     | '/_authenticated/chats/'
+    | '/_authenticated/departments/'
+    | '/_authenticated/doctors/'
     | '/_authenticated/employees/'
     | '/_authenticated/escort-categories/'
     | '/_authenticated/escort-tags/'
     | '/_authenticated/escorts/'
     | '/_authenticated/files/'
     | '/_authenticated/help-center/'
+    | '/_authenticated/hospitals/'
+    | '/_authenticated/medical-levels/'
+    | '/_authenticated/medical-tags/'
     | '/_authenticated/positions/'
     | '/_authenticated/roles/'
     | '/_authenticated/settings/'
@@ -620,6 +685,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPositionsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/medical-tags/': {
+      id: '/_authenticated/medical-tags/'
+      path: '/medical-tags'
+      fullPath: '/medical-tags'
+      preLoaderRoute: typeof AuthenticatedMedicalTagsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/medical-levels/': {
+      id: '/_authenticated/medical-levels/'
+      path: '/medical-levels'
+      fullPath: '/medical-levels'
+      preLoaderRoute: typeof AuthenticatedMedicalLevelsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/hospitals/': {
+      id: '/_authenticated/hospitals/'
+      path: '/hospitals'
+      fullPath: '/hospitals'
+      preLoaderRoute: typeof AuthenticatedHospitalsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/help-center/': {
       id: '/_authenticated/help-center/'
       path: '/help-center'
@@ -660,6 +746,20 @@ declare module '@tanstack/react-router' {
       path: '/employees'
       fullPath: '/employees'
       preLoaderRoute: typeof AuthenticatedEmployeesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/doctors/': {
+      id: '/_authenticated/doctors/'
+      path: '/doctors'
+      fullPath: '/doctors'
+      preLoaderRoute: typeof AuthenticatedDoctorsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/departments/': {
+      id: '/_authenticated/departments/'
+      path: '/departments'
+      fullPath: '/departments'
+      preLoaderRoute: typeof AuthenticatedDepartmentsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/chats/': {
@@ -756,12 +856,17 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedErrorsErrorRoute: typeof AuthenticatedErrorsErrorRoute
   AuthenticatedChatsIndexRoute: typeof AuthenticatedChatsIndexRoute
+  AuthenticatedDepartmentsIndexRoute: typeof AuthenticatedDepartmentsIndexRoute
+  AuthenticatedDoctorsIndexRoute: typeof AuthenticatedDoctorsIndexRoute
   AuthenticatedEmployeesIndexRoute: typeof AuthenticatedEmployeesIndexRoute
   AuthenticatedEscortCategoriesIndexRoute: typeof AuthenticatedEscortCategoriesIndexRoute
   AuthenticatedEscortTagsIndexRoute: typeof AuthenticatedEscortTagsIndexRoute
   AuthenticatedEscortsIndexRoute: typeof AuthenticatedEscortsIndexRoute
   AuthenticatedFilesIndexRoute: typeof AuthenticatedFilesIndexRoute
   AuthenticatedHelpCenterIndexRoute: typeof AuthenticatedHelpCenterIndexRoute
+  AuthenticatedHospitalsIndexRoute: typeof AuthenticatedHospitalsIndexRoute
+  AuthenticatedMedicalLevelsIndexRoute: typeof AuthenticatedMedicalLevelsIndexRoute
+  AuthenticatedMedicalTagsIndexRoute: typeof AuthenticatedMedicalTagsIndexRoute
   AuthenticatedPositionsIndexRoute: typeof AuthenticatedPositionsIndexRoute
   AuthenticatedRolesIndexRoute: typeof AuthenticatedRolesIndexRoute
   AuthenticatedTagsIndexRoute: typeof AuthenticatedTagsIndexRoute
@@ -773,6 +878,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedErrorsErrorRoute: AuthenticatedErrorsErrorRoute,
   AuthenticatedChatsIndexRoute: AuthenticatedChatsIndexRoute,
+  AuthenticatedDepartmentsIndexRoute: AuthenticatedDepartmentsIndexRoute,
+  AuthenticatedDoctorsIndexRoute: AuthenticatedDoctorsIndexRoute,
   AuthenticatedEmployeesIndexRoute: AuthenticatedEmployeesIndexRoute,
   AuthenticatedEscortCategoriesIndexRoute:
     AuthenticatedEscortCategoriesIndexRoute,
@@ -780,6 +887,9 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEscortsIndexRoute: AuthenticatedEscortsIndexRoute,
   AuthenticatedFilesIndexRoute: AuthenticatedFilesIndexRoute,
   AuthenticatedHelpCenterIndexRoute: AuthenticatedHelpCenterIndexRoute,
+  AuthenticatedHospitalsIndexRoute: AuthenticatedHospitalsIndexRoute,
+  AuthenticatedMedicalLevelsIndexRoute: AuthenticatedMedicalLevelsIndexRoute,
+  AuthenticatedMedicalTagsIndexRoute: AuthenticatedMedicalTagsIndexRoute,
   AuthenticatedPositionsIndexRoute: AuthenticatedPositionsIndexRoute,
   AuthenticatedRolesIndexRoute: AuthenticatedRolesIndexRoute,
   AuthenticatedTagsIndexRoute: AuthenticatedTagsIndexRoute,
