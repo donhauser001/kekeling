@@ -1,5 +1,4 @@
 import { useState, type JSX } from 'react'
-import { useLocation, useNavigate, Link } from '@tanstack/react-router'
 import {
   Save,
   RotateCcw,
@@ -12,14 +11,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button, buttonVariants } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
@@ -336,16 +328,16 @@ export function OrderSettings() {
         <div key={index} className='flex items-center justify-between py-2'>
           <Label>{item}</Label>
           <div className='flex gap-4'>
-            <label className='flex items-center gap-1.5 text-sm'>
-              <input type='checkbox' defaultChecked className='rounded' />
+            <label className='flex items-center gap-2 text-sm'>
+              <Checkbox defaultChecked />
               短信
             </label>
-            <label className='flex items-center gap-1.5 text-sm'>
-              <input type='checkbox' defaultChecked className='rounded' />
+            <label className='flex items-center gap-2 text-sm'>
+              <Checkbox defaultChecked />
               推送
             </label>
-            <label className='flex items-center gap-1.5 text-sm'>
-              <input type='checkbox' className='rounded' />
+            <label className='flex items-center gap-2 text-sm'>
+              <Checkbox />
               邮件
             </label>
           </div>
