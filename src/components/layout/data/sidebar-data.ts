@@ -40,6 +40,15 @@ import {
   BadgePercent,
   ClipboardCheck,
   ClipboardList,
+  Building,
+  GitFork,
+  Globe,
+  FileText,
+  Newspaper,
+  FolderKanban,
+  BookmarkIcon,
+  Menu,
+  Cog,
 } from 'lucide-react'
 import { ClerkLogo } from '@/assets/clerk-logo'
 import { type SidebarData } from '../types'
@@ -169,11 +178,6 @@ export const sidebarData: SidebarData = {
             },
           ],
         },
-      ],
-    },
-    {
-      title: '组织管理',
-      items: [
         {
           title: '用户中心',
           icon: CircleUser,
@@ -195,6 +199,11 @@ export const sidebarData: SidebarData = {
             },
           ],
         },
+      ],
+    },
+    {
+      title: '组织管理',
+      items: [
         {
           title: '人力资源',
           icon: Building2,
@@ -211,6 +220,27 @@ export const sidebarData: SidebarData = {
             },
           ],
         },
+        {
+          title: '企业管理',
+          icon: Building,
+          items: [
+            {
+              title: '企业设置',
+              url: '/enterprise/settings',
+              icon: Cog,
+            },
+            {
+              title: '部门设置',
+              url: '/enterprise/departments',
+              icon: FolderKanban,
+            },
+            {
+              title: '组织架构',
+              url: '/enterprise/structure',
+              icon: GitFork,
+            },
+          ],
+        },
       ],
     },
     {
@@ -220,6 +250,42 @@ export const sidebarData: SidebarData = {
           title: '文件中心',
           url: '/files',
           icon: FolderOpen,
+        },
+        {
+          title: '官网运营',
+          icon: Globe,
+          items: [
+            {
+              title: '页面',
+              url: '/cms/pages',
+              icon: FileText,
+            },
+            {
+              title: '文章',
+              url: '/cms/articles',
+              icon: Newspaper,
+            },
+            {
+              title: '文章分类',
+              url: '/cms/article-categories',
+              icon: FolderTree,
+            },
+            {
+              title: '文章标签',
+              url: '/cms/article-tags',
+              icon: BookmarkIcon,
+            },
+            {
+              title: '菜单',
+              url: '/cms/menus',
+              icon: Menu,
+            },
+            {
+              title: '网站设置',
+              url: '/cms/settings',
+              icon: Cog,
+            },
+          ],
         },
         {
           title: '设置',
