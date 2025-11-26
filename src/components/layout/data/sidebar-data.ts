@@ -22,6 +22,8 @@ import {
   FolderOpen,
   Shield,
   CircleUser,
+  Briefcase,
+  Building2,
 } from 'lucide-react'
 import { ClerkLogo } from '@/assets/clerk-logo'
 import { type SidebarData } from '../types'
@@ -82,6 +84,17 @@ export const sidebarData: SidebarData = {
               title: '角色设置',
               url: '/roles',
               icon: Shield,
+            },
+          ],
+        },
+        {
+          title: '人力资源',
+          icon: Building2,
+          items: [
+            {
+              title: '员工管理',
+              url: '/employees',
+              icon: Briefcase,
             },
           ],
         },
