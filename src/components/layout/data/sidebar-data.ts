@@ -67,6 +67,9 @@ import {
   ScrollText,
   LogIn,
   Activity,
+  Brain,
+  Library,
+  SlidersHorizontal,
 } from 'lucide-react'
 import { ClerkLogo } from '@/assets/clerk-logo'
 import { type SidebarData } from '../types'
@@ -323,6 +326,22 @@ export const sidebarData: SidebarData = {
               title: '数据报表',
               url: '/data/reports',
               icon: FileSpreadsheet,
+            },
+          ],
+        },
+        {
+          title: 'AI中心',
+          icon: Brain,
+          items: [
+            {
+              title: '知识库',
+              url: '/ai/knowledge-base',
+              icon: Library,
+            },
+            {
+              title: 'AI配置',
+              url: '/ai/settings',
+              icon: SlidersHorizontal,
             },
           ],
         },
