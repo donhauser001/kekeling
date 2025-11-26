@@ -19,16 +19,21 @@ import {
   Command,
   GalleryVerticalEnd,
   FolderOpen,
+  CircleUser,
   Briefcase,
+  Building2,
   Network,
   Tag,
   Layers,
+  Stethoscope,
   UserCheck,
+  HeartPulse,
   UserRound,
   LayoutList,
   Hospital,
   Tags,
   Award,
+  Store,
   PackageSearch,
   FolderTree,
   GitBranch,
@@ -74,7 +79,7 @@ export const sidebarData: SidebarData = {
       ],
     },
     {
-      title: '业务管理',
+      title: '业务运营',
       items: [
         {
           title: '订单管理',
@@ -82,119 +87,134 @@ export const sidebarData: SidebarData = {
           icon: ClipboardList,
         },
         {
-          title: '服务管理',
-          url: '/services',
-          icon: PackageSearch,
+          title: '业务中心',
+          icon: Store,
+          items: [
+            {
+              title: '服务管理',
+              url: '/services',
+              icon: PackageSearch,
+            },
+            {
+              title: '服务分类',
+              url: '/service-categories',
+              icon: FolderTree,
+            },
+            {
+              title: '流程管理',
+              url: '/workflows',
+              icon: GitBranch,
+            },
+            {
+              title: '价格政策',
+              url: '/pricing-policies',
+              icon: BadgePercent,
+            },
+            {
+              title: '接单设置',
+              url: '/order-settings',
+              icon: ClipboardCheck,
+            },
+          ],
         },
         {
-          title: '服务分类',
-          url: '/service-categories',
-          icon: FolderTree,
+          title: '医疗资源',
+          icon: HeartPulse,
+          items: [
+            {
+              title: '医师库',
+              url: '/doctors',
+              icon: UserRound,
+            },
+            {
+              title: '科室库',
+              url: '/departments',
+              icon: LayoutList,
+            },
+            {
+              title: '医院库',
+              url: '/hospitals',
+              icon: Hospital,
+            },
+            {
+              title: '标签云',
+              url: '/medical-tags',
+              icon: Tags,
+            },
+            {
+              title: '级别管理',
+              url: '/medical-levels',
+              icon: Award,
+            },
+          ],
         },
         {
-          title: '流程管理',
-          url: '/workflows',
-          icon: GitBranch,
-        },
-        {
-          title: '价格政策',
-          url: '/pricing-policies',
-          icon: BadgePercent,
-        },
-        {
-          title: '接单设置',
-          url: '/order-settings',
-          icon: ClipboardCheck,
+          title: '陪诊员',
+          icon: Stethoscope,
+          items: [
+            {
+              title: '人员管理',
+              url: '/escorts',
+              icon: UserCheck,
+            },
+            {
+              title: '人员分类',
+              url: '/escort-categories',
+              icon: Layers,
+            },
+            {
+              title: '人员标签',
+              url: '/escort-tags',
+              icon: Tag,
+            },
+          ],
         },
       ],
     },
     {
-      title: '医疗资源',
+      title: '组织管理',
       items: [
         {
-          title: '医师库',
-          url: '/doctors',
-          icon: UserRound,
+          title: '用户中心',
+          icon: CircleUser,
+          items: [
+            {
+              title: '用户管理',
+              url: '/users',
+              icon: Users,
+            },
+            {
+              title: '用户分类',
+              url: '/roles',
+              icon: Layers,
+            },
+            {
+              title: '用户标签',
+              url: '/tags',
+              icon: Tag,
+            },
+          ],
         },
         {
-          title: '科室库',
-          url: '/departments',
-          icon: LayoutList,
-        },
-        {
-          title: '医院库',
-          url: '/hospitals',
-          icon: Hospital,
-        },
-        {
-          title: '标签云',
-          url: '/medical-tags',
-          icon: Tags,
-        },
-        {
-          title: '级别管理',
-          url: '/medical-levels',
-          icon: Award,
+          title: '人力资源',
+          icon: Building2,
+          items: [
+            {
+              title: '员工管理',
+              url: '/employees',
+              icon: Briefcase,
+            },
+            {
+              title: '岗位设置',
+              url: '/positions',
+              icon: Network,
+            },
+          ],
         },
       ],
     },
     {
-      title: '陪诊服务',
-      items: [
-        {
-          title: '人员管理',
-          url: '/escorts',
-          icon: UserCheck,
-        },
-        {
-          title: '人员分类',
-          url: '/escort-categories',
-          icon: Layers,
-        },
-        {
-          title: '人员标签',
-          url: '/escort-tags',
-          icon: Tag,
-        },
-      ],
-    },
-    {
-      title: '用户中心',
-      items: [
-        {
-          title: '用户管理',
-          url: '/users',
-          icon: Users,
-        },
-        {
-          title: '用户分类',
-          url: '/roles',
-          icon: Layers,
-        },
-        {
-          title: '用户标签',
-          url: '/tags',
-          icon: Tag,
-        },
-      ],
-    },
-    {
-      title: '人力资源',
-      items: [
-        {
-          title: '员工管理',
-          url: '/employees',
-          icon: Briefcase,
-        },
-        {
-          title: '岗位设置',
-          url: '/positions',
-          icon: Network,
-        },
-      ],
-    },
-    {
-      title: '系统管理',
+      title: '系统',
       items: [
         {
           title: '文件中心',
