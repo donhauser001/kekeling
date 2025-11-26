@@ -60,6 +60,90 @@
   --chart-5: oklch(0.645 0.246 16.439);
 }
 
+/* ========== 主色调: 海蓝 (Blue) ========== */
+.accent-blue {
+  --primary: oklch(0.546 0.245 262.881);
+  --primary-foreground: oklch(0.984 0.003 247.858);
+  --ring: oklch(0.546 0.245 262.881);
+  --sidebar-primary: var(--primary);
+  --sidebar-ring: var(--ring);
+}
+
+.accent-blue.dark {
+  --primary: oklch(0.623 0.214 259.815);
+  --primary-foreground: oklch(0.208 0.042 265.755);
+}
+
+/* ========== 主色调: 翠绿 (Green) ========== */
+.accent-green {
+  --primary: oklch(0.627 0.194 149.214);
+  --primary-foreground: oklch(0.984 0.003 247.858);
+  --ring: oklch(0.627 0.194 149.214);
+  --sidebar-primary: var(--primary);
+  --sidebar-ring: var(--ring);
+}
+
+.accent-green.dark {
+  --primary: oklch(0.696 0.17 162.48);
+  --primary-foreground: oklch(0.208 0.042 265.755);
+}
+
+/* ========== 主色调: 紫罗兰 (Violet) ========== */
+.accent-violet {
+  --primary: oklch(0.606 0.25 292.717);
+  --primary-foreground: oklch(0.984 0.003 247.858);
+  --ring: oklch(0.606 0.25 292.717);
+  --sidebar-primary: var(--primary);
+  --sidebar-ring: var(--ring);
+}
+
+.accent-violet.dark {
+  --primary: oklch(0.702 0.183 293.541);
+  --primary-foreground: oklch(0.208 0.042 265.755);
+}
+
+/* ========== 主色调: 橙黄 (Orange) ========== */
+.accent-orange {
+  --primary: oklch(0.705 0.213 47.604);
+  --primary-foreground: oklch(0.984 0.003 247.858);
+  --ring: oklch(0.705 0.213 47.604);
+  --sidebar-primary: var(--primary);
+  --sidebar-ring: var(--ring);
+}
+
+.accent-orange.dark {
+  --primary: oklch(0.792 0.184 70.08);
+  --primary-foreground: oklch(0.208 0.042 265.755);
+}
+
+/* ========== 主色调: 玫瑰 (Rose) ========== */
+.accent-rose {
+  --primary: oklch(0.645 0.246 16.439);
+  --primary-foreground: oklch(0.984 0.003 247.858);
+  --ring: oklch(0.645 0.246 16.439);
+  --sidebar-primary: var(--primary);
+  --sidebar-ring: var(--ring);
+}
+
+.accent-rose.dark {
+  --primary: oklch(0.718 0.202 22.216);
+  --primary-foreground: oklch(0.208 0.042 265.755);
+}
+
+/* ========== 主色调: 青碧 (Cyan) ========== */
+.accent-cyan {
+  --primary: oklch(0.715 0.143 215.221);
+  --primary-foreground: oklch(0.984 0.003 247.858);
+  --ring: oklch(0.715 0.143 215.221);
+  --sidebar-primary: var(--primary);
+  --sidebar-ring: var(--ring);
+}
+
+.accent-cyan.dark {
+  --primary: oklch(0.789 0.154 211.53);
+  --primary-foreground: oklch(0.208 0.042 265.755);
+}
+
 @theme inline {
   --font-inter: 'Inter', 'sans-serif';
   --font-manrope: 'Manrope', 'sans-serif';

@@ -21,6 +21,9 @@ import {
   AudioWaveform,
   Command,
   GalleryVerticalEnd,
+  FolderOpen,
+  Shield,
+  CircleUser,
 } from 'lucide-react'
 import { ClerkLogo } from '@/assets/clerk-logo'
 import { type SidebarData } from '../types'
@@ -68,15 +71,31 @@ export const sidebarData: SidebarData = {
           icon: Package,
         },
         {
+          title: '文件中心',
+          url: '/files',
+          icon: FolderOpen,
+        },
+        {
           title: '消息中心',
           url: '/chats',
           badge: '3',
           icon: MessagesSquare,
         },
         {
-          title: '用户管理',
-          url: '/users',
-          icon: Users,
+          title: '用户中心',
+          icon: CircleUser,
+          items: [
+            {
+              title: '用户管理',
+              url: '/users',
+              icon: Users,
+            },
+            {
+              title: '角色设置',
+              url: '/roles',
+              icon: Shield,
+            },
+          ],
         },
         {
           title: 'Clerk 认证',

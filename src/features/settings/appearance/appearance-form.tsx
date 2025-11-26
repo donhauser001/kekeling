@@ -1,13 +1,16 @@
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
-import { ChevronDownIcon } from '@radix-ui/react-icons'
+import { Check } from 'lucide-react'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { fonts } from '@/config/fonts'
 import { showSubmittedData } from '@/lib/show-submitted-data'
 import { cn } from '@/lib/utils'
-import { useFont } from '@/context/font-provider'
+import {
+  type Accent,
+  ACCENT_OPTIONS,
+  useAccent,
+} from '@/context/accent-provider'
 import { useTheme } from '@/context/theme-provider'
-import { Button, buttonVariants } from '@/components/ui/button'
+import { Button } from '@/components/ui/button'
 import {
   Form,
   FormControl,
@@ -21,19 +24,27 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 
 const appearanceFormSchema = z.object({
   theme: z.enum(['light', 'dark']),
-  font: z.enum(fonts),
+  accent: z.enum([
+    'zinc',
+    'blue',
+    'green',
+    'violet',
+    'orange',
+    'rose',
+    'cyan',
+  ] as const),
 })
 
 type AppearanceFormValues = z.infer<typeof appearanceFormSchema>
 
 export function AppearanceForm() {
-  const { font, setFont } = useFont()
   const { theme, setTheme } = useTheme()
+  const { accent, setAccent } = useAccent()
 
   // This can come from your database or API.
   const defaultValues: Partial<AppearanceFormValues> = {
     theme: theme as 'light' | 'dark',
-    font,
+    accent,
   }
 
   const form = useForm<AppearanceFormValues>({
@@ -42,8 +53,8 @@ export function AppearanceForm() {
   })
 
   function onSubmit(data: AppearanceFormValues) {
-    if (data.font != font) setFont(data.font)
-    if (data.theme != theme) setTheme(data.theme)
+    if (data.theme !== theme) setTheme(data.theme)
+    if (data.accent !== accent) setAccent(data.accent)
 
     showSubmittedData(data)
   }
@@ -53,45 +64,11 @@ export function AppearanceForm() {
       <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-8'>
         <FormField
           control={form.control}
-          name='font'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>字体</FormLabel>
-              <div className='relative w-max'>
-                <FormControl>
-                  <select
-                    className={cn(
-                      buttonVariants({ variant: 'outline' }),
-                      'w-[200px] appearance-none font-normal capitalize',
-                      'dark:bg-background dark:hover:bg-background'
-                    )}
-                    {...field}
-                  >
-                    {fonts.map((font) => (
-                      <option key={font} value={font}>
-                        {font}
-                      </option>
-                    ))}
-                  </select>
-                </FormControl>
-                <ChevronDownIcon className='absolute end-3 top-2.5 h-4 w-4 opacity-50' />
-              </div>
-              <FormDescription className='font-manrope'>
-                设置控制台中使用的字体。
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
           name='theme'
           render={({ field }) => (
             <FormItem>
               <FormLabel>主题</FormLabel>
-              <FormDescription>
-                选择控制台的主题。
-              </FormDescription>
+              <FormDescription>选择控制台的主题。</FormDescription>
               <FormMessage />
               <RadioGroup
                 onValueChange={field.onChange}
@@ -151,6 +128,49 @@ export function AppearanceForm() {
                   </FormLabel>
                 </FormItem>
               </RadioGroup>
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name='accent'
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>主色调</FormLabel>
+              <FormDescription>选择应用的主色调。</FormDescription>
+              <FormMessage />
+              <FormControl>
+                <div className='flex flex-wrap gap-3 pt-2'>
+                  {ACCENT_OPTIONS.map((option) => (
+                    <button
+                      key={option.value}
+                      type='button'
+                      onClick={() => field.onChange(option.value as Accent)}
+                      className={cn(
+                        'group relative flex h-12 w-12 items-center justify-center rounded-full transition-all',
+                        'ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                        'hover:scale-110',
+                        field.value === option.value &&
+                        'ring-2 ring-ring ring-offset-2'
+                      )}
+                      style={{ backgroundColor: option.color }}
+                      aria-label={option.label}
+                      aria-pressed={field.value === option.value}
+                    >
+                      {field.value === option.value && (
+                        <Check className='h-5 w-5 text-white drop-shadow-md' />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </FormControl>
+              <div className='text-muted-foreground pt-2 text-sm'>
+                当前选择:{' '}
+                <span className='font-medium'>
+                  {ACCENT_OPTIONS.find((o) => o.value === field.value)?.label}
+                </span>
+              </div>
             </FormItem>
           )}
         />

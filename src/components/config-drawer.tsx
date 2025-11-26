@@ -1,6 +1,6 @@
 import { type SVGProps } from 'react'
 import { Root as Radio, Item } from '@radix-ui/react-radio-group'
-import { CircleCheck, RotateCcw, Settings } from 'lucide-react'
+import { Check, CircleCheck, RotateCcw, Settings } from 'lucide-react'
 import { IconDir } from '@/assets/custom/icon-dir'
 import { IconLayoutCompact } from '@/assets/custom/icon-layout-compact'
 import { IconLayoutDefault } from '@/assets/custom/icon-layout-default'
@@ -12,6 +12,7 @@ import { IconThemeDark } from '@/assets/custom/icon-theme-dark'
 import { IconThemeLight } from '@/assets/custom/icon-theme-light'
 import { IconThemeSystem } from '@/assets/custom/icon-theme-system'
 import { cn } from '@/lib/utils'
+import { ACCENT_OPTIONS, useAccent } from '@/context/accent-provider'
 import { useDirection } from '@/context/direction-provider'
 import { type Collapsible, useLayout } from '@/context/layout-provider'
 import { useTheme } from '@/context/theme-provider'
@@ -32,12 +33,14 @@ export function ConfigDrawer() {
   const { resetDir } = useDirection()
   const { resetTheme } = useTheme()
   const { resetLayout } = useLayout()
+  const { resetAccent } = useAccent()
 
   const handleReset = () => {
     setOpen(true)
     resetDir()
     resetTheme()
     resetLayout()
+    resetAccent()
   }
 
   return (
@@ -62,6 +65,7 @@ export function ConfigDrawer() {
         </SheetHeader>
         <div className='space-y-6 overflow-y-auto px-4'>
           <ThemeConfig />
+          <AccentConfig />
           <SidebarConfig />
           <LayoutConfig />
           <DirConfig />
@@ -152,7 +156,7 @@ function RadioGroupItem({
         <item.icon
           className={cn(
             !isTheme &&
-              'stroke-primary fill-primary group-data-[state=unchecked]:stroke-muted-foreground group-data-[state=unchecked]:fill-muted-foreground'
+            'stroke-primary fill-primary group-data-[state=unchecked]:stroke-muted-foreground group-data-[state=unchecked]:fill-muted-foreground'
           )}
           aria-hidden='true'
         />
@@ -348,6 +352,48 @@ function DirConfig() {
       </Radio>
       <div id='direction-description' className='sr-only'>
         选择从左到右或从右到左的文字方向
+      </div>
+    </div>
+  )
+}
+
+function AccentConfig() {
+  const { defaultAccent, accent, setAccent } = useAccent()
+  return (
+    <div>
+      <SectionTitle
+        title='主色调'
+        showReset={accent !== defaultAccent}
+        onReset={() => setAccent(defaultAccent)}
+      />
+      <div
+        className='grid w-full max-w-md grid-cols-7 gap-2'
+        role='radiogroup'
+        aria-label='选择主色调'
+      >
+        {ACCENT_OPTIONS.map((option) => (
+          <button
+            key={option.value}
+            type='button'
+            onClick={() => setAccent(option.value)}
+            className={cn(
+              'group relative flex h-10 w-10 items-center justify-center rounded-full transition-all',
+              'ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+              'hover:scale-110'
+            )}
+            style={{ backgroundColor: option.color }}
+            aria-label={option.label}
+            aria-pressed={accent === option.value}
+          >
+            {accent === option.value && (
+              <Check className='h-5 w-5 text-white drop-shadow-md' />
+            )}
+            <span className='sr-only'>{option.label}</span>
+          </button>
+        ))}
+      </div>
+      <div className='text-muted-foreground mt-2 text-xs'>
+        当前: {ACCENT_OPTIONS.find((o) => o.value === accent)?.label}
       </div>
     </div>
   )

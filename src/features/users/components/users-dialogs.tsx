@@ -1,6 +1,7 @@
 import { UsersActionDialog } from './users-action-dialog'
 import { UsersDeleteDialog } from './users-delete-dialog'
 import { UsersInviteDialog } from './users-invite-dialog'
+import { UsersPermissionsDialog } from './users-permissions-dialog'
 import { useUsers } from './users-provider'
 
 export function UsersDialogs() {
@@ -38,6 +39,18 @@ export function UsersDialogs() {
             open={open === 'delete'}
             onOpenChange={() => {
               setOpen('delete')
+              setTimeout(() => {
+                setCurrentRow(null)
+              }, 500)
+            }}
+            currentRow={currentRow}
+          />
+
+          <UsersPermissionsDialog
+            key={`user-permissions-${currentRow.id}`}
+            open={open === 'permissions'}
+            onOpenChange={() => {
+              setOpen('permissions')
               setTimeout(() => {
                 setCurrentRow(null)
               }, 500)
