@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import {
-    ClipboardCheck,
     Save,
     RotateCcw,
     Clock,
@@ -9,7 +8,6 @@ import {
     Bell,
     ShieldCheck,
     Zap,
-    Settings2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -23,8 +21,6 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { Slider } from '@/components/ui/slider'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
@@ -70,8 +66,8 @@ export function OrderSettings() {
     const [autoCancel, setAutoCancel] = useState(true)
 
     // 匹配规则
-    const [minRating, setMinRating] = useState([90])
-    const [maxDistance, setMaxDistance] = useState([10])
+    const [minRating, setMinRating] = useState(90)
+    const [maxDistance, setMaxDistance] = useState(10)
     const [requireCertification, setRequireCertification] = useState(true)
 
     const handleSave = () => {
@@ -318,15 +314,16 @@ export function OrderSettings() {
                                 <CardContent className='space-y-6'>
                                     <div className='space-y-3'>
                                         <div className='flex items-center justify-between'>
-                                            <Label>最低满意度要求</Label>
-                                            <Badge variant='outline'>{minRating[0]}%</Badge>
+                                            <Label>最低满意度要求 (%)</Label>
+                                            <Badge variant='outline'>{minRating}%</Badge>
                                         </div>
-                                        <Slider
+                                        <Input
+                                            type='number'
                                             value={minRating}
-                                            onValueChange={(v) => { setMinRating(v); markChanged() }}
+                                            onChange={(e) => { setMinRating(Number(e.target.value)); markChanged() }}
                                             max={100}
                                             min={60}
-                                            step={5}
+                                            className='max-w-[200px]'
                                         />
                                         <p className='text-muted-foreground text-xs'>只有满意度达到此标准的服务人员才能接单</p>
                                     </div>
@@ -334,14 +331,15 @@ export function OrderSettings() {
                                     <div className='space-y-3'>
                                         <div className='flex items-center justify-between'>
                                             <Label>最大服务距离（公里）</Label>
-                                            <Badge variant='outline'>{maxDistance[0]} km</Badge>
+                                            <Badge variant='outline'>{maxDistance} km</Badge>
                                         </div>
-                                        <Slider
+                                        <Input
+                                            type='number'
                                             value={maxDistance}
-                                            onValueChange={(v) => { setMaxDistance(v); markChanged() }}
+                                            onChange={(e) => { setMaxDistance(Number(e.target.value)); markChanged() }}
                                             max={50}
                                             min={1}
-                                            step={1}
+                                            className='max-w-[200px]'
                                         />
                                         <p className='text-muted-foreground text-xs'>服务人员与服务地点的最大距离</p>
                                     </div>
