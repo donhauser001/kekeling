@@ -12,6 +12,7 @@ import {
     Globe,
     Users,
     Building2,
+    CalendarCheck,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -60,6 +61,7 @@ interface HospitalData {
     description: string
     departments: string[]
     doctorCount: number
+    consultCount: number
     status: 'active' | 'inactive'
 }
 
@@ -85,6 +87,7 @@ const initialHospitals: HospitalData[] = [
         description: '中国医学科学院北京协和医学院直属医院，是国家卫生健康委指定的全国疑难重症诊治指导中心。',
         departments: ['心内科', '神经内科', '骨科', '妇产科', '儿科'],
         doctorCount: 2500,
+        consultCount: 856000,
         status: 'active',
     },
     {
@@ -99,6 +102,7 @@ const initialHospitals: HospitalData[] = [
         description: '上海交通大学医学院附属瑞金医院，是一所三级甲等大型综合性教学医院。',
         departments: ['血液科', '内分泌科', '消化内科', '心血管外科'],
         doctorCount: 2200,
+        consultCount: 723000,
         status: 'active',
     },
     {
@@ -113,6 +117,7 @@ const initialHospitals: HospitalData[] = [
         description: '以骨科和烧伤科为重点，是国内骨科领域的权威医疗机构。',
         departments: ['骨科', '烧伤科', '手外科', '脊柱外科'],
         doctorCount: 1800,
+        consultCount: 568000,
         status: 'active',
     },
     {
@@ -127,6 +132,7 @@ const initialHospitals: HospitalData[] = [
         description: '华南地区规模最大的妇女儿童医疗机构。',
         departments: ['产科', '新生儿科', '儿童呼吸科', '妇科肿瘤'],
         doctorCount: 1500,
+        consultCount: 425000,
         status: 'active',
     },
     {
@@ -141,6 +147,7 @@ const initialHospitals: HospitalData[] = [
         description: '深圳市最大的三级甲等综合医院。',
         departments: ['急诊科', '重症医学科', '肿瘤科', '神经外科'],
         doctorCount: 1600,
+        consultCount: 489000,
         status: 'active',
     },
     {
@@ -155,6 +162,7 @@ const initialHospitals: HospitalData[] = [
         description: '西南地区医疗中心，四川大学附属医院。',
         departments: ['肝胆外科', '胸外科', '泌尿外科', '眼科'],
         doctorCount: 2800,
+        consultCount: 912000,
         status: 'active',
     },
 ]
@@ -261,6 +269,7 @@ export function Hospitals() {
                 ...formData,
                 departments: formData.departments.split(/[、,，]/).map(s => s.trim()).filter(Boolean),
                 doctorCount: 0,
+                consultCount: 0,
             }
             setHospitals([...hospitals, newHospital])
         } else if (editingHospital) {
@@ -427,8 +436,8 @@ export function Hospitals() {
                                         {hospital.doctorCount} 位医师
                                     </div>
                                     <div className='text-muted-foreground flex items-center gap-1'>
-                                        <Phone className='h-4 w-4' />
-                                        {hospital.phone}
+                                        <CalendarCheck className='h-4 w-4' />
+                                        {hospital.consultCount.toLocaleString()} 次接诊
                                     </div>
                                 </div>
                                 <div className='flex flex-wrap gap-1'>

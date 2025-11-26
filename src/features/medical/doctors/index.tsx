@@ -14,6 +14,7 @@ import {
     Stethoscope,
     LayoutGrid,
     List,
+    CalendarCheck,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -73,6 +74,7 @@ interface Doctor {
     avatar?: string
     level: string
     status: 'active' | 'inactive'
+    consultCount: number
 }
 
 const initialDoctors: Doctor[] = [
@@ -88,6 +90,7 @@ const initialDoctors: Doctor[] = [
         introduction: '从事心血管内科工作30余年，擅长冠心病、心律失常的诊治。',
         level: '三甲',
         status: 'active',
+        consultCount: 3256,
     },
     {
         id: '2',
@@ -101,6 +104,7 @@ const initialDoctors: Doctor[] = [
         introduction: '神经内科专家，专注于脑血管疾病和神经退行性疾病的研究与治疗。',
         level: '三甲',
         status: 'active',
+        consultCount: 2845,
     },
     {
         id: '3',
@@ -114,6 +118,7 @@ const initialDoctors: Doctor[] = [
         introduction: '骨科领域知名专家，完成关节置换手术超过5000例。',
         level: '三甲',
         status: 'active',
+        consultCount: 4120,
     },
     {
         id: '4',
@@ -127,6 +132,7 @@ const initialDoctors: Doctor[] = [
         introduction: '妇产科专业医师，擅长高危妊娠管理和妇科微创手术。',
         level: '三甲',
         status: 'active',
+        consultCount: 1890,
     },
     {
         id: '5',
@@ -140,6 +146,7 @@ const initialDoctors: Doctor[] = [
         introduction: '消化内科专家，精通消化内镜诊疗技术。',
         level: '三甲',
         status: 'inactive',
+        consultCount: 2156,
     },
     {
         id: '6',
@@ -153,6 +160,7 @@ const initialDoctors: Doctor[] = [
         introduction: '儿科专业医师，在儿童常见病和多发病诊治方面有丰富经验。',
         level: '三甲',
         status: 'active',
+        consultCount: 1568,
     },
 ]
 
@@ -268,6 +276,7 @@ export function Doctors() {
                 introduction: formData.introduction,
                 level: formData.level,
                 status: formData.status,
+                consultCount: 0,
             }
             setDoctors([...doctors, newDoctor])
         } else if (editingDoctor) {
@@ -356,9 +365,15 @@ export function Doctors() {
                                 </Badge>
                             ))}
                         </div>
-                        <CardDescription className='line-clamp-2 text-xs'>
-                            {doctor.introduction}
-                        </CardDescription>
+                        <div className='flex items-center justify-between'>
+                            <CardDescription className='line-clamp-1 text-xs'>
+                                {doctor.introduction}
+                            </CardDescription>
+                            <div className='text-muted-foreground flex items-center gap-1 text-xs whitespace-nowrap'>
+                                <CalendarCheck className='h-3 w-3' />
+                                {doctor.consultCount.toLocaleString()} 次接诊
+                            </div>
+                        </div>
                     </CardContent>
                 </Card>
             ))}
@@ -377,6 +392,7 @@ export function Doctors() {
                         <TableHead>医院</TableHead>
                         <TableHead>专长</TableHead>
                         <TableHead>联系方式</TableHead>
+                        <TableHead>接诊数</TableHead>
                         <TableHead>状态</TableHead>
                         <TableHead className='w-[50px]'></TableHead>
                     </TableRow>
@@ -422,6 +438,12 @@ export function Doctors() {
                                         <Phone className='h-3 w-3' />
                                         {doctor.phone}
                                     </div>
+                                </div>
+                            </TableCell>
+                            <TableCell>
+                                <div className='text-muted-foreground flex items-center gap-1'>
+                                    <CalendarCheck className='h-3.5 w-3.5' />
+                                    {doctor.consultCount.toLocaleString()}
                                 </div>
                             </TableCell>
                             <TableCell>
