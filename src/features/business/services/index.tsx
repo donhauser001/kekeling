@@ -7,14 +7,23 @@ import {
     Trash2,
     Search as SearchIcon,
     X,
-    Eye,
     ToggleLeft,
     ToggleRight,
     Clock,
-    DollarSign,
     Star,
     LayoutGrid,
     List,
+    Stethoscope,
+    Bed,
+    FlaskConical,
+    MessageSquare,
+    FileText,
+    Pill,
+    FileStack,
+    Building,
+    Crown,
+    HeartPulse,
+    type LucideIcon,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -72,7 +81,7 @@ interface Service {
     status: 'active' | 'inactive'
     orderCount: number
     rating: number
-    icon: string
+    icon: LucideIcon
 }
 
 const categoryColors: Record<string, string> = {
@@ -84,16 +93,16 @@ const categoryColors: Record<string, string> = {
 }
 
 const initialServices: Service[] = [
-    { id: '1', name: '门诊陪诊', category: '陪诊服务', description: '全程陪同就医，协助挂号、取号、缴费、取药等', price: 299, unit: '次', duration: '4小时', status: 'active', orderCount: 12580, rating: 98.5, icon: '🏥' },
-    { id: '2', name: '住院陪护', category: '陪诊服务', description: '住院期间全程陪护，协助日常护理', price: 399, unit: '天', duration: '24小时', status: 'active', orderCount: 5680, rating: 97.8, icon: '🛏️' },
-    { id: '3', name: '检查陪同', category: '陪诊服务', description: '陪同进行各类检查，协助沟通解读', price: 199, unit: '次', duration: '2小时', status: 'active', orderCount: 8920, rating: 96.5, icon: '🔬' },
-    { id: '4', name: '在线问诊', category: '诊断服务', description: '线上视频/图文问诊，快速获取医生建议', price: 49, unit: '次', duration: '15分钟', status: 'active', orderCount: 25680, rating: 95.2, icon: '💬' },
-    { id: '5', name: '报告解读', category: '诊断服务', description: '专业医生解读各类检查报告', price: 99, unit: '份', duration: '30分钟', status: 'active', orderCount: 15890, rating: 97.2, icon: '📋' },
-    { id: '6', name: '药品代购', category: '跑腿服务', description: '代购处方药品并配送到家', price: 29, unit: '次', duration: '2小时', status: 'active', orderCount: 32560, rating: 98.1, icon: '💊' },
-    { id: '7', name: '病历复印', category: '跑腿服务', description: '代办病历复印及邮寄', price: 59, unit: '次', duration: '1-3天', status: 'active', orderCount: 4560, rating: 96.8, icon: '📄' },
-    { id: '8', name: '医院酒店', category: '酒店服务', description: '医院周边优质酒店预订', price: 0, unit: '晚', duration: '-', status: 'active', orderCount: 2890, rating: 94.5, icon: '🏨' },
-    { id: '9', name: 'VIP陪诊', category: '陪诊服务', description: '高端定制陪诊服务，专属管家全程服务', price: 999, unit: '次', duration: '8小时', status: 'active', orderCount: 890, rating: 99.2, icon: '👑' },
-    { id: '10', name: '术后护理', category: '陪诊服务', description: '手术后专业护理指导和陪护', price: 499, unit: '天', duration: '12小时', status: 'inactive', orderCount: 1250, rating: 97.5, icon: '🩹' },
+    { id: '1', name: '门诊陪诊', category: '陪诊服务', description: '全程陪同就医，协助挂号、取号、缴费、取药等', price: 299, unit: '次', duration: '4小时', status: 'active', orderCount: 12580, rating: 98.5, icon: Stethoscope },
+    { id: '2', name: '住院陪护', category: '陪诊服务', description: '住院期间全程陪护，协助日常护理', price: 399, unit: '天', duration: '24小时', status: 'active', orderCount: 5680, rating: 97.8, icon: Bed },
+    { id: '3', name: '检查陪同', category: '陪诊服务', description: '陪同进行各类检查，协助沟通解读', price: 199, unit: '次', duration: '2小时', status: 'active', orderCount: 8920, rating: 96.5, icon: FlaskConical },
+    { id: '4', name: '在线问诊', category: '诊断服务', description: '线上视频/图文问诊，快速获取医生建议', price: 49, unit: '次', duration: '15分钟', status: 'active', orderCount: 25680, rating: 95.2, icon: MessageSquare },
+    { id: '5', name: '报告解读', category: '诊断服务', description: '专业医生解读各类检查报告', price: 99, unit: '份', duration: '30分钟', status: 'active', orderCount: 15890, rating: 97.2, icon: FileText },
+    { id: '6', name: '药品代购', category: '跑腿服务', description: '代购处方药品并配送到家', price: 29, unit: '次', duration: '2小时', status: 'active', orderCount: 32560, rating: 98.1, icon: Pill },
+    { id: '7', name: '病历复印', category: '跑腿服务', description: '代办病历复印及邮寄', price: 59, unit: '次', duration: '1-3天', status: 'active', orderCount: 4560, rating: 96.8, icon: FileStack },
+    { id: '8', name: '医院酒店', category: '酒店服务', description: '医院周边优质酒店预订', price: 0, unit: '晚', duration: '-', status: 'active', orderCount: 2890, rating: 94.5, icon: Building },
+    { id: '9', name: 'VIP陪诊', category: '陪诊服务', description: '高端定制陪诊服务，专属管家全程服务', price: 999, unit: '次', duration: '8小时', status: 'active', orderCount: 890, rating: 99.2, icon: Crown },
+    { id: '10', name: '术后护理', category: '陪诊服务', description: '手术后专业护理指导和陪护', price: 499, unit: '天', duration: '12小时', status: 'inactive', orderCount: 1250, rating: 97.5, icon: HeartPulse },
 ]
 
 interface ServiceFormData {
@@ -188,7 +197,7 @@ export function Services() {
                 status: formData.status,
                 orderCount: 0,
                 rating: 100,
-                icon: '📦',
+                icon: PackageSearch,
             }
             setServices([...services, newService])
         } else if (editingService) {
@@ -230,8 +239,8 @@ export function Services() {
                     <CardHeader className='pb-3'>
                         <div className='flex items-start justify-between'>
                             <div className='flex items-center gap-3'>
-                                <div className={cn('flex h-10 w-10 items-center justify-center rounded-lg text-lg', categoryColors[service.category] || 'bg-gray-500')}>
-                                    {service.icon}
+                                <div className={cn('flex h-10 w-10 items-center justify-center rounded-lg', categoryColors[service.category] || 'bg-gray-500')}>
+                                    <service.icon className='h-5 w-5 text-white' />
                                 </div>
                                 <div>
                                     <CardTitle className='text-sm font-medium'>{service.name}</CardTitle>
@@ -279,8 +288,7 @@ export function Services() {
                             {service.description}
                         </CardDescription>
                         <div className='flex items-center justify-between text-sm'>
-                            <div className='flex items-center gap-1 font-semibold text-primary'>
-                                <DollarSign className='h-4 w-4' />
+                            <div className='font-semibold text-primary'>
                                 {service.price > 0 ? `¥${service.price}` : '面议'}
                                 <span className='text-muted-foreground text-xs font-normal'>/{service.unit}</span>
                             </div>
@@ -329,8 +337,8 @@ export function Services() {
                         <TableRow key={service.id} className={cn('group', service.status === 'inactive' && 'opacity-60')}>
                             <TableCell>
                                 <div className='flex items-center gap-3'>
-                                    <div className={cn('flex h-8 w-8 items-center justify-center rounded-md text-sm', categoryColors[service.category] || 'bg-gray-500')}>
-                                        {service.icon}
+                                    <div className={cn('flex h-8 w-8 items-center justify-center rounded-md', categoryColors[service.category] || 'bg-gray-500')}>
+                                        <service.icon className='h-4 w-4 text-white' />
                                     </div>
                                     <div>
                                         <div className='font-medium'>{service.name}</div>
