@@ -1,4 +1,5 @@
 import { format } from 'date-fns'
+import { zhCN } from 'date-fns/locale'
 import { Calendar as CalendarIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
@@ -17,7 +18,7 @@ type DatePickerProps = {
 export function DatePicker({
   selected,
   onSelect,
-  placeholder = 'Pick a date',
+  placeholder = '选择日期',
 }: DatePickerProps) {
   return (
     <Popover>
@@ -28,7 +29,7 @@ export function DatePicker({
           className='data-[empty=true]:text-muted-foreground w-[240px] justify-start text-start font-normal'
         >
           {selected ? (
-            format(selected, 'MMM d, yyyy')
+            format(selected, 'yyyy年M月d日', { locale: zhCN })
           ) : (
             <span>{placeholder}</span>
           )}
@@ -41,6 +42,7 @@ export function DatePicker({
           captionLayout='dropdown'
           selected={selected}
           onSelect={onSelect}
+          locale={zhCN}
           disabled={(date: Date) =>
             date > new Date() || date < new Date('1900-01-01')
           }

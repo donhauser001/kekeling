@@ -56,7 +56,7 @@ export function TeamSwitcher({ teams }: TeamSwitcherProps) {
             sideOffset={4}
           >
             <DropdownMenuLabel className='text-muted-foreground text-xs'>
-              Teams
+              团队
             </DropdownMenuLabel>
             {teams.map((team, index) => (
               <DropdownMenuItem
@@ -76,7 +76,7 @@ export function TeamSwitcher({ teams }: TeamSwitcherProps) {
               <div className='bg-background flex size-6 items-center justify-center rounded-md border'>
                 <Plus className='size-4' />
               </div>
-              <div className='text-muted-foreground font-medium'>Add team</div>
+              <div className='text-muted-foreground font-medium'>添加团队</div>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

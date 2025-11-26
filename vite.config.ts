@@ -6,6 +6,9 @@ import { tanstackRouter } from '@tanstack/router-plugin/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
+  server: {
+    port: 9527, // 周星驰经典号码 🎬
+  },
   plugins: [
     tanstackRouter({
       target: 'react',
