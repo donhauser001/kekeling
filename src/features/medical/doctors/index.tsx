@@ -9,7 +9,6 @@ import {
     X,
     Eye,
     Phone,
-    Stethoscope,
     LayoutGrid,
     List,
     CalendarCheck,
@@ -326,8 +325,7 @@ export function Doctors() {
                                             {doctor.status === 'active' ? '在职' : '离职'}
                                         </Badge>
                                     </CardTitle>
-                                    <div className='text-muted-foreground flex items-center gap-1 text-sm'>
-                                        <Stethoscope className='h-3.5 w-3.5' />
+                                    <div className='text-muted-foreground text-sm'>
                                         {doctor.title} · {doctor.department}
                                     </div>
                                 </div>
