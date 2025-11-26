@@ -9,8 +9,6 @@ import {
     X,
     Eye,
     Phone,
-    Mail,
-    Building2,
     Stethoscope,
     LayoutGrid,
     List,
@@ -363,7 +361,6 @@ export function Doctors() {
                     </CardHeader>
                     <CardContent className='space-y-2.5'>
                         <div className='flex items-center gap-2 text-sm'>
-                            <Building2 className='text-muted-foreground h-4 w-4 shrink-0' />
                             <span className='truncate'>{doctor.hospital}</span>
                             <Badge variant='outline' className='text-xs shrink-0'>{doctor.level}</Badge>
                         </div>
