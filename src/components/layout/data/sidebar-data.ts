@@ -39,6 +39,7 @@ import {
   GitBranch,
   BadgePercent,
   ClipboardCheck,
+  ClipboardList,
 } from 'lucide-react'
 import { ClerkLogo } from '@/assets/clerk-logo'
 import { type SidebarData } from '../types'
@@ -157,6 +158,11 @@ export const sidebarData: SidebarData = {
           title: '业务中心',
           icon: Store,
           items: [
+            {
+              title: '订单管理',
+              url: '/orders',
+              icon: ClipboardList,
+            },
             {
               title: '服务管理',
               url: '/services',

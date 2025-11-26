@@ -34,6 +34,7 @@ import { Route as AuthenticatedServiceCategoriesIndexRouteImport } from './route
 import { Route as AuthenticatedRolesIndexRouteImport } from './routes/_authenticated/roles/index'
 import { Route as AuthenticatedPricingPoliciesIndexRouteImport } from './routes/_authenticated/pricing-policies/index'
 import { Route as AuthenticatedPositionsIndexRouteImport } from './routes/_authenticated/positions/index'
+import { Route as AuthenticatedOrdersIndexRouteImport } from './routes/_authenticated/orders/index'
 import { Route as AuthenticatedOrderSettingsIndexRouteImport } from './routes/_authenticated/order-settings/index'
 import { Route as AuthenticatedMedicalTagsIndexRouteImport } from './routes/_authenticated/medical-tags/index'
 import { Route as AuthenticatedMedicalLevelsIndexRouteImport } from './routes/_authenticated/medical-levels/index'
@@ -183,6 +184,12 @@ const AuthenticatedPositionsIndexRoute =
   AuthenticatedPositionsIndexRouteImport.update({
     id: '/positions/',
     path: '/positions/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOrdersIndexRoute =
+  AuthenticatedOrdersIndexRouteImport.update({
+    id: '/orders/',
+    path: '/orders/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedOrderSettingsIndexRoute =
@@ -343,6 +350,7 @@ export interface FileRoutesByFullPath {
   '/medical-levels': typeof AuthenticatedMedicalLevelsIndexRoute
   '/medical-tags': typeof AuthenticatedMedicalTagsIndexRoute
   '/order-settings': typeof AuthenticatedOrderSettingsIndexRoute
+  '/orders': typeof AuthenticatedOrdersIndexRoute
   '/positions': typeof AuthenticatedPositionsIndexRoute
   '/pricing-policies': typeof AuthenticatedPricingPoliciesIndexRoute
   '/roles': typeof AuthenticatedRolesIndexRoute
@@ -387,6 +395,7 @@ export interface FileRoutesByTo {
   '/medical-levels': typeof AuthenticatedMedicalLevelsIndexRoute
   '/medical-tags': typeof AuthenticatedMedicalTagsIndexRoute
   '/order-settings': typeof AuthenticatedOrderSettingsIndexRoute
+  '/orders': typeof AuthenticatedOrdersIndexRoute
   '/positions': typeof AuthenticatedPositionsIndexRoute
   '/pricing-policies': typeof AuthenticatedPricingPoliciesIndexRoute
   '/roles': typeof AuthenticatedRolesIndexRoute
@@ -436,6 +445,7 @@ export interface FileRoutesById {
   '/_authenticated/medical-levels/': typeof AuthenticatedMedicalLevelsIndexRoute
   '/_authenticated/medical-tags/': typeof AuthenticatedMedicalTagsIndexRoute
   '/_authenticated/order-settings/': typeof AuthenticatedOrderSettingsIndexRoute
+  '/_authenticated/orders/': typeof AuthenticatedOrdersIndexRoute
   '/_authenticated/positions/': typeof AuthenticatedPositionsIndexRoute
   '/_authenticated/pricing-policies/': typeof AuthenticatedPricingPoliciesIndexRoute
   '/_authenticated/roles/': typeof AuthenticatedRolesIndexRoute
@@ -483,6 +493,7 @@ export interface FileRouteTypes {
     | '/medical-levels'
     | '/medical-tags'
     | '/order-settings'
+    | '/orders'
     | '/positions'
     | '/pricing-policies'
     | '/roles'
@@ -527,6 +538,7 @@ export interface FileRouteTypes {
     | '/medical-levels'
     | '/medical-tags'
     | '/order-settings'
+    | '/orders'
     | '/positions'
     | '/pricing-policies'
     | '/roles'
@@ -575,6 +587,7 @@ export interface FileRouteTypes {
     | '/_authenticated/medical-levels/'
     | '/_authenticated/medical-tags/'
     | '/_authenticated/order-settings/'
+    | '/_authenticated/orders/'
     | '/_authenticated/positions/'
     | '/_authenticated/pricing-policies/'
     | '/_authenticated/roles/'
@@ -778,6 +791,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPositionsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/orders/': {
+      id: '/_authenticated/orders/'
+      path: '/orders'
+      fullPath: '/orders'
+      preLoaderRoute: typeof AuthenticatedOrdersIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/order-settings/': {
       id: '/_authenticated/order-settings/'
       path: '/order-settings'
@@ -968,6 +988,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMedicalLevelsIndexRoute: typeof AuthenticatedMedicalLevelsIndexRoute
   AuthenticatedMedicalTagsIndexRoute: typeof AuthenticatedMedicalTagsIndexRoute
   AuthenticatedOrderSettingsIndexRoute: typeof AuthenticatedOrderSettingsIndexRoute
+  AuthenticatedOrdersIndexRoute: typeof AuthenticatedOrdersIndexRoute
   AuthenticatedPositionsIndexRoute: typeof AuthenticatedPositionsIndexRoute
   AuthenticatedPricingPoliciesIndexRoute: typeof AuthenticatedPricingPoliciesIndexRoute
   AuthenticatedRolesIndexRoute: typeof AuthenticatedRolesIndexRoute
@@ -996,6 +1017,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMedicalLevelsIndexRoute: AuthenticatedMedicalLevelsIndexRoute,
   AuthenticatedMedicalTagsIndexRoute: AuthenticatedMedicalTagsIndexRoute,
   AuthenticatedOrderSettingsIndexRoute: AuthenticatedOrderSettingsIndexRoute,
+  AuthenticatedOrdersIndexRoute: AuthenticatedOrdersIndexRoute,
   AuthenticatedPositionsIndexRoute: AuthenticatedPositionsIndexRoute,
   AuthenticatedPricingPoliciesIndexRoute:
     AuthenticatedPricingPoliciesIndexRoute,
