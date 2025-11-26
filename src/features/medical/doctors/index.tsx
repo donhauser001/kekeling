@@ -375,7 +375,7 @@ export function Doctors() {
                             )}
                         </div>
                         <div className='border-t pt-2.5'>
-                            <div className='flex items-center justify-center gap-4 text-xs'>
+                            <div className='flex items-center gap-4 text-xs'>
                                 <div className='text-muted-foreground flex items-center gap-1'>
                                     <CalendarCheck className='h-3.5 w-3.5' />
                                     <span className='font-medium'>{doctor.consultCount.toLocaleString()}</span>
