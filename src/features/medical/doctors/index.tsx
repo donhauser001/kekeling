@@ -12,6 +12,8 @@ import {
     Mail,
     Building2,
     Stethoscope,
+    LayoutGrid,
+    List,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -35,6 +37,15 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog'
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -174,10 +185,13 @@ const defaultFormData: DoctorFormData = {
 const titleOptions = ['主任医师', '副主任医师', '主治医师', '住院医师']
 const levelOptions = ['三甲', '三乙', '二甲', '二乙', '一级']
 
+type ViewMode = 'grid' | 'list'
+
 export function Doctors() {
     const [doctors, setDoctors] = useState<Doctor[]>(initialDoctors)
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null)
+    const [viewMode, setViewMode] = useState<ViewMode>('grid')
 
     // 表单对话框状态
     const [dialogOpen, setDialogOpen] = useState(false)
@@ -276,6 +290,179 @@ export function Doctors() {
         setDoctors(doctors.filter(d => d.id !== doctorId))
     }
 
+    // 渲染卡片视图
+    const renderGridView = () => (
+        <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
+            {filteredDoctors.map(doctor => (
+                <Card key={doctor.id} className='group'>
+                    <CardHeader className='pb-3'>
+                        <div className='flex items-start justify-between'>
+                            <div className='flex items-center gap-3'>
+                                <Avatar className='h-12 w-12'>
+                                    <AvatarFallback className='bg-primary/10 text-primary'>
+                                        {doctor.name.slice(0, 1)}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div>
+                                    <CardTitle className='flex items-center gap-2 text-base'>
+                                        {doctor.name}
+                                        <Badge variant={doctor.status === 'active' ? 'default' : 'secondary'} className='text-xs'>
+                                            {doctor.status === 'active' ? '在职' : '离职'}
+                                        </Badge>
+                                    </CardTitle>
+                                    <div className='text-muted-foreground flex items-center gap-1 text-sm'>
+                                        <Stethoscope className='h-3.5 w-3.5' />
+                                        {doctor.title} · {doctor.department}
+                                    </div>
+                                </div>
+                            </div>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant='ghost' size='icon' className='h-8 w-8 opacity-0 group-hover:opacity-100'>
+                                        <MoreHorizontal className='h-4 w-4' />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align='end'>
+                                    <DropdownMenuItem>
+                                        <Eye className='mr-2 h-4 w-4' />
+                                        查看详情
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => openEditDialog(doctor)}>
+                                        <Pencil className='mr-2 h-4 w-4' />
+                                        编辑
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                        className='text-destructive'
+                                        onClick={() => handleDelete(doctor.id)}
+                                    >
+                                        <Trash2 className='mr-2 h-4 w-4' />
+                                        删除
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
+                    </CardHeader>
+                    <CardContent className='space-y-3'>
+                        <div className='flex items-center gap-2 text-sm'>
+                            <Building2 className='text-muted-foreground h-4 w-4' />
+                            <span>{doctor.hospital}</span>
+                            <Badge variant='outline' className='text-xs'>{doctor.level}</Badge>
+                        </div>
+                        <div className='flex flex-wrap gap-1'>
+                            {doctor.specialty.map(s => (
+                                <Badge key={s} variant='secondary' className='text-xs'>
+                                    {s}
+                                </Badge>
+                            ))}
+                        </div>
+                        <CardDescription className='line-clamp-2 text-xs'>
+                            {doctor.introduction}
+                        </CardDescription>
+                    </CardContent>
+                </Card>
+            ))}
+        </div>
+    )
+
+    // 渲染列表视图
+    const renderListView = () => (
+        <Card>
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead className='w-[200px]'>医师</TableHead>
+                        <TableHead>职称</TableHead>
+                        <TableHead>科室</TableHead>
+                        <TableHead>医院</TableHead>
+                        <TableHead>专长</TableHead>
+                        <TableHead>联系方式</TableHead>
+                        <TableHead>状态</TableHead>
+                        <TableHead className='w-[50px]'></TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {filteredDoctors.map(doctor => (
+                        <TableRow key={doctor.id} className='group'>
+                            <TableCell>
+                                <div className='flex items-center gap-3'>
+                                    <Avatar className='h-9 w-9'>
+                                        <AvatarFallback className='bg-primary/10 text-primary text-sm'>
+                                            {doctor.name.slice(0, 1)}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <span className='font-medium'>{doctor.name}</span>
+                                </div>
+                            </TableCell>
+                            <TableCell>{doctor.title}</TableCell>
+                            <TableCell>{doctor.department}</TableCell>
+                            <TableCell>
+                                <div className='flex items-center gap-1.5'>
+                                    <span>{doctor.hospital}</span>
+                                    <Badge variant='outline' className='text-xs'>{doctor.level}</Badge>
+                                </div>
+                            </TableCell>
+                            <TableCell>
+                                <div className='flex flex-wrap gap-1 max-w-[200px]'>
+                                    {doctor.specialty.slice(0, 2).map(s => (
+                                        <Badge key={s} variant='secondary' className='text-xs'>
+                                            {s}
+                                        </Badge>
+                                    ))}
+                                    {doctor.specialty.length > 2 && (
+                                        <Badge variant='secondary' className='text-xs'>
+                                            +{doctor.specialty.length - 2}
+                                        </Badge>
+                                    )}
+                                </div>
+                            </TableCell>
+                            <TableCell>
+                                <div className='space-y-0.5 text-sm'>
+                                    <div className='text-muted-foreground flex items-center gap-1'>
+                                        <Phone className='h-3 w-3' />
+                                        {doctor.phone}
+                                    </div>
+                                </div>
+                            </TableCell>
+                            <TableCell>
+                                <Badge variant={doctor.status === 'active' ? 'default' : 'secondary'} className='text-xs'>
+                                    {doctor.status === 'active' ? '在职' : '离职'}
+                                </Badge>
+                            </TableCell>
+                            <TableCell>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant='ghost' size='icon' className='h-8 w-8 opacity-0 group-hover:opacity-100'>
+                                            <MoreHorizontal className='h-4 w-4' />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align='end'>
+                                        <DropdownMenuItem>
+                                            <Eye className='mr-2 h-4 w-4' />
+                                            查看详情
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => openEditDialog(doctor)}>
+                                            <Pencil className='mr-2 h-4 w-4' />
+                                            编辑
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem
+                                            className='text-destructive'
+                                            onClick={() => handleDelete(doctor.id)}
+                                        >
+                                            <Trash2 className='mr-2 h-4 w-4' />
+                                            删除
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+        </Card>
+    )
+
     return (
         <>
             <Header>
@@ -339,80 +526,24 @@ export function Doctors() {
                             </Badge>
                         ))}
                     </div>
+
+                    {/* 视图切换 */}
+                    <div className='ms-auto'>
+                        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
+                            <TabsList className='h-9'>
+                                <TabsTrigger value='grid' className='px-2.5'>
+                                    <LayoutGrid className='h-4 w-4' />
+                                </TabsTrigger>
+                                <TabsTrigger value='list' className='px-2.5'>
+                                    <List className='h-4 w-4' />
+                                </TabsTrigger>
+                            </TabsList>
+                        </Tabs>
+                    </div>
                 </div>
 
                 {/* 医师列表 */}
-                <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
-                    {filteredDoctors.map(doctor => (
-                        <Card key={doctor.id} className='group'>
-                            <CardHeader className='pb-3'>
-                                <div className='flex items-start justify-between'>
-                                    <div className='flex items-center gap-3'>
-                                        <Avatar className='h-12 w-12'>
-                                            <AvatarFallback className='bg-primary/10 text-primary'>
-                                                {doctor.name.slice(0, 1)}
-                                            </AvatarFallback>
-                                        </Avatar>
-                                        <div>
-                                            <CardTitle className='flex items-center gap-2 text-base'>
-                                                {doctor.name}
-                                                <Badge variant={doctor.status === 'active' ? 'default' : 'secondary'} className='text-xs'>
-                                                    {doctor.status === 'active' ? '在职' : '离职'}
-                                                </Badge>
-                                            </CardTitle>
-                                            <div className='text-muted-foreground flex items-center gap-1 text-sm'>
-                                                <Stethoscope className='h-3.5 w-3.5' />
-                                                {doctor.title} · {doctor.department}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant='ghost' size='icon' className='h-8 w-8 opacity-0 group-hover:opacity-100'>
-                                                <MoreHorizontal className='h-4 w-4' />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align='end'>
-                                            <DropdownMenuItem>
-                                                <Eye className='mr-2 h-4 w-4' />
-                                                查看详情
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => openEditDialog(doctor)}>
-                                                <Pencil className='mr-2 h-4 w-4' />
-                                                编辑
-                                            </DropdownMenuItem>
-                                            <DropdownMenuSeparator />
-                                            <DropdownMenuItem
-                                                className='text-destructive'
-                                                onClick={() => handleDelete(doctor.id)}
-                                            >
-                                                <Trash2 className='mr-2 h-4 w-4' />
-                                                删除
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </div>
-                            </CardHeader>
-                            <CardContent className='space-y-3'>
-                                <div className='flex items-center gap-2 text-sm'>
-                                    <Building2 className='text-muted-foreground h-4 w-4' />
-                                    <span>{doctor.hospital}</span>
-                                    <Badge variant='outline' className='text-xs'>{doctor.level}</Badge>
-                                </div>
-                                <div className='flex flex-wrap gap-1'>
-                                    {doctor.specialty.map(s => (
-                                        <Badge key={s} variant='secondary' className='text-xs'>
-                                            {s}
-                                        </Badge>
-                                    ))}
-                                </div>
-                                <CardDescription className='line-clamp-2 text-xs'>
-                                    {doctor.introduction}
-                                </CardDescription>
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
+                {viewMode === 'grid' ? renderGridView() : renderListView()}
 
                 {filteredDoctors.length === 0 && (
                     <div className='text-muted-foreground py-12 text-center'>
@@ -551,4 +682,3 @@ export function Doctors() {
         </>
     )
 }
-
