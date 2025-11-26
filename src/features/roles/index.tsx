@@ -1,12 +1,18 @@
 import { useState } from 'react'
 import {
-    Shield,
+    Tags,
     Plus,
     MoreHorizontal,
     Pencil,
     Trash2,
     Users,
     Check,
+    Crown,
+    Star,
+    Building2,
+    UserCheck,
+    Zap,
+    Gift,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -44,84 +50,77 @@ import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { cn } from '@/lib/utils'
 
-interface Role {
+interface UserCategory {
     id: string
     name: string
     description: string
     userCount: number
-    permissions: string[]
+    benefits: string[]
     isSystem: boolean
     color: string
+    icon: 'crown' | 'star' | 'building' | 'user' | 'zap' | 'gift'
 }
 
-interface Permission {
+interface Benefit {
     id: string
     name: string
     key: string
     description: string
 }
 
-interface PermissionGroup {
+interface BenefitGroup {
     id: string
     name: string
-    permissions: Permission[]
+    benefits: Benefit[]
 }
 
-const permissionGroups: PermissionGroup[] = [
+const benefitGroups: BenefitGroup[] = [
     {
-        id: 'user',
-        name: '用户管理',
-        permissions: [
-            { id: 'user-read', name: '查看用户', key: 'user:read', description: '查看用户列表和详情' },
-            { id: 'user-create', name: '创建用户', key: 'user:create', description: '创建新用户账号' },
-            { id: 'user-update', name: '编辑用户', key: 'user:update', description: '修改用户信息' },
-            { id: 'user-delete', name: '删除用户', key: 'user:delete', description: '删除用户账号' },
+        id: 'discount',
+        name: '优惠折扣',
+        benefits: [
+            { id: 'discount-5', name: '9.5折优惠', key: 'discount:5', description: '全场商品享受9.5折' },
+            { id: 'discount-10', name: '9折优惠', key: 'discount:10', description: '全场商品享受9折' },
+            { id: 'discount-20', name: '8折优惠', key: 'discount:20', description: '全场商品享受8折' },
+            { id: 'discount-free', name: '免运费', key: 'discount:free-shipping', description: '所有订单免运费' },
         ],
     },
     {
-        id: 'role',
-        name: '角色管理',
-        permissions: [
-            { id: 'role-read', name: '查看角色', key: 'role:read', description: '查看角色列表' },
-            { id: 'role-create', name: '创建角色', key: 'role:create', description: '创建新角色' },
-            { id: 'role-update', name: '编辑角色', key: 'role:update', description: '修改角色权限' },
-            { id: 'role-delete', name: '删除角色', key: 'role:delete', description: '删除角色' },
+        id: 'points',
+        name: '积分权益',
+        benefits: [
+            { id: 'points-double', name: '双倍积分', key: 'points:double', description: '消费获得双倍积分' },
+            { id: 'points-triple', name: '三倍积分', key: 'points:triple', description: '消费获得三倍积分' },
+            { id: 'points-birthday', name: '生日积分', key: 'points:birthday', description: '生日当天获赠积分' },
+            { id: 'points-exchange', name: '积分兑换', key: 'points:exchange', description: '可使用积分兑换商品' },
+        ],
+    },
+    {
+        id: 'service',
+        name: '专属服务',
+        benefits: [
+            { id: 'service-vip', name: 'VIP客服', key: 'service:vip', description: '专属VIP客服通道' },
+            { id: 'service-priority', name: '优先发货', key: 'service:priority', description: '订单优先处理发货' },
+            { id: 'service-return', name: '无忧退换', key: 'service:return', description: '30天无理由退换货' },
+            { id: 'service-trial', name: '新品试用', key: 'service:trial', description: '新品优先试用权' },
         ],
     },
     {
         id: 'content',
-        name: '内容管理',
-        permissions: [
-            { id: 'content-read', name: '查看内容', key: 'content:read', description: '查看内容列表' },
-            { id: 'content-write', name: '编辑内容', key: 'content:write', description: '编辑内容' },
-            { id: 'content-review', name: '审核内容', key: 'content:review', description: '审核内容' },
-            { id: 'content-delete', name: '删除内容', key: 'content:delete', description: '删除内容' },
+        name: '内容权益',
+        benefits: [
+            { id: 'content-course', name: '免费课程', key: 'content:course', description: '免费观看付费课程' },
+            { id: 'content-download', name: '资源下载', key: 'content:download', description: '免费下载付费资源' },
+            { id: 'content-live', name: '直播特权', key: 'content:live', description: '专属直播间特权' },
         ],
     },
     {
-        id: 'file',
-        name: '文件管理',
-        permissions: [
-            { id: 'file-read', name: '查看文件', key: 'file:read', description: '查看文件列表' },
-            { id: 'file-upload', name: '上传文件', key: 'file:upload', description: '上传新文件' },
-            { id: 'file-delete', name: '删除文件', key: 'file:delete', description: '删除文件' },
-        ],
-    },
-    {
-        id: 'settings',
-        name: '系统设置',
-        permissions: [
-            { id: 'settings-read', name: '查看设置', key: 'settings:read', description: '查看系统设置' },
-            { id: 'settings-write', name: '修改设置', key: 'settings:write', description: '修改系统设置' },
-        ],
-    },
-    {
-        id: 'finance',
-        name: '财务管理',
-        permissions: [
-            { id: 'finance-read', name: '查看财务', key: 'finance:read', description: '查看财务数据' },
-            { id: 'finance-write', name: '编辑财务', key: 'finance:write', description: '编辑财务记录' },
-            { id: 'report-read', name: '查看报表', key: 'report:read', description: '查看财务报表' },
+        id: 'activity',
+        name: '活动权益',
+        benefits: [
+            { id: 'activity-early', name: '提前购买', key: 'activity:early', description: '活动商品提前购买' },
+            { id: 'activity-exclusive', name: '专属活动', key: 'activity:exclusive', description: '参与专属会员活动' },
+            { id: 'activity-gift', name: '专属礼品', key: 'activity:gift', description: '节日专属礼品' },
         ],
     },
 ]
@@ -147,113 +146,143 @@ const colorOptions = [
     { value: 'bg-gray-500', label: '灰色' },
 ]
 
-const initialRoles: Role[] = [
+const iconOptions = [
+    { value: 'crown', label: '皇冠', icon: Crown },
+    { value: 'star', label: '星星', icon: Star },
+    { value: 'building', label: '企业', icon: Building2 },
+    { value: 'user', label: '用户', icon: UserCheck },
+    { value: 'zap', label: '闪电', icon: Zap },
+    { value: 'gift', label: '礼物', icon: Gift },
+] as const
+
+const initialCategories: UserCategory[] = [
     {
         id: '1',
-        name: '超级管理员',
-        description: '拥有系统所有权限，可以管理所有功能和用户',
-        userCount: 2,
-        permissions: ['all'],
+        name: '至尊VIP',
+        description: '最高等级会员，享受全部特权和最优折扣',
+        userCount: 128,
+        benefits: ['all'],
         isSystem: true,
-        color: 'bg-red-500',
+        color: 'bg-amber-500',
+        icon: 'crown',
     },
     {
         id: '2',
-        name: '管理员',
-        description: '可以管理用户、内容和基本系统设置',
-        userCount: 5,
-        permissions: ['user:read', 'user:write', 'content:read', 'content:write', 'settings:read'],
+        name: '黄金会员',
+        description: '高级会员用户，享受大部分会员特权',
+        userCount: 1256,
+        benefits: ['discount:10', 'points:double', 'service:vip', 'service:priority', 'activity:early'],
         isSystem: true,
-        color: 'bg-orange-500',
+        color: 'bg-yellow-500',
+        icon: 'star',
     },
     {
         id: '3',
-        name: '编辑',
-        description: '可以创建和编辑内容，但不能删除',
-        userCount: 12,
-        permissions: ['content:read', 'content:write'],
-        isSystem: false,
-        color: 'bg-blue-500',
+        name: '白银会员',
+        description: '中级会员用户，享受基础会员特权',
+        userCount: 5832,
+        benefits: ['discount:5', 'points:birthday', 'service:return', 'points:exchange'],
+        isSystem: true,
+        color: 'bg-gray-400',
+        icon: 'star',
     },
     {
         id: '4',
-        name: '审核员',
-        description: '可以审核和管理用户提交的内容',
-        userCount: 8,
-        permissions: ['content:read', 'content:review', 'user:read'],
+        name: '企业用户',
+        description: '企业级用户，享受企业专属服务和批量优惠',
+        userCount: 89,
+        benefits: ['discount:20', 'service:vip', 'service:priority', 'activity:exclusive'],
         isSystem: false,
-        color: 'bg-green-500',
+        color: 'bg-blue-500',
+        icon: 'building',
     },
     {
         id: '5',
-        name: '访客',
-        description: '只能查看公开内容，无编辑权限',
-        userCount: 156,
-        permissions: ['content:read'],
+        name: '普通用户',
+        description: '注册用户，享受基础服务',
+        userCount: 25680,
+        benefits: ['points:exchange', 'service:return'],
         isSystem: true,
-        color: 'bg-gray-500',
+        color: 'bg-slate-500',
+        icon: 'user',
     },
     {
         id: '6',
-        name: '财务',
-        description: '可以查看和管理财务相关数据',
-        userCount: 3,
-        permissions: ['finance:read', 'finance:write', 'report:read'],
-        isSystem: false,
-        color: 'bg-purple-500',
+        name: '新用户',
+        description: '新注册用户，享受新人专属福利',
+        userCount: 3420,
+        benefits: ['discount:10', 'activity:gift', 'content:trial'],
+        isSystem: true,
+        color: 'bg-green-500',
+        icon: 'gift',
     },
 ]
 
-interface RoleFormData {
+interface CategoryFormData {
     name: string
     description: string
     color: string
+    icon: 'crown' | 'star' | 'building' | 'user' | 'zap' | 'gift'
     isSystem: boolean
-    permissions: string[]
+    benefits: string[]
 }
 
-const defaultFormData: RoleFormData = {
+const defaultFormData: CategoryFormData = {
     name: '',
     description: '',
     color: 'bg-blue-500',
+    icon: 'user',
     isSystem: false,
-    permissions: [],
+    benefits: [],
+}
+
+const getIconComponent = (iconName: string) => {
+    const iconMap: Record<string, typeof Crown> = {
+        crown: Crown,
+        star: Star,
+        building: Building2,
+        user: UserCheck,
+        zap: Zap,
+        gift: Gift,
+    }
+    return iconMap[iconName] || UserCheck
 }
 
 export function Roles() {
-    const [roles, setRoles] = useState<Role[]>(initialRoles)
-    const [selectedRole, setSelectedRole] = useState<string | null>(null)
+    const [categories, setCategories] = useState<UserCategory[]>(initialCategories)
+    const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
 
-    // 角色表单对话框状态
-    const [roleDialogOpen, setRoleDialogOpen] = useState(false)
-    const [roleDialogMode, setRoleDialogMode] = useState<'create' | 'edit'>('create')
-    const [editingRole, setEditingRole] = useState<Role | null>(null)
-    const [formData, setFormData] = useState<RoleFormData>(defaultFormData)
+    // 分类表单对话框状态
+    const [categoryDialogOpen, setCategoryDialogOpen] = useState(false)
+    const [categoryDialogMode, setCategoryDialogMode] = useState<'create' | 'edit'>('create')
+    const [editingCategory, setEditingCategory] = useState<UserCategory | null>(null)
+    const [formData, setFormData] = useState<CategoryFormData>(defaultFormData)
     const [formErrors, setFormErrors] = useState<Record<string, string>>({})
 
-    // 打开新建角色对话框
+    // 打开新建分类对话框
     const openCreateDialog = () => {
-        setRoleDialogMode('create')
+        setCategoryDialogMode('create')
         setFormData(defaultFormData)
         setFormErrors({})
-        setRoleDialogOpen(true)
+        setCategoryDialogOpen(true)
     }
 
-    // 打开编辑角色对话框
-    const openEditDialog = (role: Role) => {
-        setRoleDialogMode('edit')
-        setEditingRole(role)
+    // 打开编辑分类对话框
+    const openEditDialog = (category: UserCategory) => {
+        setCategoryDialogMode('edit')
+        setEditingCategory(category)
         setFormData({
-            name: role.name,
-            description: role.description,
-            color: role.color,
-            isSystem: role.isSystem,
-            permissions: role.permissions.includes('all')
-                ? permissionGroups.flatMap(g => g.permissions.map(p => p.key))
-                : [...role.permissions],
+            name: category.name,
+            description: category.description,
+            color: category.color,
+            icon: category.icon,
+            isSystem: category.isSystem,
+            benefits: category.benefits.includes('all')
+                ? benefitGroups.flatMap(g => g.benefits.map(p => p.key))
+                : [...category.benefits],
         })
         setFormErrors({})
-        setRoleDialogOpen(true)
+        setCategoryDialogOpen(true)
     }
 
     // 表单验证
@@ -261,76 +290,85 @@ export function Roles() {
         const errors: Record<string, string> = {}
 
         if (!formData.name.trim()) {
-            errors.name = '请输入角色名称'
+            errors.name = '请输入分类名称'
         } else if (formData.name.length > 20) {
-            errors.name = '角色名称不能超过20个字符'
-        } else if (roleDialogMode === 'create' && roles.some(r => r.name === formData.name)) {
-            errors.name = '角色名称已存在'
-        } else if (roleDialogMode === 'edit' && roles.some(r => r.name === formData.name && r.id !== editingRole?.id)) {
-            errors.name = '角色名称已存在'
+            errors.name = '分类名称不能超过20个字符'
+        } else if (categoryDialogMode === 'create' && categories.some(r => r.name === formData.name)) {
+            errors.name = '分类名称已存在'
+        } else if (categoryDialogMode === 'edit' && categories.some(r => r.name === formData.name && r.id !== editingCategory?.id)) {
+            errors.name = '分类名称已存在'
         }
 
         if (!formData.description.trim()) {
-            errors.description = '请输入角色描述'
+            errors.description = '请输入分类描述'
         } else if (formData.description.length > 100) {
-            errors.description = '角色描述不能超过100个字符'
+            errors.description = '分类描述不能超过100个字符'
         }
 
-        if (formData.permissions.length === 0) {
-            errors.permissions = '请至少选择一个权限'
+        if (formData.benefits.length === 0) {
+            errors.benefits = '请至少选择一个权益'
         }
 
         setFormErrors(errors)
         return Object.keys(errors).length === 0
     }
 
-    // 保存角色
-    const handleSaveRole = () => {
+    // 保存分类
+    const handleSaveCategory = () => {
         if (!validateForm()) return
 
-        if (roleDialogMode === 'create') {
-            const newRole: Role = {
+        if (categoryDialogMode === 'create') {
+            const newCategory: UserCategory = {
                 id: Date.now().toString(),
                 name: formData.name,
                 description: formData.description,
                 color: formData.color,
+                icon: formData.icon,
                 isSystem: formData.isSystem,
-                permissions: formData.permissions,
+                benefits: formData.benefits,
                 userCount: 0,
             }
-            setRoles([...roles, newRole])
-        } else if (editingRole) {
-            setRoles(roles.map(r =>
-                r.id === editingRole.id
-                    ? { ...r, name: formData.name, description: formData.description, color: formData.color, permissions: formData.permissions }
+            setCategories([...categories, newCategory])
+        } else if (editingCategory) {
+            setCategories(categories.map(r =>
+                r.id === editingCategory.id
+                    ? { ...r, name: formData.name, description: formData.description, color: formData.color, icon: formData.icon, benefits: formData.benefits }
                     : r
             ))
         }
 
-        setRoleDialogOpen(false)
+        setCategoryDialogOpen(false)
     }
 
-    // 切换表单中的权限
-    const toggleFormPermission = (key: string) => {
+    // 切换表单中的权益
+    const toggleFormBenefit = (key: string) => {
         setFormData(prev => ({
             ...prev,
-            permissions: prev.permissions.includes(key)
-                ? prev.permissions.filter(k => k !== key)
-                : [...prev.permissions, key]
+            benefits: prev.benefits.includes(key)
+                ? prev.benefits.filter(k => k !== key)
+                : [...prev.benefits, key]
         }))
     }
 
-    // 切换表单中的权限组
-    const toggleFormGroupPermissions = (group: PermissionGroup) => {
-        const groupKeys = group.permissions.map(p => p.key)
-        const allEnabled = groupKeys.every(key => formData.permissions.includes(key))
+    // 切换表单中的权益组
+    const toggleFormGroupBenefits = (group: BenefitGroup) => {
+        const groupKeys = group.benefits.map(p => p.key)
+        const allEnabled = groupKeys.every(key => formData.benefits.includes(key))
 
         setFormData(prev => ({
             ...prev,
-            permissions: allEnabled
-                ? prev.permissions.filter(key => !groupKeys.includes(key))
-                : [...prev.permissions, ...groupKeys.filter(key => !prev.permissions.includes(key))]
+            benefits: allEnabled
+                ? prev.benefits.filter(key => !groupKeys.includes(key))
+                : [...prev.benefits, ...groupKeys.filter(key => !prev.benefits.includes(key))]
         }))
+    }
+
+    const getBenefitName = (key: string): string => {
+        for (const group of benefitGroups) {
+            const benefit = group.benefits.find(b => b.key === key)
+            if (benefit) return benefit.name
+        }
+        return key
     }
 
     return (
@@ -347,124 +385,127 @@ export function Roles() {
             <Main>
                 <div className='mb-6 flex items-center justify-between'>
                     <div>
-                        <h1 className='text-2xl font-bold tracking-tight'>角色设置</h1>
-                        <p className='text-muted-foreground'>管理系统角色和分配权限</p>
+                        <h1 className='text-2xl font-bold tracking-tight'>用户分类</h1>
+                        <p className='text-muted-foreground'>管理用户分类和分配权益</p>
                     </div>
                     <Button onClick={openCreateDialog}>
                         <Plus className='mr-2 h-4 w-4' />
-                        新建角色
+                        新建分类
                     </Button>
                 </div>
 
                 <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
-                    {roles.map((role) => (
-                        <Card
-                            key={role.id}
-                            className={`cursor-pointer transition-all hover:shadow-md ${selectedRole === role.id ? 'ring-primary ring-2' : ''
-                                }`}
-                            onClick={() => setSelectedRole(role.id)}
-                        >
-                            <CardHeader className='pb-3'>
-                                <div className='flex items-start justify-between'>
-                                    <div className='flex items-center gap-3'>
-                                        <div
-                                            className={`flex h-10 w-10 items-center justify-center rounded-lg ${role.color}`}
-                                        >
-                                            <Shield className='h-5 w-5 text-white' />
-                                        </div>
-                                        <div>
-                                            <CardTitle className='flex items-center gap-2 text-base'>
-                                                {role.name}
-                                                {role.isSystem && (
-                                                    <Badge variant='secondary' className='text-xs'>
-                                                        系统
-                                                    </Badge>
-                                                )}
-                                            </CardTitle>
-                                            <div className='text-muted-foreground flex items-center gap-1 text-sm'>
-                                                <Users className='h-3.5 w-3.5' />
-                                                {role.userCount} 个用户
+                    {categories.map((category) => {
+                        const IconComponent = getIconComponent(category.icon)
+                        return (
+                            <Card
+                                key={category.id}
+                                className={`cursor-pointer transition-all hover:shadow-md ${selectedCategory === category.id ? 'ring-primary ring-2' : ''
+                                    }`}
+                                onClick={() => setSelectedCategory(category.id)}
+                            >
+                                <CardHeader className='pb-3'>
+                                    <div className='flex items-start justify-between'>
+                                        <div className='flex items-center gap-3'>
+                                            <div
+                                                className={`flex h-10 w-10 items-center justify-center rounded-lg ${category.color}`}
+                                            >
+                                                <IconComponent className='h-5 w-5 text-white' />
+                                            </div>
+                                            <div>
+                                                <CardTitle className='flex items-center gap-2 text-base'>
+                                                    {category.name}
+                                                    {category.isSystem && (
+                                                        <Badge variant='secondary' className='text-xs'>
+                                                            系统
+                                                        </Badge>
+                                                    )}
+                                                </CardTitle>
+                                                <div className='text-muted-foreground flex items-center gap-1 text-sm'>
+                                                    <Users className='h-3.5 w-3.5' />
+                                                    {category.userCount.toLocaleString()} 人
+                                                </div>
                                             </div>
                                         </div>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button
+                                                    variant='ghost'
+                                                    size='icon'
+                                                    className='h-8 w-8'
+                                                    onClick={(e) => e.stopPropagation()}
+                                                >
+                                                    <MoreHorizontal className='h-4 w-4' />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align='end'>
+                                                <DropdownMenuItem
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        openEditDialog(category)
+                                                    }}
+                                                >
+                                                    <Pencil className='mr-2 h-4 w-4' />
+                                                    编辑分类
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem>
+                                                    <Users className='mr-2 h-4 w-4' />
+                                                    查看用户
+                                                </DropdownMenuItem>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem
+                                                    className='text-destructive'
+                                                    disabled={category.isSystem}
+                                                >
+                                                    <Trash2 className='mr-2 h-4 w-4' />
+                                                    删除分类
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
                                     </div>
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button
-                                                variant='ghost'
-                                                size='icon'
-                                                className='h-8 w-8'
-                                                onClick={(e) => e.stopPropagation()}
-                                            >
-                                                <MoreHorizontal className='h-4 w-4' />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align='end'>
-                                            <DropdownMenuItem
-                                                onClick={(e) => {
-                                                    e.stopPropagation()
-                                                    openEditDialog(role)
-                                                }}
-                                            >
-                                                <Pencil className='mr-2 h-4 w-4' />
-                                                编辑角色
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem>
-                                                <Users className='mr-2 h-4 w-4' />
-                                                查看用户
-                                            </DropdownMenuItem>
-                                            <DropdownMenuSeparator />
-                                            <DropdownMenuItem
-                                                className='text-destructive'
-                                                disabled={role.isSystem}
-                                            >
-                                                <Trash2 className='mr-2 h-4 w-4' />
-                                                删除角色
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </div>
-                            </CardHeader>
-                            <CardContent>
-                                <CardDescription className='mb-3 line-clamp-2'>
-                                    {role.description}
-                                </CardDescription>
-                                <div className='flex flex-wrap gap-1'>
-                                    {role.permissions.slice(0, 3).map((perm) => (
-                                        <Badge key={perm} variant='outline' className='text-xs'>
-                                            {perm === 'all' ? '全部权限' : perm}
-                                        </Badge>
-                                    ))}
-                                    {role.permissions.length > 3 && (
-                                        <Badge variant='outline' className='text-xs'>
-                                            +{role.permissions.length - 3}
-                                        </Badge>
-                                    )}
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ))}
+                                </CardHeader>
+                                <CardContent>
+                                    <CardDescription className='mb-3 line-clamp-2'>
+                                        {category.description}
+                                    </CardDescription>
+                                    <div className='flex flex-wrap gap-1'>
+                                        {category.benefits.slice(0, 3).map((benefit) => (
+                                            <Badge key={benefit} variant='outline' className='text-xs'>
+                                                {benefit === 'all' ? '全部权益' : getBenefitName(benefit)}
+                                            </Badge>
+                                        ))}
+                                        {category.benefits.length > 3 && (
+                                            <Badge variant='outline' className='text-xs'>
+                                                +{category.benefits.length - 3}
+                                            </Badge>
+                                        )}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )
+                    })}
                 </div>
 
-                {selectedRole && (
+                {selectedCategory && (
                     <div className='mt-6'>
                         <Card>
                             <CardHeader>
                                 <CardTitle className='text-base'>
-                                    权限详情 - {roles.find((r) => r.id === selectedRole)?.name}
+                                    权益详情 - {categories.find((r) => r.id === selectedCategory)?.name}
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <div className='grid gap-2 sm:grid-cols-2 lg:grid-cols-3'>
-                                    {roles
-                                        .find((r) => r.id === selectedRole)
-                                        ?.permissions.map((perm) => (
+                                    {categories
+                                        .find((r) => r.id === selectedCategory)
+                                        ?.benefits.map((benefit) => (
                                             <div
-                                                key={perm}
+                                                key={benefit}
                                                 className='bg-muted/50 flex items-center gap-2 rounded-md px-3 py-2'
                                             >
                                                 <Check className='text-primary h-4 w-4' />
                                                 <span className='text-sm'>
-                                                    {perm === 'all' ? '全部权限' : perm}
+                                                    {benefit === 'all' ? '全部权益' : getBenefitName(benefit)}
                                                 </span>
                                             </div>
                                         ))}
@@ -475,47 +516,73 @@ export function Roles() {
                 )}
             </Main>
 
-            {/* 新建/编辑角色对话框 */}
-            <Dialog open={roleDialogOpen} onOpenChange={setRoleDialogOpen}>
+            {/* 新建/编辑分类对话框 */}
+            <Dialog open={categoryDialogOpen} onOpenChange={setCategoryDialogOpen}>
                 <DialogContent className='max-w-2xl'>
                     <DialogHeader>
                         <DialogTitle className='flex items-center gap-2'>
-                            <Shield className='h-5 w-5' />
-                            {roleDialogMode === 'create' ? '新建角色' : '编辑角色'}
+                            <Tags className='h-5 w-5' />
+                            {categoryDialogMode === 'create' ? '新建分类' : '编辑分类'}
                         </DialogTitle>
                         <DialogDescription>
-                            {roleDialogMode === 'create'
-                                ? '创建一个新的系统角色，并为其分配权限'
-                                : '修改角色的基本信息和权限配置'}
+                            {categoryDialogMode === 'create'
+                                ? '创建一个新的用户分类，并为其分配权益'
+                                : '修改分类的基本信息和权益配置'}
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className='space-y-6'>
                         {/* 基本信息 */}
                         <div className='space-y-4'>
-                            <div className='space-y-2'>
-                                <Label htmlFor='name'>
-                                    角色名称 <span className='text-destructive'>*</span>
-                                </Label>
-                                <Input
-                                    id='name'
-                                    placeholder='请输入角色名称'
-                                    value={formData.name}
-                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                    className={formErrors.name ? 'border-destructive' : ''}
-                                />
-                                {formErrors.name && (
-                                    <p className='text-destructive text-sm'>{formErrors.name}</p>
-                                )}
+                            <div className='grid grid-cols-2 gap-4'>
+                                <div className='space-y-2'>
+                                    <Label htmlFor='name'>
+                                        分类名称 <span className='text-destructive'>*</span>
+                                    </Label>
+                                    <Input
+                                        id='name'
+                                        placeholder='请输入分类名称'
+                                        value={formData.name}
+                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                        className={formErrors.name ? 'border-destructive' : ''}
+                                    />
+                                    {formErrors.name && (
+                                        <p className='text-destructive text-sm'>{formErrors.name}</p>
+                                    )}
+                                </div>
+                                <div className='space-y-2'>
+                                    <Label>分类图标</Label>
+                                    <div className='flex flex-wrap gap-2'>
+                                        {iconOptions.map((opt) => {
+                                            const Icon = opt.icon
+                                            return (
+                                                <button
+                                                    key={opt.value}
+                                                    type='button'
+                                                    className={cn(
+                                                        'flex h-9 w-9 items-center justify-center rounded-md border transition-all',
+                                                        formData.icon === opt.value
+                                                            ? 'border-primary bg-primary/10'
+                                                            : 'border-border hover:border-primary/50'
+                                                    )}
+                                                    onClick={() => setFormData({ ...formData, icon: opt.value })}
+                                                    title={opt.label}
+                                                >
+                                                    <Icon className='h-4 w-4' />
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
                             </div>
 
                             <div className='space-y-2'>
                                 <Label htmlFor='description'>
-                                    角色描述 <span className='text-destructive'>*</span>
+                                    分类描述 <span className='text-destructive'>*</span>
                                 </Label>
                                 <Textarea
                                     id='description'
-                                    placeholder='请输入角色描述'
+                                    placeholder='请输入分类描述'
                                     value={formData.description}
                                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                     className={cn('resize-none', formErrors.description ? 'border-destructive' : '')}
@@ -527,14 +594,14 @@ export function Roles() {
                             </div>
 
                             <div className='space-y-2'>
-                                <Label>角色颜色</Label>
+                                <Label>分类颜色</Label>
                                 <div className='flex flex-wrap gap-2'>
                                     {colorOptions.map((color) => (
                                         <button
                                             key={color.value}
                                             type='button'
                                             className={cn(
-                                                'h-8 w-8 rounded-full transition-all',
+                                                'h-7 w-7 rounded-full transition-all',
                                                 color.value,
                                                 formData.color === color.value
                                                     ? 'ring-primary ring-2 ring-offset-2'
@@ -548,25 +615,25 @@ export function Roles() {
                             </div>
                         </div>
 
-                        {/* 权限设置 */}
+                        {/* 权益设置 */}
                         <div className='space-y-2'>
                             <Label>
-                                权限配置 <span className='text-destructive'>*</span>
+                                权益配置 <span className='text-destructive'>*</span>
                                 <span className='text-muted-foreground ml-2 text-sm font-normal'>
-                                    已选择 {formData.permissions.length} 个权限
+                                    已选择 {formData.benefits.length} 个权益
                                 </span>
                             </Label>
-                            {formErrors.permissions && (
-                                <p className='text-destructive text-sm'>{formErrors.permissions}</p>
+                            {formErrors.benefits && (
+                                <p className='text-destructive text-sm'>{formErrors.benefits}</p>
                             )}
-                            <ScrollArea className='h-[280px] rounded-md border p-3'>
+                            <ScrollArea className='h-[240px] rounded-md border p-3'>
                                 <div className='space-y-4'>
-                                    {permissionGroups.map((group) => {
-                                        const groupKeys = group.permissions.map((p) => p.key)
+                                    {benefitGroups.map((group) => {
+                                        const groupKeys = group.benefits.map((p) => p.key)
                                         const enabledCount = groupKeys.filter((key) =>
-                                            formData.permissions.includes(key)
+                                            formData.benefits.includes(key)
                                         ).length
-                                        const allEnabled = enabledCount === group.permissions.length
+                                        const allEnabled = enabledCount === group.benefits.length
                                         const someEnabled = enabledCount > 0 && !allEnabled
 
                                         return (
@@ -575,7 +642,7 @@ export function Roles() {
                                                     <Checkbox
                                                         id={`group-${group.id}`}
                                                         checked={allEnabled}
-                                                        onCheckedChange={() => toggleFormGroupPermissions(group)}
+                                                        onCheckedChange={() => toggleFormGroupBenefits(group)}
                                                         className={someEnabled ? 'data-[state=checked]:bg-primary/50' : ''}
                                                     />
                                                     <label
@@ -585,27 +652,27 @@ export function Roles() {
                                                         {group.name}
                                                     </label>
                                                     <Badge variant='outline' className='text-xs'>
-                                                        {enabledCount}/{group.permissions.length}
+                                                        {enabledCount}/{group.benefits.length}
                                                     </Badge>
                                                 </div>
                                                 <div className='ml-6 grid gap-1.5 sm:grid-cols-2'>
-                                                    {group.permissions.map((permission) => {
-                                                        const isEnabled = formData.permissions.includes(permission.key)
+                                                    {group.benefits.map((benefit) => {
+                                                        const isEnabled = formData.benefits.includes(benefit.key)
                                                         return (
                                                             <div
-                                                                key={permission.id}
+                                                                key={benefit.id}
                                                                 className='flex items-center gap-2'
                                                             >
                                                                 <Checkbox
-                                                                    id={permission.id}
+                                                                    id={benefit.id}
                                                                     checked={isEnabled}
-                                                                    onCheckedChange={() => toggleFormPermission(permission.key)}
+                                                                    onCheckedChange={() => toggleFormBenefit(benefit.key)}
                                                                 />
                                                                 <label
-                                                                    htmlFor={permission.id}
+                                                                    htmlFor={benefit.id}
                                                                     className='text-muted-foreground cursor-pointer text-sm'
                                                                 >
-                                                                    {permission.name}
+                                                                    {benefit.name}
                                                                 </label>
                                                             </div>
                                                         )
@@ -620,11 +687,11 @@ export function Roles() {
                     </div>
 
                     <div className='flex justify-end gap-2 pt-4'>
-                        <Button variant='outline' onClick={() => setRoleDialogOpen(false)}>
+                        <Button variant='outline' onClick={() => setCategoryDialogOpen(false)}>
                             取消
                         </Button>
-                        <Button onClick={handleSaveRole}>
-                            {roleDialogMode === 'create' ? '创建角色' : '保存更改'}
+                        <Button onClick={handleSaveCategory}>
+                            {categoryDialogMode === 'create' ? '创建分类' : '保存更改'}
                         </Button>
                     </div>
                 </DialogContent>

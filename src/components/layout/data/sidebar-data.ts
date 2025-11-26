@@ -20,11 +20,11 @@ import {
   Command,
   GalleryVerticalEnd,
   FolderOpen,
-  Shield,
   CircleUser,
   Briefcase,
   Building2,
   Network,
+  Tags,
 } from 'lucide-react'
 import { ClerkLogo } from '@/assets/clerk-logo'
 import { type SidebarData } from '../types'
@@ -82,9 +82,9 @@ export const sidebarData: SidebarData = {
               icon: Users,
             },
             {
-              title: '角色设置',
+              title: '用户分类',
               url: '/roles',
-              icon: Shield,
+              icon: Tags,
             },
           ],
         },
