@@ -311,49 +311,20 @@ export const sidebarData: SidebarData = {
       title: '数据管理',
       items: [
         {
-          title: '数据统计',
-          url: '/data/statistics',
-          icon: BarChart3,
-        },
-        {
-          title: '数据报表',
-          url: '/data/reports',
-          icon: FileSpreadsheet,
-        },
-        {
-          title: '数据导入',
-          url: '/data/import',
-          icon: Upload,
-        },
-        {
-          title: '数据导出',
-          url: '/data/export',
-          icon: Download,
-        },
-        {
-          title: '数据备份',
-          url: '/data/backup',
-          icon: DatabaseBackup,
-        },
-        {
-          title: '数据字典',
-          url: '/data/dictionary',
-          icon: BookOpen,
-        },
-        {
-          title: '操作日志',
-          url: '/data/operation-logs',
-          icon: ScrollText,
-        },
-        {
-          title: '登录日志',
-          url: '/data/login-logs',
-          icon: LogIn,
-        },
-        {
-          title: '系统日志',
-          url: '/data/system-logs',
-          icon: Activity,
+          title: '数据中心',
+          icon: Database,
+          items: [
+            {
+              title: '数据统计',
+              url: '/data/statistics',
+              icon: BarChart3,
+            },
+            {
+              title: '数据报表',
+              url: '/data/reports',
+              icon: FileSpreadsheet,
+            },
+          ],
         },
       ],
     },
@@ -364,6 +335,47 @@ export const sidebarData: SidebarData = {
           title: '文件中心',
           url: '/files',
           icon: FolderOpen,
+        },
+        {
+          title: '数据管理',
+          icon: Database,
+          items: [
+            {
+              title: '数据导入',
+              url: '/data/import',
+              icon: Upload,
+            },
+            {
+              title: '数据导出',
+              url: '/data/export',
+              icon: Download,
+            },
+            {
+              title: '数据备份',
+              url: '/data/backup',
+              icon: DatabaseBackup,
+            },
+            {
+              title: '数据字典',
+              url: '/data/dictionary',
+              icon: BookOpen,
+            },
+            {
+              title: '操作日志',
+              url: '/data/operation-logs',
+              icon: ScrollText,
+            },
+            {
+              title: '登录日志',
+              url: '/data/login-logs',
+              icon: LogIn,
+            },
+            {
+              title: '系统日志',
+              url: '/data/system-logs',
+              icon: Activity,
+            },
+          ],
         },
         {
           title: '官网运营',
