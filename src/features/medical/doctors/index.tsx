@@ -15,6 +15,7 @@ import {
     LayoutGrid,
     List,
     CalendarCheck,
+    Star,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -75,6 +76,7 @@ interface Doctor {
     level: string
     status: 'active' | 'inactive'
     consultCount: number
+    satisfaction: number
 }
 
 const initialDoctors: Doctor[] = [
@@ -91,6 +93,7 @@ const initialDoctors: Doctor[] = [
         level: '三甲',
         status: 'active',
         consultCount: 3256,
+        satisfaction: 98.5,
     },
     {
         id: '2',
@@ -105,6 +108,7 @@ const initialDoctors: Doctor[] = [
         level: '三甲',
         status: 'active',
         consultCount: 2845,
+        satisfaction: 97.2,
     },
     {
         id: '3',
@@ -119,6 +123,7 @@ const initialDoctors: Doctor[] = [
         level: '三甲',
         status: 'active',
         consultCount: 4120,
+        satisfaction: 99.1,
     },
     {
         id: '4',
@@ -133,6 +138,7 @@ const initialDoctors: Doctor[] = [
         level: '三甲',
         status: 'active',
         consultCount: 1890,
+        satisfaction: 96.8,
     },
     {
         id: '5',
@@ -147,6 +153,7 @@ const initialDoctors: Doctor[] = [
         level: '三甲',
         status: 'inactive',
         consultCount: 2156,
+        satisfaction: 95.6,
     },
     {
         id: '6',
@@ -161,6 +168,7 @@ const initialDoctors: Doctor[] = [
         level: '三甲',
         status: 'active',
         consultCount: 1568,
+        satisfaction: 98.2,
     },
 ]
 
@@ -277,6 +285,7 @@ export function Doctors() {
                 level: formData.level,
                 status: formData.status,
                 consultCount: 0,
+                satisfaction: 100,
             }
             setDoctors([...doctors, newDoctor])
         } else if (editingDoctor) {
@@ -365,13 +374,14 @@ export function Doctors() {
                                 </Badge>
                             ))}
                         </div>
-                        <div className='flex items-center justify-between'>
-                            <CardDescription className='line-clamp-1 text-xs'>
-                                {doctor.introduction}
-                            </CardDescription>
+                        <div className='flex items-center justify-between gap-2'>
                             <div className='text-muted-foreground flex items-center gap-1 text-xs whitespace-nowrap'>
                                 <CalendarCheck className='h-3 w-3' />
-                                {doctor.consultCount.toLocaleString()} 次接诊
+                                {doctor.consultCount.toLocaleString()}
+                            </div>
+                            <div className='flex items-center gap-1 text-xs whitespace-nowrap text-amber-500'>
+                                <Star className='h-3 w-3 fill-current' />
+                                {doctor.satisfaction}%
                             </div>
                         </div>
                     </CardContent>
@@ -393,6 +403,7 @@ export function Doctors() {
                         <TableHead>专长</TableHead>
                         <TableHead>联系方式</TableHead>
                         <TableHead>接诊数</TableHead>
+                        <TableHead>满意度</TableHead>
                         <TableHead>状态</TableHead>
                         <TableHead className='w-[50px]'></TableHead>
                     </TableRow>
@@ -444,6 +455,12 @@ export function Doctors() {
                                 <div className='text-muted-foreground flex items-center gap-1'>
                                     <CalendarCheck className='h-3.5 w-3.5' />
                                     {doctor.consultCount.toLocaleString()}
+                                </div>
+                            </TableCell>
+                            <TableCell>
+                                <div className='flex items-center gap-1 text-amber-500'>
+                                    <Star className='h-3.5 w-3.5 fill-current' />
+                                    {doctor.satisfaction}%
                                 </div>
                             </TableCell>
                             <TableCell>

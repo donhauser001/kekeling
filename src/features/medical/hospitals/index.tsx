@@ -13,6 +13,7 @@ import {
     Users,
     Building2,
     CalendarCheck,
+    Star,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -62,6 +63,7 @@ interface HospitalData {
     departments: string[]
     doctorCount: number
     consultCount: number
+    satisfaction: number
     status: 'active' | 'inactive'
 }
 
@@ -88,6 +90,7 @@ const initialHospitals: HospitalData[] = [
         departments: ['心内科', '神经内科', '骨科', '妇产科', '儿科'],
         doctorCount: 2500,
         consultCount: 856000,
+        satisfaction: 98.5,
         status: 'active',
     },
     {
@@ -103,6 +106,7 @@ const initialHospitals: HospitalData[] = [
         departments: ['血液科', '内分泌科', '消化内科', '心血管外科'],
         doctorCount: 2200,
         consultCount: 723000,
+        satisfaction: 97.8,
         status: 'active',
     },
     {
@@ -118,6 +122,7 @@ const initialHospitals: HospitalData[] = [
         departments: ['骨科', '烧伤科', '手外科', '脊柱外科'],
         doctorCount: 1800,
         consultCount: 568000,
+        satisfaction: 98.2,
         status: 'active',
     },
     {
@@ -133,6 +138,7 @@ const initialHospitals: HospitalData[] = [
         departments: ['产科', '新生儿科', '儿童呼吸科', '妇科肿瘤'],
         doctorCount: 1500,
         consultCount: 425000,
+        satisfaction: 97.5,
         status: 'active',
     },
     {
@@ -148,6 +154,7 @@ const initialHospitals: HospitalData[] = [
         departments: ['急诊科', '重症医学科', '肿瘤科', '神经外科'],
         doctorCount: 1600,
         consultCount: 489000,
+        satisfaction: 96.8,
         status: 'active',
     },
     {
@@ -163,6 +170,7 @@ const initialHospitals: HospitalData[] = [
         departments: ['肝胆外科', '胸外科', '泌尿外科', '眼科'],
         doctorCount: 2800,
         consultCount: 912000,
+        satisfaction: 98.8,
         status: 'active',
     },
 ]
@@ -270,6 +278,7 @@ export function Hospitals() {
                 departments: formData.departments.split(/[、,，]/).map(s => s.trim()).filter(Boolean),
                 doctorCount: 0,
                 consultCount: 0,
+                satisfaction: 100,
             }
             setHospitals([...hospitals, newHospital])
         } else if (editingHospital) {
@@ -433,11 +442,15 @@ export function Hospitals() {
                                 <div className='flex items-center gap-4 text-sm'>
                                     <div className='text-muted-foreground flex items-center gap-1'>
                                         <Users className='h-4 w-4' />
-                                        {hospital.doctorCount} 位医师
+                                        {hospital.doctorCount}
                                     </div>
                                     <div className='text-muted-foreground flex items-center gap-1'>
                                         <CalendarCheck className='h-4 w-4' />
-                                        {hospital.consultCount.toLocaleString()} 次接诊
+                                        {hospital.consultCount.toLocaleString()}
+                                    </div>
+                                    <div className='flex items-center gap-1 text-amber-500'>
+                                        <Star className='h-4 w-4 fill-current' />
+                                        {hospital.satisfaction}%
                                     </div>
                                 </div>
                                 <div className='flex flex-wrap gap-1'>

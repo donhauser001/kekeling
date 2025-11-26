@@ -10,6 +10,7 @@ import {
     Users,
     Stethoscope,
     CalendarCheck,
+    Star,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -53,6 +54,7 @@ interface Department {
     description: string
     doctorCount: number
     consultCount: number
+    satisfaction: number
     diseases: string[]
     color: string
 }
@@ -67,18 +69,18 @@ const categoryColors: Record<string, string> = {
 }
 
 const initialDepartments: Department[] = [
-    { id: '1', name: '心内科', category: '内科', description: '诊治心血管系统疾病', doctorCount: 45, consultCount: 12580, diseases: ['冠心病', '心律失常', '高血压', '心肌病'], color: 'bg-red-500' },
-    { id: '2', name: '神经内科', category: '内科', description: '诊治神经系统疾病', doctorCount: 38, consultCount: 9860, diseases: ['脑血管病', '帕金森病', '癫痫', '头痛'], color: 'bg-purple-500' },
-    { id: '3', name: '消化内科', category: '内科', description: '诊治消化系统疾病', doctorCount: 42, consultCount: 11240, diseases: ['胃炎', '肝病', '胃肠道肿瘤', '消化道出血'], color: 'bg-amber-500' },
-    { id: '4', name: '呼吸内科', category: '内科', description: '诊治呼吸系统疾病', doctorCount: 35, consultCount: 8950, diseases: ['肺炎', '哮喘', '慢阻肺', '肺癌'], color: 'bg-cyan-500' },
-    { id: '5', name: '骨科', category: '外科', description: '诊治骨骼和关节疾病', doctorCount: 52, consultCount: 15680, diseases: ['骨折', '关节炎', '脊柱病', '运动损伤'], color: 'bg-orange-500' },
-    { id: '6', name: '普外科', category: '外科', description: '诊治腹部外科疾病', doctorCount: 48, consultCount: 13450, diseases: ['阑尾炎', '胆囊炎', '疝气', '甲状腺疾病'], color: 'bg-rose-500' },
-    { id: '7', name: '妇产科', category: '妇儿', description: '诊治妇科和产科疾病', doctorCount: 56, consultCount: 18960, diseases: ['妇科肿瘤', '不孕症', '高危妊娠', '产前检查'], color: 'bg-pink-500' },
-    { id: '8', name: '儿科', category: '妇儿', description: '诊治儿童疾病', doctorCount: 62, consultCount: 22350, diseases: ['儿童呼吸道感染', '儿童消化病', '儿童保健', '新生儿疾病'], color: 'bg-sky-500' },
-    { id: '9', name: '眼科', category: '五官', description: '诊治眼部疾病', doctorCount: 28, consultCount: 6580, diseases: ['白内障', '青光眼', '近视', '眼底病'], color: 'bg-emerald-500' },
-    { id: '10', name: '耳鼻喉科', category: '五官', description: '诊治耳鼻喉疾病', doctorCount: 25, consultCount: 5890, diseases: ['鼻炎', '中耳炎', '咽喉炎', '听力障碍'], color: 'bg-teal-500' },
-    { id: '11', name: '放射科', category: '医技', description: '影像诊断科室', doctorCount: 32, consultCount: 28560, diseases: ['CT检查', 'MRI检查', 'X光检查', '超声检查'], color: 'bg-indigo-500' },
-    { id: '12', name: '检验科', category: '医技', description: '临床检验科室', doctorCount: 28, consultCount: 35680, diseases: ['血液检查', '生化检查', '免疫检查', '微生物检查'], color: 'bg-violet-500' },
+    { id: '1', name: '心内科', category: '内科', description: '诊治心血管系统疾病', doctorCount: 45, consultCount: 12580, satisfaction: 97.8, diseases: ['冠心病', '心律失常', '高血压', '心肌病'], color: 'bg-red-500' },
+    { id: '2', name: '神经内科', category: '内科', description: '诊治神经系统疾病', doctorCount: 38, consultCount: 9860, satisfaction: 96.5, diseases: ['脑血管病', '帕金森病', '癫痫', '头痛'], color: 'bg-purple-500' },
+    { id: '3', name: '消化内科', category: '内科', description: '诊治消化系统疾病', doctorCount: 42, consultCount: 11240, satisfaction: 95.2, diseases: ['胃炎', '肝病', '胃肠道肿瘤', '消化道出血'], color: 'bg-amber-500' },
+    { id: '4', name: '呼吸内科', category: '内科', description: '诊治呼吸系统疾病', doctorCount: 35, consultCount: 8950, satisfaction: 94.8, diseases: ['肺炎', '哮喘', '慢阻肺', '肺癌'], color: 'bg-cyan-500' },
+    { id: '5', name: '骨科', category: '外科', description: '诊治骨骼和关节疾病', doctorCount: 52, consultCount: 15680, satisfaction: 98.2, diseases: ['骨折', '关节炎', '脊柱病', '运动损伤'], color: 'bg-orange-500' },
+    { id: '6', name: '普外科', category: '外科', description: '诊治腹部外科疾病', doctorCount: 48, consultCount: 13450, satisfaction: 96.9, diseases: ['阑尾炎', '胆囊炎', '疝气', '甲状腺疾病'], color: 'bg-rose-500' },
+    { id: '7', name: '妇产科', category: '妇儿', description: '诊治妇科和产科疾病', doctorCount: 56, consultCount: 18960, satisfaction: 97.5, diseases: ['妇科肿瘤', '不孕症', '高危妊娠', '产前检查'], color: 'bg-pink-500' },
+    { id: '8', name: '儿科', category: '妇儿', description: '诊治儿童疾病', doctorCount: 62, consultCount: 22350, satisfaction: 98.6, diseases: ['儿童呼吸道感染', '儿童消化病', '儿童保健', '新生儿疾病'], color: 'bg-sky-500' },
+    { id: '9', name: '眼科', category: '五官', description: '诊治眼部疾病', doctorCount: 28, consultCount: 6580, satisfaction: 95.8, diseases: ['白内障', '青光眼', '近视', '眼底病'], color: 'bg-emerald-500' },
+    { id: '10', name: '耳鼻喉科', category: '五官', description: '诊治耳鼻喉疾病', doctorCount: 25, consultCount: 5890, satisfaction: 94.5, diseases: ['鼻炎', '中耳炎', '咽喉炎', '听力障碍'], color: 'bg-teal-500' },
+    { id: '11', name: '放射科', category: '医技', description: '影像诊断科室', doctorCount: 32, consultCount: 28560, satisfaction: 96.2, diseases: ['CT检查', 'MRI检查', 'X光检查', '超声检查'], color: 'bg-indigo-500' },
+    { id: '12', name: '检验科', category: '医技', description: '临床检验科室', doctorCount: 28, consultCount: 35680, satisfaction: 95.5, diseases: ['血液检查', '生化检查', '免疫检查', '微生物检查'], color: 'bg-violet-500' },
 ]
 
 interface DepartmentFormData {
@@ -193,6 +195,7 @@ export function Departments() {
                 color: formData.color,
                 doctorCount: 0,
                 consultCount: 0,
+                satisfaction: 100,
             }
             setDepartments([...departments, newDepartment])
         } else if (editingDepartment) {
@@ -317,6 +320,10 @@ export function Departments() {
                                                             <span className='flex items-center gap-0.5'>
                                                                 <CalendarCheck className='h-3 w-3' />
                                                                 {dept.consultCount.toLocaleString()}
+                                                            </span>
+                                                            <span className='flex items-center gap-0.5 text-amber-500'>
+                                                                <Star className='h-3 w-3 fill-current' />
+                                                                {dept.satisfaction}%
                                                             </span>
                                                         </div>
                                                     </div>

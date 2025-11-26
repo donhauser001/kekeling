@@ -24,6 +24,8 @@ const escortSchema = z.object({
   phoneNumber: z.string(),
   status: escortStatusSchema,
   category: escortCategorySchema,
+  consultCount: z.number(),
+  satisfaction: z.number(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 })

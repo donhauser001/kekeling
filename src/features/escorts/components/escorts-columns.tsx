@@ -1,4 +1,5 @@
 import { type ColumnDef } from '@tanstack/react-table'
+import { CalendarCheck, Star } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -137,6 +138,30 @@ export const escortsColumns: ColumnDef<Escort>[] = [
     },
     enableSorting: false,
     enableHiding: false,
+  },
+  {
+    accessorKey: 'consultCount',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title='接诊数' />
+    ),
+    cell: ({ row }) => (
+      <div className='text-muted-foreground flex items-center gap-1'>
+        <CalendarCheck size={14} />
+        <span>{row.getValue<number>('consultCount').toLocaleString()}</span>
+      </div>
+    ),
+  },
+  {
+    accessorKey: 'satisfaction',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title='满意度' />
+    ),
+    cell: ({ row }) => (
+      <div className='flex items-center gap-1 text-amber-500'>
+        <Star size={14} className='fill-current' />
+        <span>{row.getValue<number>('satisfaction')}%</span>
+      </div>
+    ),
   },
   {
     id: 'actions',

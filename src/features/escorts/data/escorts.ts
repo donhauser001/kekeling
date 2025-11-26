@@ -27,6 +27,8 @@ export const escorts = Array.from({ length: 500 }, () => {
       'junior',
       'trainee',
     ]),
+    consultCount: faker.number.int({ min: 50, max: 2000 }),
+    satisfaction: faker.number.float({ min: 85, max: 100, fractionDigits: 1 }),
     createdAt: faker.date.past(),
     updatedAt: faker.date.recent(),
   }
