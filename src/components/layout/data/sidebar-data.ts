@@ -14,7 +14,6 @@ import {
   UserCog,
   UserX,
   Users,
-  MessagesSquare,
   ShieldCheck,
   AudioWaveform,
   Command,
@@ -66,12 +65,6 @@ export const sidebarData: SidebarData = {
           title: '文件中心',
           url: '/files',
           icon: FolderOpen,
-        },
-        {
-          title: '消息中心',
-          url: '/chats',
-          badge: '3',
-          icon: MessagesSquare,
         },
         {
           title: '用户中心',
