@@ -361,27 +361,37 @@ export function Doctors() {
                             </DropdownMenu>
                         </div>
                     </CardHeader>
-                    <CardContent className='space-y-3'>
+                    <CardContent className='space-y-2.5'>
                         <div className='flex items-center gap-2 text-sm'>
-                            <Building2 className='text-muted-foreground h-4 w-4' />
-                            <span>{doctor.hospital}</span>
-                            <Badge variant='outline' className='text-xs'>{doctor.level}</Badge>
+                            <Building2 className='text-muted-foreground h-4 w-4 shrink-0' />
+                            <span className='truncate'>{doctor.hospital}</span>
+                            <Badge variant='outline' className='text-xs shrink-0'>{doctor.level}</Badge>
                         </div>
                         <div className='flex flex-wrap gap-1'>
-                            {doctor.specialty.map(s => (
+                            {doctor.specialty.slice(0, 3).map(s => (
                                 <Badge key={s} variant='secondary' className='text-xs'>
                                     {s}
                                 </Badge>
                             ))}
+                            {doctor.specialty.length > 3 && (
+                                <Badge variant='secondary' className='text-xs'>
+                                    +{doctor.specialty.length - 3}
+                                </Badge>
+                            )}
                         </div>
-                        <div className='flex items-center justify-between gap-2'>
-                            <div className='text-muted-foreground flex items-center gap-1 text-xs whitespace-nowrap'>
-                                <CalendarCheck className='h-3 w-3' />
-                                {doctor.consultCount.toLocaleString()}
-                            </div>
-                            <div className='flex items-center gap-1 text-xs whitespace-nowrap text-amber-500'>
-                                <Star className='h-3 w-3 fill-current' />
-                                {doctor.satisfaction}%
+                        <div className='border-t pt-2.5'>
+                            <div className='flex items-center justify-center gap-4 text-xs'>
+                                <div className='text-muted-foreground flex items-center gap-1'>
+                                    <CalendarCheck className='h-3.5 w-3.5' />
+                                    <span className='font-medium'>{doctor.consultCount.toLocaleString()}</span>
+                                    <span>次接诊</span>
+                                </div>
+                                <div className='text-muted-foreground'>|</div>
+                                <div className='flex items-center gap-1 text-amber-500'>
+                                    <Star className='h-3.5 w-3.5 fill-current' />
+                                    <span className='font-medium'>{doctor.satisfaction}%</span>
+                                    <span className='text-muted-foreground'>满意度</span>
+                                </div>
                             </div>
                         </div>
                     </CardContent>
