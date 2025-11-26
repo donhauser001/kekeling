@@ -490,95 +490,72 @@ export function Tags() {
                         })}
                     </div>
                 ) : (
-                    // 分组视图
-                    <div className='space-y-6'>
-                        {groupedTags.map(group => group.tags.length > 0 && (
-                            <div key={group.value}>
-                                <div className='mb-3 flex items-center justify-between'>
-                                    <div className='flex items-center gap-2'>
-                                        <div className='flex items-center gap-1.5'>
-                                            {group.color && (
-                                                <span className={cn('h-3 w-3 rounded-full', group.color)} />
-                                            )}
-                                            <h3 className='font-semibold'>{group.label}</h3>
-                                        </div>
-                                        <Badge variant='secondary' className='text-xs'>
-                                            {group.tags.length} 个标签
-                                        </Badge>
-                                        <span className='text-muted-foreground text-xs'>
-                                            共 {group.totalUsers.toLocaleString()} 人
-                                        </span>
-                                    </div>
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant='ghost' size='icon' className='h-7 w-7'>
-                                                <MoreHorizontal className='h-4 w-4' />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align='end'>
-                                            <DropdownMenuItem onClick={() => openEditCategoryDialog(group)}>
-                                                <Pencil className='mr-2 h-4 w-4' />
-                                                编辑分类
-                                            </DropdownMenuItem>
-                                            <DropdownMenuSeparator />
-                                            <DropdownMenuItem
-                                                className='text-destructive'
-                                                onClick={() => handleDeleteCategory(group.value)}
-                                                disabled={group.tags.length > 0}
-                                            >
-                                                <Trash2 className='mr-2 h-4 w-4' />
-                                                删除分类
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </div>
-                                <div className='flex flex-wrap gap-2'>
-                                    {group.tags.map(tag => {
-                                        const colorClasses = getColorClasses(tag.color)
-                                        return (
-                                            <div
-                                                key={tag.id}
-                                                className={cn(
-                                                    'group relative flex items-center gap-2 rounded-full border px-3 py-1.5 transition-all hover:shadow-sm',
-                                                    colorClasses.border,
-                                                    'bg-background'
-                                                )}
-                                            >
-                                                <span className={cn('h-2 w-2 rounded-full', tag.color)} />
-                                                <span className='text-sm font-medium'>{tag.name}</span>
-                                                <span className='text-muted-foreground text-xs'>
-                                                    {tag.userCount.toLocaleString()}
-                                                </span>
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <button className='text-muted-foreground hover:text-foreground ml-1 opacity-0 transition-opacity group-hover:opacity-100'>
-                                                            <MoreHorizontal className='h-3.5 w-3.5' />
-                                                        </button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align='end'>
-                                                        <DropdownMenuItem onClick={() => openEditDialog(tag)}>
-                                                            <Pencil className='mr-2 h-4 w-4' />
-                                                            编辑
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem>
-                                                            <Users className='mr-2 h-4 w-4' />
-                                                            查看用户
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuSeparator />
-                                                        <DropdownMenuItem
-                                                            className='text-destructive'
-                                                            onClick={() => handleDeleteTag(tag.id)}
-                                                        >
-                                                            <Trash2 className='mr-2 h-4 w-4' />
-                                                            删除
-                                                        </DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
+                    // 分组视图 - 卡片形式
+                    <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
+                        {groupedTags.map(group => (
+                            <Card key={group.value} className='group'>
+                                <CardHeader className='pb-3'>
+                                    <div className='flex items-start justify-between'>
+                                        <div className='flex items-center gap-3'>
+                                            <div className={cn('flex h-10 w-10 items-center justify-center rounded-lg', group.color || 'bg-gray-500')}>
+                                                <Layers className='h-5 w-5 text-white' />
                                             </div>
-                                        )
-                                    })}
-                                </div>
-                            </div>
+                                            <div>
+                                                <CardTitle className='text-base'>{group.label}</CardTitle>
+                                                <div className='text-muted-foreground flex items-center gap-2 text-sm'>
+                                                    <span>{group.tags.length} 个标签</span>
+                                                    <span>·</span>
+                                                    <span>{group.totalUsers.toLocaleString()} 人</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant='ghost' size='icon' className='h-8 w-8 opacity-0 group-hover:opacity-100'>
+                                                    <MoreHorizontal className='h-4 w-4' />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align='end'>
+                                                <DropdownMenuItem onClick={() => openEditCategoryDialog(group)}>
+                                                    <Pencil className='mr-2 h-4 w-4' />
+                                                    编辑分类
+                                                </DropdownMenuItem>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem
+                                                    className='text-destructive'
+                                                    onClick={() => handleDeleteCategory(group.value)}
+                                                    disabled={group.tags.length > 0}
+                                                >
+                                                    <Trash2 className='mr-2 h-4 w-4' />
+                                                    删除分类
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </div>
+                                </CardHeader>
+                                <CardContent>
+                                    {group.tags.length > 0 ? (
+                                        <div className='flex flex-wrap gap-1.5'>
+                                            {group.tags.map(tag => (
+                                                <Badge
+                                                    key={tag.id}
+                                                    variant='outline'
+                                                    className='group/tag cursor-pointer gap-1.5 py-1 transition-all hover:shadow-sm'
+                                                    onClick={() => openEditDialog(tag)}
+                                                >
+                                                    <span className={cn('h-2 w-2 rounded-full', tag.color)} />
+                                                    <span>{tag.name}</span>
+                                                    <span className='text-muted-foreground'>
+                                                        {tag.userCount.toLocaleString()}
+                                                    </span>
+                                                </Badge>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className='text-muted-foreground text-sm'>暂无标签</p>
+                                    )}
+                                </CardContent>
+                            </Card>
                         ))}
                     </div>
                 )}
