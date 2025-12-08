@@ -87,7 +87,7 @@
 
 // 搜索区域
 .search-section {
-  margin: -40px 24px 0;
+  margin: 20px 24px 0; // 增加与顶部的间距
   position: relative;
   z-index: 10;
 }
@@ -95,19 +95,19 @@
 .search-bar {
   display: flex;
   align-items: center;
-  gap: 16px;
-  height: 88px;
-  padding: 0 32px;
+  gap: 12px;
+  height: 72px; // 精致一些
+  padding: 0 24px;
   background: #fff;
-  border-radius: 44px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  border-radius: 36px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
 }
 
 .search-input {
   flex: 1;
   height: 100%;
-  font-size: 28px;
-  color: #262626;
+  font-size: 26px; // 精致一些
+  color: #333;
   background: transparent;
   border: none;
   outline: none;
