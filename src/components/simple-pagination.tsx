@@ -77,7 +77,7 @@ export function SimplePagination({
       </div>
 
       <div className='flex items-center gap-2'>
-        <div className='hidden text-sm font-medium lg:flex lg:items-center lg:gap-1'>
+        <div className='hidden whitespace-nowrap text-sm font-medium lg:block'>
           第 <span className='font-bold'>{currentPage}</span> / {totalPages} 页
         </div>
         <div className='flex items-center space-x-1'>
