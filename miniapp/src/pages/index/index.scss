@@ -2,21 +2,40 @@
   min-height: 100vh;
   background-color: #f5f7fa;
   padding-bottom: 120px;
+  position: relative;
+  
+  // 页面顶部渐变背景 - 首屏40%高度，平滑过渡
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 40vh;
+    background: linear-gradient(
+      180deg, 
+      #1890ff 0%, 
+      #1890ff 30%,
+      #5baaff 55%,
+      #a8d4ff 70%,
+      #d9ecfc 82%,
+      #f5f7fa 95%,
+      #f5f7fa 100%
+    );
+    z-index: 0;
+    pointer-events: none;
+  }
 }
 
 // 头部品牌区域
 .header-section {
-  background: linear-gradient(135deg, #1890ff 0%, #096dd9 50%, #0050b3 100%);
-  padding: 60px 32px 80px;
+  padding: 60px 32px 40px;
   position: relative;
-  overflow: hidden;
+  z-index: 1;
 
-  // 装饰圆
+  // 移除装饰圆
   &::before {
-    content: '';
-    position: absolute;
-    top: -100px;
-    right: -100px;
+    display: none;
     width: 300px;
     height: 300px;
     background: rgba(255, 255, 255, 0.1);
@@ -24,14 +43,7 @@
   }
 
   &::after {
-    content: '';
-    position: absolute;
-    bottom: -50px;
-    left: -50px;
-    width: 200px;
-    height: 200px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 50%;
+    display: none;
   }
 }
 
@@ -113,6 +125,8 @@
 // 服务分类区域
 .category-section {
   padding: 32px 24px;
+  position: relative;
+  z-index: 1;
 }
 
 // 置顶分类 - 左右两个大卡片
@@ -390,6 +404,8 @@
 // 数据统计区域
 .stats-section {
   padding: 0 24px 32px;
+  position: relative;
+  z-index: 1;
 }
 
 .stats-card {
@@ -426,6 +442,8 @@
 .values-section {
   padding: 32px 24px;
   background: #fff;
+  position: relative;
+  z-index: 1;
 }
 
 .section-header {
@@ -494,6 +512,8 @@
   align-items: center;
   padding: 48px 32px;
   background: #f9fafb;
+  position: relative;
+  z-index: 1;
 }
 
 .footer-brand {
