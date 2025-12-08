@@ -140,15 +140,17 @@
 
 .pinned-icon {
   position: absolute;
-  top: 20px;
-  right: 20px;
-  width: 44px;
-  height: 44px;
+  top: 24px;
+  right: 24px;
+  width: 56px;
+  height: 56px;
+  padding: 12px;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
   background: rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
+  border-radius: 14px;
 }
 
 .pinned-name {
