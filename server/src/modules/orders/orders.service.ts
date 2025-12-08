@@ -63,6 +63,13 @@ export class OrdersService {
       data: { orderCount: { increment: 1 } },
     });
 
+    // 🖨️ [Dev] 打印订单信息，方便 H5 调试时复制 ID 去测试接口
+    console.log(`📦 [Order] New Order Created!`);
+    console.log(`   ID: ${order.id}`);
+    console.log(`   No: ${order.orderNo}`);
+    console.log(`   Amount: ¥${Number(order.totalAmount)}`);
+    console.log(`   Service: ${service.name}`);
+
     return order;
   }
 

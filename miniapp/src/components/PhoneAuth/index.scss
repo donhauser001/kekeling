@@ -1,0 +1,105 @@
+/**
+ * 手机号授权组件样式
+ */
+.phone-auth {
+  width: 100%;
+  padding: 32px;
+  box-sizing: border-box;
+
+  // H5 模式样式
+  &--h5 {
+    .phone-auth__input-group {
+      display: flex;
+      align-items: center;
+      margin-bottom: 24px;
+      background: #f5f5f5;
+      border-radius: 12px;
+      overflow: hidden;
+
+      &--code {
+        background: transparent;
+        gap: 16px;
+      }
+    }
+
+    .phone-auth__input {
+      flex: 1;
+      height: 88px;
+      padding: 0 24px;
+      font-size: 32px;
+      background: #f5f5f5;
+      border-radius: 12px;
+
+      &--code {
+        flex: 1;
+      }
+    }
+
+    .phone-auth__send-btn {
+      flex-shrink: 0;
+      height: 88px;
+      padding: 0 24px;
+      font-size: 28px;
+      color: #1890ff;
+      background: #e6f7ff;
+      border: none;
+      border-radius: 12px;
+
+      &[disabled] {
+        color: #999;
+        background: #f5f5f5;
+      }
+    }
+
+    .phone-auth__confirm-btn {
+      width: 100%;
+      height: 96px;
+      margin-top: 32px;
+      font-size: 32px;
+      font-weight: 500;
+      color: #fff;
+      background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
+      border: none;
+      border-radius: 48px;
+
+      &::after {
+        border: none;
+      }
+    }
+
+    .phone-auth__tip {
+      display: block;
+      margin-top: 24px;
+      font-size: 24px;
+      color: #faad14;
+      text-align: center;
+    }
+  }
+
+  // 小程序模式样式
+  &--weapp {
+    .phone-auth__wechat-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 96px;
+      font-size: 32px;
+      font-weight: 500;
+      color: #fff;
+      background: #07c160;
+      border: none;
+      border-radius: 48px;
+
+      &::after {
+        border: none;
+      }
+    }
+
+    .phone-auth__wechat-icon {
+      margin-right: 12px;
+      font-size: 36px;
+    }
+  }
+}
+
