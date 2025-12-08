@@ -198,86 +198,8 @@ async function main() {
   const deptTemplates = await createDepartmentTemplates();
   console.log('✅ 科室库创建完成');
 
-  // 1. 创建服务分类
-  const categories = await Promise.all([
-    prisma.serviceCategory.create({
-      data: { name: '陪诊服务', icon: 'stethoscope', sort: 1 },
-    }),
-    prisma.serviceCategory.create({
-      data: { name: '代办服务', icon: 'clipboard-list', sort: 2 },
-    }),
-    prisma.serviceCategory.create({
-      data: { name: '陪护服务', icon: 'bed', sort: 3 },
-    }),
-  ]);
-  console.log('✅ 服务分类创建完成');
-
-  // 2. 创建服务
-  await Promise.all([
-    prisma.service.create({
-      data: {
-        categoryId: categories[0].id,
-        name: '全程陪诊',
-        description: '专业陪诊员全程陪同就医，挂号、问诊、检查、取药一站式服务',
-        price: 299,
-        originalPrice: 399,
-        duration: '4-6小时',
-        orderCount: 0,
-        rating: 100,
-        tags: JSON.stringify(['热门', '专业']),
-        serviceIncludes: JSON.stringify(['代挂号预约', '全程陪同就诊', '协助问诊沟通', '陪同各项检查', '代取报告单', '代取药']),
-      },
-    }),
-    prisma.service.create({
-      data: {
-        categoryId: categories[1].id,
-        name: '代办挂号',
-        description: '专家号、普通号代挂服务，省去排队烦恼',
-        price: 99,
-        duration: '当天',
-        orderCount: 0,
-        rating: 100,
-        tags: JSON.stringify(['便捷', '热门']),
-      },
-    }),
-    prisma.service.create({
-      data: {
-        categoryId: categories[0].id,
-        name: '检查陪同',
-        description: '陪同完成各项检查，协助排队、取报告',
-        price: 199,
-        originalPrice: 249,
-        duration: '2-4小时',
-        orderCount: 0,
-        rating: 100,
-      },
-    }),
-    prisma.service.create({
-      data: {
-        categoryId: categories[2].id,
-        name: '住院陪护',
-        description: '住院期间全程陪护，协助日常护理',
-        price: 399,
-        originalPrice: 499,
-        duration: '24小时',
-        orderCount: 0,
-        rating: 100,
-        tags: JSON.stringify(['专业', '24小时']),
-      },
-    }),
-    prisma.service.create({
-      data: {
-        categoryId: categories[1].id,
-        name: '代取报告',
-        description: '检查报告代取代寄，省时省力',
-        price: 49,
-        duration: '当天',
-        orderCount: 0,
-        rating: 100,
-      },
-    }),
-  ]);
-  console.log('✅ 服务创建完成');
+  // 1. 创建服务分类 (在后面统一创建，这里跳过)
+  // 服务分类和服务在医院数据后创建
 
   // ========== 北京主要三甲医院 ==========
 
@@ -832,7 +754,254 @@ async function main() {
 
   console.log('✅ 医院和科室创建完成');
 
-  // 4. 创建轮播图
+  // 4. 创建服务分类和服务
+  console.log('\n📦 正在创建服务分类和服务...');
+  
+  // 服务分类
+  const serviceCategories = await Promise.all([
+    prisma.serviceCategory.create({
+      data: {
+        name: '陪诊服务',
+        icon: 'hospital',
+        description: '专业陪诊师全程陪同就医',
+        sort: 1,
+        status: 'active',
+      },
+    }),
+    prisma.serviceCategory.create({
+      data: {
+        name: '代办服务',
+        icon: 'file-text',
+        description: '代办挂号、取药、拿报告等',
+        sort: 2,
+        status: 'active',
+      },
+    }),
+    prisma.serviceCategory.create({
+      data: {
+        name: '陪护服务',
+        icon: 'heart',
+        description: '住院陪护、术后照护',
+        sort: 3,
+        status: 'active',
+      },
+    }),
+    prisma.serviceCategory.create({
+      data: {
+        name: '其他服务',
+        icon: 'more-horizontal',
+        description: '其他医疗相关服务',
+        sort: 4,
+        status: 'active',
+      },
+    }),
+  ]);
+
+  // 获取分类ID
+  const [peizhen, daiban, peihu] = serviceCategories;
+
+  // 创建服务
+  await Promise.all([
+    // 陪诊服务
+    prisma.service.create({
+      data: {
+        categoryId: peizhen.id,
+        name: '全程陪诊服务',
+        description: '专业陪诊师从挂号到就医全程陪同，省时省心',
+        price: 299,
+        originalPrice: 399,
+        unit: '次',
+        duration: '4-6小时',
+        serviceIncludes: [
+          { text: '专业陪诊师全程陪同', icon: 'check' },
+          { text: '协助挂号、取号、排队', icon: 'check' },
+          { text: '引导就诊流程', icon: 'check' },
+          { text: '代取检查报告', icon: 'check' },
+          { text: '免费咨询3次', icon: 'phone' },
+          { text: '服务报告1份', icon: 'file' },
+        ],
+        serviceNotes: [
+          { title: '服务时间', content: '服务时间为预约当日8:00-17:00，超出时间按小时加收费用' },
+          { title: '取消政策', content: '服务开始前24小时可免费取消，24小时内取消扣除50%费用' },
+          { title: '特别说明', content: '本服务不包含挂号费、检查费等医疗费用，需由用户自行承担' },
+        ],
+        needPatient: true,
+        needHospital: true,
+        needDepartment: true,
+        needAppointment: true,
+        sort: 1,
+        status: 'active',
+        orderCount: 1256,
+        rating: 98.5,
+      },
+    }),
+    prisma.service.create({
+      data: {
+        categoryId: peizhen.id,
+        name: '半日陪诊服务',
+        description: '适合检查项目较少的患者，灵活高效',
+        price: 199,
+        originalPrice: 249,
+        unit: '次',
+        duration: '2-3小时',
+        serviceIncludes: [
+          { text: '陪诊师陪同就诊', icon: 'check' },
+          { text: '协助挂号排队', icon: 'check' },
+          { text: '引导检查流程', icon: 'check' },
+        ],
+        serviceNotes: [
+          { title: '服务时间', content: '半日服务时长约2-3小时，适合上午或下午就诊' },
+          { title: '适用场景', content: '简单复诊、单项检查、开药取药' },
+        ],
+        needPatient: true,
+        needHospital: true,
+        needAppointment: true,
+        sort: 2,
+        status: 'active',
+        orderCount: 856,
+        rating: 97.8,
+      },
+    }),
+
+    // 代办服务
+    prisma.service.create({
+      data: {
+        categoryId: daiban.id,
+        name: '代办挂号',
+        description: '专业代挂各大医院号源，省去排队烦恼',
+        price: 99,
+        originalPrice: 129,
+        unit: '次',
+        serviceIncludes: [
+          { text: '专人代为挂号', icon: 'check' },
+          { text: '挂号成功后通知', icon: 'check' },
+          { text: '提供就诊指引', icon: 'check' },
+        ],
+        serviceNotes: [
+          { title: '服务说明', content: '代挂普通号、专家号，具体号源情况以医院实际为准' },
+          { title: '费用说明', content: '服务费不含挂号费，挂号费需另行支付' },
+        ],
+        needHospital: true,
+        needDepartment: true,
+        needDoctor: true,
+        needAppointment: true,
+        sort: 1,
+        status: 'active',
+        orderCount: 2156,
+        rating: 96.5,
+      },
+    }),
+    prisma.service.create({
+      data: {
+        categoryId: daiban.id,
+        name: '代取报告',
+        description: '代取检查报告，快递到家',
+        price: 49,
+        unit: '次',
+        serviceIncludes: [
+          { text: '代为领取报告', icon: 'check' },
+          { text: '拍照发送电子版', icon: 'check' },
+          { text: '可选快递到家', icon: 'check' },
+        ],
+        serviceNotes: [
+          { title: '服务说明', content: '需提供取报告所需的凭证信息' },
+          { title: '快递说明', content: '快递费用另计，默认顺丰到付' },
+        ],
+        needHospital: true,
+        needAppointment: true,
+        sort: 2,
+        status: 'active',
+        orderCount: 1023,
+        rating: 98.2,
+      },
+    }),
+    prisma.service.create({
+      data: {
+        categoryId: daiban.id,
+        name: '代办取药',
+        description: '凭处方代为取药，送药上门',
+        price: 69,
+        unit: '次',
+        serviceIncludes: [
+          { text: '凭处方代为取药', icon: 'check' },
+          { text: '核对药品清单', icon: 'check' },
+          { text: '送药上门服务', icon: 'check' },
+        ],
+        serviceNotes: [
+          { title: '服务说明', content: '需提供有效处方或病历，药费需自行承担' },
+          { title: '配送范围', content: '市区内免费配送，郊区另计' },
+        ],
+        needHospital: true,
+        sort: 3,
+        status: 'active',
+        orderCount: 567,
+        rating: 97.6,
+      },
+    }),
+
+    // 陪护服务
+    prisma.service.create({
+      data: {
+        categoryId: peihu.id,
+        name: '住院陪护',
+        description: '24小时专业住院陪护，让家属更安心',
+        price: 399,
+        unit: '天',
+        serviceIncludes: [
+          { text: '24小时专人陪护', icon: 'check' },
+          { text: '协助日常护理', icon: 'check' },
+          { text: '配合医护工作', icon: 'check' },
+          { text: '及时反馈病情', icon: 'check' },
+        ],
+        serviceNotes: [
+          { title: '服务时间', content: '24小时制，从入住当日开始计算' },
+          { title: '服务内容', content: '包含协助进食、翻身、如厕等日常护理' },
+          { title: '特殊情况', content: '重症患者需提前评估，费用可能上浮' },
+        ],
+        minQuantity: 1,
+        maxQuantity: 30,
+        needPatient: true,
+        needHospital: true,
+        needAppointment: true,
+        sort: 1,
+        status: 'active',
+        orderCount: 234,
+        rating: 99.1,
+      },
+    }),
+    prisma.service.create({
+      data: {
+        categoryId: peihu.id,
+        name: '术后照护',
+        description: '专业术后护理，加速康复',
+        price: 499,
+        unit: '天',
+        serviceIncludes: [
+          { text: '专业术后护理', icon: 'check' },
+          { text: '伤口观察换药协助', icon: 'check' },
+          { text: '康复指导', icon: 'check' },
+          { text: '用药提醒', icon: 'check' },
+        ],
+        serviceNotes: [
+          { title: '服务说明', content: '适用于各类手术后的护理照护' },
+          { title: '护理级别', content: '根据手术类型评估护理级别和费用' },
+        ],
+        minQuantity: 1,
+        maxQuantity: 14,
+        needPatient: true,
+        needHospital: true,
+        needAppointment: true,
+        sort: 2,
+        status: 'active',
+        orderCount: 156,
+        rating: 98.8,
+      },
+    }),
+  ]);
+
+  console.log('✅ 服务分类和服务创建完成');
+
+  // 5. 创建轮播图
   await Promise.all([
     prisma.banner.create({
       data: {
@@ -860,6 +1029,9 @@ async function main() {
   const templateCount = await prisma.departmentTemplate.count();
   const topLevelTemplates = await prisma.departmentTemplate.count({ where: { parentId: null } });
   const subTemplates = await prisma.departmentTemplate.count({ where: { NOT: { parentId: null } } });
+
+  const categoryCount = await prisma.serviceCategory.count();
+  const serviceCount = await prisma.service.count();
   
   console.log('\n📊 数据统计:');
   console.log(`   科室库: ${templateCount} 个 (一级: ${topLevelTemplates}, 二级: ${subTemplates})`);
@@ -867,6 +1039,8 @@ async function main() {
   console.log(`   医院科室: ${departmentCount} 个`);
   console.log(`   - 一级科室: ${topLevelDepts} 个`);
   console.log(`   - 二级科室: ${subDepts} 个`);
+  console.log(`   服务分类: ${categoryCount} 个`);
+  console.log(`   服务项目: ${serviceCount} 个`);
 
   console.log('\n🎉 真实数据添加完成！');
 }

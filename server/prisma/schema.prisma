@@ -54,9 +54,10 @@ model Patient {
 model ServiceCategory {
   id          String    @id @default(uuid())
   name        String
-  icon        String?
-  sort        Int       @default(0)
-  status      String    @default("active") // active, inactive
+  icon        String?                       // 图标 URL 或图标名称
+  description String?                       // 分类描述
+  sort        Int       @default(0)         // 排序权重
+  status      String    @default("active")  // active, inactive
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
 
@@ -69,19 +70,35 @@ model Service {
   id               String    @id @default(uuid())
   categoryId       String    @map("category_id")
   name             String
-  description      String?
-  price            Float
-  originalPrice    Float?    @map("original_price")
-  duration         String?   // 服务时长
+  description      String?   @db.Text          // 支持长文本
+  
+  // ✅ 修正：使用 Decimal 处理金额，避免浮点精度问题
+  price            Decimal   @db.Decimal(10, 2)
+  originalPrice    Decimal?  @map("original_price") @db.Decimal(10, 2)
+  unit             String    @default("次")    // 单位：次、天、小时
+  duration         String?                     // 服务时长描述
+  
   coverImage       String?   @map("cover_image")
-  detailImages     String?   @map("detail_images")
-  serviceIncludes  String?   @map("service_includes")  // 服务包含项 JSON
-  serviceNotes     String?   @map("service_notes")     // 注意事项 JSON
+  detailImages     String[]  @default([])      // ✅ 修正：使用 Postgres 数组存多图URL
+  
+  // ✅ 修正：使用 Json 类型，支持深层查询
+  serviceIncludes  Json?     @map("service_includes")  // [{ text, icon }]
+  serviceNotes     Json?     @map("service_notes")     // [{ title, content }]
+  
+  // 业务配置
+  minQuantity      Int       @default(1) @map("min_quantity")
+  maxQuantity      Int       @default(99) @map("max_quantity")
+  needPatient      Boolean   @default(true) @map("need_patient")
+  needHospital     Boolean   @default(true) @map("need_hospital")
+  needDepartment   Boolean   @default(false) @map("need_department")
+  needDoctor       Boolean   @default(false) @map("need_doctor")
+  needAppointment  Boolean   @default(true) @map("need_appointment")
+  
   orderCount       Int       @default(0) @map("order_count")
-  rating           Float     @default(98.0)
-  tags             String?   // JSON
+  rating           Decimal   @default(98.0) @db.Decimal(4, 1) // ✅ 评分: 0-100 百分制
+  tags             String[]  @default([])     // ✅ 标签数组
   sort             Int       @default(0)
-  status           String    @default("active") // active, inactive
+  status           String    @default("active") // active, inactive, draft
   createdAt        DateTime  @default(now()) @map("created_at")
   updatedAt        DateTime  @updatedAt @map("updated_at")
 
@@ -277,10 +294,10 @@ model Order {
   appointmentTime  String    @map("appointment_time")
   departmentName   String?   @map("department_name")   // 保留: 兼容旧数据
   
-  // 金额信息
-  totalAmount      Float     @map("total_amount")
-  discountAmount   Float     @default(0) @map("discount_amount")
-  paidAmount       Float     @default(0) @map("paid_amount")
+  // 金额信息 - ✅ 使用 Decimal 避免浮点精度问题
+  totalAmount      Decimal   @map("total_amount") @db.Decimal(10, 2)
+  discountAmount   Decimal   @default(0) @map("discount_amount") @db.Decimal(10, 2)
+  paidAmount       Decimal   @default(0) @map("paid_amount") @db.Decimal(10, 2)
   
   // 状态
   status           String    @default("pending") // pending, paid, confirmed, assigned, in_progress, completed, cancelled, refunded
