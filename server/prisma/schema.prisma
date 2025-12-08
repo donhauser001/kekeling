@@ -1,0 +1,250 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ========== 用户模块 ==========
+
+model User {
+  id          String   @id @default(uuid())
+  openid      String   @unique
+  unionid     String?
+  nickname    String?
+  avatar      String?
+  phone       String?  @unique
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // 关联
+  patients    Patient[]
+  orders      Order[]
+
+  @@map("users")
+}
+
+// 就诊人
+model Patient {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  name        String
+  gender      String   // male, female
+  age         Int
+  phone       String
+  idCard      String?  @map("id_card")
+  relation    String   // 本人、父亲、母亲、子女、其他
+  isDefault   Boolean  @default(false) @map("is_default")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user        User     @relation(fields: [userId], references: [id])
+  orders      Order[]
+
+  @@map("patients")
+}
+
+// ========== 服务模块 ==========
+
+model ServiceCategory {
+  id          String    @id @default(uuid())
+  name        String
+  icon        String?
+  sort        Int       @default(0)
+  status      String    @default("active") // active, inactive
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  services    Service[]
+
+  @@map("service_categories")
+}
+
+model Service {
+  id               String    @id @default(uuid())
+  categoryId       String    @map("category_id")
+  name             String
+  description      String?   @db.Text
+  price            Decimal   @db.Decimal(10, 2)
+  originalPrice    Decimal?  @map("original_price") @db.Decimal(10, 2)
+  duration         String?   // 服务时长
+  coverImage       String?   @map("cover_image")
+  detailImages     Json?     @map("detail_images")
+  serviceIncludes  Json?     @map("service_includes")  // 服务包含项
+  serviceNotes     Json?     @map("service_notes")     // 注意事项
+  orderCount       Int       @default(0) @map("order_count")
+  rating           Decimal   @default(98.0) @db.Decimal(5, 2)
+  tags             Json?
+  sort             Int       @default(0)
+  status           String    @default("active") // active, inactive
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  category         ServiceCategory @relation(fields: [categoryId], references: [id])
+  orders           Order[]
+
+  @@map("services")
+}
+
+// ========== 医院模块 ==========
+
+model Hospital {
+  id           String   @id @default(uuid())
+  name         String
+  level        String   // 三甲、三乙、二甲等
+  type         String   // 综合、专科
+  address      String
+  phone        String?
+  latitude     Decimal? @db.Decimal(10, 7)
+  longitude    Decimal? @db.Decimal(10, 7)
+  introduction String?  @db.Text
+  departments  Json?    // 科室列表
+  trafficGuide String?  @map("traffic_guide") @db.Text
+  parkingInfo  String?  @map("parking_info")
+  coverImage   String?  @map("cover_image")
+  status       String   @default("active") // active, inactive
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  orders       Order[]
+  escorts      EscortHospital[]
+
+  @@map("hospitals")
+}
+
+// ========== 陪诊员模块 ==========
+
+model Escort {
+  id             String    @id @default(uuid())
+  name           String
+  gender         String    // male, female
+  avatar         String?
+  phone          String    @unique
+  idCard         String?   @map("id_card")
+  level          String    // senior, intermediate, junior, trainee
+  experience     String?   // 从业年限
+  introduction   String?   @db.Text
+  tags           Json?
+  certificates   Json?     // 资质证书
+  rating         Decimal   @default(98.0) @db.Decimal(5, 2)
+  orderCount     Int       @default(0) @map("order_count")
+  status         String    @default("active") // active, inactive, pending, suspended
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  hospitals      EscortHospital[]
+  orders         Order[]
+
+  @@map("escorts")
+}
+
+// 陪诊员-医院关联表 (多对多)
+model EscortHospital {
+  id           String   @id @default(uuid())
+  escortId     String   @map("escort_id")
+  hospitalId   String   @map("hospital_id")
+  familiarDepts Json?   @map("familiar_depts") // 熟悉的科室
+
+  escort       Escort   @relation(fields: [escortId], references: [id])
+  hospital     Hospital @relation(fields: [hospitalId], references: [id])
+
+  @@unique([escortId, hospitalId])
+  @@map("escort_hospitals")
+}
+
+// ========== 订单模块 ==========
+
+model Order {
+  id               String    @id @default(uuid())
+  orderNo          String    @unique @map("order_no")
+  userId           String    @map("user_id")
+  patientId        String    @map("patient_id")
+  serviceId        String    @map("service_id")
+  hospitalId       String    @map("hospital_id")
+  escortId         String?   @map("escort_id")
+  
+  // 预约信息
+  appointmentDate  DateTime  @map("appointment_date") @db.Date
+  appointmentTime  String    @map("appointment_time")
+  departmentName   String?   @map("department_name")
+  
+  // 金额信息
+  totalAmount      Decimal   @map("total_amount") @db.Decimal(10, 2)
+  discountAmount   Decimal   @default(0) @map("discount_amount") @db.Decimal(10, 2)
+  paidAmount       Decimal   @default(0) @map("paid_amount") @db.Decimal(10, 2)
+  
+  // 状态
+  status           String    @default("pending") // pending, paid, confirmed, assigned, in_progress, completed, cancelled, refunded
+  
+  // 支付信息
+  paymentMethod    String?   @map("payment_method")
+  paymentTime      DateTime? @map("payment_time")
+  transactionId    String?   @map("transaction_id")
+  
+  // 备注
+  userRemark       String?   @map("user_remark") @db.Text
+  adminRemark      String?   @map("admin_remark") @db.Text
+  cancelReason     String?   @map("cancel_reason")
+  
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  // 关联
+  user             User      @relation(fields: [userId], references: [id])
+  patient          Patient   @relation(fields: [patientId], references: [id])
+  service          Service   @relation(fields: [serviceId], references: [id])
+  hospital         Hospital  @relation(fields: [hospitalId], references: [id])
+  escort           Escort?   @relation(fields: [escortId], references: [id])
+
+  @@map("orders")
+}
+
+// ========== 系统配置 ==========
+
+model Config {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     Json
+  remark    String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("configs")
+}
+
+// 首页轮播图
+model Banner {
+  id        String   @id @default(uuid())
+  title     String?
+  image     String
+  link      String?
+  sort      Int      @default(0)
+  status    String   @default("active") // active, inactive
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("banners")
+}
+
+// ========== 管理员模块 ==========
+
+model Admin {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  password  String
+  name      String
+  email     String?
+  phone     String?
+  role      String   @default("admin") // superadmin, admin, operator
+  status    String   @default("active") // active, inactive
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("admins")
+}
+
