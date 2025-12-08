@@ -3,9 +3,9 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 开始添加测试数据...');
+  console.log('🌱 开始添加真实数据...');
 
-  // 清理现有数据 (开发环境)
+  // 清理现有数据
   await prisma.order.deleteMany();
   await prisma.escortHospital.deleteMany();
   await prisma.doctor.deleteMany();
@@ -41,8 +41,8 @@ async function main() {
         price: 299,
         originalPrice: 399,
         duration: '4-6小时',
-        orderCount: 12580,
-        rating: 98.5,
+        orderCount: 0,
+        rating: 100,
         tags: JSON.stringify(['热门', '专业']),
         serviceIncludes: JSON.stringify(['代挂号预约', '全程陪同就诊', '协助问诊沟通', '陪同各项检查', '代取报告单', '代取药']),
       },
@@ -54,8 +54,8 @@ async function main() {
         description: '专家号、普通号代挂服务，省去排队烦恼',
         price: 99,
         duration: '当天',
-        orderCount: 8920,
-        rating: 99,
+        orderCount: 0,
+        rating: 100,
         tags: JSON.stringify(['便捷', '热门']),
       },
     }),
@@ -67,8 +67,8 @@ async function main() {
         price: 199,
         originalPrice: 249,
         duration: '2-4小时',
-        orderCount: 6580,
-        rating: 97,
+        orderCount: 0,
+        rating: 100,
       },
     }),
     prisma.service.create({
@@ -79,8 +79,8 @@ async function main() {
         price: 399,
         originalPrice: 499,
         duration: '24小时',
-        orderCount: 3250,
-        rating: 99,
+        orderCount: 0,
+        rating: 100,
         tags: JSON.stringify(['专业', '24小时']),
       },
     }),
@@ -91,357 +91,395 @@ async function main() {
         description: '检查报告代取代寄，省时省力',
         price: 49,
         duration: '当天',
-        orderCount: 5680,
-        rating: 98,
+        orderCount: 0,
+        rating: 100,
       },
     }),
   ]);
   console.log('✅ 服务创建完成');
 
-  // 3. 创建医院
-  const hospitals = await Promise.all([
-    prisma.hospital.create({
-      data: {
-        name: '上海市第一人民医院',
-        level: '三甲',
-        type: '综合',
-        address: '上海市松江区新松江路650号',
-        phone: '021-12345678',
-        introduction: '上海市第一人民医院创建于1864年，是全国建院最早的综合性百年老院之一。',
-        trafficGuide: '地铁9号线松江新城站步行800米',
-        parkingInfo: '医院设有地下停车场',
-      },
-    }),
-    prisma.hospital.create({
-      data: {
-        name: '复旦大学附属华山医院',
-        level: '三甲',
-        type: '综合',
-        address: '上海市静安区乌鲁木齐中路12号',
-        phone: '021-23456789',
-        introduction: '华山医院是复旦大学附属医院，国家卫生健康委员会委管医院。',
-      },
-    }),
-    prisma.hospital.create({
-      data: {
-        name: '上海交通大学医学院附属瑞金医院',
-        level: '三甲',
-        type: '综合',
-        address: '上海市黄浦区瑞金二路197号',
-        phone: '021-34567890',
-        introduction: '瑞金医院建于1907年，是一所集医疗、教学、科研于一体的三级甲等综合性医院。',
-      },
-    }),
-  ]);
-  console.log('✅ 医院创建完成');
+  // ========== 北京主要三甲医院 ==========
 
-  // 4. 创建科室 (医院1: 上海市第一人民医院)
-  // 一级科室
-  const h1_neike = await prisma.department.create({
-    data: { name: '内科', hospitalId: hospitals[0].id, sort: 1 },
-  });
-  const h1_waike = await prisma.department.create({
-    data: { name: '外科', hospitalId: hospitals[0].id, sort: 2 },
-  });
-  const h1_fuke = await prisma.department.create({
-    data: { name: '妇产科', hospitalId: hospitals[0].id, sort: 3 },
+  // 3.1 北京协和医院
+  const xiehe = await prisma.hospital.create({
+    data: {
+      name: '北京协和医院',
+      level: '三甲',
+      type: '综合',
+      address: '北京市东城区帅府园1号',
+      phone: '010-69156114',
+      latitude: 39.9136,
+      longitude: 116.4169,
+      introduction: '北京协和医院是一所位于北京市东城区，集医疗、科研、教学为一体的大型综合医院。是国家卫生健康委指定的全国疑难重症诊治指导中心，连续多年位居中国医院排行榜榜首。',
+      trafficGuide: '地铁1号线王府井站C口出，步行约800米；或乘坐公交1路、52路、82路等至东单站下车',
+      parkingInfo: '医院设有地下停车场，车位有限，建议乘坐公共交通',
+    },
   });
 
-  // 二级科室 (内科下)
-  const h1_xinxueguan = await prisma.department.create({
-    data: { name: '心血管内科', hospitalId: hospitals[0].id, parentId: h1_neike.id, sort: 1 },
+  // 协和医院科室
+  const xiehe_neike = await prisma.department.create({
+    data: { name: '内科', hospitalId: xiehe.id, sort: 1 },
   });
-  const h1_xiaohua = await prisma.department.create({
-    data: { name: '消化内科', hospitalId: hospitals[0].id, parentId: h1_neike.id, sort: 2 },
+  const xiehe_waike = await prisma.department.create({
+    data: { name: '外科', hospitalId: xiehe.id, sort: 2 },
   });
-  const h1_shenjing = await prisma.department.create({
-    data: { name: '神经内科', hospitalId: hospitals[0].id, parentId: h1_neike.id, sort: 3 },
+  const xiehe_fuke = await prisma.department.create({
+    data: { name: '妇产科', hospitalId: xiehe.id, sort: 3 },
   });
-
-  // 二级科室 (外科下)
-  const h1_guke = await prisma.department.create({
-    data: { name: '骨科', hospitalId: hospitals[0].id, parentId: h1_waike.id, sort: 1 },
+  const xiehe_erke = await prisma.department.create({
+    data: { name: '儿科', hospitalId: xiehe.id, sort: 4 },
   });
-  const h1_puwaike = await prisma.department.create({
-    data: { name: '普外科', hospitalId: hospitals[0].id, parentId: h1_waike.id, sort: 2 },
+  const xiehe_yanke = await prisma.department.create({
+    data: { name: '眼科', hospitalId: xiehe.id, sort: 5 },
   });
 
-  // 科室 (医院2: 华山医院)
-  const h2_shenjingwaike = await prisma.department.create({
-    data: { name: '神经外科', hospitalId: hospitals[1].id, sort: 1, introduction: '华山医院神经外科是国家临床重点专科' },
-  });
-  const h2_pifu = await prisma.department.create({
-    data: { name: '皮肤科', hospitalId: hospitals[1].id, sort: 2 },
-  });
-  const h2_ganran = await prisma.department.create({
-    data: { name: '感染科', hospitalId: hospitals[1].id, sort: 3 },
-  });
-
-  // 科室 (医院3: 瑞金医院)
-  const h3_neifenmi = await prisma.department.create({
-    data: { name: '内分泌科', hospitalId: hospitals[2].id, sort: 1, introduction: '瑞金医院内分泌科是国内领先的专科' },
-  });
-  const h3_xueye = await prisma.department.create({
-    data: { name: '血液科', hospitalId: hospitals[2].id, sort: 2 },
-  });
-  const h3_zhongliu = await prisma.department.create({
-    data: { name: '肿瘤科', hospitalId: hospitals[2].id, sort: 3 },
-  });
-
-  console.log('✅ 科室创建完成');
-
-  // 5. 创建医生
+  // 内科子科室
   await Promise.all([
-    // 医院1 - 心血管内科
-    prisma.doctor.create({
-      data: {
-        name: '张明华',
-        gender: 'male',
-        hospitalId: hospitals[0].id,
-        departmentId: h1_xinxueguan.id,
-        title: 'chief',
-        level: 'expert',
-        specialties: ['冠心病', '心律失常', '心力衰竭', '高血压'],
-        introduction: '从事心血管内科临床工作30余年，在冠心病介入治疗、心律失常射频消融等方面有丰富经验。',
-        education: '上海交通大学医学院博士',
-        experience: '30年',
-        rating: 4.9,
-        consultCount: 1256,
-        reviewCount: 328,
-      },
-    }),
-    prisma.doctor.create({
-      data: {
-        name: '王丽娟',
-        gender: 'female',
-        hospitalId: hospitals[0].id,
-        departmentId: h1_xinxueguan.id,
-        title: 'associate_chief',
-        level: 'senior',
-        specialties: ['冠心病', '高血压', '心肌病'],
-        introduction: '擅长心血管疾病的诊治，尤其在高血压、冠心病等常见病多发病的诊治方面经验丰富。',
-        education: '复旦大学医学院硕士',
-        experience: '18年',
-        rating: 4.8,
-        consultCount: 892,
-        reviewCount: 156,
-      },
-    }),
-    // 医院1 - 消化内科
-    prisma.doctor.create({
-      data: {
-        name: '李秀英',
-        gender: 'female',
-        hospitalId: hospitals[0].id,
-        departmentId: h1_xiaohua.id,
-        title: 'chief',
-        level: 'expert',
-        specialties: ['胃炎', '消化性溃疡', '肝病', '胃肠镜'],
-        introduction: '擅长消化系统疾病的诊治，尤其在胃肠镜检查与治疗方面经验丰富。',
-        education: '同济大学医学院博士',
-        experience: '25年',
-        rating: 4.9,
-        consultCount: 1089,
-        reviewCount: 267,
-      },
-    }),
-    // 医院1 - 骨科
-    prisma.doctor.create({
-      data: {
-        name: '陈伟',
-        gender: 'male',
-        hospitalId: hospitals[0].id,
-        departmentId: h1_guke.id,
-        title: 'associate_chief',
-        level: 'senior',
-        specialties: ['骨折', '关节炎', '颈椎病', '腰椎间盘突出'],
-        introduction: '擅长骨科常见病、多发病的诊治，在关节置换、脊柱疾病方面有丰富经验。',
-        education: '第二军医大学硕士',
-        experience: '15年',
-        rating: 4.7,
-        consultCount: 756,
-        reviewCount: 134,
-      },
-    }),
-    // 医院2 - 神经外科
-    prisma.doctor.create({
-      data: {
-        name: '周建国',
-        gender: 'male',
-        hospitalId: hospitals[1].id,
-        departmentId: h2_shenjingwaike.id,
-        title: 'chief',
-        level: 'expert',
-        specialties: ['脑肿瘤', '脑血管病', '颅脑损伤', '功能神经外科'],
-        introduction: '华山医院神经外科主任医师，在脑肿瘤微创手术、脑血管病介入治疗方面造诣深厚。',
-        education: '上海医科大学博士',
-        experience: '28年',
-        rating: 5.0,
-        consultCount: 2156,
-        reviewCount: 512,
-      },
-    }),
-    // 医院2 - 皮肤科
-    prisma.doctor.create({
-      data: {
-        name: '林雅琴',
-        gender: 'female',
-        hospitalId: hospitals[1].id,
-        departmentId: h2_pifu.id,
-        title: 'associate_chief',
-        specialties: ['皮炎', '湿疹', '银屑病', '皮肤美容'],
-        introduction: '擅长各种皮肤病的诊治，尤其在皮炎、湿疹、银屑病等方面有独特见解。',
-        experience: '12年',
-        rating: 4.8,
-        consultCount: 623,
-        reviewCount: 89,
-      },
-    }),
-    // 医院3 - 内分泌科
-    prisma.doctor.create({
-      data: {
-        name: '赵国强',
-        gender: 'male',
-        hospitalId: hospitals[2].id,
-        departmentId: h3_neifenmi.id,
-        title: 'chief',
-        level: 'expert',
-        specialties: ['糖尿病', '甲状腺疾病', '肥胖症', '内分泌紊乱'],
-        introduction: '瑞金医院内分泌科主任医师，在糖尿病、甲状腺疾病等方面有深入研究，发表论文100余篇。',
-        education: '上海交通大学医学院博士后',
-        experience: '32年',
-        rating: 4.9,
-        consultCount: 3256,
-        reviewCount: 789,
-      },
-    }),
-    prisma.doctor.create({
-      data: {
-        name: '孙敏',
-        gender: 'female',
-        hospitalId: hospitals[2].id,
-        departmentId: h3_neifenmi.id,
-        title: 'attending',
-        specialties: ['糖尿病', '甲亢', '甲减'],
-        introduction: '擅长糖尿病及甲状腺疾病的诊治。',
-        experience: '8年',
-        rating: 4.6,
-        consultCount: 356,
-        reviewCount: 45,
-      },
-    }),
-    // 医院3 - 血液科
-    prisma.doctor.create({
-      data: {
-        name: '吴志远',
-        gender: 'male',
-        hospitalId: hospitals[2].id,
-        departmentId: h3_xueye.id,
-        title: 'chief',
-        level: 'expert',
-        specialties: ['白血病', '淋巴瘤', '贫血', '血小板减少'],
-        introduction: '瑞金医院血液科主任医师，在白血病诊治方面享有盛誉，主持多项国家级科研项目。',
-        education: '中国科学院博士',
-        experience: '26年',
-        rating: 4.9,
-        consultCount: 1567,
-        reviewCount: 423,
-      },
-    }),
+    prisma.department.create({ data: { name: '心内科', hospitalId: xiehe.id, parentId: xiehe_neike.id, sort: 1, introduction: '心血管疾病诊治中心，国内领先' } }),
+    prisma.department.create({ data: { name: '消化内科', hospitalId: xiehe.id, parentId: xiehe_neike.id, sort: 2, introduction: '消化系统疾病诊疗，胃肠镜检查' } }),
+    prisma.department.create({ data: { name: '呼吸内科', hospitalId: xiehe.id, parentId: xiehe_neike.id, sort: 3 } }),
+    prisma.department.create({ data: { name: '内分泌科', hospitalId: xiehe.id, parentId: xiehe_neike.id, sort: 4, introduction: '糖尿病、甲状腺疾病诊治' } }),
+    prisma.department.create({ data: { name: '肾内科', hospitalId: xiehe.id, parentId: xiehe_neike.id, sort: 5 } }),
+    prisma.department.create({ data: { name: '风湿免疫科', hospitalId: xiehe.id, parentId: xiehe_neike.id, sort: 6, introduction: '国内顶尖的风湿免疫疾病诊治中心' } }),
+    prisma.department.create({ data: { name: '血液内科', hospitalId: xiehe.id, parentId: xiehe_neike.id, sort: 7 } }),
+    prisma.department.create({ data: { name: '神经内科', hospitalId: xiehe.id, parentId: xiehe_neike.id, sort: 8 } }),
   ]);
-  console.log('✅ 医生创建完成');
 
-  // 6. 创建陪诊员
-  const escorts = await Promise.all([
-    prisma.escort.create({
-      data: {
-        name: '张护士',
-        gender: 'female',
-        phone: '13800000001',
-        level: 'senior',
-        experience: '5年',
-        introduction: '三甲医院护士出身，熟悉各大医院就诊流程，擅长与医生沟通。',
-        tags: JSON.stringify(['专业沟通', '耐心细致', '准时守约']),
-        certificates: JSON.stringify(['护士执业资格证', '健康管理师证']),
-        rating: 98.5,
-        orderCount: 568,
-      },
-    }),
-    prisma.escort.create({
-      data: {
-        name: '李护士',
-        gender: 'female',
-        phone: '13800000002',
-        level: 'intermediate',
-        experience: '3年',
-        introduction: '护理专业毕业，熟悉常见检查流程，服务态度好。',
-        tags: JSON.stringify(['服务热情', '沟通顺畅']),
-        certificates: JSON.stringify(['护士执业资格证']),
-        rating: 97.2,
-        orderCount: 423,
-      },
-    }),
-    prisma.escort.create({
-      data: {
-        name: '王师傅',
-        gender: 'male',
-        phone: '13800000003',
-        level: 'intermediate',
-        experience: '4年',
-        introduction: '从事陪诊工作4年，经验丰富，熟悉医保报销流程。',
-        tags: JSON.stringify(['经验丰富', '医保熟悉']),
-        rating: 96.8,
-        orderCount: 312,
-      },
-    }),
-  ]);
-  console.log('✅ 陪诊员创建完成');
-
-  // 7. 关联陪诊员和医院
+  // 外科子科室
   await Promise.all([
-    prisma.escortHospital.create({
-      data: {
-        escortId: escorts[0].id,
-        hospitalId: hospitals[0].id,
-        familiarDepts: JSON.stringify(['心血管内科', '消化内科']),
-      },
-    }),
-    prisma.escortHospital.create({
-      data: {
-        escortId: escorts[0].id,
-        hospitalId: hospitals[1].id,
-        familiarDepts: JSON.stringify(['神经外科', '皮肤科']),
-      },
-    }),
-    prisma.escortHospital.create({
-      data: {
-        escortId: escorts[1].id,
-        hospitalId: hospitals[2].id,
-        familiarDepts: JSON.stringify(['内分泌科']),
-      },
-    }),
-    prisma.escortHospital.create({
-      data: {
-        escortId: escorts[2].id,
-        hospitalId: hospitals[1].id,
-        familiarDepts: JSON.stringify(['感染科']),
-      },
-    }),
+    prisma.department.create({ data: { name: '普外科', hospitalId: xiehe.id, parentId: xiehe_waike.id, sort: 1 } }),
+    prisma.department.create({ data: { name: '骨科', hospitalId: xiehe.id, parentId: xiehe_waike.id, sort: 2 } }),
+    prisma.department.create({ data: { name: '泌尿外科', hospitalId: xiehe.id, parentId: xiehe_waike.id, sort: 3 } }),
+    prisma.department.create({ data: { name: '心外科', hospitalId: xiehe.id, parentId: xiehe_waike.id, sort: 4 } }),
+    prisma.department.create({ data: { name: '胸外科', hospitalId: xiehe.id, parentId: xiehe_waike.id, sort: 5 } }),
+    prisma.department.create({ data: { name: '神经外科', hospitalId: xiehe.id, parentId: xiehe_waike.id, sort: 6 } }),
   ]);
-  console.log('✅ 陪诊员-医院关联创建完成');
 
-  // 8. 创建轮播图
+  // 其他科室
+  await Promise.all([
+    prisma.department.create({ data: { name: '皮肤科', hospitalId: xiehe.id, sort: 6, introduction: '国内皮肤病诊治权威' } }),
+    prisma.department.create({ data: { name: '口腔科', hospitalId: xiehe.id, sort: 7 } }),
+    prisma.department.create({ data: { name: '耳鼻喉科', hospitalId: xiehe.id, sort: 8 } }),
+    prisma.department.create({ data: { name: '放射科', hospitalId: xiehe.id, sort: 9 } }),
+    prisma.department.create({ data: { name: '检验科', hospitalId: xiehe.id, sort: 10 } }),
+    prisma.department.create({ data: { name: '病理科', hospitalId: xiehe.id, sort: 11, introduction: '全国病理诊断中心' } }),
+  ]);
+
+  // 3.2 北京大学第一医院
+  const beiyiyuan = await prisma.hospital.create({
+    data: {
+      name: '北京大学第一医院',
+      level: '三甲',
+      type: '综合',
+      address: '北京市西城区西什库大街8号',
+      phone: '010-83572211',
+      latitude: 39.9289,
+      longitude: 116.3837,
+      introduction: '北京大学第一医院（简称"北大医院"）创建于1915年，是我国最早创办的国立医院，也是国内首批建立的临床医学院之一。',
+      trafficGuide: '地铁4号线西四站D口出，步行约500米',
+      parkingInfo: '医院设有停车场，建议提前到达',
+    },
+  });
+
+  const beiyiyuan_neike = await prisma.department.create({
+    data: { name: '内科', hospitalId: beiyiyuan.id, sort: 1 },
+  });
+  const beiyiyuan_waike = await prisma.department.create({
+    data: { name: '外科', hospitalId: beiyiyuan.id, sort: 2 },
+  });
+
+  await Promise.all([
+    prisma.department.create({ data: { name: '肾内科', hospitalId: beiyiyuan.id, parentId: beiyiyuan_neike.id, sort: 1, introduction: '全国肾脏病临床医学研究中心' } }),
+    prisma.department.create({ data: { name: '心内科', hospitalId: beiyiyuan.id, parentId: beiyiyuan_neike.id, sort: 2 } }),
+    prisma.department.create({ data: { name: '消化内科', hospitalId: beiyiyuan.id, parentId: beiyiyuan_neike.id, sort: 3 } }),
+    prisma.department.create({ data: { name: '呼吸内科', hospitalId: beiyiyuan.id, parentId: beiyiyuan_neike.id, sort: 4 } }),
+    prisma.department.create({ data: { name: '神经内科', hospitalId: beiyiyuan.id, parentId: beiyiyuan_neike.id, sort: 5 } }),
+    prisma.department.create({ data: { name: '泌尿外科', hospitalId: beiyiyuan.id, parentId: beiyiyuan_waike.id, sort: 1, introduction: '全国泌尿外科诊疗中心' } }),
+    prisma.department.create({ data: { name: '普外科', hospitalId: beiyiyuan.id, parentId: beiyiyuan_waike.id, sort: 2 } }),
+    prisma.department.create({ data: { name: '骨科', hospitalId: beiyiyuan.id, parentId: beiyiyuan_waike.id, sort: 3 } }),
+    prisma.department.create({ data: { name: '妇产科', hospitalId: beiyiyuan.id, sort: 3 } }),
+    prisma.department.create({ data: { name: '儿科', hospitalId: beiyiyuan.id, sort: 4 } }),
+    prisma.department.create({ data: { name: '皮肤科', hospitalId: beiyiyuan.id, sort: 5, introduction: '皮肤性病诊疗中心' } }),
+    prisma.department.create({ data: { name: '眼科', hospitalId: beiyiyuan.id, sort: 6 } }),
+  ]);
+
+  // 3.3 北京大学第三医院
+  const beisanyuan = await prisma.hospital.create({
+    data: {
+      name: '北京大学第三医院',
+      level: '三甲',
+      type: '综合',
+      address: '北京市海淀区花园北路49号',
+      phone: '010-82266699',
+      latitude: 39.9842,
+      longitude: 116.3567,
+      introduction: '北京大学第三医院（简称"北医三院"）始建于1958年，是国家卫生健康委委管的集医疗、教学、科研和预防保健为一体的现代化综合性三级甲等医院。生殖医学中心为国内辅助生殖技术的发源地。',
+      trafficGuide: '地铁10号线西土城站A口出，步行约600米',
+      parkingInfo: '医院周边停车位紧张，建议公共交通出行',
+    },
+  });
+
+  const beisanyuan_neike = await prisma.department.create({
+    data: { name: '内科', hospitalId: beisanyuan.id, sort: 1 },
+  });
+  const beisanyuan_waike = await prisma.department.create({
+    data: { name: '外科', hospitalId: beisanyuan.id, sort: 2 },
+  });
+
+  await Promise.all([
+    prisma.department.create({ data: { name: '心内科', hospitalId: beisanyuan.id, parentId: beisanyuan_neike.id, sort: 1 } }),
+    prisma.department.create({ data: { name: '消化内科', hospitalId: beisanyuan.id, parentId: beisanyuan_neike.id, sort: 2 } }),
+    prisma.department.create({ data: { name: '呼吸内科', hospitalId: beisanyuan.id, parentId: beisanyuan_neike.id, sort: 3 } }),
+    prisma.department.create({ data: { name: '神经内科', hospitalId: beisanyuan.id, parentId: beisanyuan_neike.id, sort: 4 } }),
+    prisma.department.create({ data: { name: '骨科', hospitalId: beisanyuan.id, parentId: beisanyuan_waike.id, sort: 1, introduction: '运动医学研究所所在地，骨科诊疗全国领先' } }),
+    prisma.department.create({ data: { name: '普外科', hospitalId: beisanyuan.id, parentId: beisanyuan_waike.id, sort: 2 } }),
+    prisma.department.create({ data: { name: '泌尿外科', hospitalId: beisanyuan.id, parentId: beisanyuan_waike.id, sort: 3 } }),
+    prisma.department.create({ data: { name: '生殖医学中心', hospitalId: beisanyuan.id, sort: 3, introduction: '中国大陆首例试管婴儿诞生地，国内辅助生殖技术发源地' } }),
+    prisma.department.create({ data: { name: '妇产科', hospitalId: beisanyuan.id, sort: 4 } }),
+    prisma.department.create({ data: { name: '眼科', hospitalId: beisanyuan.id, sort: 5, introduction: '眼科中心' } }),
+    prisma.department.create({ data: { name: '康复医学科', hospitalId: beisanyuan.id, sort: 6 } }),
+  ]);
+
+  // 3.4 北京天坛医院
+  const tiantan = await prisma.hospital.create({
+    data: {
+      name: '首都医科大学附属北京天坛医院',
+      level: '三甲',
+      type: '综合',
+      address: '北京市丰台区南四环西路119号',
+      phone: '010-59976611',
+      latitude: 39.8453,
+      longitude: 116.2889,
+      introduction: '北京天坛医院始建于1956年，是一所以神经外科为先导，以神经科学集群为特色的大型三级甲等综合医院。神经外科、神经内科在国内外享有盛誉。',
+      trafficGuide: '地铁8号线天桥站或14号线西铁营站',
+      parkingInfo: '医院设有大型停车场',
+    },
+  });
+
+  const tiantan_neike = await prisma.department.create({
+    data: { name: '内科', hospitalId: tiantan.id, sort: 1 },
+  });
+  const tiantan_waike = await prisma.department.create({
+    data: { name: '外科', hospitalId: tiantan.id, sort: 2 },
+  });
+
+  await Promise.all([
+    prisma.department.create({ data: { name: '神经内科', hospitalId: tiantan.id, parentId: tiantan_neike.id, sort: 1, introduction: '国家神经系统疾病临床医学研究中心' } }),
+    prisma.department.create({ data: { name: '心内科', hospitalId: tiantan.id, parentId: tiantan_neike.id, sort: 2 } }),
+    prisma.department.create({ data: { name: '消化内科', hospitalId: tiantan.id, parentId: tiantan_neike.id, sort: 3 } }),
+    prisma.department.create({ data: { name: '呼吸内科', hospitalId: tiantan.id, parentId: tiantan_neike.id, sort: 4 } }),
+    prisma.department.create({ data: { name: '神经外科', hospitalId: tiantan.id, parentId: tiantan_waike.id, sort: 1, introduction: '亚洲最大的神经外科诊疗中心，世界著名' } }),
+    prisma.department.create({ data: { name: '脊柱脊髓外科', hospitalId: tiantan.id, parentId: tiantan_waike.id, sort: 2 } }),
+    prisma.department.create({ data: { name: '普外科', hospitalId: tiantan.id, parentId: tiantan_waike.id, sort: 3 } }),
+    prisma.department.create({ data: { name: '介入神经病学科', hospitalId: tiantan.id, sort: 3, introduction: '神经介入诊疗中心' } }),
+    prisma.department.create({ data: { name: '癫痫科', hospitalId: tiantan.id, sort: 4 } }),
+    prisma.department.create({ data: { name: '功能神经外科', hospitalId: tiantan.id, sort: 5 } }),
+  ]);
+
+  // 3.5 中国人民解放军总医院(301医院)
+  const h301 = await prisma.hospital.create({
+    data: {
+      name: '中国人民解放军总医院',
+      level: '三甲',
+      type: '综合',
+      address: '北京市海淀区复兴路28号',
+      phone: '010-66887329',
+      latitude: 39.9074,
+      longitude: 116.2949,
+      introduction: '中国人民解放军总医院（301医院）创建于1953年，是集医疗、保健、教学、科研于一体的大型现代化综合性医院。',
+      trafficGuide: '地铁1号线五棵松站A口出',
+      parkingInfo: '院内设有停车场，凭就诊卡可享受停车优惠',
+    },
+  });
+
+  const h301_neike = await prisma.department.create({
+    data: { name: '内科', hospitalId: h301.id, sort: 1 },
+  });
+  const h301_waike = await prisma.department.create({
+    data: { name: '外科', hospitalId: h301.id, sort: 2 },
+  });
+
+  await Promise.all([
+    prisma.department.create({ data: { name: '心内科', hospitalId: h301.id, parentId: h301_neike.id, sort: 1 } }),
+    prisma.department.create({ data: { name: '消化内科', hospitalId: h301.id, parentId: h301_neike.id, sort: 2 } }),
+    prisma.department.create({ data: { name: '呼吸内科', hospitalId: h301.id, parentId: h301_neike.id, sort: 3 } }),
+    prisma.department.create({ data: { name: '肾内科', hospitalId: h301.id, parentId: h301_neike.id, sort: 4 } }),
+    prisma.department.create({ data: { name: '神经内科', hospitalId: h301.id, parentId: h301_neike.id, sort: 5 } }),
+    prisma.department.create({ data: { name: '骨科', hospitalId: h301.id, parentId: h301_waike.id, sort: 1, introduction: '全军骨科研究所' } }),
+    prisma.department.create({ data: { name: '普外科', hospitalId: h301.id, parentId: h301_waike.id, sort: 2 } }),
+    prisma.department.create({ data: { name: '泌尿外科', hospitalId: h301.id, parentId: h301_waike.id, sort: 3 } }),
+    prisma.department.create({ data: { name: '心外科', hospitalId: h301.id, parentId: h301_waike.id, sort: 4 } }),
+    prisma.department.create({ data: { name: '神经外科', hospitalId: h301.id, parentId: h301_waike.id, sort: 5 } }),
+    prisma.department.create({ data: { name: '耳鼻喉科', hospitalId: h301.id, sort: 3, introduction: '全军耳鼻咽喉头颈外科中心' } }),
+    prisma.department.create({ data: { name: '眼科', hospitalId: h301.id, sort: 4 } }),
+    prisma.department.create({ data: { name: '口腔科', hospitalId: h301.id, sort: 5 } }),
+  ]);
+
+  // 3.6 北京阜外医院
+  const fuwai = await prisma.hospital.create({
+    data: {
+      name: '中国医学科学院阜外医院',
+      level: '三甲',
+      type: '专科',
+      address: '北京市西城区北礼士路167号',
+      phone: '010-88398866',
+      latitude: 39.9391,
+      longitude: 116.3513,
+      introduction: '阜外医院是国家心血管病中心所在地，是以诊治心血管疾病为主的三级甲等专科医院，心血管疾病诊治能力全国第一、世界领先。',
+      trafficGuide: '地铁2号线阜成门站B口出，步行约300米',
+      parkingInfo: '医院停车位有限，建议乘坐公共交通',
+    },
+  });
+
+  await Promise.all([
+    prisma.department.create({ data: { name: '心内科', hospitalId: fuwai.id, sort: 1, introduction: '国家心血管病中心，心内科诊疗世界领先' } }),
+    prisma.department.create({ data: { name: '心外科', hospitalId: fuwai.id, sort: 2, introduction: '心脏外科手术量全国第一' } }),
+    prisma.department.create({ data: { name: '心律失常中心', hospitalId: fuwai.id, sort: 3 } }),
+    prisma.department.create({ data: { name: '冠心病中心', hospitalId: fuwai.id, sort: 4 } }),
+    prisma.department.create({ data: { name: '结构性心脏病中心', hospitalId: fuwai.id, sort: 5 } }),
+    prisma.department.create({ data: { name: '高血压诊治中心', hospitalId: fuwai.id, sort: 6 } }),
+    prisma.department.create({ data: { name: '心力衰竭中心', hospitalId: fuwai.id, sort: 7 } }),
+    prisma.department.create({ data: { name: '血管外科', hospitalId: fuwai.id, sort: 8 } }),
+    prisma.department.create({ data: { name: '心脏重症监护中心', hospitalId: fuwai.id, sort: 9 } }),
+  ]);
+
+  // 3.7 北京积水潭医院
+  const jishuitan = await prisma.hospital.create({
+    data: {
+      name: '北京积水潭医院',
+      level: '三甲',
+      type: '综合',
+      address: '北京市西城区新街口东街31号',
+      phone: '010-58516688',
+      latitude: 39.9439,
+      longitude: 116.3774,
+      introduction: '北京积水潭医院是以骨科、烧伤科为重点学科的三级甲等综合医院，骨科诊疗综合实力全国领先。',
+      trafficGuide: '地铁2号线积水潭站A口出',
+      parkingInfo: '医院停车场位于南门',
+    },
+  });
+
+  const jishuitan_guke = await prisma.department.create({
+    data: { name: '骨科', hospitalId: jishuitan.id, sort: 1, introduction: '全国骨科诊疗中心，运动医学、创伤骨科全国领先' },
+  });
+
+  await Promise.all([
+    prisma.department.create({ data: { name: '创伤骨科', hospitalId: jishuitan.id, parentId: jishuitan_guke.id, sort: 1, introduction: '创伤骨科全国领先' } }),
+    prisma.department.create({ data: { name: '脊柱外科', hospitalId: jishuitan.id, parentId: jishuitan_guke.id, sort: 2 } }),
+    prisma.department.create({ data: { name: '矫形骨科', hospitalId: jishuitan.id, parentId: jishuitan_guke.id, sort: 3 } }),
+    prisma.department.create({ data: { name: '手外科', hospitalId: jishuitan.id, parentId: jishuitan_guke.id, sort: 4, introduction: '手外科诊疗中心' } }),
+    prisma.department.create({ data: { name: '足踝外科', hospitalId: jishuitan.id, parentId: jishuitan_guke.id, sort: 5 } }),
+    prisma.department.create({ data: { name: '关节外科', hospitalId: jishuitan.id, parentId: jishuitan_guke.id, sort: 6 } }),
+    prisma.department.create({ data: { name: '运动医学科', hospitalId: jishuitan.id, parentId: jishuitan_guke.id, sort: 7, introduction: '国家运动医学中心' } }),
+    prisma.department.create({ data: { name: '烧伤科', hospitalId: jishuitan.id, sort: 2, introduction: '全国烧伤诊疗中心' } }),
+    prisma.department.create({ data: { name: '内科', hospitalId: jishuitan.id, sort: 3 } }),
+    prisma.department.create({ data: { name: '康复科', hospitalId: jishuitan.id, sort: 4 } }),
+  ]);
+
+  // 3.8 北京同仁医院
+  const tongren = await prisma.hospital.create({
+    data: {
+      name: '首都医科大学附属北京同仁医院',
+      level: '三甲',
+      type: '综合',
+      address: '北京市东城区东交民巷1号',
+      phone: '010-58269911',
+      latitude: 39.9072,
+      longitude: 116.4090,
+      introduction: '北京同仁医院始建于1886年，是一所以眼科、耳鼻咽喉科和心血管疾病诊疗为重点的大型综合性三甲医院。眼科、耳鼻喉科在国内外享有盛誉。',
+      trafficGuide: '地铁2号线崇文门站C口出，步行约500米',
+      parkingInfo: '医院周边停车位紧张',
+    },
+  });
+
+  await Promise.all([
+    prisma.department.create({ data: { name: '眼科', hospitalId: tongren.id, sort: 1, introduction: '全国眼科诊疗中心，北京眼科研究所所在地' } }),
+    prisma.department.create({ data: { name: '耳鼻咽喉头颈外科', hospitalId: tongren.id, sort: 2, introduction: '全国耳鼻咽喉诊疗中心' } }),
+    prisma.department.create({ data: { name: '心内科', hospitalId: tongren.id, sort: 3 } }),
+    prisma.department.create({ data: { name: '消化内科', hospitalId: tongren.id, sort: 4 } }),
+    prisma.department.create({ data: { name: '内分泌科', hospitalId: tongren.id, sort: 5, introduction: '糖尿病诊疗中心' } }),
+    prisma.department.create({ data: { name: '普外科', hospitalId: tongren.id, sort: 6 } }),
+    prisma.department.create({ data: { name: '骨科', hospitalId: tongren.id, sort: 7 } }),
+    prisma.department.create({ data: { name: '妇产科', hospitalId: tongren.id, sort: 8 } }),
+  ]);
+
+  // 3.9 北京安贞医院
+  const anzhen = await prisma.hospital.create({
+    data: {
+      name: '首都医科大学附属北京安贞医院',
+      level: '三甲',
+      type: '综合',
+      address: '北京市朝阳区安贞路2号',
+      phone: '010-64456611',
+      latitude: 39.9716,
+      longitude: 116.4052,
+      introduction: '北京安贞医院是以治疗心肺血管疾病为重点的三级甲等综合医院，心脏外科、心内科、血管外科在国内处于领先地位。',
+      trafficGuide: '地铁10号线安贞门站B口出',
+      parkingInfo: '医院设有地下停车场',
+    },
+  });
+
+  await Promise.all([
+    prisma.department.create({ data: { name: '心内科', hospitalId: anzhen.id, sort: 1, introduction: '心血管疾病诊治中心' } }),
+    prisma.department.create({ data: { name: '心外科', hospitalId: anzhen.id, sort: 2, introduction: '心脏手术量全国领先' } }),
+    prisma.department.create({ data: { name: '血管外科', hospitalId: anzhen.id, sort: 3 } }),
+    prisma.department.create({ data: { name: '呼吸内科', hospitalId: anzhen.id, sort: 4 } }),
+    prisma.department.create({ data: { name: '胸外科', hospitalId: anzhen.id, sort: 5 } }),
+    prisma.department.create({ data: { name: '消化内科', hospitalId: anzhen.id, sort: 6 } }),
+    prisma.department.create({ data: { name: '神经内科', hospitalId: anzhen.id, sort: 7 } }),
+    prisma.department.create({ data: { name: '妇产科', hospitalId: anzhen.id, sort: 8 } }),
+  ]);
+
+  // 3.10 北京宣武医院
+  const xuanwu = await prisma.hospital.create({
+    data: {
+      name: '首都医科大学宣武医院',
+      level: '三甲',
+      type: '综合',
+      address: '北京市西城区长椿街45号',
+      phone: '010-83198899',
+      latitude: 39.8936,
+      longitude: 116.3647,
+      introduction: '宣武医院是以神经科学和老年医学为重点的三级甲等综合医院，神经内科、神经外科在国内处于领先地位。',
+      trafficGuide: '地铁2号线长椿街站A口出',
+      parkingInfo: '医院停车位有限',
+    },
+  });
+
+  const xuanwu_neike = await prisma.department.create({
+    data: { name: '内科', hospitalId: xuanwu.id, sort: 1 },
+  });
+  const xuanwu_waike = await prisma.department.create({
+    data: { name: '外科', hospitalId: xuanwu.id, sort: 2 },
+  });
+
+  await Promise.all([
+    prisma.department.create({ data: { name: '神经内科', hospitalId: xuanwu.id, parentId: xuanwu_neike.id, sort: 1, introduction: '国家老年疾病临床医学研究中心' } }),
+    prisma.department.create({ data: { name: '心内科', hospitalId: xuanwu.id, parentId: xuanwu_neike.id, sort: 2 } }),
+    prisma.department.create({ data: { name: '消化内科', hospitalId: xuanwu.id, parentId: xuanwu_neike.id, sort: 3 } }),
+    prisma.department.create({ data: { name: '呼吸内科', hospitalId: xuanwu.id, parentId: xuanwu_neike.id, sort: 4 } }),
+    prisma.department.create({ data: { name: '神经外科', hospitalId: xuanwu.id, parentId: xuanwu_waike.id, sort: 1, introduction: '功能神经外科中心' } }),
+    prisma.department.create({ data: { name: '普外科', hospitalId: xuanwu.id, parentId: xuanwu_waike.id, sort: 2 } }),
+    prisma.department.create({ data: { name: '骨科', hospitalId: xuanwu.id, parentId: xuanwu_waike.id, sort: 3 } }),
+    prisma.department.create({ data: { name: '康复医学科', hospitalId: xuanwu.id, sort: 3, introduction: '神经康复中心' } }),
+    prisma.department.create({ data: { name: '老年医学科', hospitalId: xuanwu.id, sort: 4 } }),
+    prisma.department.create({ data: { name: '血管超声诊断科', hospitalId: xuanwu.id, sort: 5 } }),
+  ]);
+
+  console.log('✅ 医院和科室创建完成');
+
+  // 4. 创建轮播图
   await Promise.all([
     prisma.banner.create({
       data: {
-        title: '专业陪诊服务',
+        title: '科科灵专业陪诊服务',
         image: '/images/banner1.png',
         sort: 1,
       },
     }),
     prisma.banner.create({
       data: {
-        title: '新用户专享优惠',
+        title: '新用户首单立减',
         image: '/images/banner2.png',
         sort: 2,
       },
@@ -452,16 +490,12 @@ async function main() {
   // 统计
   const hospitalCount = await prisma.hospital.count();
   const departmentCount = await prisma.department.count();
-  const doctorCount = await prisma.doctor.count();
-  const escortCount = await prisma.escort.count();
   
   console.log('\n📊 数据统计:');
-  console.log(`   医院: ${hospitalCount} 个`);
+  console.log(`   医院: ${hospitalCount} 家`);
   console.log(`   科室: ${departmentCount} 个`);
-  console.log(`   医生: ${doctorCount} 位`);
-  console.log(`   陪诊员: ${escortCount} 位`);
 
-  console.log('\n🎉 测试数据添加完成！');
+  console.log('\n🎉 真实数据添加完成！');
 }
 
 main()
