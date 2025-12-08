@@ -269,57 +269,7 @@ export const escortApi = {
     }),
 }
 
-// ============================================
-// 服务 API
-// ============================================
-
-export interface Service {
-  id: string
-  name: string
-  description: string
-  categoryId: string
-  price: number
-  originalPrice: number | null
-  unit: string
-  duration: string | null
-  coverImage: string | null
-  detailImages: string | null
-  features: string | null
-  process: string | null
-  notice: string | null
-  isHot: boolean
-  isNew: boolean
-  sortOrder: number
-  status: string
-  createdAt: string
-  updatedAt: string
-  category?: {
-    id: string
-    name: string
-  }
-}
-
-export interface ServiceCategory {
-  id: string
-  name: string
-  icon: string | null
-  description: string | null
-  sortOrder: number
-  status: string
-}
-
-export const serviceApi = {
-  getCategories: () =>
-    request<ServiceCategory[]>('/services/categories'),
-
-  getList: (query: { categoryId?: string; page?: number; pageSize?: number } = {}) =>
-    request<PaginatedData<Service>>('/services', {
-      params: query,
-    }),
-
-  getById: (id: string) =>
-    request<Service>(`/services/${id}`),
-}
+// 服务 API - 在文件末尾定义
 
 // ============================================
 // 医院 API
@@ -614,6 +564,206 @@ export const departmentTemplateApi = {
   delete: (id: string) =>
     request<void>(`/department-templates/${id}`, {
       method: 'DELETE',
+    }),
+}
+
+// ============================================
+// 服务分类 API
+// ============================================
+
+export interface ServiceCategory {
+  id: string
+  name: string
+  icon: string | null
+  description: string | null
+  sort: number
+  status: string
+  serviceCount?: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ServiceCategoryQuery {
+  keyword?: string
+  status?: string
+  page?: number
+  pageSize?: number
+}
+
+export interface CreateServiceCategoryData {
+  name: string
+  icon?: string
+  description?: string
+  sort?: number
+}
+
+export interface UpdateServiceCategoryData extends Partial<CreateServiceCategoryData> {
+  status?: string
+}
+
+export const serviceCategoryApi = {
+  // 获取分类列表 (分页)
+  getList: (query: ServiceCategoryQuery = {}) =>
+    request<PaginatedData<ServiceCategory>>('/service-categories', {
+      params: query as Record<string, string | number | boolean | undefined>,
+    }),
+
+  // 获取所有启用的分类 (下拉选择用)
+  getActive: () =>
+    request<ServiceCategory[]>('/service-categories/active'),
+
+  // 获取分类详情
+  getById: (id: string) =>
+    request<ServiceCategory>(`/service-categories/${id}`),
+
+  // 创建分类
+  create: (data: CreateServiceCategoryData) =>
+    request<ServiceCategory>('/service-categories', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // 更新分类
+  update: (id: string, data: UpdateServiceCategoryData) =>
+    request<ServiceCategory>(`/service-categories/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // 删除分类
+  delete: (id: string) =>
+    request<void>(`/service-categories/${id}`, {
+      method: 'DELETE',
+    }),
+
+  // 批量更新排序
+  updateSort: (items: { id: string; sort: number }[]) =>
+    request<{ success: boolean }>('/service-categories/batch/sort', {
+      method: 'PUT',
+      body: JSON.stringify(items),
+    }),
+}
+
+// ============================================
+// 服务管理 API
+// ============================================
+
+export interface ServiceIncludeItem {
+  text: string
+  icon?: string
+}
+
+export interface ServiceNoteItem {
+  title: string
+  content: string
+}
+
+export interface Service {
+  id: string
+  categoryId: string
+  name: string
+  description: string | null
+  price: number
+  originalPrice: number | null
+  unit: string
+  duration: string | null
+  coverImage: string | null
+  detailImages: string[]
+  serviceIncludes: ServiceIncludeItem[] | null
+  serviceNotes: ServiceNoteItem[] | null
+  minQuantity: number
+  maxQuantity: number
+  needPatient: boolean
+  needHospital: boolean
+  needDepartment: boolean
+  needDoctor: boolean
+  needAppointment: boolean
+  orderCount: number
+  rating: number
+  tags: string[]
+  sort: number
+  status: string
+  createdAt: string
+  updatedAt: string
+  category?: ServiceCategory
+}
+
+export interface ServiceQuery {
+  categoryId?: string
+  keyword?: string
+  status?: string
+  page?: number
+  pageSize?: number
+}
+
+export interface CreateServiceData {
+  name: string
+  categoryId: string
+  description?: string
+  price: number
+  originalPrice?: number
+  unit?: string
+  duration?: string
+  coverImage?: string
+  detailImages?: string[]
+  serviceIncludes?: ServiceIncludeItem[]
+  serviceNotes?: ServiceNoteItem[]
+  minQuantity?: number
+  maxQuantity?: number
+  needPatient?: boolean
+  needHospital?: boolean
+  needDepartment?: boolean
+  needDoctor?: boolean
+  needAppointment?: boolean
+  tags?: string[]
+  sort?: number
+  status?: string
+}
+
+export interface UpdateServiceData extends Partial<CreateServiceData> {}
+
+export const serviceApi = {
+  // 获取服务列表 (分页)
+  getList: (query: ServiceQuery = {}) =>
+    request<PaginatedData<Service>>('/services', {
+      params: query as Record<string, string | number | boolean | undefined>,
+    }),
+
+  // 获取服务详情
+  getById: (id: string) =>
+    request<Service>(`/services/${id}`),
+
+  // 获取热门服务
+  getHot: (limit = 6) =>
+    request<Service[]>('/services/hot', {
+      params: { limit },
+    }),
+
+  // 创建服务
+  create: (data: CreateServiceData) =>
+    request<Service>('/services', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // 更新服务
+  update: (id: string, data: UpdateServiceData) =>
+    request<Service>(`/services/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // 删除服务
+  delete: (id: string) =>
+    request<void>(`/services/${id}`, {
+      method: 'DELETE',
+    }),
+
+  // 批量更新状态
+  batchUpdateStatus: (ids: string[], status: 'active' | 'inactive' | 'draft') =>
+    request<{ success: boolean; count: number }>('/services/batch/status', {
+      method: 'PUT',
+      body: JSON.stringify({ ids, status }),
     }),
 }
 

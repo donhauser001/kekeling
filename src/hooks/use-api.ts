@@ -8,6 +8,7 @@ import {
   dashboardApi,
   orderApi,
   escortApi,
+  serviceCategoryApi,
   serviceApi,
   hospitalApi,
   userApi,
@@ -17,6 +18,8 @@ import {
   type OrderQuery,
   type EscortQuery,
   type DoctorQuery,
+  type ServiceCategoryQuery,
+  type ServiceQuery,
 } from '@/lib/api'
 
 // ============================================
@@ -166,18 +169,72 @@ export function useDeleteEscort() {
 }
 
 // ============================================
-// 服务
+// 服务分类
 // ============================================
 
-export function useServiceCategories() {
+export function useServiceCategories(query: ServiceCategoryQuery = {}) {
   return useQuery({
-    queryKey: ['services', 'categories'],
-    queryFn: () => serviceApi.getCategories(),
+    queryKey: ['serviceCategories', query],
+    queryFn: () => serviceCategoryApi.getList(query),
     staleTime: 5 * 60 * 1000, // 5分钟
   })
 }
 
-export function useServices(query: Parameters<typeof serviceApi.getList>[0] = {}) {
+export function useActiveServiceCategories() {
+  return useQuery({
+    queryKey: ['serviceCategories', 'active'],
+    queryFn: () => serviceCategoryApi.getActive(),
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useServiceCategory(id: string) {
+  return useQuery({
+    queryKey: ['serviceCategories', id],
+    queryFn: () => serviceCategoryApi.getById(id),
+    enabled: !!id,
+  })
+}
+
+export function useCreateServiceCategory() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: serviceCategoryApi.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['serviceCategories'] })
+    },
+  })
+}
+
+export function useUpdateServiceCategory() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Parameters<typeof serviceCategoryApi.update>[1] }) =>
+      serviceCategoryApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['serviceCategories'] })
+    },
+  })
+}
+
+export function useDeleteServiceCategory() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: serviceCategoryApi.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['serviceCategories'] })
+    },
+  })
+}
+
+// ============================================
+// 服务管理
+// ============================================
+
+export function useServices(query: ServiceQuery = {}) {
   return useQuery({
     queryKey: ['services', query],
     queryFn: () => serviceApi.getList(query),
@@ -190,6 +247,42 @@ export function useService(id: string) {
     queryKey: ['services', id],
     queryFn: () => serviceApi.getById(id),
     enabled: !!id,
+  })
+}
+
+export function useCreateService() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: serviceApi.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['services'] })
+      queryClient.invalidateQueries({ queryKey: ['serviceCategories'] })
+    },
+  })
+}
+
+export function useUpdateService() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Parameters<typeof serviceApi.update>[1] }) =>
+      serviceApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['services'] })
+    },
+  })
+}
+
+export function useDeleteService() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: serviceApi.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['services'] })
+      queryClient.invalidateQueries({ queryKey: ['serviceCategories'] })
+    },
   })
 }
 
