@@ -6,6 +6,7 @@ import { UsersModule } from './modules/users/users.module';
 import { ServicesModule } from './modules/services/services.module';
 import { HospitalsModule } from './modules/hospitals/hospitals.module';
 import { DepartmentsModule } from './modules/departments/departments.module';
+import { DepartmentTemplatesModule } from './modules/department-templates/department-templates.module';
 import { DoctorsModule } from './modules/doctors/doctors.module';
 import { EscortsModule } from './modules/escorts/escorts.module';
 import { OrdersModule } from './modules/orders/orders.module';
@@ -26,6 +27,7 @@ import { PaymentModule } from './modules/payment/payment.module';
     ServicesModule,
     HospitalsModule,
     DepartmentsModule,
+    DepartmentTemplatesModule,
     DoctorsModule,
     EscortsModule,
     OrdersModule,

@@ -122,11 +122,40 @@ model Hospital {
 
 // ========== 科室模块 ==========
 
+// 科室库/类目字典 (不属于任何医院，是通用的科室定义)
+model DepartmentTemplate {
+  id           String   @id @default(uuid())
+  name         String   @unique                 // 科室名称 (唯一)
+  code         String?                          // 科室编码
+  category     String                           // 大类: 内科、外科、妇儿、五官、医技、其他
+  parentId     String?  @map("parent_id")       // 父科室ID (支持层级)
+  
+  description  String?                          // 科室描述
+  diseases     String?                          // 常见疾病 JSON
+  color        String?                          // 显示颜色
+  icon         String?                          // 图标
+  
+  sort         Int      @default(0)
+  status       String   @default("active")      // active, inactive
+  
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // 关联
+  parent       DepartmentTemplate?  @relation("SubTemplates", fields: [parentId], references: [id])
+  children     DepartmentTemplate[] @relation("SubTemplates")
+  departments  Department[]                     // 被哪些医院科室使用
+
+  @@map("department_templates")
+}
+
+// 医院科室 (属于某个医院，引用科室库)
 model Department {
   id           String   @id @default(uuid())
-  name         String
-  code         String?                          // 科室编码
   hospitalId   String   @map("hospital_id")
+  templateId   String?  @map("template_id")     // 关联科室库模板
+  
+  name         String                            // 科室名称 (可自定义，默认取模板名)
   parentId     String?  @map("parent_id")       // 父科室ID (支持层级)
   
   introduction String?                          // 科室简介
@@ -140,9 +169,10 @@ model Department {
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   // 关联
-  hospital     Hospital     @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
-  parent       Department?  @relation("SubDepartments", fields: [parentId], references: [id])
-  children     Department[] @relation("SubDepartments")
+  hospital     Hospital             @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  template     DepartmentTemplate?  @relation(fields: [templateId], references: [id])
+  parent       Department?          @relation("SubDepartments", fields: [parentId], references: [id])
+  children     Department[]         @relation("SubDepartments")
   doctors      Doctor[]
   orders       Order[]
 

@@ -12,6 +12,7 @@ import {
   hospitalApi,
   userApi,
   homeApi,
+  departmentTemplateApi,
   type OrderQuery,
   type EscortQuery,
 } from '@/lib/api'
@@ -247,6 +248,76 @@ export function useHomeStats() {
     queryKey: ['home', 'stats'],
     queryFn: () => homeApi.getStats(),
     staleTime: 60 * 1000,
+  })
+}
+
+// ============================================
+// 科室库
+// ============================================
+
+export function useDepartmentTemplates(query: { category?: string; keyword?: string } = {}) {
+  return useQuery({
+    queryKey: ['department-templates', 'tree', query],
+    queryFn: () => departmentTemplateApi.getTree(query),
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useDepartmentTemplatesList(query: Parameters<typeof departmentTemplateApi.getList>[0] = {}) {
+  return useQuery({
+    queryKey: ['department-templates', 'list', query],
+    queryFn: () => departmentTemplateApi.getList(query),
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useDepartmentCategories() {
+  return useQuery({
+    queryKey: ['department-templates', 'categories'],
+    queryFn: () => departmentTemplateApi.getCategories(),
+    staleTime: 10 * 60 * 1000,
+  })
+}
+
+export function useDepartmentTemplate(id: string) {
+  return useQuery({
+    queryKey: ['department-templates', id],
+    queryFn: () => departmentTemplateApi.getById(id),
+    enabled: !!id,
+  })
+}
+
+export function useCreateDepartmentTemplate() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: departmentTemplateApi.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['department-templates'] })
+    },
+  })
+}
+
+export function useUpdateDepartmentTemplate() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Parameters<typeof departmentTemplateApi.update>[1] }) =>
+      departmentTemplateApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['department-templates'] })
+    },
+  })
+}
+
+export function useDeleteDepartmentTemplate() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: departmentTemplateApi.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['department-templates'] })
+    },
   })
 }
 

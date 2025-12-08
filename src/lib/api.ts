@@ -408,3 +408,72 @@ export const homeApi = {
     request<HomeStats>('/home/stats'),
 }
 
+// ============================================
+// 科室库 API
+// ============================================
+
+export interface DepartmentTemplate {
+  id: string
+  name: string
+  code: string | null
+  category: string
+  parentId: string | null
+  description: string | null
+  diseases: string[]
+  color: string | null
+  icon: string | null
+  sort: number
+  status: string
+  createdAt: string
+  updatedAt: string
+  parent?: DepartmentTemplate
+  children?: DepartmentTemplate[]
+}
+
+export interface DepartmentCategory {
+  name: string
+  count: number
+}
+
+export const departmentTemplateApi = {
+  // 获取科室库 (树形)
+  getTree: (query: { category?: string; keyword?: string } = {}) =>
+    request<DepartmentTemplate[]>('/department-templates', {
+      params: query,
+    }),
+
+  // 获取科室库 (平铺分页)
+  getList: (query: { category?: string; keyword?: string; page?: number; pageSize?: number } = {}) =>
+    request<PaginatedData<DepartmentTemplate>>('/department-templates/flat', {
+      params: query,
+    }),
+
+  // 获取所有分类
+  getCategories: () =>
+    request<DepartmentCategory[]>('/department-templates/categories'),
+
+  // 获取详情
+  getById: (id: string) =>
+    request<DepartmentTemplate>(`/department-templates/${id}`),
+
+  // 创建
+  create: (data: Partial<DepartmentTemplate>) =>
+    request<DepartmentTemplate>('/department-templates', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // 更新
+  update: (id: string, data: Partial<DepartmentTemplate>) =>
+    request<DepartmentTemplate>(`/department-templates/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // 删除
+  delete: (id: string) =>
+    request<void>(`/department-templates/${id}`, {
+      method: 'DELETE',
+    }),
+}
+

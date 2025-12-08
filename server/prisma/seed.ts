@@ -2,6 +2,182 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+// 科室库数据 (科室类目字典)
+async function createDepartmentTemplates() {
+  const templates: Array<{
+    name: string;
+    category: string;
+    description: string;
+    diseases?: string[];
+    color: string;
+    children?: Array<{
+      name: string;
+      description: string;
+      diseases?: string[];
+      color: string;
+    }>;
+  }> = [
+    {
+      name: '内科',
+      category: '内科',
+      description: '诊治内脏疾病',
+      color: 'bg-blue-500',
+      children: [
+        { name: '心内科', description: '心血管系统疾病诊治', diseases: ['冠心病', '心律失常', '高血压', '心肌病', '心力衰竭'], color: 'bg-red-500' },
+        { name: '神经内科', description: '神经系统疾病诊治', diseases: ['脑血管病', '帕金森病', '癫痫', '头痛', '眩晕'], color: 'bg-purple-500' },
+        { name: '消化内科', description: '消化系统疾病诊治', diseases: ['胃炎', '肝病', '消化性溃疡', '消化道出血', '胃肠道肿瘤'], color: 'bg-amber-500' },
+        { name: '呼吸内科', description: '呼吸系统疾病诊治', diseases: ['肺炎', '哮喘', '慢阻肺', '肺癌', '支气管炎'], color: 'bg-cyan-500' },
+        { name: '内分泌科', description: '内分泌及代谢疾病诊治', diseases: ['糖尿病', '甲状腺疾病', '骨质疏松', '高脂血症', '肥胖症'], color: 'bg-teal-500' },
+        { name: '肾内科', description: '肾脏疾病诊治', diseases: ['肾炎', '肾衰竭', '尿毒症', '肾结石', '肾病综合征'], color: 'bg-indigo-500' },
+        { name: '血液内科', description: '血液系统疾病诊治', diseases: ['贫血', '白血病', '淋巴瘤', '血小板疾病', '骨髓瘤'], color: 'bg-rose-500' },
+        { name: '风湿免疫科', description: '风湿免疫系统疾病诊治', diseases: ['类风湿关节炎', '红斑狼疮', '痛风', '强直性脊柱炎', '干燥综合征'], color: 'bg-violet-500' },
+        { name: '感染科', description: '感染性疾病诊治', diseases: ['肝炎', '艾滋病', '结核病', '流感', '发热待查'], color: 'bg-orange-500' },
+        { name: '老年病科', description: '老年综合疾病诊治', diseases: ['老年痴呆', '老年综合征', '跌倒预防', '衰弱综合征'], color: 'bg-gray-500' },
+      ],
+    },
+    {
+      name: '外科',
+      category: '外科',
+      description: '手术治疗为主',
+      color: 'bg-red-500',
+      children: [
+        { name: '普外科', description: '腹部外科疾病诊治', diseases: ['阑尾炎', '胆囊炎', '疝气', '甲状腺结节', '乳腺疾病'], color: 'bg-red-500' },
+        { name: '骨科', description: '骨骼和关节疾病诊治', diseases: ['骨折', '关节炎', '颈椎病', '腰椎间盘突出', '运动损伤'], color: 'bg-orange-500' },
+        { name: '神经外科', description: '神经系统外科疾病诊治', diseases: ['脑肿瘤', '脑出血', '脑外伤', '脊髓疾病', '神经血管病'], color: 'bg-purple-500' },
+        { name: '心胸外科', description: '心脏和胸腔疾病诊治', diseases: ['冠心病手术', '心脏瓣膜病', '肺癌', '食管癌', '先心病'], color: 'bg-rose-500' },
+        { name: '泌尿外科', description: '泌尿系统疾病诊治', diseases: ['肾结石', '前列腺疾病', '泌尿系肿瘤', '尿路感染', '膀胱疾病'], color: 'bg-blue-500' },
+        { name: '肝胆外科', description: '肝胆胰疾病诊治', diseases: ['肝癌', '胆结石', '胰腺炎', '肝硬化', '胆管癌'], color: 'bg-amber-500' },
+        { name: '胃肠外科', description: '胃肠道外科疾病诊治', diseases: ['胃癌', '结直肠癌', '肠梗阻', '胃穿孔', '肠息肉'], color: 'bg-green-500' },
+        { name: '血管外科', description: '血管疾病诊治', diseases: ['下肢静脉曲张', '动脉硬化', '血栓', '动脉瘤', '血管畸形'], color: 'bg-cyan-500' },
+        { name: '整形外科', description: '整形美容手术', diseases: ['烧伤整形', '瘢痕修复', '先天畸形', '皮肤肿瘤'], color: 'bg-pink-500' },
+        { name: '烧伤科', description: '烧伤及创面修复', diseases: ['烧伤', '烫伤', '电击伤', '化学烧伤', '冻伤'], color: 'bg-orange-600' },
+      ],
+    },
+    {
+      name: '妇儿',
+      category: '妇儿',
+      description: '妇女儿童疾病',
+      color: 'bg-pink-500',
+      children: [
+        { name: '妇科', description: '妇科疾病诊治', diseases: ['妇科炎症', '子宫肌瘤', '卵巢囊肿', '宫颈疾病', '月经失调'], color: 'bg-pink-500' },
+        { name: '产科', description: '孕产期保健及分娩', diseases: ['产前检查', '高危妊娠', '分娩', '产后护理', '妊娠并发症'], color: 'bg-rose-500' },
+        { name: '儿科', description: '儿童疾病诊治', diseases: ['发热', '肺炎', '腹泻', '儿童保健', '生长发育'], color: 'bg-sky-500' },
+        { name: '新生儿科', description: '新生儿疾病诊治', diseases: ['新生儿黄疸', '早产儿', '新生儿肺炎', '新生儿窒息'], color: 'bg-blue-400' },
+        { name: '小儿外科', description: '小儿外科疾病诊治', diseases: ['小儿疝气', '先天畸形', '小儿肿瘤', '小儿骨科'], color: 'bg-cyan-500' },
+        { name: '生殖医学科', description: '不孕不育诊治', diseases: ['不孕症', '试管婴儿', '人工授精', '复发性流产'], color: 'bg-purple-500' },
+      ],
+    },
+    {
+      name: '五官',
+      category: '五官',
+      description: '五官疾病诊治',
+      color: 'bg-purple-500',
+      children: [
+        { name: '眼科', description: '眼部疾病诊治', diseases: ['白内障', '青光眼', '近视', '眼底病', '斜视弱视'], color: 'bg-emerald-500' },
+        { name: '耳鼻喉科', description: '耳鼻喉疾病诊治', diseases: ['鼻炎', '中耳炎', '咽喉炎', '听力障碍', '鼻窦炎'], color: 'bg-teal-500' },
+        { name: '口腔科', description: '口腔疾病诊治', diseases: ['龋齿', '牙周病', '口腔黏膜病', '正畸', '种植牙'], color: 'bg-amber-500' },
+        { name: '口腔颌面外科', description: '口腔颌面外科疾病', diseases: ['颌面肿瘤', '颌面畸形', '颌骨骨折', '唇腭裂'], color: 'bg-orange-500' },
+      ],
+    },
+    {
+      name: '皮肤性病',
+      category: '其他',
+      description: '皮肤疾病诊治',
+      color: 'bg-yellow-500',
+      children: [
+        { name: '皮肤科', description: '皮肤疾病诊治', diseases: ['湿疹', '荨麻疹', '痤疮', '银屑病', '皮肤过敏'], color: 'bg-yellow-500' },
+        { name: '性病科', description: '性传播疾病诊治', diseases: ['梅毒', '淋病', '尖锐湿疣', '生殖器疱疹'], color: 'bg-red-400' },
+      ],
+    },
+    {
+      name: '医技',
+      category: '医技',
+      description: '医疗技术科室',
+      color: 'bg-green-500',
+      children: [
+        { name: '放射科', description: '影像检查诊断', diseases: ['CT检查', 'MRI检查', 'X光检查', '造影检查'], color: 'bg-indigo-500' },
+        { name: '超声科', description: '超声影像检查', diseases: ['腹部超声', '心脏超声', '妇科超声', '血管超声'], color: 'bg-blue-500' },
+        { name: '检验科', description: '临床检验', diseases: ['血液检查', '生化检查', '免疫检查', '微生物检查'], color: 'bg-violet-500' },
+        { name: '病理科', description: '病理诊断', diseases: ['活检', '细胞学检查', '免疫组化', '分子病理'], color: 'bg-purple-500' },
+        { name: '核医学科', description: '核医学检查治疗', diseases: ['PET-CT', '甲状腺扫描', '骨扫描', '核素治疗'], color: 'bg-cyan-500' },
+      ],
+    },
+    {
+      name: '中医',
+      category: '其他',
+      description: '中医诊疗',
+      color: 'bg-emerald-500',
+      children: [
+        { name: '中医内科', description: '中医内科诊治', diseases: ['脾胃病', '心脑血管', '呼吸系统', '亚健康调理'], color: 'bg-emerald-500' },
+        { name: '中医外科', description: '中医外科诊治', diseases: ['疮疡', '痔疮', '乳腺疾病', '周围血管病'], color: 'bg-teal-500' },
+        { name: '针灸科', description: '针灸治疗', diseases: ['颈椎病', '腰腿痛', '面瘫', '失眠', '中风后遗症'], color: 'bg-green-500' },
+        { name: '推拿科', description: '推拿按摩治疗', diseases: ['颈椎病', '腰椎病', '肩周炎', '运动损伤'], color: 'bg-lime-500' },
+        { name: '中医骨伤科', description: '中医骨伤诊治', diseases: ['骨折', '脱位', '筋伤', '骨病'], color: 'bg-amber-500' },
+      ],
+    },
+    {
+      name: '其他',
+      category: '其他',
+      description: '其他专科',
+      color: 'bg-gray-500',
+      children: [
+        { name: '急诊科', description: '急危重症救治', diseases: ['心脏骤停', '严重创伤', '中毒', '急性疼痛', '高热'], color: 'bg-red-600' },
+        { name: '重症医学科', description: 'ICU危重症救治', diseases: ['呼吸衰竭', '多器官功能衰竭', '感染性休克', '重症监护'], color: 'bg-red-500' },
+        { name: '康复医学科', description: '康复治疗', diseases: ['脑卒中康复', '骨折康复', '脊髓损伤', '神经康复'], color: 'bg-green-500' },
+        { name: '疼痛科', description: '疼痛诊治', diseases: ['颈肩腰腿痛', '神经痛', '癌痛', '头痛'], color: 'bg-orange-500' },
+        { name: '精神科', description: '精神心理疾病诊治', diseases: ['抑郁症', '焦虑症', '精神分裂症', '失眠', '心理咨询'], color: 'bg-purple-500' },
+        { name: '全科医学科', description: '综合诊疗', diseases: ['健康体检', '慢病管理', '家庭医学', '健康咨询'], color: 'bg-blue-500' },
+        { name: '营养科', description: '营养评估与指导', diseases: ['营养不良', '肥胖', '糖尿病饮食', '肾病饮食'], color: 'bg-lime-500' },
+        { name: '体检中心', description: '健康体检', diseases: ['年度体检', '入职体检', '专项筛查', 'VIP体检'], color: 'bg-sky-500' },
+      ],
+    },
+  ];
+
+  const createdTemplates: Record<string, string> = {};
+  let totalCount = 0;
+  let parentCount = 0;
+  let childCount = 0;
+
+  for (const template of templates) {
+    // 创建一级科室
+    const parent = await prisma.departmentTemplate.create({
+      data: {
+        name: template.name,
+        category: template.category,
+        description: template.description,
+        diseases: template.diseases ? JSON.stringify(template.diseases) : null,
+        color: template.color,
+        sort: templates.indexOf(template),
+      },
+    });
+    createdTemplates[template.name] = parent.id;
+    parentCount++;
+    totalCount++;
+
+    // 创建二级科室
+    if (template.children) {
+      for (const child of template.children) {
+        await prisma.departmentTemplate.create({
+          data: {
+            name: child.name,
+            category: template.category,
+            parentId: parent.id,
+            description: child.description,
+            diseases: child.diseases ? JSON.stringify(child.diseases) : null,
+            color: child.color,
+            sort: template.children.indexOf(child),
+          },
+        });
+        childCount++;
+        totalCount++;
+      }
+    }
+  }
+
+  console.log(`   科室库: ${totalCount} 个 (一级: ${parentCount}, 二级: ${childCount})`);
+  return createdTemplates;
+}
+
 async function main() {
   console.log('🌱 开始添加真实数据...');
 
@@ -15,7 +191,12 @@ async function main() {
   await prisma.service.deleteMany();
   await prisma.serviceCategory.deleteMany();
   await prisma.banner.deleteMany();
+  await prisma.departmentTemplate.deleteMany();
   console.log('✅ 清理旧数据完成');
+
+  // 0. 创建科室库 (科室类目字典)
+  const deptTemplates = await createDepartmentTemplates();
+  console.log('✅ 科室库创建完成');
 
   // 1. 创建服务分类
   const categories = await Promise.all([
@@ -676,9 +857,14 @@ async function main() {
   const topLevelDepts = await prisma.department.count({ where: { parentId: null } });
   const subDepts = await prisma.department.count({ where: { NOT: { parentId: null } } });
   
+  const templateCount = await prisma.departmentTemplate.count();
+  const topLevelTemplates = await prisma.departmentTemplate.count({ where: { parentId: null } });
+  const subTemplates = await prisma.departmentTemplate.count({ where: { NOT: { parentId: null } } });
+  
   console.log('\n📊 数据统计:');
+  console.log(`   科室库: ${templateCount} 个 (一级: ${topLevelTemplates}, 二级: ${subTemplates})`);
   console.log(`   医院: ${hospitalCount} 家`);
-  console.log(`   科室: ${departmentCount} 个`);
+  console.log(`   医院科室: ${departmentCount} 个`);
   console.log(`   - 一级科室: ${topLevelDepts} 个`);
   console.log(`   - 二级科室: ${subDepts} 个`);
 
