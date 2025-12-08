@@ -32,17 +32,17 @@ model User {
 
 // 就诊人
 model Patient {
-  id          String   @id @default(uuid())
-  userId      String   @map("user_id")
+  id          String    @id @default(uuid())
+  userId      String    @map("user_id")
   name        String
-  gender      String   // male, female
-  age         Int
+  gender      String    // male, female
+  birthday    DateTime? // ✅ 修正：存生日而非年龄，前端动态计算年龄
   phone       String
-  idCard      String?  @map("id_card")
-  relation    String   // 本人、父亲、母亲、子女、其他
-  isDefault   Boolean  @default(false) @map("is_default")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  idCard      String?   @map("id_card")
+  relation    String    // 本人、父亲、母亲、子女、其他
+  isDefault   Boolean   @default(false) @map("is_default")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
 
   user        User     @relation(fields: [userId], references: [id])
   orders      Order[]
@@ -96,7 +96,7 @@ model Service {
   needAppointment  Boolean   @default(true) @map("need_appointment")
   
   orderCount       Int       @default(0) @map("order_count")
-  rating           Decimal   @default(98.0) @db.Decimal(4, 1) // ✅ 评分: 0-100 百分制
+  rating           Float     @default(5.0)    // ✅ 修正：统一5分制评分
   tags             String[]  @default([])     // ✅ 标签数组
   sort             Int       @default(0)
   status           String    @default("active") // active, inactive, draft
@@ -253,7 +253,7 @@ model Escort {
   level          String    // senior, intermediate, junior, trainee
   experience     String?   // 从业年限
   introduction   String?   // 个人简介
-  tags           String?   // JSON: ["耐心细致", "经验丰富"]
+  tags           String[]  @default([])  // ✅ 修正：改为原生数组，支持 { has: 'xxx' } 查询
   certificates   String?   // JSON: [{name, url, expireDate}]
 
   // 统计数据
@@ -266,6 +266,7 @@ model Escort {
 
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")  // ✅ 新增：软删除支持
 
   // 关联
   user           User?     @relation(fields: [userId], references: [id])

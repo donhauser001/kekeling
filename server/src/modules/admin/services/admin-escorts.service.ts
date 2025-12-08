@@ -40,7 +40,7 @@ export interface AssociateHospitalDto {
 
 @Injectable()
 export class AdminEscortsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   // ============================================
   // 查询方法
@@ -60,7 +60,9 @@ export class AdminEscortsService {
   }) {
     const { status, workStatus, level, cityCode, keyword, page = 1, pageSize = 10 } = params;
 
-    const where: any = {};
+    const where: any = {
+      deletedAt: null,  // ✅ 过滤已软删除的记录
+    };
     if (status) where.status = status;
     if (workStatus) where.workStatus = workStatus;
     if (level) where.level = level;
@@ -91,10 +93,10 @@ export class AdminEscortsService {
       this.prisma.escort.count({ where }),
     ]);
 
-    // 转换数据格式，解析 JSON 字段
+    // 转换数据格式
     const formattedData = data.map((escort) => ({
       ...escort,
-      tags: escort.tags ? JSON.parse(escort.tags) : [],
+      tags: escort.tags || [],  // ✅ tags 现在是原生数组，无需 JSON.parse
       certificates: escort.certificates ? JSON.parse(escort.certificates) : [],
       hospitals: escort.hospitals.map((eh) => ({
         id: eh.hospital.id,
@@ -110,8 +112,8 @@ export class AdminEscortsService {
    * 获取陪诊员详情
    */
   async findById(id: string) {
-    const escort = await this.prisma.escort.findUnique({
-      where: { id },
+    const escort = await this.prisma.escort.findFirst({
+      where: { id, deletedAt: null },  // ✅ 过滤已软删除的记录
       include: {
         hospitals: {
           include: { hospital: { select: { id: true, name: true, address: true } } },
@@ -131,7 +133,7 @@ export class AdminEscortsService {
 
     return {
       ...escort,
-      tags: escort.tags ? JSON.parse(escort.tags) : [],
+      tags: escort.tags || [],  // ✅ tags 现在是原生数组
       certificates: escort.certificates ? JSON.parse(escort.certificates) : [],
       hospitals: escort.hospitals.map((eh) => ({
         ...eh.hospital,
@@ -148,6 +150,7 @@ export class AdminEscortsService {
     const { hospitalId, cityCode } = params;
 
     const where: any = {
+      deletedAt: null,  // ✅ 过滤已软删除的记录
       status: 'active',
       workStatus: 'working', // 只返回正在接单的陪诊员
     };
@@ -174,7 +177,7 @@ export class AdminEscortsService {
 
     return data.map((escort) => ({
       ...escort,
-      tags: escort.tags ? JSON.parse(escort.tags) : [],
+      tags: escort.tags || [],  // ✅ tags 现在是原生数组
       hospitals: escort.hospitals.map((eh) => ({
         id: eh.hospital.id,
         name: eh.hospital.name,
@@ -206,7 +209,7 @@ export class AdminEscortsService {
     const escort = await this.prisma.escort.create({
       data: {
         ...data,
-        tags: tags ? JSON.stringify(tags) : null,
+        tags: tags || [],  // ✅ tags 现在是原生数组
         certificates: certificates ? JSON.stringify(certificates) : null,
         status: 'pending', // 新建默认待审核
         workStatus: 'resting',
@@ -253,7 +256,7 @@ export class AdminEscortsService {
 
     const updateData: any = { ...data };
     if (tags !== undefined) {
-      updateData.tags = tags ? JSON.stringify(tags) : null;
+      updateData.tags = tags || [];  // ✅ tags 现在是原生数组
     }
     if (certificates !== undefined) {
       updateData.certificates = certificates ? JSON.stringify(certificates) : null;
@@ -268,17 +271,13 @@ export class AdminEscortsService {
   }
 
   /**
-   * 删除陪诊员
+   * 删除陪诊员 (软删除)
+   * ✅ 改为软删除：设置 deletedAt，保留历史订单关联
    */
   async delete(id: string) {
     // 检查是否存在
     const escort = await this.prisma.escort.findUnique({
-      where: { id },
-      include: {
-        _count: {
-          select: { orders: true },
-        },
-      },
+      where: { id, deletedAt: null },
     });
 
     if (!escort) {
@@ -299,14 +298,13 @@ export class AdminEscortsService {
       );
     }
 
-    // 删除医院关联
-    await this.prisma.escortHospital.deleteMany({
-      where: { escortId: id },
-    });
-
-    // 删除陪诊员
-    await this.prisma.escort.delete({
+    // ✅ 软删除：设置 deletedAt 时间戳
+    await this.prisma.escort.update({
       where: { id },
+      data: {
+        deletedAt: new Date(),
+        status: 'inactive',
+      },
     });
 
     return { success: true };
@@ -447,12 +445,13 @@ export class AdminEscortsService {
    * 获取陪诊员统计数据
    */
   async getStats() {
+    // ✅ 过滤已软删除的记录
     const [total, active, working, busy, pending] = await Promise.all([
-      this.prisma.escort.count(),
-      this.prisma.escort.count({ where: { status: 'active' } }),
-      this.prisma.escort.count({ where: { status: 'active', workStatus: 'working' } }),
-      this.prisma.escort.count({ where: { status: 'active', workStatus: 'busy' } }),
-      this.prisma.escort.count({ where: { status: 'pending' } }),
+      this.prisma.escort.count({ where: { deletedAt: null } }),
+      this.prisma.escort.count({ where: { deletedAt: null, status: 'active' } }),
+      this.prisma.escort.count({ where: { deletedAt: null, status: 'active', workStatus: 'working' } }),
+      this.prisma.escort.count({ where: { deletedAt: null, status: 'active', workStatus: 'busy' } }),
+      this.prisma.escort.count({ where: { deletedAt: null, status: 'pending' } }),
     ]);
 
     return {
