@@ -139,14 +139,16 @@
 }
 
 .pinned-icon {
-  width: 48px;
-  height: 48px;
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.2);
   border-radius: 12px;
-  margin-bottom: 12px;
 }
 
 .pinned-name {
@@ -155,6 +157,7 @@
   font-weight: 600;
   color: #fff;
   margin-bottom: 8px;
+  padding-right: 56px; // 避免与右上角图标重叠
 }
 
 .pinned-desc {
