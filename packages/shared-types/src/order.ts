@@ -1,8 +1,59 @@
 import { z } from 'zod'
 import { timestampsSchema, contactInfoSchema, locationSchema } from './common'
 
+// ============================================
+// 订单状态常量
+// ============================================
+
 /**
- * 订单状态
+ * 订单状态枚举对象 - 用于代码中引用，避免魔法字符串
+ */
+export const ORDER_STATUS = {
+  PENDING: 'pending',           // 待支付
+  PAID: 'paid',                 // 已支付，待确认
+  CONFIRMED: 'confirmed',       // 已确认，待服务
+  ASSIGNED: 'assigned',         // 已分配陪诊员
+  IN_PROGRESS: 'in_progress',   // 服务中
+  COMPLETED: 'completed',       // 已完成
+  CANCELLED: 'cancelled',       // 已取消
+  REFUNDING: 'refunding',       // 退款中
+  REFUNDED: 'refunded',         // 已退款
+} as const
+
+export type OrderStatusType = typeof ORDER_STATUS[keyof typeof ORDER_STATUS]
+
+/**
+ * 订单状态标签映射
+ */
+export const ORDER_STATUS_LABELS: Record<OrderStatusType, string> = {
+  pending: '待支付',
+  paid: '待接单',
+  confirmed: '已确认',
+  assigned: '已分配',
+  in_progress: '服务中',
+  completed: '已完成',
+  cancelled: '已取消',
+  refunding: '退款中',
+  refunded: '已退款',
+}
+
+/**
+ * 订单状态颜色映射 (Tailwind CSS classes)
+ */
+export const ORDER_STATUS_COLORS: Record<OrderStatusType, string> = {
+  pending: 'text-yellow-600 bg-yellow-50 border-yellow-200',
+  paid: 'text-blue-600 bg-blue-50 border-blue-200',
+  confirmed: 'text-purple-600 bg-purple-50 border-purple-200',
+  assigned: 'text-indigo-600 bg-indigo-50 border-indigo-200',
+  in_progress: 'text-cyan-600 bg-cyan-50 border-cyan-200',
+  completed: 'text-green-600 bg-green-50 border-green-200',
+  cancelled: 'text-gray-600 bg-gray-50 border-gray-200',
+  refunding: 'text-orange-600 bg-orange-50 border-orange-200',
+  refunded: 'text-red-600 bg-red-50 border-red-200',
+}
+
+/**
+ * 订单状态 Zod Schema
  */
 export const orderStatusSchema = z.enum([
   'pending',      // 待支付
@@ -45,7 +96,7 @@ export const orderServiceItemSchema = z.object({
   serviceId: z.string(),
   serviceName: z.string(),
   serviceCategory: z.string(),
-  price: z.number(),
+  price: z.coerce.number(), // ✅ 处理 Decimal 可能返回的字符串
   quantity: z.number().default(1),
   unit: z.string(), // 次、天、小时
 })
@@ -92,14 +143,14 @@ export const orderSchema = z.object({
   escortName: z.string().nullable(),
   escortPhone: z.string().nullable(),
   
-  // 订单金额
-  totalAmount: z.number(),         // 订单总额
-  discountAmount: z.number().default(0), // 优惠金额
-  paidAmount: z.number(),          // 实付金额
+  // 订单金额 (使用 coerce 处理 Decimal 返回的字符串)
+  totalAmount: z.coerce.number(),         // 订单总额
+  discountAmount: z.coerce.number().default(0), // 优惠金额
+  paidAmount: z.coerce.number(),          // 实付金额
   
   // 优惠券
   couponId: z.string().optional(),
-  couponAmount: z.number().optional(),
+  couponAmount: z.coerce.number().optional(),
   
   // 支付信息
   paymentMethod: paymentMethodSchema.optional(),
@@ -122,7 +173,7 @@ export const orderSchema = z.object({
   // 取消/退款
   cancelReason: z.string().optional(),
   cancelTime: z.string().datetime().optional(),
-  refundAmount: z.number().optional(),
+  refundAmount: z.coerce.number().optional(),
   refundTime: z.string().datetime().optional(),
 }).merge(timestampsSchema)
 

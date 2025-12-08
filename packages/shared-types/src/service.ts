@@ -25,9 +25,9 @@ export const serviceSchema = z.object({
   description: z.string(),
   detailContent: z.string().optional(), // 富文本详情
   
-  // 价格相关
-  price: z.number(),              // 基础价格
-  originalPrice: z.number().optional(), // 原价（划线价）
+  // 价格相关 (使用 coerce 处理 Decimal 返回的字符串)
+  price: z.coerce.number(),              // 基础价格
+  originalPrice: z.coerce.number().optional(), // 原价（划线价）
   unit: z.string(),               // 计价单位：次、天、小时
   
   // 服务属性
@@ -42,7 +42,7 @@ export const serviceSchema = z.object({
   
   // 统计
   orderCount: z.number().default(0),   // 订单数
-  rating: z.number().default(100),     // 满意度 %
+  rating: z.coerce.number().default(100),     // 满意度 % (也可能是 Decimal)
   
   // 状态
   status: statusSchema,
@@ -75,18 +75,18 @@ export const pricingPolicySchema = z.object({
   name: z.string(),
   serviceId: z.string(),
   
-  // 价格规则
-  basePrice: z.number(),
+  // 价格规则 (使用 coerce 处理 Decimal)
+  basePrice: z.coerce.number(),
   // 时段加价
-  peakTimeExtra: z.number().optional(),  // 高峰时段加价
-  nightExtra: z.number().optional(),     // 夜间加价
-  holidayExtra: z.number().optional(),   // 节假日加价
+  peakTimeExtra: z.coerce.number().optional(),  // 高峰时段加价
+  nightExtra: z.coerce.number().optional(),     // 夜间加价
+  holidayExtra: z.coerce.number().optional(),   // 节假日加价
   
   // 距离加价（针对跑腿服务）
   distanceRules: z.array(z.object({
     minKm: z.number(),
     maxKm: z.number(),
-    price: z.number(),
+    price: z.coerce.number(),
   })).optional(),
   
   status: statusSchema,
