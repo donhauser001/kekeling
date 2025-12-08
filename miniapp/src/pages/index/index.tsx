@@ -200,15 +200,22 @@ export default function Index() {
                   <View 
                     key={category.id}
                     className='pinned-card'
-                    style={{ background: category.color || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
                     onClick={() => Taro.navigateTo({ url: `/pages/services/index?categoryId=${category.id}` })}
                   >
-                    <View className='pinned-icon'>
-                      <Icon name={getCategoryIcon(category)} size={28} color='#fff' />
+                    <View 
+                      className='pinned-icon'
+                      style={{ background: `${category.color || '#1890ff'}20` }}
+                    >
+                      <Icon name={getCategoryIcon(category)} size={28} color={category.color || '#1890ff'} />
                     </View>
                     <View className='pinned-header'>
-                      <Text className='pinned-name'>{category.name}</Text>
-                      <Text className='pinned-count'>{category.serviceCount || category.services?.length || 0}项</Text>
+                      <Text className='pinned-name' style={{ color: category.color || '#1890ff' }}>{category.name}</Text>
+                      <Text 
+                        className='pinned-count'
+                        style={{ color: category.color || '#1890ff', background: `${category.color || '#1890ff'}15` }}
+                      >
+                        {category.serviceCount || category.services?.length || 0}项
+                      </Text>
                     </View>
                     <Text className='pinned-desc'>{category.description || ''}</Text>
                   </View>
