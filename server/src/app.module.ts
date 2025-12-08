@@ -17,6 +17,7 @@ import { UploadModule } from './modules/upload/upload.module';
 import { HomeModule } from './modules/home/home.module';
 import { PaymentModule } from './modules/payment/payment.module';
 import { SystemConfigModule } from './modules/config/config.module';
+import { TestModule } from './modules/test/test.module'; // ⚠️ 仅开发环境，生产环境请注释
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { SystemConfigModule } from './modules/config/config.module';
     HomeModule,
     PaymentModule,
     SystemConfigModule,
+    TestModule, // ⚠️ 仅开发环境，生产环境请注释
   ],
 })
 export class AppModule {}

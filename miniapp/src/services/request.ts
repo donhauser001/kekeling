@@ -4,19 +4,30 @@
  */
 import Taro from '@tarojs/taro'
 
+// 当前环境
+const isH5 = process.env.TARO_ENV === 'h5'
+const isDev = process.env.NODE_ENV === 'development'
+
 // 环境配置
 const ENV_CONFIG = {
-  // 开发环境：本地后端（开启"不校验合法域名"）
-  development: 'http://localhost:3000/api',
+  // 开发环境：本地后端
+  development: isH5 
+    ? '/api'  // H5 使用代理，避免跨域
+    : 'http://localhost:3000/api', // 小程序直连（需开启"不校验合法域名"）
   // 生产环境：线上后端（备案后替换）
   production: 'https://api.yourdomain.com/api',
 }
 
 // 获取 BASE_URL
 const getBaseUrl = () => {
-  // 可以根据小程序的环境变量或编译参数切换
   const env = process.env.NODE_ENV || 'development'
-  return ENV_CONFIG[env] || ENV_CONFIG.development
+  const baseUrl = ENV_CONFIG[env] || ENV_CONFIG.development
+  
+  if (isDev) {
+    console.log(`🔗 [Request] BASE_URL: ${baseUrl} (ENV: ${env}, H5: ${isH5})`)
+  }
+  
+  return baseUrl
 }
 
 const BASE_URL = getBaseUrl()
