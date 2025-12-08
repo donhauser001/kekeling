@@ -757,48 +757,74 @@ async function main() {
   // 4. 创建服务分类和服务
   console.log('\n📦 正在创建服务分类和服务...');
 
-  // 服务分类
+  // 服务分类 - 匹配后台配置
+  // isPinned: 置顶分类（最多2个席位，显示为左右并列大卡片）
+  // color: 主题颜色（支持渐变色，格式：linear-gradient(135deg, #color1 0%, #color2 100%)）
   const serviceCategories = await Promise.all([
+    // 置顶分类 1 - 陪诊服务（紫色渐变）
     prisma.serviceCategory.create({
       data: {
         name: '陪诊服务',
-        icon: 'hospital',
-        description: '专业陪诊师全程陪同就医',
+        icon: 'stethoscope',
+        color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        description: '医院陪诊相关服务，包括门诊、住院、检查等全程陪同',
+        isPinned: true,
         sort: 1,
         status: 'active',
       },
     }),
+    // 置顶分类 2 - 跑腿服务（粉红渐变）
     prisma.serviceCategory.create({
       data: {
-        name: '代办服务',
-        icon: 'file-text',
-        description: '代办挂号、取药、拿报告等',
+        name: '跑腿服务',
+        icon: 'truck',
+        color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+        description: '医疗相关跑腿代办，药品代购、病历代办等',
+        isPinned: true,
         sort: 2,
         status: 'active',
       },
     }),
+    // 非置顶分类 - 诊断服务（绿色）
     prisma.serviceCategory.create({
       data: {
-        name: '陪护服务',
-        icon: 'heart',
-        description: '住院陪护、术后照护',
+        name: '诊断服务',
+        icon: 'message-square',
+        color: '#10b981',
+        description: '在线诊断咨询服务，提供专业医疗咨询',
+        isPinned: false,
         sort: 3,
         status: 'active',
       },
     }),
+    // 非置顶分类 - 酒店服务（蓝色）
     prisma.serviceCategory.create({
       data: {
-        name: '其他服务',
-        icon: 'more-horizontal',
-        description: '其他医疗相关服务',
+        name: '酒店服务',
+        icon: 'building',
+        color: '#3b82f6',
+        description: '医院周边住宿服务，方便就医住宿',
+        isPinned: false,
         sort: 4,
+        status: 'active',
+      },
+    }),
+    // 非置顶分类 - 特色服务（橙色）
+    prisma.serviceCategory.create({
+      data: {
+        name: '特色服务',
+        icon: 'sparkles',
+        color: '#f97316',
+        description: '特色增值服务，满足个性化需求',
+        isPinned: false,
+        sort: 5,
         status: 'active',
       },
     }),
   ]);
 
   // 获取分类ID
-  const [peizhen, daiban, peihu] = serviceCategories;
+  const [peizhen, zhenduan, paotui, jiudian, tese] = serviceCategories;
 
   // 创建服务
   await Promise.all([
@@ -863,75 +889,272 @@ async function main() {
       },
     }),
 
-    // 代办服务
+    // 诊断服务 - 在线问诊
     prisma.service.create({
       data: {
-        categoryId: daiban.id,
-        name: '代办挂号',
-        description: '专业代挂各大医院号源，省去排队烦恼',
-        price: 99,
-        originalPrice: 129,
+        categoryId: zhenduan.id,
+        name: '在线问诊',
+        description: '专业医生在线解答健康问题',
+        price: 29,
+        originalPrice: 49,
         unit: '次',
         serviceIncludes: [
-          { text: '专人代为挂号', icon: 'check' },
-          { text: '挂号成功后通知', icon: 'check' },
-          { text: '提供就诊指引', icon: 'check' },
+          { text: '专业医生解答', icon: 'check' },
+          { text: '图文/语音咨询', icon: 'check' },
+          { text: '48小时内回复', icon: 'check' },
         ],
         serviceNotes: [
-          { title: '服务说明', content: '代挂普通号、专家号，具体号源情况以医院实际为准' },
-          { title: '费用说明', content: '服务费不含挂号费，挂号费需另行支付' },
+          { title: '服务说明', content: '在线问诊仅提供健康咨询，不能代替线下诊疗' },
         ],
-        needHospital: true,
-        needDepartment: true,
-        needDoctor: true,
-        needAppointment: true,
         sort: 1,
         status: 'active',
-        orderCount: 2156,
-        rating: 96.5,
+        orderCount: 3256,
+        rating: 96.8,
       },
     }),
     prisma.service.create({
       data: {
-        categoryId: daiban.id,
-        name: '代取报告',
-        description: '代取检查报告，快递到家',
-        price: 49,
+        categoryId: zhenduan.id,
+        name: '报告解读',
+        description: '专业医生帮您解读各类检查报告',
+        price: 39,
         unit: '次',
         serviceIncludes: [
-          { text: '代为领取报告', icon: 'check' },
-          { text: '拍照发送电子版', icon: 'check' },
-          { text: '可选快递到家', icon: 'check' },
+          { text: '专业医生解读', icon: 'check' },
+          { text: '文字详细说明', icon: 'check' },
+          { text: '后续建议指导', icon: 'check' },
         ],
         serviceNotes: [
-          { title: '服务说明', content: '需提供取报告所需的凭证信息' },
-          { title: '快递说明', content: '快递费用另计，默认顺丰到付' },
+          { title: '服务说明', content: '请上传清晰的报告照片，以便医生准确解读' },
         ],
-        needHospital: true,
-        needAppointment: true,
         sort: 2,
         status: 'active',
-        orderCount: 1023,
+        orderCount: 1892,
+        rating: 97.5,
+      },
+    }),
+    prisma.service.create({
+      data: {
+        categoryId: zhenduan.id,
+        name: '健康咨询',
+        description: '日常健康问题专业咨询',
+        price: 19,
+        unit: '次',
+        serviceIncludes: [
+          { text: '健康问题解答', icon: 'check' },
+          { text: '生活方式建议', icon: 'check' },
+        ],
+        serviceNotes: [
+          { title: '服务说明', content: '适合日常保健、饮食、运动等问题咨询' },
+        ],
+        sort: 3,
+        status: 'active',
+        orderCount: 2156,
+        rating: 95.2,
+      },
+    }),
+
+    // 跑腿服务 - 药品代购
+    prisma.service.create({
+      data: {
+        categoryId: paotui.id,
+        name: '药品代购',
+        description: '代购医院及药店药品，送药上门',
+        price: 39,
+        unit: '次',
+        serviceIncludes: [
+          { text: '凭处方代为购药', icon: 'check' },
+          { text: '核对药品信息', icon: 'check' },
+          { text: '送药上门', icon: 'check' },
+        ],
+        serviceNotes: [
+          { title: '服务说明', content: '处方药需提供有效处方，药费需自行承担' },
+        ],
+        needHospital: true,
+        sort: 1,
+        status: 'active',
+        orderCount: 1567,
         rating: 98.2,
       },
     }),
     prisma.service.create({
       data: {
-        categoryId: daiban.id,
-        name: '代办取药',
-        description: '凭处方代为取药，送药上门',
-        price: 69,
+        categoryId: paotui.id,
+        name: '病历代办',
+        description: '代办复印病历、办理出院手续等',
+        price: 49,
         unit: '次',
         serviceIncludes: [
-          { text: '凭处方代为取药', icon: 'check' },
-          { text: '核对药品清单', icon: 'check' },
-          { text: '送药上门服务', icon: 'check' },
+          { text: '代办病历复印', icon: 'check' },
+          { text: '代办出院手续', icon: 'check' },
+          { text: '资料整理归档', icon: 'check' },
         ],
         serviceNotes: [
-          { title: '服务说明', content: '需提供有效处方或病历，药费需自行承担' },
-          { title: '配送范围', content: '市区内免费配送，郊区另计' },
+          { title: '服务说明', content: '需提供患者授权和相关证件信息' },
         ],
         needHospital: true,
+        sort: 2,
+        status: 'active',
+        orderCount: 823,
+        rating: 97.8,
+      },
+    }),
+    prisma.service.create({
+      data: {
+        categoryId: paotui.id,
+        name: '预约代办',
+        description: '代办各类医院预约挂号',
+        price: 29,
+        unit: '次',
+        serviceIncludes: [
+          { text: '专人代为预约', icon: 'check' },
+          { text: '预约成功通知', icon: 'check' },
+          { text: '就诊指引', icon: 'check' },
+        ],
+        serviceNotes: [
+          { title: '服务说明', content: '代办普通号、专家号，具体号源以医院实际为准' },
+        ],
+        needHospital: true,
+        needDepartment: true,
+        sort: 3,
+        status: 'active',
+        orderCount: 2456,
+        rating: 96.5,
+      },
+    }),
+
+    // 酒店服务 - 医院酒店
+    prisma.service.create({
+      data: {
+        categoryId: jiudian.id,
+        name: '医院酒店',
+        description: '医院周边优选酒店预订',
+        price: 199,
+        originalPrice: 299,
+        unit: '晚',
+        serviceIncludes: [
+          { text: '优选医院周边酒店', icon: 'check' },
+          { text: '就医接送服务', icon: 'check' },
+          { text: '24小时管家服务', icon: 'check' },
+        ],
+        serviceNotes: [
+          { title: '服务说明', content: '提供医院周边500米内优选酒店' },
+        ],
+        needHospital: true,
+        needAppointment: true,
+        sort: 1,
+        status: 'active',
+        orderCount: 567,
+        rating: 98.5,
+      },
+    }),
+    prisma.service.create({
+      data: {
+        categoryId: jiudian.id,
+        name: '康养公寓',
+        description: '术后康养短租公寓',
+        price: 299,
+        unit: '晚',
+        serviceIncludes: [
+          { text: '独立康养公寓', icon: 'check' },
+          { text: '专业护理人员', icon: 'check' },
+          { text: '营养餐配送', icon: 'check' },
+        ],
+        serviceNotes: [
+          { title: '服务说明', content: '适合术后康复期患者及家属' },
+        ],
+        needAppointment: true,
+        sort: 2,
+        status: 'active',
+        orderCount: 234,
+        rating: 99.2,
+      },
+    }),
+    prisma.service.create({
+      data: {
+        categoryId: jiudian.id,
+        name: '家属住宿',
+        description: '陪护家属经济住宿',
+        price: 99,
+        unit: '晚',
+        serviceIncludes: [
+          { text: '经济舒适住宿', icon: 'check' },
+          { text: '步行可达医院', icon: 'check' },
+          { text: '行李寄存', icon: 'check' },
+        ],
+        serviceNotes: [
+          { title: '服务说明', content: '经济型住宿，适合陪护家属' },
+        ],
+        needHospital: true,
+        needAppointment: true,
+        sort: 3,
+        status: 'active',
+        orderCount: 892,
+        rating: 96.8,
+      },
+    }),
+
+    // 特色服务 - 医疗翻译
+    prisma.service.create({
+      data: {
+        categoryId: tese.id,
+        name: '医疗翻译',
+        description: '专业医疗翻译陪同就医',
+        price: 499,
+        unit: '次',
+        serviceIncludes: [
+          { text: '专业医疗翻译', icon: 'check' },
+          { text: '全程陪同就医', icon: 'check' },
+          { text: '病历翻译服务', icon: 'check' },
+        ],
+        serviceNotes: [
+          { title: '服务说明', content: '支持英语、日语、韩语等主要语种' },
+        ],
+        needHospital: true,
+        needAppointment: true,
+        sort: 1,
+        status: 'active',
+        orderCount: 156,
+        rating: 99.5,
+      },
+    }),
+    prisma.service.create({
+      data: {
+        categoryId: tese.id,
+        name: '心理疏导',
+        description: '专业心理咨询师疏导服务',
+        price: 199,
+        unit: '次',
+        serviceIncludes: [
+          { text: '专业心理咨询', icon: 'check' },
+          { text: '情绪疏导', icon: 'check' },
+          { text: '私密保护', icon: 'check' },
+        ],
+        serviceNotes: [
+          { title: '服务说明', content: '适合就医焦虑、术前紧张等情况' },
+        ],
+        needAppointment: true,
+        sort: 2,
+        status: 'active',
+        orderCount: 423,
+        rating: 98.8,
+      },
+    }),
+    prisma.service.create({
+      data: {
+        categoryId: tese.id,
+        name: '营养指导',
+        description: '专业营养师膳食指导',
+        price: 99,
+        unit: '次',
+        serviceIncludes: [
+          { text: '专业营养评估', icon: 'check' },
+          { text: '个性化食谱', icon: 'check' },
+          { text: '饮食建议指导', icon: 'check' },
+        ],
+        serviceNotes: [
+          { title: '服务说明', content: '适合术后康复、慢病管理等人群' },
+        ],
         sort: 3,
         status: 'active',
         orderCount: 567,
@@ -939,64 +1162,83 @@ async function main() {
       },
     }),
 
-    // 陪护服务
+    // 陪诊服务 - 门诊陪诊（新增）
     prisma.service.create({
       data: {
-        categoryId: peihu.id,
+        categoryId: peizhen.id,
+        name: '门诊陪诊',
+        description: '门诊就医全程陪同服务',
+        price: 199,
+        originalPrice: 249,
+        unit: '次',
+        duration: '3-4小时',
+        serviceIncludes: [
+          { text: '门诊全程陪同', icon: 'check' },
+          { text: '协助挂号取号', icon: 'check' },
+          { text: '引导就诊流程', icon: 'check' },
+        ],
+        serviceNotes: [
+          { title: '服务说明', content: '适合门诊复诊、专家门诊等场景' },
+        ],
+        needPatient: true,
+        needHospital: true,
+        needDepartment: true,
+        needAppointment: true,
+        sort: 3,
+        status: 'active',
+        orderCount: 1567,
+        rating: 98.2,
+      },
+    }),
+    prisma.service.create({
+      data: {
+        categoryId: peizhen.id,
         name: '住院陪护',
-        description: '24小时专业住院陪护，让家属更安心',
+        description: '住院期间全程陪护服务',
         price: 399,
         unit: '天',
         serviceIncludes: [
           { text: '24小时专人陪护', icon: 'check' },
           { text: '协助日常护理', icon: 'check' },
-          { text: '配合医护工作', icon: 'check' },
           { text: '及时反馈病情', icon: 'check' },
         ],
         serviceNotes: [
-          { title: '服务时间', content: '24小时制，从入住当日开始计算' },
-          { title: '服务内容', content: '包含协助进食、翻身、如厕等日常护理' },
-          { title: '特殊情况', content: '重症患者需提前评估，费用可能上浮' },
+          { title: '服务说明', content: '住院期间全天候陪护服务' },
         ],
-        minQuantity: 1,
-        maxQuantity: 30,
         needPatient: true,
         needHospital: true,
         needAppointment: true,
-        sort: 1,
+        sort: 4,
         status: 'active',
-        orderCount: 234,
+        orderCount: 892,
         rating: 99.1,
       },
     }),
     prisma.service.create({
       data: {
-        categoryId: peihu.id,
-        name: '术后照护',
-        description: '专业术后护理，加速康复',
-        price: 499,
-        unit: '天',
+        categoryId: peizhen.id,
+        name: '检查陪同',
+        description: '各类检查项目全程陪同',
+        price: 149,
+        unit: '次',
         serviceIncludes: [
-          { text: '专业术后护理', icon: 'check' },
-          { text: '伤口观察换药协助', icon: 'check' },
-          { text: '康复指导', icon: 'check' },
-          { text: '用药提醒', icon: 'check' },
+          { text: '检查全程陪同', icon: 'check' },
+          { text: '排队代候', icon: 'check' },
+          { text: '结果代取', icon: 'check' },
         ],
         serviceNotes: [
-          { title: '服务说明', content: '适用于各类手术后的护理照护' },
-          { title: '护理级别', content: '根据手术类型评估护理级别和费用' },
+          { title: '服务说明', content: '适合CT、MRI、胃肠镜等检查项目' },
         ],
-        minQuantity: 1,
-        maxQuantity: 14,
         needPatient: true,
         needHospital: true,
         needAppointment: true,
-        sort: 2,
+        sort: 5,
         status: 'active',
-        orderCount: 156,
-        rating: 98.8,
+        orderCount: 1234,
+        rating: 97.8,
       },
     }),
+
   ]);
 
   console.log('✅ 服务分类和服务创建完成');

@@ -841,7 +841,9 @@ export interface ServiceCategory {
   id: string
   name: string
   icon: string | null
+  color: string | null        // 主题颜色（支持渐变）
   description: string | null
+  isPinned: boolean           // 是否置顶
   sort: number
   status: string
   serviceCount?: number
@@ -859,8 +861,10 @@ export interface ServiceCategoryQuery {
 export interface CreateServiceCategoryData {
   name: string
   icon?: string
+  color?: string
   description?: string
   sort?: number
+  isPinned?: boolean
 }
 
 export interface UpdateServiceCategoryData extends Partial<CreateServiceCategoryData> {

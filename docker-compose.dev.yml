@@ -1,11 +1,10 @@
 # ============================================
 # 科科灵陪诊平台 Docker Compose (开发环境)
 # ============================================
-# 启动:     docker-compose -f docker-compose.dev.yml up -d
-# 停止:     docker-compose -f docker-compose.dev.yml down
-# 查看日志: docker-compose -f docker-compose.dev.yml logs -f
-# ============================================
-# 开发环境只启动数据库，前后端本地运行
+# 启动全部:  docker-compose -f docker-compose.dev.yml up -d
+# 只启动DB:  docker-compose -f docker-compose.dev.yml up -d postgres adminer
+# 停止:      docker-compose -f docker-compose.dev.yml down
+# 查看日志:  docker-compose -f docker-compose.dev.yml logs -f
 # ============================================
 
 services:
@@ -48,6 +47,51 @@ services:
       ADMINER_DEFAULT_SERVER: postgres
     networks:
       - kekeling-dev-network
+
+  # ==========================================
+  # 后端 API 服务 (开发环境)
+  # ==========================================
+  api:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: kekeling-api-dev
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      DATABASE_URL: postgresql://kekeling:kekeling123@postgres:5432/kekeling?schema=public
+      JWT_SECRET: kekeling-jwt-secret-dev
+      JWT_EXPIRES_IN: 7d
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - kekeling-dev-network
+    profiles:
+      - full
+
+  # ==========================================
+  # 管理后台 (开发环境)
+  # ==========================================
+  admin:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_BASE_URL=/api
+    container_name: kekeling-admin-dev
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+    networks:
+      - kekeling-dev-network
+    profiles:
+      - full
 
   # ==========================================
   # Redis (可选，用于缓存)

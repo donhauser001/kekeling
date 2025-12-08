@@ -28,7 +28,12 @@ interface ServiceCategory {
   id: string
   name: string
   icon?: string
+  color?: string      // 主题颜色（支持渐变）
   sort?: number
+  description?: string
+  serviceCount?: number
+  services?: Service[]
+  isPinned?: boolean  // 是否置顶
 }
 
 // 图标映射
@@ -63,47 +68,34 @@ const brandValues = [
 ]
 
 export default function Index() {
-  const [activeTab, setActiveTab] = useState<string>('')
   const [categories, setCategories] = useState<ServiceCategory[]>([])
-  const [services, setServices] = useState<Service[]>([])
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState({ userCount: 50000, hospitalCount: 50, rating: 98.5 })
   const [searchValue, setSearchValue] = useState('')
 
-  // 加载服务分类
+  // 加载服务分类（包含每个分类下的服务）
   const loadCategories = async () => {
     try {
+      setLoading(true)
       const data = await servicesApi.getCategories()
       if (data && data.length > 0) {
-        setCategories(data)
-        setActiveTab(data[0].id)
+        // 为每个分类加载其服务
+        const categoriesWithServices = await Promise.all(
+          data.map(async (category: ServiceCategory) => {
+            try {
+              const result = await servicesApi.getList({ categoryId: category.id, pageSize: 5 })
+              const serviceList = result?.data || result || []
+              return { ...category, services: Array.isArray(serviceList) ? serviceList : [] }
+            } catch {
+              return { ...category, services: [] }
+            }
+          })
+        )
+        setCategories(categoriesWithServices)
       }
     } catch (err) {
       console.error('加载分类失败:', err)
-      // 使用默认分类
-      setCategories([
-        { id: 'escort', name: '陪诊服务', icon: 'user-check' },
-        { id: 'agency', name: '代办服务', icon: 'rocket' },
-      ])
-      setActiveTab('escort')
-    }
-  }
-
-  // 加载服务列表
-  const loadServices = async (categoryId?: string) => {
-    try {
-      setLoading(true)
-      const params: any = { pageSize: 10 }
-      if (categoryId) {
-        params.categoryId = categoryId
-      }
-      const result = await servicesApi.getList(params)
-      // 处理返回的数据格式
-      const data = result?.data || result || []
-      setServices(Array.isArray(data) ? data : [])
-    } catch (err) {
-      console.error('加载服务失败:', err)
-      setServices([])
+      setCategories([])
     } finally {
       setLoading(false)
     }
@@ -131,18 +123,9 @@ export default function Index() {
     loadStats()
   }, [])
 
-  // 分类切换时加载对应服务
-  useEffect(() => {
-    if (activeTab) {
-      loadServices(activeTab)
-    }
-  }, [activeTab])
-
   // 页面显示时刷新
   useDidShow(() => {
-    if (activeTab) {
-      loadServices(activeTab)
-    }
+    loadCategories()
   })
 
   const handleSearch = () => {
@@ -167,24 +150,9 @@ export default function Index() {
     Taro.navigateTo({ url: `/pages/services/detail?id=${id}` })
   }
 
-  const handleViewAll = () => {
-    Taro.navigateTo({ url: '/pages/services/index' })
-  }
-
-  // 获取服务图标
-  const getServiceIcon = (service: Service) => {
-    return iconMap[service.name] || iconMap[service.category?.name || ''] || 'stethoscope'
-  }
-
   // 获取分类图标
   const getCategoryIcon = (category: ServiceCategory) => {
     return category.icon || iconMap[category.name] || 'grid'
-  }
-
-  // 当前分类是否为代办类
-  const isAgencyCategory = () => {
-    const currentCategory = categories.find(c => c.id === activeTab)
-    return currentCategory?.name?.includes('代办') || false
   }
 
   return (
@@ -215,93 +183,79 @@ export default function Index() {
         </View>
       </View>
 
-      {/* 服务选项卡 */}
-      <View className='tabs-section'>
-        <View className='tabs-container'>
-          {categories.map((category, index) => (
-            <View key={category.id}>
-              {index > 0 && <View className='tab-divider' />}
-              <View 
-                className={`tab-item ${activeTab === category.id ? 'active' : ''}`}
-                onClick={() => setActiveTab(category.id)}
-              >
-                <View className='tab-content'>
-                  <View className='tab-icon'>
-                    <Icon 
-                      name={getCategoryIcon(category)} 
-                      size={24} 
-                      color={activeTab === category.id ? (category.name.includes('代办') ? '#52c41a' : '#1890ff') : '#999'} 
-                    />
-                  </View>
-                  <View className='tab-text'>
-                    <Text className='tab-title'>{category.name.replace('服务', '')}</Text>
-                    <Text className='tab-desc'>
-                      {category.name.includes('代办') ? '少跑冤枉路' : '少花冤枉钱'}
-                    </Text>
-                  </View>
-                </View>
-                {activeTab === category.id && (
-                  <View className={`tab-indicator ${category.name.includes('代办') ? 'green' : ''}`} />
-                )}
-              </View>
-            </View>
-          ))}
-        </View>
-      </View>
-
-      {/* 服务内容卡片 */}
-      <View className='services-section'>
+      {/* 服务分类区域 */}
+      <View className='category-section'>
         {loading ? (
           <View className='loading-container'>
             <Text className='loading-text'>加载中...</Text>
           </View>
-        ) : services.length === 0 ? (
-          <View className='empty-container'>
-            <Icon name='inbox' size={48} color='#d9d9d9' />
-            <Text className='empty-text'>暂无服务</Text>
-          </View>
         ) : (
-          <View className='services-list'>
-            {services.map((service, index) => (
-              <View 
-                key={service.id}
-                className={`service-card ${isAgencyCategory() ? 'green' : ''}`}
-                onClick={() => handleServiceClick(service.id)}
-                style={{ animationDelay: `${index * 0.1}s` }}
-              >
-                {service.orderCount && service.orderCount > 100 && (
-                  <View className={`service-tag ${isAgencyCategory() ? 'green' : ''}`}>
-                    热门
+          <>
+            {/* 置顶分类 - 左右两个大卡片 (最多2个) */}
+            <View className='pinned-categories'>
+              {categories
+                .filter(c => c.isPinned)
+                .slice(0, 2)
+                .map((category) => (
+                  <View 
+                    key={category.id}
+                    className='pinned-card'
+                    style={{ background: category.color || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
+                    onClick={() => Taro.navigateTo({ url: `/pages/services/index?categoryId=${category.id}` })}
+                  >
+                    <View className='pinned-icon'>
+                      <Icon name={getCategoryIcon(category)} size={28} color='#fff' />
+                    </View>
+                    <Text className='pinned-name'>{category.name}</Text>
+                    <Text className='pinned-desc'>{category.description || ''}</Text>
+                    <View className='pinned-tags'>
+                      {(category.services || []).slice(0, 2).map((service: Service) => (
+                        <Text key={service.id} className='pinned-tag'>{service.name}</Text>
+                      ))}
+                      {(category.services || []).length > 2 && (
+                        <Text className='pinned-tag more'>+{(category.services?.length || 0) - 2}</Text>
+                      )}
+                    </View>
                   </View>
-                )}
-                <View className='service-icon'>
-                  <Icon 
-                    name={getServiceIcon(service)} 
-                    size={28} 
-                    color={isAgencyCategory() ? '#52c41a' : '#1890ff'} 
-                  />
-                </View>
-                <Text className='service-title'>{service.name}</Text>
-                <Text className='service-desc'>{service.description || '专业陪诊服务'}</Text>
-                <View className='service-footer'>
-                  <Text className='service-price'>
-                    <Text className='price-symbol'>¥</Text>
-                    {Number(service.price)}
-                    <Text className='price-unit'>起</Text>
-                  </Text>
-                  <View className='service-arrow'>
-                    <Icon name='chevron-right' size={16} color='#d9d9d9' />
-                  </View>
-                </View>
+                ))}
+            </View>
+
+            {/* 非置顶分类 - 横向标签 */}
+            <View className='other-categories'>
+              <View className='other-categories-scroll'>
+                {categories
+                  .filter(c => !c.isPinned)
+                  .map((category) => {
+                    // 提取颜色（如果是渐变取第一个颜色，否则直接使用）
+                    const baseColor = category.color?.includes('gradient') 
+                      ? category.color.match(/#[a-fA-F0-9]{6}/)?.[0] || '#1890ff'
+                      : category.color || '#1890ff'
+                    return (
+                      <View 
+                        key={category.id}
+                        className='other-category-item'
+                        onClick={() => Taro.navigateTo({ url: `/pages/services/index?categoryId=${category.id}` })}
+                      >
+                        <View 
+                          className='other-category-icon'
+                          style={{ background: `${baseColor}15` }}
+                        >
+                          <Icon name={getCategoryIcon(category)} size={18} color={baseColor} />
+                        </View>
+                        <Text className='other-category-name'>{category.name}</Text>
+                        <Text 
+                          className='other-category-count'
+                          style={{ color: baseColor, background: `${baseColor}15` }}
+                        >
+                          {category.serviceCount || (category.services?.length || 0)}
+                        </Text>
+                      </View>
+                    )
+                  })}
               </View>
-            ))}
-          </View>
+            </View>
+          </>
         )}
-        
-        <View className='view-all' onClick={handleViewAll}>
-          <Text>查看全部服务</Text>
-          <Icon name='arrow-right' size={16} color='#1890ff' />
-        </View>
       </View>
 
       {/* 数据统计 */}

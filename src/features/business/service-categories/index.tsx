@@ -12,6 +12,18 @@ import {
     FileText,
     Heart,
     MoreHorizontal as MoreIcon,
+    Pin,
+    Stethoscope,
+    Truck,
+    MessageSquare,
+    Building,
+    Sparkles,
+    Pill,
+    Syringe,
+    Baby,
+    Eye,
+    Bone,
+    Brain,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -67,12 +79,22 @@ import {
 } from '@/hooks/use-api'
 import type { ServiceCategory } from '@/lib/api'
 
-// 图标选项
+// 图标选项 - 与小程序 Icon 组件对应
 const iconOptions = [
+    { value: 'stethoscope', label: '听诊器', icon: Stethoscope },
+    { value: 'truck', label: '卡车', icon: Truck },
+    { value: 'message-square', label: '消息', icon: MessageSquare },
+    { value: 'building', label: '建筑', icon: Building },
+    { value: 'sparkles', label: '闪光', icon: Sparkles },
     { value: 'hospital', label: '医院', icon: Hospital },
-    { value: 'file-text', label: '文件', icon: FileText },
     { value: 'heart', label: '爱心', icon: Heart },
-    { value: 'more-horizontal', label: '更多', icon: MoreIcon },
+    { value: 'pill', label: '药品', icon: Pill },
+    { value: 'syringe', label: '针管', icon: Syringe },
+    { value: 'baby', label: '婴儿', icon: Baby },
+    { value: 'eye', label: '眼睛', icon: Eye },
+    { value: 'bone', label: '骨骼', icon: Bone },
+    { value: 'brain', label: '大脑', icon: Brain },
+    { value: 'file-text', label: '文件', icon: FileText },
 ] as const
 
 // 图标映射
@@ -81,28 +103,40 @@ const getIconComponent = (iconName: string | null) => {
     return option?.icon || Layers
 }
 
-// 颜色映射
-const categoryColors: Record<string, string> = {
-    'hospital': 'bg-blue-500',
-    'file-text': 'bg-green-500',
-    'heart': 'bg-pink-500',
-    'more-horizontal': 'bg-gray-500',
-}
+// 预设颜色选项（支持渐变和纯色）
+const colorPresets = [
+    { value: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', label: '紫色渐变', preview: 'bg-gradient-to-br from-[#667eea] to-[#764ba2]' },
+    { value: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', label: '粉红渐变', preview: 'bg-gradient-to-br from-[#f093fb] to-[#f5576c]' },
+    { value: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', label: '蓝色渐变', preview: 'bg-gradient-to-br from-[#4facfe] to-[#00f2fe]' },
+    { value: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', label: '绿色渐变', preview: 'bg-gradient-to-br from-[#43e97b] to-[#38f9d7]' },
+    { value: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', label: '橙粉渐变', preview: 'bg-gradient-to-br from-[#fa709a] to-[#fee140]' },
+    { value: '#3b82f6', label: '蓝色', preview: 'bg-[#3b82f6]' },
+    { value: '#10b981', label: '绿色', preview: 'bg-[#10b981]' },
+    { value: '#f97316', label: '橙色', preview: 'bg-[#f97316]' },
+    { value: '#8b5cf6', label: '紫色', preview: 'bg-[#8b5cf6]' },
+    { value: '#ec4899', label: '粉色', preview: 'bg-[#ec4899]' },
+    { value: '#ef4444', label: '红色', preview: 'bg-[#ef4444]' },
+    { value: '#6b7280', label: '灰色', preview: 'bg-[#6b7280]' },
+] as const
 
 interface FormData {
     name: string
     icon: string
+    color: string
     description: string
     sort: number
     status: string
+    isPinned: boolean
 }
 
 const defaultFormData: FormData = {
     name: '',
-    icon: 'hospital',
+    icon: 'stethoscope',
+    color: '#3b82f6',
     description: '',
     sort: 0,
     status: 'active',
+    isPinned: false,
 }
 
 export function ServiceCategories() {
@@ -132,13 +166,18 @@ export function ServiceCategories() {
         setEditingCategory(category)
         setFormData({
             name: category.name,
-            icon: category.icon || 'hospital',
+            icon: category.icon || 'stethoscope',
+            color: category.color || '#3b82f6',
             description: category.description || '',
             sort: category.sort,
             status: category.status,
+            isPinned: category.isPinned || false,
         })
         setDialogOpen(true)
     }
+
+    // 获取当前已置顶的分类数量
+    const pinnedCount = categories.filter(c => c.isPinned).length
 
     // 打开删除确认
     const openDeleteDialog = (category: ServiceCategory) => {
@@ -153,6 +192,12 @@ export function ServiceCategories() {
             return
         }
 
+        // 检查置顶限制
+        if (formData.isPinned && !editingCategory?.isPinned && pinnedCount >= 2) {
+            toast.error('最多只能置顶 2 个分类')
+            return
+        }
+
         try {
             if (editingCategory) {
                 await updateMutation.mutateAsync({
@@ -160,9 +205,11 @@ export function ServiceCategories() {
                     data: {
                         name: formData.name,
                         icon: formData.icon,
+                        color: formData.color || undefined,
                         description: formData.description || undefined,
                         sort: formData.sort,
                         status: formData.status,
+                        isPinned: formData.isPinned,
                     },
                 })
                 toast.success('更新成功')
@@ -170,8 +217,10 @@ export function ServiceCategories() {
                 await createMutation.mutateAsync({
                     name: formData.name,
                     icon: formData.icon,
+                    color: formData.color || undefined,
                     description: formData.description || undefined,
                     sort: formData.sort,
+                    isPinned: formData.isPinned,
                 })
                 toast.success('创建成功')
             }
@@ -268,30 +317,36 @@ export function ServiceCategories() {
                     <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'>
                         {categories.map((category) => {
                             const IconComponent = getIconComponent(category.icon)
-                            const bgColor = categoryColors[category.icon || ''] || 'bg-gray-500'
+                            // 使用动态颜色
+                            const hasGradient = category.color?.includes('gradient')
+                            const bgStyle = category.color 
+                                ? { background: category.color }
+                                : { backgroundColor: '#6b7280' }
 
                             return (
                                 <Card
                                     key={category.id}
                                     className={cn(
                                         'transition-all hover:shadow-md',
-                                        category.status === 'inactive' && 'opacity-60'
+                                        category.status === 'inactive' && 'opacity-60',
+                                        category.isPinned && 'ring-2 ring-primary ring-offset-2'
                                     )}
                                 >
                                     <CardHeader className='pb-3'>
                                         <div className='flex items-start justify-between'>
                                             <div className='flex items-center gap-3'>
                                                 <div
-                                                    className={cn(
-                                                        'flex h-10 w-10 items-center justify-center rounded-lg',
-                                                        bgColor
-                                                    )}
+                                                    className='flex h-10 w-10 items-center justify-center rounded-lg'
+                                                    style={bgStyle}
                                                 >
                                                     <IconComponent className='h-5 w-5 text-white' />
                                                 </div>
                                                 <div>
                                                     <CardTitle className='flex items-center gap-2 text-base'>
                                                         {category.name}
+                                                        {category.isPinned && (
+                                                            <Pin className='h-4 w-4 text-primary' />
+                                                        )}
                                                     </CardTitle>
                                                     <div className='text-muted-foreground flex items-center gap-1 text-sm'>
                                                         <PackageSearch className='h-3.5 w-3.5' />
@@ -338,11 +393,18 @@ export function ServiceCategories() {
                                             {category.description || '暂无描述'}
                                         </CardDescription>
                                         <div className='flex items-center justify-between'>
-                                            <Badge
-                                                variant={category.status === 'active' ? 'default' : 'secondary'}
-                                            >
-                                                {category.status === 'active' ? '已启用' : '已停用'}
-                                            </Badge>
+                                            <div className='flex items-center gap-2'>
+                                                <Badge
+                                                    variant={category.status === 'active' ? 'default' : 'secondary'}
+                                                >
+                                                    {category.status === 'active' ? '已启用' : '已停用'}
+                                                </Badge>
+                                                {category.isPinned && (
+                                                    <Badge variant='outline' className='text-primary border-primary'>
+                                                        置顶
+                                                    </Badge>
+                                                )}
+                                            </div>
                                             <span className='text-muted-foreground text-xs'>
                                                 排序: {category.sort}
                                             </span>
@@ -413,6 +475,42 @@ export function ServiceCategories() {
                         </div>
 
                         <div className='space-y-2'>
+                            <Label>主题颜色</Label>
+                            <p className='text-muted-foreground text-xs mb-2'>
+                                选择颜色将应用到小程序分类卡片
+                            </p>
+                            <div className='flex flex-wrap gap-2'>
+                                {colorPresets.map((preset) => (
+                                    <button
+                                        key={preset.value}
+                                        type='button'
+                                        className={cn(
+                                            'h-8 w-8 rounded-md border-2 transition-all',
+                                            preset.preview,
+                                            formData.color === preset.value
+                                                ? 'border-foreground scale-110'
+                                                : 'border-transparent hover:scale-105'
+                                        )}
+                                        onClick={() =>
+                                            setFormData({ ...formData, color: preset.value })
+                                        }
+                                        title={preset.label}
+                                    />
+                                ))}
+                            </div>
+                            {/* 当前颜色预览 */}
+                            <div className='mt-2 flex items-center gap-2'>
+                                <div 
+                                    className='h-6 w-6 rounded border'
+                                    style={{ background: formData.color }}
+                                />
+                                <span className='text-sm text-muted-foreground'>
+                                    {colorPresets.find(p => p.value === formData.color)?.label || '自定义颜色'}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className='space-y-2'>
                             <Label htmlFor='description'>分类描述</Label>
                             <Textarea
                                 id='description'
@@ -423,6 +521,35 @@ export function ServiceCategories() {
                                 }
                                 rows={3}
                             />
+                        </div>
+
+                        {/* 置顶设置 */}
+                        <div className='space-y-2 rounded-lg border p-4'>
+                            <div className='flex items-center justify-between'>
+                                <div className='space-y-0.5'>
+                                    <Label className='flex items-center gap-2'>
+                                        <Pin className='h-4 w-4' />
+                                        首页置顶
+                                    </Label>
+                                    <p className='text-muted-foreground text-xs'>
+                                        置顶分类将在小程序首页以大卡片形式展示（最多 2 个）
+                                    </p>
+                                </div>
+                                <Switch
+                                    checked={formData.isPinned}
+                                    onCheckedChange={(checked) => {
+                                        // 检查是否可以置顶
+                                        if (checked && !editingCategory?.isPinned && pinnedCount >= 2) {
+                                            toast.error('最多只能置顶 2 个分类')
+                                            return
+                                        }
+                                        setFormData({ ...formData, isPinned: checked })
+                                    }}
+                                />
+                            </div>
+                            <p className='text-xs text-muted-foreground'>
+                                当前已置顶: {pinnedCount}/2
+                            </p>
                         </div>
 
                         <div className='grid grid-cols-2 gap-4'>

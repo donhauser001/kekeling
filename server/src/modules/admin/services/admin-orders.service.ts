@@ -83,7 +83,7 @@ export class AdminOrdersService {
             select: { id: true, name: true, title: true },
           },
           patient: {
-            select: { id: true, name: true, phone: true, gender: true, age: true },
+            select: { id: true, name: true, phone: true, gender: true, birthday: true },
           },
           escort: {
             select: { id: true, name: true, phone: true, avatar: true, level: true },
@@ -477,8 +477,7 @@ export class AdminOrdersService {
       where: { id: orderId },
       data: {
         status: 'refunded',
-        refundTime: new Date(),
-        refundAmount: order.paidAmount,
+        cancelledAt: new Date(), // 使用 cancelledAt 记录退款时间
       },
     });
   }

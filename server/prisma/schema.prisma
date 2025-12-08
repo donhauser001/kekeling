@@ -55,8 +55,10 @@ model Patient {
 model ServiceCategory {
   id          String    @id @default(uuid())
   name        String
-  icon        String?                       // 图标 URL 或图标名称
+  icon        String?                       // 图标名称 (Lucide icon name)
+  color       String?                       // 主题颜色 (如: #667eea 或 gradient)
   description String?                       // 分类描述
+  isPinned    Boolean   @default(false) @map("is_pinned") // 是否置顶（最多2个）
   sort        Int       @default(0)         // 排序权重
   status      String    @default("active")  // active, inactive
   createdAt   DateTime  @default(now()) @map("created_at")
