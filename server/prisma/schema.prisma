@@ -25,6 +25,7 @@ model User {
   // 关联
   patients    Patient[]
   orders      Order[]
+  escort      Escort?   // 陪诊员身份 (1:1, 可空)
 
   @@map("users")
 }
@@ -240,22 +241,34 @@ model Doctor {
 
 model Escort {
   id             String    @id @default(uuid())
+  userId         String?   @unique @map("user_id") // 关联小程序账号 (手机号匹配后自动关联)
   name           String
   gender         String    // male, female
-  avatar         String?
   phone          String    @unique
   idCard         String?   @map("id_card")
+  avatar         String?
+
+  // 业务属性
+  cityCode       String    @default("110100") @map("city_code") // 城市代码 (默认北京)
   level          String    // senior, intermediate, junior, trainee
   experience     String?   // 从业年限
-  introduction   String?
-  tags           String?   // JSON
-  certificates   String?   // JSON
-  rating         Float     @default(98.0)
+  introduction   String?   // 个人简介
+  tags           String?   // JSON: ["耐心细致", "经验丰富"]
+  certificates   String?   // JSON: [{name, url, expireDate}]
+
+  // 统计数据
+  rating         Float     @default(5.0)  // 评分 (5分制)
   orderCount     Int       @default(0) @map("order_count")
-  status         String    @default("active") // active, inactive, pending, suspended
+
+  // 状态管理
+  status         String    @default("pending") // pending(待审核), active(已激活), inactive(已停用), suspended(已封禁)
+  workStatus     String    @default("resting") @map("work_status") // resting(休息), working(接单中), busy(服务中)
+
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
 
+  // 关联
+  user           User?     @relation(fields: [userId], references: [id])
   hospitals      EscortHospital[]
   orders         Order[]
 

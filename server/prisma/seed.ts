@@ -1020,6 +1020,236 @@ async function main() {
   ]);
   console.log('✅ 轮播图创建完成');
 
+  // 6. 创建陪诊员数据
+  console.log('\n👥 正在创建陪诊员数据...');
+  
+  const escorts = await Promise.all([
+    prisma.escort.create({
+      data: {
+        name: '张晓红',
+        gender: 'female',
+        phone: '13800138001',
+        cityCode: '110100',
+        level: 'senior',
+        experience: '8年',
+        introduction: '从事医疗陪诊服务8年，熟悉北京各大三甲医院就诊流程，服务过上千位患者，深受好评。',
+        tags: JSON.stringify(['耐心细致', '经验丰富', '三甲医院专家']),
+        rating: 4.9,
+        orderCount: 1258,
+        status: 'active',
+        workStatus: 'working',
+      },
+    }),
+    prisma.escort.create({
+      data: {
+        name: '李明华',
+        gender: 'male',
+        phone: '13800138002',
+        cityCode: '110100',
+        level: 'senior',
+        experience: '6年',
+        introduction: '专注肿瘤科陪诊，对北京肿瘤医院、中国医学科学院肿瘤医院非常熟悉。',
+        tags: JSON.stringify(['肿瘤科专家', '24小时服务', '住院陪护']),
+        rating: 4.8,
+        orderCount: 876,
+        status: 'active',
+        workStatus: 'working',
+      },
+    }),
+    prisma.escort.create({
+      data: {
+        name: '王芳',
+        gender: 'female',
+        phone: '13800138003',
+        cityCode: '110100',
+        level: 'intermediate',
+        experience: '4年',
+        introduction: '擅长儿科陪诊，有爱心，善于与小朋友沟通，让看病不再可怕。',
+        tags: JSON.stringify(['儿科专长', '亲和力强', '细心周到']),
+        rating: 4.7,
+        orderCount: 542,
+        status: 'active',
+        workStatus: 'resting',
+      },
+    }),
+    prisma.escort.create({
+      data: {
+        name: '陈志强',
+        gender: 'male',
+        phone: '13800138004',
+        cityCode: '110100',
+        level: 'intermediate',
+        experience: '3年',
+        introduction: '退伍军人，责任心强，擅长老年患者陪护。',
+        tags: JSON.stringify(['老年护理', '责任心强', '力量型服务']),
+        rating: 4.6,
+        orderCount: 328,
+        status: 'active',
+        workStatus: 'busy',
+      },
+    }),
+    prisma.escort.create({
+      data: {
+        name: '刘婷婷',
+        gender: 'female',
+        phone: '13800138005',
+        cityCode: '110100',
+        level: 'junior',
+        experience: '2年',
+        introduction: '护理专业毕业，持有护士资格证，专业素养高。',
+        tags: JSON.stringify(['护理专业', '持证上岗', '年轻活力']),
+        rating: 4.5,
+        orderCount: 186,
+        status: 'active',
+        workStatus: 'working',
+      },
+    }),
+    prisma.escort.create({
+      data: {
+        name: '赵伟',
+        gender: 'male',
+        phone: '13800138006',
+        cityCode: '110100',
+        level: 'junior',
+        experience: '1年',
+        introduction: '认真负责，服务态度好，正在快速成长中。',
+        tags: JSON.stringify(['态度好', '守时', '学习能力强']),
+        rating: 4.3,
+        orderCount: 87,
+        status: 'active',
+        workStatus: 'resting',
+      },
+    }),
+    prisma.escort.create({
+      data: {
+        name: '孙丽',
+        gender: 'female',
+        phone: '13800138007',
+        cityCode: '110100',
+        level: 'trainee',
+        experience: '半年',
+        introduction: '实习陪诊员，热情学习中。',
+        tags: JSON.stringify(['新人', '热情']),
+        rating: 4.0,
+        orderCount: 25,
+        status: 'active',
+        workStatus: 'resting',
+      },
+    }),
+    prisma.escort.create({
+      data: {
+        name: '周强',
+        gender: 'male',
+        phone: '13800138008',
+        cityCode: '110100',
+        level: 'senior',
+        experience: '10年',
+        introduction: '资深陪诊员，曾任医院护工组长，对医院运作非常了解。',
+        tags: JSON.stringify(['资深专家', '全科服务', 'VIP专属']),
+        rating: 5.0,
+        orderCount: 2156,
+        status: 'active',
+        workStatus: 'busy',
+      },
+    }),
+    prisma.escort.create({
+      data: {
+        name: '吴敏',
+        gender: 'female',
+        phone: '13800138009',
+        cityCode: '110100',
+        level: 'intermediate',
+        experience: '5年',
+        introduction: '妇产科陪诊专家，陪伴过上百位准妈妈完成产检和分娩。',
+        tags: JSON.stringify(['妇产科', '产检陪同', '温柔体贴']),
+        rating: 4.8,
+        orderCount: 623,
+        status: 'active',
+        workStatus: 'working',
+      },
+    }),
+    prisma.escort.create({
+      data: {
+        name: '郑涛',
+        gender: 'male',
+        phone: '13800138010',
+        cityCode: '110100',
+        level: 'intermediate',
+        experience: '4年',
+        introduction: '骨科陪诊专长，熟悉骨科检查和手术流程。',
+        tags: JSON.stringify(['骨科专长', '手术陪护', '康复指导']),
+        rating: 4.6,
+        orderCount: 412,
+        status: 'inactive', // 暂停服务
+        workStatus: 'resting',
+      },
+    }),
+  ]);
+
+  // 关联陪诊员和医院
+  // 张晓红 - 协和、北大一院
+  await Promise.all([
+    prisma.escortHospital.create({
+      data: { escortId: escorts[0].id, hospitalId: xiehe.id, familiarDepts: JSON.stringify(['内科', '外科']) },
+    }),
+    prisma.escortHospital.create({
+      data: { escortId: escorts[0].id, hospitalId: beiyiyuan.id, familiarDepts: JSON.stringify(['心内科']) },
+    }),
+  ]);
+
+  // 李明华 - 天坛、安贞
+  await Promise.all([
+    prisma.escortHospital.create({
+      data: { escortId: escorts[1].id, hospitalId: tiantan.id, familiarDepts: JSON.stringify(['神经内科', '神经外科']) },
+    }),
+    prisma.escortHospital.create({
+      data: { escortId: escorts[1].id, hospitalId: anzhen.id, familiarDepts: JSON.stringify(['心内科']) },
+    }),
+  ]);
+
+  // 王芳 - 同仁、宣武
+  await Promise.all([
+    prisma.escortHospital.create({
+      data: { escortId: escorts[2].id, hospitalId: tongren.id, familiarDepts: JSON.stringify(['眼科', '耳鼻喉科']) },
+    }),
+    prisma.escortHospital.create({
+      data: { escortId: escorts[2].id, hospitalId: xuanwu.id, familiarDepts: JSON.stringify(['神经内科']) },
+    }),
+  ]);
+
+  // 陈志强 - 301医院
+  await prisma.escortHospital.create({
+    data: { escortId: escorts[3].id, hospitalId: h301.id, familiarDepts: JSON.stringify(['骨科', '康复医学科']) },
+  });
+
+  // 周强 - 多家医院 (资深，熟悉多家)
+  await Promise.all([
+    prisma.escortHospital.create({
+      data: { escortId: escorts[7].id, hospitalId: xiehe.id, familiarDepts: JSON.stringify(['全科']) },
+    }),
+    prisma.escortHospital.create({
+      data: { escortId: escorts[7].id, hospitalId: beiyiyuan.id },
+    }),
+    prisma.escortHospital.create({
+      data: { escortId: escorts[7].id, hospitalId: beisanyuan.id, familiarDepts: JSON.stringify(['骨科']) },
+    }),
+    prisma.escortHospital.create({
+      data: { escortId: escorts[7].id, hospitalId: h301.id },
+    }),
+  ]);
+
+  // 吴敏 - 北医三院 (妇产科)
+  await prisma.escortHospital.create({
+    data: { escortId: escorts[8].id, hospitalId: beisanyuan.id, familiarDepts: JSON.stringify(['妇产科', '产科']) },
+  });
+
+  // 郑涛 - 积水潭 (骨科)
+  await prisma.escortHospital.create({
+    data: { escortId: escorts[9].id, hospitalId: jishuitan.id, familiarDepts: JSON.stringify(['骨科', '脊柱外科']) },
+  });
+
+  console.log('✅ 陪诊员数据创建完成');
+
   // 统计
   const hospitalCount = await prisma.hospital.count();
   const departmentCount = await prisma.department.count();
@@ -1032,6 +1262,9 @@ async function main() {
 
   const categoryCount = await prisma.serviceCategory.count();
   const serviceCount = await prisma.service.count();
+  const escortCount = await prisma.escort.count();
+  const activeEscorts = await prisma.escort.count({ where: { status: 'active' } });
+  const workingEscorts = await prisma.escort.count({ where: { workStatus: 'working' } });
   
   console.log('\n📊 数据统计:');
   console.log(`   科室库: ${templateCount} 个 (一级: ${topLevelTemplates}, 二级: ${subTemplates})`);
@@ -1041,6 +1274,7 @@ async function main() {
   console.log(`   - 二级科室: ${subDepts} 个`);
   console.log(`   服务分类: ${categoryCount} 个`);
   console.log(`   服务项目: ${serviceCount} 个`);
+  console.log(`   陪诊员: ${escortCount} 人 (在岗: ${activeEscorts}, 接单中: ${workingEscorts})`);
 
   console.log('\n🎉 真实数据添加完成！');
 }
