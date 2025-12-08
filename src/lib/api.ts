@@ -1051,6 +1051,12 @@ export interface OrderSettings {
   refundFeeRate: number         // 取消扣款比例 (0-1)
 }
 
+export interface ThemeSettings {
+  primaryColor: string          // 主色调
+  brandName: string             // 品牌名称
+  brandSlogan: string           // 品牌标语
+}
+
 export const configApi = {
   // 获取所有配置
   getAll: () =>
@@ -1074,6 +1080,17 @@ export const configApi = {
   // 更新订单设置
   updateOrderSettings: (data: Partial<OrderSettings>) =>
     request<OrderSettings>('/config/order/settings', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // 获取主题设置
+  getThemeSettings: () =>
+    request<ThemeSettings>('/config/theme/settings'),
+
+  // 更新主题设置
+  updateThemeSettings: (data: Partial<ThemeSettings>) =>
+    request<ThemeSettings>('/config/theme/settings', {
       method: 'PUT',
       body: JSON.stringify(data),
     }),

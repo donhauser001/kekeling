@@ -2,7 +2,7 @@ import { Controller, Get, Put, Body, Param, Delete } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam, ApiBody } from '@nestjs/swagger';
 import { ConfigService } from './config.service';
 import { ApiResponse } from '../../common/response/api-response';
-import { type OrderSettings } from './dto/config.dto';
+import { type OrderSettings, type ThemeSettings } from './dto/config.dto';
 
 @ApiTags('系统配置')
 @Controller('config')
@@ -92,6 +92,24 @@ export class ConfigController {
   @ApiOperation({ summary: '更新订单设置' })
   async updateOrderSettings(@Body() body: Partial<OrderSettings>) {
     const data = await this.configService.updateOrderSettings(body);
+    return ApiResponse.success(data, '保存成功');
+  }
+
+  // ============================================
+  // 主题设置专用接口
+  // ============================================
+
+  @Get('theme/settings')
+  @ApiOperation({ summary: '获取主题设置' })
+  async getThemeSettings() {
+    const data = await this.configService.getThemeSettings();
+    return ApiResponse.success(data);
+  }
+
+  @Put('theme/settings')
+  @ApiOperation({ summary: '更新主题设置' })
+  async updateThemeSettings(@Body() body: Partial<ThemeSettings>) {
+    const data = await this.configService.updateThemeSettings(body);
     return ApiResponse.success(data, '保存成功');
   }
 }

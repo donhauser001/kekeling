@@ -50,3 +50,28 @@ export interface OrderSettings {
   refundFeeRate: number;
 }
 
+// ============================================
+// 主题设置
+// ============================================
+
+// 主题设置配置键
+export const THEME_CONFIG_KEYS = {
+  PRIMARY_COLOR: 'theme.primary_color',
+  BRAND_NAME: 'theme.brand_name',
+  BRAND_SLOGAN: 'theme.brand_slogan',
+} as const;
+
+// 主题设置默认值
+export const THEME_CONFIG_DEFAULTS: Record<string, any> = {
+  [THEME_CONFIG_KEYS.PRIMARY_COLOR]: '#1890ff',
+  [THEME_CONFIG_KEYS.BRAND_NAME]: '科科灵',
+  [THEME_CONFIG_KEYS.BRAND_SLOGAN]: '让就医不再孤单',
+};
+
+// 主题设置类型
+export interface ThemeSettings {
+  primaryColor: string;
+  brandName: string;
+  brandSlogan: string;
+}
+

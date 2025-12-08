@@ -27,6 +27,16 @@ export const homeApi = {
   getStats: () => get('/home/stats'),
 }
 
+// ========== 配置模块 ==========
+export const configApi = {
+  // 获取主题设置
+  getThemeSettings: () => get<{
+    primaryColor: string
+    brandName: string
+    brandSlogan: string
+  }>('/config/theme/settings'),
+}
+
 // ========== 服务模块 ==========
 export const servicesApi = {
   // 获取分类列表

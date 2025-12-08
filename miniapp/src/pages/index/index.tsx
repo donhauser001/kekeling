@@ -2,7 +2,7 @@ import { View, Text } from '@tarojs/components'
 import Taro, { useDidShow } from '@tarojs/taro'
 import { useState, useEffect } from 'react'
 import Icon from '@/components/Icon'
-import { servicesApi, homeApi } from '@/services/api'
+import { servicesApi, homeApi, configApi } from '@/services/api'
 import { checkDebugCommand } from '@/utils/env-adapter'
 import './index.scss'
 
@@ -67,11 +67,23 @@ const brandValues = [
   },
 ]
 
+// 主题设置类型
+interface ThemeSettings {
+  primaryColor: string
+  brandName: string
+  brandSlogan: string
+}
+
 export default function Index() {
   const [categories, setCategories] = useState<ServiceCategory[]>([])
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState({ userCount: 50000, hospitalCount: 50, rating: 98.5 })
   const [searchValue, setSearchValue] = useState('')
+  const [themeSettings, setThemeSettings] = useState<ThemeSettings>({
+    primaryColor: '#1890ff',
+    brandName: '科科灵',
+    brandSlogan: '让就医不再孤单',
+  })
 
   // 加载服务分类（包含每个分类下的服务）
   const loadCategories = async () => {
@@ -117,8 +129,25 @@ export default function Index() {
     }
   }
 
+  // 加载主题设置
+  const loadThemeSettings = async () => {
+    try {
+      const data = await configApi.getThemeSettings()
+      if (data) {
+        setThemeSettings({
+          primaryColor: data.primaryColor || '#1890ff',
+          brandName: data.brandName || '科科灵',
+          brandSlogan: data.brandSlogan || '让就医不再孤单',
+        })
+      }
+    } catch (err) {
+      console.error('加载主题设置失败:', err)
+    }
+  }
+
   // 初始化加载
   useEffect(() => {
+    loadThemeSettings()
     loadCategories()
     loadStats()
   }, [])
@@ -155,13 +184,10 @@ export default function Index() {
     return category.icon || iconMap[category.name] || 'grid'
   }
 
-  // 获取主题色（第一个置顶分类的颜色）
-  const primaryColor = categories.find(c => c.isPinned)?.color || '#1890ff'
-
   return (
     <View 
       className='index-page'
-      style={{ '--primary-color': primaryColor } as React.CSSProperties}
+      style={{ '--primary-color': themeSettings.primaryColor } as React.CSSProperties}
     >
       {/* 头部区域 - Logo & Slogan */}
       <View className='header-section'>
@@ -170,8 +196,8 @@ export default function Index() {
             <Icon name='hospital' size={32} color='#fff' />
           </View>
           <View className='brand-text'>
-            <Text className='brand-name'>科科灵</Text>
-            <Text className='brand-slogan'>让就医不再孤单</Text>
+            <Text className='brand-name'>{themeSettings.brandName}</Text>
+            <Text className='brand-slogan'>{themeSettings.brandSlogan}</Text>
           </View>
         </View>
       </View>

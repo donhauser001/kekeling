@@ -3,7 +3,10 @@ import { PrismaService } from '../../prisma/prisma.service';
 import {
   ORDER_CONFIG_KEYS,
   ORDER_CONFIG_DEFAULTS,
+  THEME_CONFIG_KEYS,
+  THEME_CONFIG_DEFAULTS,
   type OrderSettings,
+  type ThemeSettings,
 } from './dto/config.dto';
 
 @Injectable()
@@ -213,6 +216,62 @@ export class ConfigService {
     }
 
     return this.getOrderSettings();
+  }
+
+  // ============================================
+  // 主题设置专用方法
+  // ============================================
+
+  /**
+   * 获取主题设置
+   */
+  async getThemeSettings(): Promise<ThemeSettings> {
+    const keys = Object.values(THEME_CONFIG_KEYS);
+    const configs = await this.getMultiple(keys);
+
+    return {
+      primaryColor:
+        configs[THEME_CONFIG_KEYS.PRIMARY_COLOR] ??
+        THEME_CONFIG_DEFAULTS[THEME_CONFIG_KEYS.PRIMARY_COLOR],
+      brandName:
+        configs[THEME_CONFIG_KEYS.BRAND_NAME] ??
+        THEME_CONFIG_DEFAULTS[THEME_CONFIG_KEYS.BRAND_NAME],
+      brandSlogan:
+        configs[THEME_CONFIG_KEYS.BRAND_SLOGAN] ??
+        THEME_CONFIG_DEFAULTS[THEME_CONFIG_KEYS.BRAND_SLOGAN],
+    };
+  }
+
+  /**
+   * 更新主题设置
+   */
+  async updateThemeSettings(settings: Partial<ThemeSettings>): Promise<ThemeSettings> {
+    const configs: { key: string; value: any }[] = [];
+
+    if (settings.primaryColor !== undefined) {
+      configs.push({
+        key: THEME_CONFIG_KEYS.PRIMARY_COLOR,
+        value: settings.primaryColor,
+      });
+    }
+    if (settings.brandName !== undefined) {
+      configs.push({
+        key: THEME_CONFIG_KEYS.BRAND_NAME,
+        value: settings.brandName,
+      });
+    }
+    if (settings.brandSlogan !== undefined) {
+      configs.push({
+        key: THEME_CONFIG_KEYS.BRAND_SLOGAN,
+        value: settings.brandSlogan,
+      });
+    }
+
+    if (configs.length > 0) {
+      await this.setMultiple(configs);
+    }
+
+    return this.getThemeSettings();
   }
 }
 
