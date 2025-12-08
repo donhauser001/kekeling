@@ -144,24 +144,30 @@ export const escortsColumns: ColumnDef<Escort>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='接诊数' />
     ),
-    cell: ({ row }) => (
-      <div className='text-muted-foreground flex items-center gap-1'>
-        <CalendarCheck size={14} />
-        <span>{row.getValue<number>('consultCount').toLocaleString()}</span>
-      </div>
-    ),
+    cell: ({ row }) => {
+      const count = row.getValue<number>('consultCount') ?? 0
+      return (
+        <div className='text-muted-foreground flex items-center gap-1'>
+          <CalendarCheck size={14} />
+          <span>{count.toLocaleString()}</span>
+        </div>
+      )
+    },
   },
   {
     accessorKey: 'satisfaction',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='满意度' />
     ),
-    cell: ({ row }) => (
-      <div className='flex items-center gap-1 text-amber-500'>
-        <Star size={14} className='fill-current' />
-        <span>{row.getValue<number>('satisfaction')}%</span>
-      </div>
-    ),
+    cell: ({ row }) => {
+      const satisfaction = row.getValue<number>('satisfaction') ?? 0
+      return (
+        <div className='flex items-center gap-1 text-amber-500'>
+          <Star size={14} className='fill-current' />
+          <span>{satisfaction.toFixed(1)}%</span>
+        </div>
+      )
+    },
   },
   {
     id: 'actions',

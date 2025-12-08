@@ -1,0 +1,252 @@
+/**
+ * 科科灵管理后台 API Hooks
+ * 基于 TanStack Query
+ */
+
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import {
+  dashboardApi,
+  orderApi,
+  escortApi,
+  serviceApi,
+  hospitalApi,
+  userApi,
+  homeApi,
+  type OrderQuery,
+  type EscortQuery,
+} from '@/lib/api'
+
+// ============================================
+// 仪表盘
+// ============================================
+
+export function useDashboardStatistics() {
+  return useQuery({
+    queryKey: ['dashboard', 'statistics'],
+    queryFn: () => dashboardApi.getStatistics(),
+    staleTime: 30 * 1000, // 30秒
+  })
+}
+
+export function useOrderTrend(days: number = 7) {
+  return useQuery({
+    queryKey: ['dashboard', 'order-trend', days],
+    queryFn: () => dashboardApi.getOrderTrend(days),
+    staleTime: 60 * 1000, // 1分钟
+  })
+}
+
+export function useOrderStatus() {
+  return useQuery({
+    queryKey: ['dashboard', 'order-status'],
+    queryFn: () => dashboardApi.getOrderStatus(),
+    staleTime: 60 * 1000,
+  })
+}
+
+// ============================================
+// 订单
+// ============================================
+
+export function useOrders(query: OrderQuery = {}) {
+  return useQuery({
+    queryKey: ['orders', query],
+    queryFn: () => orderApi.getList(query),
+    staleTime: 10 * 1000,
+  })
+}
+
+export function useOrder(id: string) {
+  return useQuery({
+    queryKey: ['orders', id],
+    queryFn: () => orderApi.getById(id),
+    enabled: !!id,
+  })
+}
+
+export function useAssignOrder() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, escortId }: { id: string; escortId: string }) =>
+      orderApi.assign(id, escortId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] })
+    },
+  })
+}
+
+export function useUpdateOrderStatus() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, status }: { id: string; status: string }) =>
+      orderApi.updateStatus(id, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] })
+    },
+  })
+}
+
+export function useCancelOrder() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
+      orderApi.cancel(id, reason),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] })
+    },
+  })
+}
+
+// ============================================
+// 陪诊员
+// ============================================
+
+export function useEscorts(query: EscortQuery = {}) {
+  return useQuery({
+    queryKey: ['escorts', query],
+    queryFn: () => escortApi.getList(query),
+    staleTime: 30 * 1000,
+  })
+}
+
+export function useAvailableEscorts(hospitalId?: string) {
+  return useQuery({
+    queryKey: ['escorts', 'available', hospitalId],
+    queryFn: () => escortApi.getAvailable(hospitalId),
+    staleTime: 30 * 1000,
+  })
+}
+
+export function useEscort(id: string) {
+  return useQuery({
+    queryKey: ['escorts', id],
+    queryFn: () => escortApi.getById(id),
+    enabled: !!id,
+  })
+}
+
+export function useCreateEscort() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: escortApi.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['escorts'] })
+    },
+  })
+}
+
+export function useUpdateEscort() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Parameters<typeof escortApi.update>[1] }) =>
+      escortApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['escorts'] })
+    },
+  })
+}
+
+export function useDeleteEscort() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: escortApi.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['escorts'] })
+    },
+  })
+}
+
+// ============================================
+// 服务
+// ============================================
+
+export function useServiceCategories() {
+  return useQuery({
+    queryKey: ['services', 'categories'],
+    queryFn: () => serviceApi.getCategories(),
+    staleTime: 5 * 60 * 1000, // 5分钟
+  })
+}
+
+export function useServices(query: Parameters<typeof serviceApi.getList>[0] = {}) {
+  return useQuery({
+    queryKey: ['services', query],
+    queryFn: () => serviceApi.getList(query),
+    staleTime: 60 * 1000,
+  })
+}
+
+export function useService(id: string) {
+  return useQuery({
+    queryKey: ['services', id],
+    queryFn: () => serviceApi.getById(id),
+    enabled: !!id,
+  })
+}
+
+// ============================================
+// 医院
+// ============================================
+
+export function useHospitals(query: Parameters<typeof hospitalApi.getList>[0] = {}) {
+  return useQuery({
+    queryKey: ['hospitals', query],
+    queryFn: () => hospitalApi.getList(query),
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useHospital(id: string) {
+  return useQuery({
+    queryKey: ['hospitals', id],
+    queryFn: () => hospitalApi.getById(id),
+    enabled: !!id,
+  })
+}
+
+// ============================================
+// 用户
+// ============================================
+
+export function useUsers(query: Parameters<typeof userApi.getList>[0] = {}) {
+  return useQuery({
+    queryKey: ['users', query],
+    queryFn: () => userApi.getList(query),
+    staleTime: 30 * 1000,
+  })
+}
+
+export function useUser(id: string) {
+  return useQuery({
+    queryKey: ['users', id],
+    queryFn: () => userApi.getById(id),
+    enabled: !!id,
+  })
+}
+
+// ============================================
+// 首页配置
+// ============================================
+
+export function useBanners() {
+  return useQuery({
+    queryKey: ['home', 'banners'],
+    queryFn: () => homeApi.getBanners(),
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useHomeStats() {
+  return useQuery({
+    queryKey: ['home', 'stats'],
+    queryFn: () => homeApi.getStats(),
+    staleTime: 60 * 1000,
+  })
+}
+

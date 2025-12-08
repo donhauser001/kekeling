@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
@@ -15,11 +16,14 @@ import { MessageButton } from '@/components/message-button'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
+import { useDashboardStatistics } from '@/hooks/use-api'
 import { Analytics } from './components/analytics'
 import { Overview } from './components/overview'
 import { RecentSales } from './components/recent-sales'
 
 export function Dashboard() {
+  const { data: stats, isLoading } = useDashboardStatistics()
+
   return (
     <>
       {/* ===== Top Heading ===== */}
@@ -64,32 +68,7 @@ export function Dashboard() {
               <Card>
                 <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
                   <CardTitle className='text-sm font-medium'>
-                    总收入
-                  </CardTitle>
-                  <svg
-                    xmlns='http://www.w3.org/2000/svg'
-                    viewBox='0 0 24 24'
-                    fill='none'
-                    stroke='currentColor'
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth='2'
-                    className='text-muted-foreground h-4 w-4'
-                  >
-                    <path d='M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6' />
-                  </svg>
-                </CardHeader>
-                <CardContent>
-                  <div className='text-2xl font-bold'>¥452,318.90</div>
-                  <p className='text-muted-foreground text-xs'>
-                    较上月 +20.1%
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                  <CardTitle className='text-sm font-medium'>
-                    订阅用户
+                    今日订单
                   </CardTitle>
                   <svg
                     xmlns='http://www.w3.org/2000/svg'
@@ -107,15 +86,23 @@ export function Dashboard() {
                   </svg>
                 </CardHeader>
                 <CardContent>
-                  <div className='text-2xl font-bold'>+2350</div>
-                  <p className='text-muted-foreground text-xs'>
-                    较上月 +180.1%
-                  </p>
+                  {isLoading ? (
+                    <Skeleton className='h-8 w-24' />
+                  ) : (
+                    <>
+                      <div className='text-2xl font-bold'>{stats?.todayOrders ?? 0}</div>
+                      <p className='text-muted-foreground text-xs'>
+                        较昨日 {stats?.orderGrowth ? `+${stats.orderGrowth}%` : '-'}
+                      </p>
+                    </>
+                  )}
                 </CardContent>
               </Card>
               <Card>
                 <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                  <CardTitle className='text-sm font-medium'>销售额</CardTitle>
+                  <CardTitle className='text-sm font-medium'>
+                    今日收入
+                  </CardTitle>
                   <svg
                     xmlns='http://www.w3.org/2000/svg'
                     viewBox='0 0 24 24'
@@ -126,21 +113,56 @@ export function Dashboard() {
                     strokeWidth='2'
                     className='text-muted-foreground h-4 w-4'
                   >
-                    <rect width='20' height='14' x='2' y='5' rx='2' />
-                    <path d='M2 10h20' />
+                    <path d='M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6' />
                   </svg>
                 </CardHeader>
                 <CardContent>
-                  <div className='text-2xl font-bold'>+12,234</div>
-                  <p className='text-muted-foreground text-xs'>
-                    较上月 +19%
-                  </p>
+                  {isLoading ? (
+                    <Skeleton className='h-8 w-24' />
+                  ) : (
+                    <>
+                      <div className='text-2xl font-bold'>¥{(stats?.todayRevenue ?? 0).toLocaleString()}</div>
+                      <p className='text-muted-foreground text-xs'>
+                        较昨日 {stats?.revenueGrowth ? `+${stats.revenueGrowth}%` : '-'}
+                      </p>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+                  <CardTitle className='text-sm font-medium'>待处理订单</CardTitle>
+                  <svg
+                    xmlns='http://www.w3.org/2000/svg'
+                    viewBox='0 0 24 24'
+                    fill='none'
+                    stroke='currentColor'
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth='2'
+                    className='text-muted-foreground h-4 w-4'
+                  >
+                    <circle cx='12' cy='12' r='10' />
+                    <polyline points='12 6 12 12 16 14' />
+                  </svg>
+                </CardHeader>
+                <CardContent>
+                  {isLoading ? (
+                    <Skeleton className='h-8 w-24' />
+                  ) : (
+                    <>
+                      <div className='text-2xl font-bold'>{stats?.pendingOrders ?? 0}</div>
+                      <p className='text-muted-foreground text-xs'>
+                        需要及时处理
+                      </p>
+                    </>
+                  )}
                 </CardContent>
               </Card>
               <Card>
                 <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
                   <CardTitle className='text-sm font-medium'>
-                    当前在线
+                    陪诊员数量
                   </CardTitle>
                   <svg
                     xmlns='http://www.w3.org/2000/svg'
@@ -156,17 +178,23 @@ export function Dashboard() {
                   </svg>
                 </CardHeader>
                 <CardContent>
-                  <div className='text-2xl font-bold'>+573</div>
-                  <p className='text-muted-foreground text-xs'>
-                    较上小时 +201
-                  </p>
+                  {isLoading ? (
+                    <Skeleton className='h-8 w-24' />
+                  ) : (
+                    <>
+                      <div className='text-2xl font-bold'>{stats?.totalEscorts ?? 0}</div>
+                      <p className='text-muted-foreground text-xs'>
+                        总用户 {stats?.totalUsers ?? 0} 人
+                      </p>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             </div>
             <div className='grid grid-cols-1 gap-4 lg:grid-cols-7'>
               <Card className='col-span-1 lg:col-span-4'>
                 <CardHeader>
-                  <CardTitle>数据概览</CardTitle>
+                  <CardTitle>订单趋势</CardTitle>
                 </CardHeader>
                 <CardContent className='ps-2'>
                   <Overview />
@@ -174,9 +202,9 @@ export function Dashboard() {
               </Card>
               <Card className='col-span-1 lg:col-span-3'>
                 <CardHeader>
-                  <CardTitle>最近销售</CardTitle>
+                  <CardTitle>最近订单</CardTitle>
                   <CardDescription>
-                    本月共完成 265 笔销售
+                    已完成 {stats?.completedOrders ?? 0} 单
                   </CardDescription>
                 </CardHeader>
                 <CardContent>

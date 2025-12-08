@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
@@ -13,8 +14,8 @@ import { MessageButton } from '@/components/message-button'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
+import { useOrders, useDashboardStatistics } from '@/hooks/use-api'
 import { OrdersTable } from './components/orders-table'
-import { orders } from './data/orders'
 
 const route = getRouteApi('/_authenticated/orders/')
 
@@ -22,11 +23,36 @@ export function Orders() {
   const search = route.useSearch()
   const navigate = route.useNavigate()
 
-  // 统计数据
-  const todayOrders = orders.filter(o => o.createdAt.startsWith('2024-03-18')).length
-  const pendingOrders = orders.filter(o => o.status === 'pending').length
-  const completedOrders = orders.filter(o => o.status === 'completed').length
-  const totalRevenue = orders.filter(o => o.status === 'completed').reduce((sum, o) => sum + o.paidAmount, 0)
+  // 从 API 获取数据
+  const { data: ordersData, isLoading: ordersLoading } = useOrders({
+    page: 1,
+    pageSize: 100,
+  })
+  const { data: stats, isLoading: statsLoading } = useDashboardStatistics()
+
+  // 转换订单数据格式
+  const orders = (ordersData?.data ?? []).map(order => ({
+    id: order.id,
+    orderNo: order.orderNo,
+    serviceName: order.service?.name ?? order.serviceName ?? '-',
+    serviceCategory: order.serviceCategory ?? '-',
+    customerName: order.patient?.name ?? order.customerName ?? '-',
+    customerPhone: order.patient?.phone ?? order.customerPhone ?? '-',
+    escortName: order.escort?.name ?? order.escortName ?? null,
+    escortPhone: order.escort?.phone ?? order.escortPhone ?? null,
+    hospital: order.hospitalInfo?.name ?? order.hospital ?? '-',
+    department: order.department ?? '-',
+    appointmentDate: order.appointmentDate,
+    appointmentTime: order.appointmentTime,
+    status: order.status,
+    amount: order.amount,
+    paidAmount: order.paidAmount,
+    createdAt: order.createdAt,
+    updatedAt: order.updatedAt,
+    remark: order.remark ?? '',
+  }))
+
+  const isLoading = ordersLoading || statsLoading
 
   return (
     <>
@@ -72,10 +98,16 @@ export function Orders() {
               </svg>
             </CardHeader>
             <CardContent>
-              <div className='text-2xl font-bold'>{todayOrders}</div>
-              <p className='text-muted-foreground text-xs'>
-                较昨日 +12%
-              </p>
+              {isLoading ? (
+                <Skeleton className='h-8 w-16' />
+              ) : (
+                <>
+                  <div className='text-2xl font-bold'>{stats?.todayOrders ?? 0}</div>
+                  <p className='text-muted-foreground text-xs'>
+                    较昨日 {stats?.orderGrowth ? `+${stats.orderGrowth}%` : '-'}
+                  </p>
+                </>
+              )}
             </CardContent>
           </Card>
           <Card>
@@ -96,10 +128,16 @@ export function Orders() {
               </svg>
             </CardHeader>
             <CardContent>
-              <div className='text-2xl font-bold'>{pendingOrders}</div>
-              <p className='text-muted-foreground text-xs'>
-                需要及时处理
-              </p>
+              {isLoading ? (
+                <Skeleton className='h-8 w-16' />
+              ) : (
+                <>
+                  <div className='text-2xl font-bold'>{stats?.pendingOrders ?? 0}</div>
+                  <p className='text-muted-foreground text-xs'>
+                    需要及时处理
+                  </p>
+                </>
+              )}
             </CardContent>
           </Card>
           <Card>
@@ -120,15 +158,21 @@ export function Orders() {
               </svg>
             </CardHeader>
             <CardContent>
-              <div className='text-2xl font-bold'>{completedOrders}</div>
-              <p className='text-muted-foreground text-xs'>
-                完成率 {Math.round(completedOrders / orders.length * 100)}%
-              </p>
+              {isLoading ? (
+                <Skeleton className='h-8 w-16' />
+              ) : (
+                <>
+                  <div className='text-2xl font-bold'>{stats?.completedOrders ?? 0}</div>
+                  <p className='text-muted-foreground text-xs'>
+                    完成率 {orders.length > 0 ? Math.round((stats?.completedOrders ?? 0) / orders.length * 100) : 0}%
+                  </p>
+                </>
+              )}
             </CardContent>
           </Card>
           <Card>
             <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-              <CardTitle className='text-sm font-medium'>总收入</CardTitle>
+              <CardTitle className='text-sm font-medium'>今日收入</CardTitle>
               <svg
                 xmlns='http://www.w3.org/2000/svg'
                 viewBox='0 0 24 24'
@@ -143,10 +187,16 @@ export function Orders() {
               </svg>
             </CardHeader>
             <CardContent>
-              <div className='text-2xl font-bold'>¥{totalRevenue.toLocaleString()}</div>
-              <p className='text-muted-foreground text-xs'>
-                较上周 +8.5%
-              </p>
+              {isLoading ? (
+                <Skeleton className='h-8 w-24' />
+              ) : (
+                <>
+                  <div className='text-2xl font-bold'>¥{(stats?.todayRevenue ?? 0).toLocaleString()}</div>
+                  <p className='text-muted-foreground text-xs'>
+                    较昨日 {stats?.revenueGrowth ? `+${stats.revenueGrowth}%` : '-'}
+                  </p>
+                </>
+              )}
             </CardContent>
           </Card>
         </div>
