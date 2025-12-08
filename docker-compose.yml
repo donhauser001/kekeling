@@ -1,33 +1,40 @@
 # ============================================
-# 科科灵陪诊平台 Docker Compose
+# 科科灵陪诊平台 Docker Compose (生产环境)
 # ============================================
-# 启动: docker-compose up -d
-# 停止: docker-compose down
+# 一键启动: docker-compose up -d --build
+# 停止:     docker-compose down
 # 查看日志: docker-compose logs -f
+# 重建:     docker-compose up -d --build --force-recreate
 # ============================================
 
 services:
+  # ==========================================
   # PostgreSQL 数据库
+  # ==========================================
   postgres:
     image: postgres:15-alpine
     container_name: kekeling-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: kekeling
-      POSTGRES_PASSWORD: kekeling123
-      POSTGRES_DB: kekeling
+      POSTGRES_USER: ${POSTGRES_USER:-kekeling}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-kekeling123}
+      POSTGRES_DB: ${POSTGRES_DB:-kekeling}
       TZ: Asia/Shanghai
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U kekeling -d kekeling"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - kekeling-network
 
-  # 后端 API 服务
+  # ==========================================
+  # 后端 API 服务 (NestJS)
+  # ==========================================
   api:
     build:
       context: ./server
@@ -37,13 +44,17 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-      DATABASE_URL: postgresql://kekeling:kekeling123@postgres:5432/kekeling?schema=public
-      JWT_SECRET: kekeling-jwt-secret-key-production-2024
-      JWT_EXPIRES_IN: 7d
-      WECHAT_APPID: ${WECHAT_APPID:-wx6e10ab2c3b2c8c73}
-      WECHAT_SECRET: ${WECHAT_SECRET:-your-wechat-secret}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-kekeling}:${POSTGRES_PASSWORD:-kekeling123}@postgres:5432/${POSTGRES_DB:-kekeling}?schema=public
+      JWT_SECRET: ${JWT_SECRET:-kekeling-jwt-secret-key-production-2024}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      # 微信配置
+      WECHAT_APP_ID: ${WECHAT_APP_ID:-}
+      WECHAT_APP_SECRET: ${WECHAT_APP_SECRET:-}
+      WECHAT_MCH_ID: ${WECHAT_MCH_ID:-}
+      WECHAT_PAY_API_KEY: ${WECHAT_PAY_API_KEY:-}
+      WECHAT_PAY_NOTIFY_URL: ${WECHAT_PAY_NOTIFY_URL:-}
     ports:
-      - "3000:3000"
+      - "${API_PORT:-3000}:3000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -52,24 +63,62 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 40s
+    networks:
+      - kekeling-network
 
+  # ==========================================
+  # 管理后台 (React + Vite)
+  # ==========================================
+  admin:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_BASE_URL=${VITE_API_BASE_URL:-/api}
+    container_name: kekeling-admin
+    restart: unless-stopped
+    ports:
+      - "${ADMIN_PORT:-80}:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - kekeling-network
+
+  # ==========================================
   # Adminer - 数据库管理工具 (可选)
+  # ==========================================
   adminer:
     image: adminer:latest
     container_name: kekeling-adminer
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "${ADMINER_PORT:-8080}:8080"
     depends_on:
       - postgres
     environment:
       ADMINER_DEFAULT_SERVER: postgres
+    networks:
+      - kekeling-network
+    profiles:
+      - tools
 
+# ==========================================
+# 数据卷
+# ==========================================
 volumes:
   postgres_data:
     driver: local
 
+# ==========================================
+# 网络
+# ==========================================
 networks:
-  default:
-    name: kekeling-network
-
+  kekeling-network:
+    driver: bridge

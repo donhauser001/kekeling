@@ -1,31 +1,55 @@
-# 前端项目
-src/
-miniapp/
-packages/
-public/
-docs/
+# ============================================
+# Docker 忽略文件
+# ============================================
 
-# 配置文件
-*.config.js
-*.config.ts
-tsconfig*.json
-components.json
-
-# 依赖
+# 依赖目录
 node_modules
-.pnpm-store
+**/node_modules
+
+# 构建产物 (由 Docker 重新构建)
+dist
+**/dist
+.next
+.nuxt
+
+# 日志
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# 环境文件
+.env
+.env.local
+.env.*.local
+
+# IDE 和编辑器
+.idea
+.vscode
+*.swp
+*.swo
+.DS_Store
 
 # Git
 .git
 .gitignore
 
-# IDE
-.idea
-.vscode
-.cursor
+# 测试
+coverage
+.nyc_output
 
-# 其他
+# 文档
+docs
 *.md
-*.log
-.DS_Store
+!README.md
 
+# 其他项目目录 (不需要打包到前端镜像)
+server
+miniapp
+packages
+
+# 临时文件
+tmp
+temp
+.cache

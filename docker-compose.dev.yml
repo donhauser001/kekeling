@@ -1,12 +1,17 @@
 # ============================================
 # 科科灵陪诊平台 Docker Compose (开发环境)
 # ============================================
-# 仅启动数据库，后端本地开发
-# 启动: docker-compose -f docker-compose.dev.yml up -d
+# 启动:     docker-compose -f docker-compose.dev.yml up -d
+# 停止:     docker-compose -f docker-compose.dev.yml down
+# 查看日志: docker-compose -f docker-compose.dev.yml logs -f
+# ============================================
+# 开发环境只启动数据库，前后端本地运行
 # ============================================
 
 services:
-  # PostgreSQL 数据库
+  # ==========================================
+  # PostgreSQL 数据库 (开发)
+  # ==========================================
   postgres:
     image: postgres:15-alpine
     container_name: kekeling-postgres-dev
@@ -25,8 +30,12 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - kekeling-dev-network
 
+  # ==========================================
   # Adminer - 数据库管理工具
+  # ==========================================
   adminer:
     image: adminer:latest
     container_name: kekeling-adminer-dev
@@ -37,8 +46,37 @@ services:
       - postgres
     environment:
       ADMINER_DEFAULT_SERVER: postgres
+    networks:
+      - kekeling-dev-network
 
+  # ==========================================
+  # Redis (可选，用于缓存)
+  # ==========================================
+  redis:
+    image: redis:7-alpine
+    container_name: kekeling-redis-dev
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_dev_data:/data
+    networks:
+      - kekeling-dev-network
+    profiles:
+      - cache
+
+# ==========================================
+# 数据卷
+# ==========================================
 volumes:
   postgres_dev_data:
     driver: local
+  redis_dev_data:
+    driver: local
 
+# ==========================================
+# 网络
+# ==========================================
+networks:
+  kekeling-dev-network:
+    driver: bridge

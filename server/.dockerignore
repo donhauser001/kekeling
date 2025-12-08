@@ -1,32 +1,48 @@
-# 依赖
-node_modules
-.pnpm-store
+# ============================================
+# Docker 忽略文件 (后端)
+# ============================================
 
-# 构建产物
+# 依赖目录
+node_modules
+
+# 构建产物 (由 Docker 重新构建)
 dist
 
-# 开发文件
+# 日志
 *.log
+npm-debug.log*
+pnpm-debug.log*
+
+# 环境文件
 .env
-.env.*
-!.env.example
+.env.local
+.env.*.local
 
-# 数据库文件
-prisma/*.db
-prisma/*.db-journal
-
-# IDE
+# IDE 和编辑器
 .idea
 .vscode
 *.swp
 *.swo
+.DS_Store
+
+# Git
+.git
+.gitignore
 
 # 测试
 coverage
 .nyc_output
 
-# 其他
-.DS_Store
-Thumbs.db
-*.md
+# SQLite 开发数据库
+prisma/dev.db
+prisma/dev.db-journal
 
+# 文档
+docs
+*.md
+!README.md
+
+# 临时文件
+tmp
+temp
+.cache
