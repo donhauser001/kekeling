@@ -119,10 +119,18 @@ export function useEscorts(query: EscortQuery = {}) {
   })
 }
 
-export function useAvailableEscorts(hospitalId?: string) {
+export function useEscortStats() {
   return useQuery({
-    queryKey: ['escorts', 'available', hospitalId],
-    queryFn: () => escortApi.getAvailable(hospitalId),
+    queryKey: ['escorts', 'stats'],
+    queryFn: () => escortApi.getStats(),
+    staleTime: 60 * 1000,
+  })
+}
+
+export function useAvailableEscorts(params?: { hospitalId?: string; cityCode?: string }) {
+  return useQuery({
+    queryKey: ['escorts', 'available', params],
+    queryFn: () => escortApi.getAvailable(params),
     staleTime: 30 * 1000,
   })
 }
@@ -163,6 +171,49 @@ export function useDeleteEscort() {
 
   return useMutation({
     mutationFn: escortApi.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['escorts'] })
+    },
+  })
+}
+
+export function useUpdateEscortStatus() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, status }: { id: string; status: string }) =>
+      escortApi.updateStatus(id, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['escorts'] })
+    },
+  })
+}
+
+export function useUpdateEscortWorkStatus() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, workStatus }: { id: string; workStatus: string }) =>
+      escortApi.updateWorkStatus(id, workStatus),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['escorts'] })
+    },
+  })
+}
+
+export function useUpdateEscortHospitals() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      escortId,
+      hospitalIds,
+      familiarDeptsMap,
+    }: {
+      escortId: string
+      hospitalIds: string[]
+      familiarDeptsMap?: Record<string, string[]>
+    }) => escortApi.updateHospitals(escortId, hospitalIds, familiarDeptsMap),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['escorts'] })
     },

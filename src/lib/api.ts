@@ -206,66 +206,158 @@ export const orderApi = {
 // 陪诊员 API
 // ============================================
 
-export interface Escort {
+export interface EscortCertificate {
+  name: string
+  url: string
+  expireDate?: string
+}
+
+export interface EscortHospital {
   id: string
   name: string
+  familiarDepts: string[]
+}
+
+export interface Escort {
+  id: string
+  userId: string | null
+  name: string
   phone: string
+  gender: 'male' | 'female'
   avatar: string | null
-  gender: string
-  age: number | null
-  level: string
+  idCard: string | null
+  cityCode: string
+  level: 'senior' | 'intermediate' | 'junior' | 'trainee'
+  experience: string | null
   introduction: string | null
-  certifications: string | null
-  serviceCount: number
+  tags: string[]
+  certificates: EscortCertificate[]
   rating: number
-  status: 'active' | 'inactive' | 'pending' | 'suspended'
+  orderCount: number
+  status: 'pending' | 'active' | 'inactive' | 'suspended'
+  workStatus: 'resting' | 'working' | 'busy'
+  hospitals: EscortHospital[]
+  user?: {
+    id: string
+    nickname: string | null
+    avatar: string | null
+  }
   createdAt: string
   updatedAt: string
-  hospitals?: Array<{
-    hospital: {
-      id: string
-      name: string
-    }
-  }>
 }
 
 export interface EscortQuery {
   page?: number
   pageSize?: number
   status?: string
+  workStatus?: string
+  level?: string
+  cityCode?: string
   keyword?: string
-  hospitalId?: string
+}
+
+export interface CreateEscortData {
+  name: string
+  gender: 'male' | 'female'
+  phone: string
+  avatar?: string
+  idCard?: string
+  cityCode?: string
+  level: 'senior' | 'intermediate' | 'junior' | 'trainee'
+  experience?: string
+  introduction?: string
+  tags?: string[]
+  certificates?: EscortCertificate[]
+  hospitalIds?: string[]
+}
+
+export interface UpdateEscortData extends Partial<CreateEscortData> {
+  status?: 'pending' | 'active' | 'inactive' | 'suspended'
+  workStatus?: 'resting' | 'working' | 'busy'
+}
+
+export interface EscortStats {
+  total: number
+  active: number
+  working: number
+  busy: number
+  pending: number
+  inactive: number
 }
 
 export const escortApi = {
+  // 获取列表
   getList: (query: EscortQuery = {}) =>
     request<PaginatedData<Escort>>('/admin/escorts', {
       params: query as Record<string, string | number | boolean | undefined>,
     }),
 
-  getAvailable: (hospitalId?: string) =>
+  // 获取统计
+  getStats: () =>
+    request<EscortStats>('/admin/escorts/stats'),
+
+  // 获取可派单陪诊员
+  getAvailable: (params?: { hospitalId?: string; cityCode?: string }) =>
     request<Escort[]>('/admin/escorts/available', {
-      params: { hospitalId },
+      params,
     }),
 
+  // 获取详情
   getById: (id: string) =>
-    request<Escort>(`/escorts/${id}`),
+    request<Escort>(`/admin/escorts/${id}`),
 
-  create: (data: Partial<Escort>) =>
-    request<Escort>('/escorts', {
+  // 创建
+  create: (data: CreateEscortData) =>
+    request<Escort>('/admin/escorts', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
-  update: (id: string, data: Partial<Escort>) =>
-    request<Escort>(`/escorts/${id}`, {
-      method: 'PATCH',
+  // 更新
+  update: (id: string, data: UpdateEscortData) =>
+    request<Escort>(`/admin/escorts/${id}`, {
+      method: 'PUT',
       body: JSON.stringify(data),
     }),
 
+  // 删除
   delete: (id: string) =>
-    request<void>(`/escorts/${id}`, {
+    request<void>(`/admin/escorts/${id}`, {
       method: 'DELETE',
+    }),
+
+  // 更新状态
+  updateStatus: (id: string, status: string) =>
+    request<Escort>(`/admin/escorts/${id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
+    }),
+
+  // 更新接单状态
+  updateWorkStatus: (id: string, workStatus: string) =>
+    request<Escort>(`/admin/escorts/${id}/work-status`, {
+      method: 'PUT',
+      body: JSON.stringify({ workStatus }),
+    }),
+
+  // 关联医院
+  associateHospital: (escortId: string, hospitalId: string, familiarDepts?: string[]) =>
+    request<void>(`/admin/escorts/${escortId}/hospitals`, {
+      method: 'POST',
+      body: JSON.stringify({ hospitalId, familiarDepts }),
+    }),
+
+  // 解除医院关联
+  dissociateHospital: (escortId: string, hospitalId: string) =>
+    request<void>(`/admin/escorts/${escortId}/hospitals/${hospitalId}`, {
+      method: 'DELETE',
+    }),
+
+  // 批量更新医院关联
+  updateHospitals: (escortId: string, hospitalIds: string[], familiarDeptsMap?: Record<string, string[]>) =>
+    request<Escort>(`/admin/escorts/${escortId}/hospitals`, {
+      method: 'PUT',
+      body: JSON.stringify({ hospitalIds, familiarDeptsMap }),
     }),
 }
 
