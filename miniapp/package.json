@@ -41,8 +41,8 @@
     "@tarojs/components": "4.1.9",
     "@tarojs/helper": "4.1.9",
     "@tarojs/plugin-framework-react": "4.1.9",
-    "@tarojs/plugin-platform-weapp": "4.1.9",
     "@tarojs/plugin-platform-h5": "4.1.9",
+    "@tarojs/plugin-platform-weapp": "4.1.9",
     "@tarojs/react": "4.1.9",
     "@tarojs/runtime": "4.1.9",
     "@tarojs/shared": "4.1.9",
@@ -53,12 +53,15 @@
   },
   "devDependencies": {
     "@babel/core": "^7.24.0",
+    "@babel/preset-env": "^7.28.5",
+    "@babel/preset-react": "^7.28.5",
+    "@babel/preset-typescript": "^7.28.5",
     "@tarojs/cli": "4.1.9",
     "@tarojs/webpack5-runner": "4.1.9",
     "@types/react": "^18.3.1",
+    "babel-preset-taro": "^4.1.9",
     "eslint": "^9.0.0",
     "sass": "^1.80.0",
     "typescript": "^5.6.3"
   }
 }
-
