@@ -1,0 +1,167 @@
+.orders-page {
+  min-height: 100vh;
+  background-color: var(--background-color);
+  padding-bottom: 120px;
+}
+
+// Tab 栏
+.order-tabs {
+  display: flex;
+  background-color: #fff;
+  padding: 0 8px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.tab-item {
+  flex: 1;
+  text-align: center;
+  padding: 24px 0;
+  font-size: 28px;
+  color: var(--text-color-secondary);
+  position: relative;
+
+  &.active {
+    color: var(--primary-color);
+    font-weight: 500;
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 40px;
+      height: 4px;
+      background-color: var(--primary-color);
+      border-radius: 2px;
+    }
+  }
+}
+
+// 订单列表
+.order-list {
+  padding: 16px 24px;
+}
+
+.order-card {
+  margin-bottom: 16px;
+}
+
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 16px;
+}
+
+.order-no {
+  font-size: 24px;
+  color: var(--text-color-secondary);
+}
+
+.order-status {
+  font-size: 26px;
+  font-weight: 500;
+}
+
+.order-content {
+  margin-bottom: 16px;
+}
+
+.service-info {
+  margin-bottom: 12px;
+}
+
+.service-name {
+  font-size: 32px;
+  font-weight: 500;
+  color: var(--text-color);
+  display: block;
+  margin-bottom: 8px;
+}
+
+.hospital-name {
+  font-size: 26px;
+  color: var(--text-color-secondary);
+}
+
+.appointment-info {
+  display: flex;
+  gap: 24px;
+}
+
+.appointment-time,
+.escort-name {
+  font-size: 24px;
+  color: var(--text-color-secondary);
+}
+
+.order-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color);
+}
+
+.price-info {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+
+  .label {
+    font-size: 24px;
+    color: var(--text-color-secondary);
+  }
+
+  .price {
+    font-size: 36px;
+  }
+}
+
+.action-btns {
+  display: flex;
+  gap: 16px;
+}
+
+.btn {
+  padding: 12px 24px;
+  font-size: 26px;
+  border-radius: 32px;
+
+  &.btn-primary {
+    background-color: var(--primary-color);
+    color: #fff;
+  }
+
+  &.btn-outline {
+    border: 1px solid var(--primary-color);
+    color: var(--primary-color);
+  }
+
+  &.btn-text {
+    color: var(--text-color-secondary);
+  }
+}
+
+// 空状态
+.empty-container {
+  padding: 120px 40px;
+  
+  .empty-icon {
+    font-size: 120px;
+    display: block;
+    text-align: center;
+    margin-bottom: 24px;
+  }
+
+  .empty-text {
+    display: block;
+    text-align: center;
+  }
+}
+

@@ -115,7 +115,7 @@ import { orderSchema, createOrderRequestSchema } from '@kekeling/shared-types'
 
 ### 3.1 微信小程序账号
 
-- [ ] 已注册企业认证小程序账号
+- [x] 已注册企业认证小程序账号
 - [ ] 已完成微信认证（年审）
 - [ ] 已获取 AppID 和 AppSecret
 - [ ] 已添加开发者账号
@@ -124,7 +124,7 @@ import { orderSchema, createOrderRequestSchema } from '@kekeling/shared-types'
 
 ### 3.2 微信支付
 
-- [ ] 已开通微信支付商户号
+- [ ] 已开通微信支付商户号 **🔄 审核中**
 - [ ] 商户号已关联小程序 AppID
 - [ ] 已获取 API 密钥
 - [ ] 已配置支付目录和授权域名
@@ -136,7 +136,7 @@ import { orderSchema, createOrderRequestSchema } from '@kekeling/shared-types'
 
 - [ ] 已购买云服务器（推荐：阿里云/腾讯云）
 - [ ] 已购买域名
-- [ ] **已完成 ICP 备案**（⚠️ 通常需要 10-20 天）
+- [ ] **ICP 备案** **🔄 审核中**（⚠️ 通常需要 10-20 天）
 - [ ] 已配置 HTTPS 证书
 - [ ] 已在小程序后台配置服务器域名
 
@@ -275,7 +275,12 @@ import { orderSchema, createOrderRequestSchema } from '@kekeling/shared-types'
 | **Node.js (Nest.js)** | 技术栈统一、灵活性高 | 需要服务器和备案 | 长期项目、有后端团队 |
 | **Go / Java** | 性能好、企业级 | 学习成本高 | 大型项目 |
 
-**推荐：** 如果 ICP 备案已完成或进行中，建议用 **Node.js**；如果时间非常紧且没有备案，考虑 **云开发** 快速上线。
+**✅ 已确认：使用 Node.js (Nest.js)**
+
+> 备案和支付都在审核中，预计 1-2 周内通过。当前策略：
+> - 小程序端：先开发 UI 和业务逻辑，使用 Mock 数据
+> - 后端：本地开发，等备案通过后部署
+> - 支付：先做模拟支付流程，等商户号下来后对接真实支付
 
 ### 5.2 数据库设计
 

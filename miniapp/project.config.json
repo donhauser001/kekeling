@@ -1,0 +1,19 @@
+{
+  "miniprogramRoot": "dist/",
+  "projectname": "kekeling-miniapp",
+  "description": "Kekeling 陪诊服务小程序",
+  "appid": "请填写小程序AppID",
+  "setting": {
+    "urlCheck": true,
+    "es6": false,
+    "enhance": false,
+    "compileHotReLoad": false,
+    "postcss": false,
+    "minified": false
+  },
+  "compileType": "miniprogram",
+  "simulatorType": "wechat",
+  "simulatorPluginLibVersion": {},
+  "condition": {}
+}
+

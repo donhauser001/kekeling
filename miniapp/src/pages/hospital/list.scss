@@ -1,0 +1,45 @@
+.hospital-page {
+  min-height: 100vh;
+  background-color: var(--background-color);
+}
+
+.hospital-list {
+  padding: 24px;
+}
+
+.hospital-card {
+  margin-bottom: 16px;
+}
+
+.hospital-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.hospital-name {
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.hospital-address {
+  font-size: 26px;
+  color: var(--text-color-secondary);
+  margin-bottom: 16px;
+}
+
+.hospital-footer {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color);
+}
+
+.hospital-distance,
+.hospital-count {
+  font-size: 24px;
+  color: var(--text-color-placeholder);
+}
+
