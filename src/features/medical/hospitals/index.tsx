@@ -408,10 +408,10 @@ export function Hospitals() {
                                                 </div>
                                                 <div className='flex-1 min-w-0'>
                                                     <CardTitle className='flex items-center gap-2 text-base'>
-                                                        <span className='truncate'>{hospital.shortName || hospital.name}</span>
+                                                        <span className='truncate'>{hospital.name}</span>
                                                     </CardTitle>
                                                     {hospital.shortName && (
-                                                        <p className='text-muted-foreground text-xs truncate'>{hospital.name}</p>
+                                                        <p className='text-muted-foreground text-xs'>简称：{hospital.shortName}</p>
                                                     )}
                                                     <div className='mt-1 flex flex-wrap items-center gap-1'>
                                                         <Badge variant='outline' className='text-xs'>
