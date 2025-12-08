@@ -1,5 +1,5 @@
-import { IsString, IsOptional, IsInt, IsEnum, MinLength, MaxLength } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsString, IsOptional, IsInt, IsEnum, IsBoolean, MinLength, MaxLength } from 'class-validator';
+import { Type, Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateServiceCategoryDto {
@@ -9,16 +9,27 @@ export class CreateServiceCategoryDto {
   @MaxLength(20, { message: '名称最多20个字' })
   name: string;
 
-  @ApiPropertyOptional({ description: '图标 URL 或图标名称' })
+  @ApiPropertyOptional({ description: '图标名称 (Lucide icon name)' })
   @IsOptional()
   @IsString()
   icon?: string;
+
+  @ApiPropertyOptional({ description: '主题颜色 (如: #667eea 或渐变色)' })
+  @IsOptional()
+  @IsString()
+  color?: string;
 
   @ApiPropertyOptional({ description: '分类描述' })
   @IsOptional()
   @IsString()
   @MaxLength(200)
   description?: string;
+
+  @ApiPropertyOptional({ description: '是否置顶 (最多2个)', default: false })
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => value === 'true' || value === true)
+  isPinned?: boolean;
 
   @ApiPropertyOptional({ description: '排序权重', default: 0 })
   @IsOptional()
@@ -35,16 +46,27 @@ export class UpdateServiceCategoryDto {
   @MaxLength(20)
   name?: string;
 
-  @ApiPropertyOptional({ description: '图标 URL 或图标名称' })
+  @ApiPropertyOptional({ description: '图标名称 (Lucide icon name)' })
   @IsOptional()
   @IsString()
   icon?: string;
+
+  @ApiPropertyOptional({ description: '主题颜色 (如: #667eea 或渐变色)' })
+  @IsOptional()
+  @IsString()
+  color?: string;
 
   @ApiPropertyOptional({ description: '分类描述' })
   @IsOptional()
   @IsString()
   @MaxLength(200)
   description?: string;
+
+  @ApiPropertyOptional({ description: '是否置顶 (最多2个)' })
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => value === 'true' || value === true)
+  isPinned?: boolean;
 
   @ApiPropertyOptional({ description: '排序权重' })
   @IsOptional()
