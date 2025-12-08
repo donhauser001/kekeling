@@ -155,8 +155,14 @@ export default function Index() {
     return category.icon || iconMap[category.name] || 'grid'
   }
 
+  // 获取主题色（第一个置顶分类的颜色）
+  const primaryColor = categories.find(c => c.isPinned)?.color || '#1890ff'
+
   return (
-    <View className='index-page'>
+    <View 
+      className='index-page'
+      style={{ '--primary-color': primaryColor } as React.CSSProperties}
+    >
       {/* 头部区域 - Logo & Slogan */}
       <View className='header-section'>
         <View className='brand'>

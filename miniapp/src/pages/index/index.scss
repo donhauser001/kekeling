@@ -14,8 +14,8 @@
     height: 40vh;
     background: linear-gradient(
       180deg, 
-      #1890ff 0%, 
-      #1890ff 30%,
+      var(--primary-color, #1890ff) 0%, 
+      var(--primary-color, #1890ff) 30%,
       #5baaff 55%,
       #a8d4ff 70%,
       #d9ecfc 82%,
@@ -421,7 +421,7 @@
 
 .stats-card {
   display: flex;
-  background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
+  background: var(--primary-color, #1890ff);
   border-radius: 20px;
   padding: 32px 16px;
 }
