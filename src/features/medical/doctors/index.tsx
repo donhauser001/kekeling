@@ -66,27 +66,13 @@ import { SimplePagination } from '@/components/simple-pagination'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { cn } from '@/lib/utils'
 
-// 职称选项
-const titleOptions = [
-    { value: 'chief', label: '主任医师' },
-    { value: 'associate_chief', label: '副主任医师' },
-    { value: 'attending', label: '主治医师' },
-    { value: 'resident', label: '住院医师' },
-]
+// 导入统一的数据定义
+import { doctorTitles, doctorTitleLabels, doctorTitleColors } from './data/data'
 
-const titleLabels: Record<string, string> = {
-    'chief': '主任医师',
-    'associate_chief': '副主任医师',
-    'attending': '主治医师',
-    'resident': '住院医师',
-}
-
-const titleColors: Record<string, string> = {
-    'chief': 'bg-red-500',
-    'associate_chief': 'bg-orange-500',
-    'attending': 'bg-blue-500',
-    'resident': 'bg-green-500',
-}
+// 职称选项（兼容旧代码）
+const titleOptions = doctorTitles
+const titleLabels = doctorTitleLabels
+const titleColors = doctorTitleColors
 
 interface DoctorFormData {
     name: string

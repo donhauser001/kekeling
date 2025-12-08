@@ -1,11 +1,11 @@
 import { type ColumnDef } from '@tanstack/react-table'
 import { Phone, CalendarCheck, Star } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { DataTableColumnHeader } from '@/components/data-table'
-import { doctorStatusTypes } from '../data/data'
+import { doctorStatusTypes, doctorTitleLabels } from '../data/data'
 import { type Doctor } from '../data/schema'
 import { DataTableRowActions } from './data-table-row-actions'
 
@@ -45,11 +45,19 @@ export const doctorsColumns: ColumnDef<Doctor>[] = [
         cell: ({ row }) => (
             <div className='flex items-center gap-3 ps-2'>
                 <Avatar className='h-9 w-9'>
+                    {row.original.avatar && <AvatarImage src={row.original.avatar} />}
                     <AvatarFallback className='bg-primary/10 text-primary text-sm'>
                         {row.getValue<string>('name').slice(0, 1)}
                     </AvatarFallback>
                 </Avatar>
-                <span className='font-medium'>{row.getValue('name')}</span>
+                <div>
+                    <span className='font-medium'>{row.getValue('name')}</span>
+                    {row.original.gender && (
+                        <span className='text-muted-foreground ml-1 text-xs'>
+                            {row.original.gender === 'male' ? '男' : '女'}
+                        </span>
+                    )}
+                </div>
             </div>
         ),
         meta: {
@@ -65,50 +73,58 @@ export const doctorsColumns: ColumnDef<Doctor>[] = [
         header: ({ column }) => (
             <DataTableColumnHeader column={column} title='职称' />
         ),
-        cell: ({ row }) => <div>{row.getValue('title')}</div>,
+        cell: ({ row }) => {
+            const title = row.getValue<string>('title')
+            return (
+                <Badge variant='outline' className='text-xs'>
+                    {doctorTitleLabels[title] || title}
+                </Badge>
+            )
+        },
         filterFn: (row, id, value) => {
             return value.includes(row.getValue(id))
         },
     },
     {
-        accessorKey: 'department',
+        // ✅ 使用 accessorFn 处理对象类型
+        id: 'department',
+        accessorFn: (row) => row.department?.name || '-',
         header: ({ column }) => (
             <DataTableColumnHeader column={column} title='科室' />
         ),
-        cell: ({ row }) => <div>{row.getValue('department')}</div>,
-        filterFn: (row, id, value) => {
-            return value.includes(row.getValue(id))
-        },
+        cell: ({ row }) => <div>{row.original.department?.name || '-'}</div>,
     },
     {
-        accessorKey: 'hospital',
+        // ✅ 使用 accessorFn 处理对象类型
+        id: 'hospital',
+        accessorFn: (row) => row.hospital?.name || '-',
         header: ({ column }) => (
             <DataTableColumnHeader column={column} title='医院' />
         ),
         cell: ({ row }) => (
             <div className='flex items-center gap-1.5'>
-                <span className='truncate max-w-[150px]'>{row.getValue('hospital')}</span>
-                <Badge variant='outline' className='text-xs shrink-0'>{row.original.level}</Badge>
+                <span className='truncate max-w-[150px]'>{row.original.hospital?.name || '-'}</span>
             </div>
         ),
     },
     {
-        accessorKey: 'specialty',
+        // ✅ 字段名改为复数 specialties
+        accessorKey: 'specialties',
         header: ({ column }) => (
             <DataTableColumnHeader column={column} title='专长' />
         ),
         cell: ({ row }) => {
-            const specialty = row.getValue<string[]>('specialty')
+            const specialties = row.getValue<string[]>('specialties') || []
             return (
                 <div className='flex flex-wrap gap-1 max-w-[180px]'>
-                    {specialty.slice(0, 2).map((s) => (
+                    {specialties.slice(0, 2).map((s) => (
                         <Badge key={s} variant='secondary' className='text-xs'>
                             {s}
                         </Badge>
                     ))}
-                    {specialty.length > 2 && (
+                    {specialties.length > 2 && (
                         <Badge variant='secondary' className='text-xs'>
-                            +{specialty.length - 2}
+                            +{specialties.length - 2}
                         </Badge>
                     )}
                 </div>
@@ -121,12 +137,17 @@ export const doctorsColumns: ColumnDef<Doctor>[] = [
         header: ({ column }) => (
             <DataTableColumnHeader column={column} title='联系方式' />
         ),
-        cell: ({ row }) => (
-            <div className='text-muted-foreground flex items-center gap-1 text-sm'>
-                <Phone className='h-3 w-3' />
-                {row.getValue('phone')}
-            </div>
-        ),
+        cell: ({ row }) => {
+            const phone = row.getValue<string | null>('phone')
+            return phone ? (
+                <div className='text-muted-foreground flex items-center gap-1 text-sm'>
+                    <Phone className='h-3 w-3' />
+                    {phone}
+                </div>
+            ) : (
+                <span className='text-muted-foreground'>-</span>
+            )
+        },
         enableSorting: false,
     },
     {
@@ -142,14 +163,15 @@ export const doctorsColumns: ColumnDef<Doctor>[] = [
         ),
     },
     {
-        accessorKey: 'satisfaction',
+        // ✅ 字段名改为 rating
+        accessorKey: 'rating',
         header: ({ column }) => (
-            <DataTableColumnHeader column={column} title='满意度' />
+            <DataTableColumnHeader column={column} title='评分' />
         ),
         cell: ({ row }) => (
             <div className='flex items-center gap-1 text-amber-500'>
                 <Star className='h-3.5 w-3.5 fill-current' />
-                {row.getValue('satisfaction')}%
+                {row.getValue<number>('rating')?.toFixed(1) || '-'}
             </div>
         ),
     },
@@ -160,7 +182,7 @@ export const doctorsColumns: ColumnDef<Doctor>[] = [
         ),
         cell: ({ row }) => {
             const status = row.getValue('status') as string
-            const badgeColor = doctorStatusTypes.get(status as any)
+            const badgeColor = doctorStatusTypes.get(status as 'active' | 'inactive')
             return (
                 <Badge variant='outline' className={cn('capitalize', badgeColor)}>
                     {status === 'active' ? '在职' : '离职'}
@@ -178,4 +200,3 @@ export const doctorsColumns: ColumnDef<Doctor>[] = [
         cell: DataTableRowActions,
     },
 ]
-
