@@ -1,9 +1,11 @@
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
+import { useEffect } from 'react'
 import { Check } from 'lucide-react'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { showSubmittedData } from '@/lib/show-submitted-data'
+import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { configApi } from '@/lib/api'
 import {
   type Accent,
   ACCENT_OPTIONS,
@@ -41,22 +43,48 @@ export function AppearanceForm() {
   const { theme, setTheme } = useTheme()
   const { accent, setAccent } = useAccent()
 
-  // This can come from your database or API.
-  const defaultValues: Partial<AppearanceFormValues> = {
-    theme: theme as 'light' | 'dark',
-    accent,
-  }
-
   const form = useForm<AppearanceFormValues>({
     resolver: zodResolver(appearanceFormSchema),
-    defaultValues,
+    defaultValues: {
+      theme: theme as 'light' | 'dark',
+      accent,
+    },
   })
 
-  function onSubmit(data: AppearanceFormValues) {
+  // 从后台加载主色调设置
+  useEffect(() => {
+    const loadThemeSettings = async () => {
+      try {
+        const data = await configApi.getThemeSettings()
+        if (data?.primaryColor) {
+          // 根据颜色值找到对应的 accent
+          const matchedAccent = ACCENT_OPTIONS.find(o => o.color === data.primaryColor)
+          if (matchedAccent) {
+            form.setValue('accent', matchedAccent.value)
+            setAccent(matchedAccent.value)
+          }
+        }
+      } catch (err) {
+        console.error('加载主题设置失败:', err)
+      }
+    }
+    loadThemeSettings()
+  }, [form, setAccent])
+
+  async function onSubmit(data: AppearanceFormValues) {
+    // 更新本地主题
     if (data.theme !== theme) setTheme(data.theme)
     if (data.accent !== accent) setAccent(data.accent)
 
-    showSubmittedData(data)
+    // 同步主色调到后台数据库（所有终端共享）
+    try {
+      const selectedColor = ACCENT_OPTIONS.find(o => o.value === data.accent)?.color || '#71717a'
+      await configApi.updateThemeSettings({ primaryColor: selectedColor })
+      toast.success('主题设置已保存，所有终端将同步更新')
+    } catch (err) {
+      console.error('保存主题设置失败:', err)
+      toast.error('保存失败，请重试')
+    }
   }
 
   return (
@@ -138,7 +166,7 @@ export function AppearanceForm() {
           render={({ field }) => (
             <FormItem>
               <FormLabel>主色调</FormLabel>
-              <FormDescription>选择应用的主色调。</FormDescription>
+              <FormDescription>选择应用的主色调，将同步到所有终端（管理后台、小程序、App等）。</FormDescription>
               <FormMessage />
               <FormControl>
                 <div className='flex flex-wrap gap-3 pt-2'>
