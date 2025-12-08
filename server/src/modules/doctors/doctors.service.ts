@@ -47,7 +47,7 @@ export class DoctorsService {
     }
 
     // 排序
-    let orderBy: any = [{ sort: 'asc' }, { createdAt: 'desc' }];
+    let orderBy: any = [{ createdAt: 'desc' }];
     if (sort === 'rating') {
       orderBy = [{ rating: 'desc' }, { consultCount: 'desc' }];
     } else if (sort === 'consultCount') {

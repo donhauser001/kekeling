@@ -13,8 +13,10 @@ import {
   userApi,
   homeApi,
   departmentTemplateApi,
+  doctorApi,
   type OrderQuery,
   type EscortQuery,
+  type DoctorQuery,
 } from '@/lib/api'
 
 // ============================================
@@ -351,6 +353,60 @@ export function useDeleteDepartmentTemplate() {
     mutationFn: departmentTemplateApi.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['department-templates'] })
+    },
+  })
+}
+
+// ============================================
+// 医生
+// ============================================
+
+export function useDoctors(query: DoctorQuery = {}) {
+  return useQuery({
+    queryKey: ['doctors', query],
+    queryFn: () => doctorApi.getList(query),
+    staleTime: 30 * 1000,
+  })
+}
+
+export function useDoctor(id: string) {
+  return useQuery({
+    queryKey: ['doctors', id],
+    queryFn: () => doctorApi.getById(id),
+    enabled: !!id,
+  })
+}
+
+export function useCreateDoctor() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: doctorApi.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['doctors'] })
+    },
+  })
+}
+
+export function useUpdateDoctor() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Parameters<typeof doctorApi.update>[1] }) =>
+      doctorApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['doctors'] })
+    },
+  })
+}
+
+export function useDeleteDoctor() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: doctorApi.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['doctors'] })
     },
   })
 }
