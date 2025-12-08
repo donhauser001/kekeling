@@ -1,92 +1,152 @@
-# Shadcn 管理后台
+# Kekeling 陪诊服务管理平台
 
+> 专业的陪诊服务运营管理系统，为医疗陪诊行业提供一站式后台解决方案。
 
-## 功能特性
+---
 
-- 🌓 亮色/暗色模式
-- 📱 响应式设计
-- ♿ 无障碍访问
-- 📁 内置侧边栏组件
+## 📋 项目简介
+
+Kekeling 是一个面向陪诊服务行业的管理后台系统，帮助运营团队高效管理陪诊员、订单、用户和医疗资源。本项目是整个陪诊服务产品矩阵的核心管理端。
+
+### 产品矩阵
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Kekeling 陪诊服务平台                      │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│   ┌─────────────┐                                          │
+│   │  管理后台   │  ← 当前项目                               │
+│   │   (Web)    │    运营人员使用                            │
+│   └─────────────┘                                          │
+│          │                                                  │
+│          │ API 对接                                         │
+│          ▼                                                  │
+│   ┌─────────────────────────────────────────────────────┐  │
+│   │                    用户端                            │  │
+│   │  ┌───────────┐ ┌───────────┐ ┌───────────┐        │  │
+│   │  │ 微信小程序 │ │  iOS App  │ │Android App│        │  │
+│   │  │  (规划中) │ │  (规划中) │ │ (规划中)  │        │  │
+│   │  └───────────┘ └───────────┘ └───────────┘        │  │
+│   └─────────────────────────────────────────────────────┘  │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## ✨ 功能特性
+
+### 核心业务模块
+
+| 模块 | 功能描述 |
+|------|---------|
+| 🏥 **医疗资源管理** | 医院库、科室库、医生库管理 |
+| 👨‍⚕️ **陪诊员管理** | 陪诊员档案、排班、考核管理 |
+| 📦 **订单管理** | 订单全流程管理、订单分配、售后处理 |
+| 👥 **用户管理** | 用户信息、就诊人、会员管理 |
+| 💰 **业务配置** | 服务分类、价格政策、工作流配置 |
+| 📊 **数据看板** | 运营数据统计、报表分析 |
+
+### 系统特性
+
+- 🌓 亮色/暗色模式切换
+- 📱 响应式设计，支持多端访问
+- ♿ 无障碍访问支持
+- 📁 可折叠侧边栏导航
 - 🔍 全局搜索命令
-- 📄 10+ 页面
-- 🧩 额外自定义组件
-- 🔄 RTL（从右到左）支持
+- 🔄 RTL（从右到左）语言支持
 
-<details>
-<summary>自定义组件说明（点击展开）</summary>
+---
 
-本项目使用 Shadcn UI 组件，但部分组件为了更好地支持 RTL（从右到左）和其他改进做了轻微修改。这些自定义组件与原版 Shadcn UI 有所不同。
-
-如果你想通过 Shadcn CLI 更新组件（例如 `npx shadcn@latest add <component>`），对于未自定义的组件通常是安全的。对于下面列出的自定义组件，你可能需要手动合并更改，以保留项目的修改并避免覆盖 RTL 支持或其他更新。
-
-> 如果你不需要 RTL 支持，可以放心通过 Shadcn CLI 更新"RTL 更新组件"，因为这些更改主要是为了 RTL 兼容性。"已修改组件"可能有其他需要考虑的自定义内容。
-
-### 已修改组件
-
-- scroll-area（滚动区域）
-- sonner（通知提示）
-- separator（分隔线）
-
-### RTL 更新组件
-
-- alert-dialog（警告对话框）
-- calendar（日历）
-- command（命令面板）
-- dialog（对话框）
-- dropdown-menu（下拉菜单）
-- select（选择器）
-- table（表格）
-- sheet（抽屉）
-- sidebar（侧边栏）
-- switch（开关）
-
-**说明：**
-
-- **已修改组件**：这些组件有通用更新，可能包括 RTL 调整。
-- **RTL 更新组件**：这些组件有专门针对 RTL 语言支持的更改（如布局、定位）。
-- 实现细节请查看 `src/components/ui/` 目录下的源文件。
-- 项目中所有其他 Shadcn UI 组件都是标准版本，可以安全地通过 CLI 更新。
-
-</details>
-
-## 技术栈
+## 🛠️ 技术栈
 
 | 类别 | 技术 |
 |------|------|
+| **前端框架** | [React 19](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/) |
 | **UI 框架** | [ShadcnUI](https://ui.shadcn.com)（TailwindCSS + RadixUI） |
 | **构建工具** | [Vite](https://vitejs.dev/) |
 | **路由** | [TanStack Router](https://tanstack.com/router/latest) |
-| **类型检查** | [TypeScript](https://www.typescriptlang.org/) |
-| **代码规范** | [ESLint](https://eslint.org/) & [Prettier](https://prettier.io/) |
-| **图标** | [Lucide Icons](https://lucide.dev/icons/)、[Tabler Icons](https://tabler.io/icons)（仅品牌图标） |
-| **认证（部分）** | [Clerk](https://go.clerk.com/GttUAaK) |
+| **状态管理** | [Zustand](https://zustand-demo.pmnd.rs/) |
+| **数据请求** | [TanStack Query](https://tanstack.com/query/latest) + [Axios](https://axios-http.com/) |
+| **表格处理** | [TanStack Table](https://tanstack.com/table/latest) |
+| **表单验证** | [React Hook Form](https://react-hook-form.com/) + [Zod](https://zod.dev/) |
+| **图标库** | [Lucide Icons](https://lucide.dev/icons/) |
+| **认证** | [Clerk](https://clerk.com/) |
 
-## 本地运行
+---
 
-克隆项目
+## 📁 项目结构
 
-```bash
-git clone https://github.com/donhauser001/kekeling
+```
+src/
+├── assets/           # 静态资源（图标、Logo等）
+├── components/       # 通用组件
+│   ├── ui/          # ShadcnUI 基础组件
+│   ├── layout/      # 布局组件
+│   └── data-table/  # 数据表格组件
+├── config/          # 配置文件
+├── context/         # React Context 提供者
+├── features/        # 业务功能模块
+│   ├── escorts/     # 陪诊员管理
+│   ├── orders/      # 订单管理
+│   ├── users/       # 用户管理
+│   ├── medical/     # 医疗资源管理
+│   ├── hr/          # 人力资源管理
+│   ├── dashboard/   # 数据看板
+│   ├── settings/    # 系统设置
+│   └── ...
+├── hooks/           # 自定义 Hooks
+├── lib/             # 工具函数库
+├── routes/          # 路由配置
+├── stores/          # Zustand 状态管理
+└── styles/          # 全局样式
 ```
 
-进入项目目录
+---
+
+## 🚀 快速开始
+
+### 环境要求
+
+- Node.js >= 18
+- pnpm >= 8
+
+### 安装运行
 
 ```bash
-cd shadcn-admin
-```
+# 克隆项目
+git clone https://github.com/donhauser001/kekeling.git
 
-安装依赖
+# 进入项目目录
+cd kekeling
 
-```bash
+# 安装依赖
 pnpm install
+
+# 启动开发服务器
+pnpm dev
 ```
 
-启动开发服务器
+### 常用命令
 
 ```bash
-pnpm run dev
+pnpm dev          # 启动开发服务器
+pnpm build        # 构建生产版本
+pnpm preview      # 预览生产构建
+pnpm lint         # 代码检查
+pnpm format       # 代码格式化
 ```
 
-## 许可证
+---
+
+## 📖 相关文档
+
+- [用户端产品规划文档](./docs/用户端产品规划文档.md)
+- [更新日志](./CHANGELOG.md)
+
+---
+
+## 📄 许可证
 
 基于 [MIT 许可证](https://choosealicense.com/licenses/mit/) 开源
