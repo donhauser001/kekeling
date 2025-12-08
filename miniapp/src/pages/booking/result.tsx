@@ -2,6 +2,7 @@ import { View, Text, Button } from '@tarojs/components'
 import Taro, { useRouter } from '@tarojs/taro'
 import { useState } from 'react'
 import Icon from '@/components/Icon'
+import { getPrimaryColor } from '@/utils/theme'
 import { mockRequestPayment, isH5 } from '@/utils/env-adapter'
 import { post } from '@/services/request'
 import { ordersApi } from '@/services/api'
@@ -159,7 +160,7 @@ export default function BookingResult() {
         </Button>
         <View className='secondary-actions'>
           <View className='action-item' onClick={handleViewOrder}>
-            <Icon name='file-text' size={20} color='#1890ff' />
+            <Icon name='file-text' size={20} color={getPrimaryColor()} />
             <Text>查看订单</Text>
           </View>
           <View className='action-item' onClick={handleCancel}>
@@ -182,7 +183,7 @@ export default function BookingResult() {
             <Text>请在30分钟内完成支付，超时订单将自动取消</Text>
           </View>
           <View className='tip-item'>
-            <Icon name='phone' size={16} color='#1890ff' />
+            <Icon name='phone' size={16} color={getPrimaryColor()} />
             <Text>支付成功后，陪诊员将在服务前一天与您联系</Text>
           </View>
           <View className='tip-item'>

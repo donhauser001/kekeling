@@ -3,6 +3,7 @@ import Taro, { useRouter } from '@tarojs/taro'
 import { useState, useEffect } from 'react'
 import Icon from '@/components/Icon'
 import { servicesApi } from '@/services/api'
+import { getPrimaryColor } from '@/utils/theme'
 import './detail.scss'
 
 // 服务详情数据类型
@@ -181,7 +182,7 @@ export default function ServiceDetail() {
           <Image src={service.coverImage} mode='aspectFill' className='cover-image' />
         ) : (
           <View className='cover-placeholder'>
-            <Icon name={getServiceIcon()} size={64} color='#1890ff' />
+            <Icon name={getServiceIcon()} size={64} color={getPrimaryColor()} />
           </View>
         )}
         <View className='cover-overlay'>
@@ -208,7 +209,7 @@ export default function ServiceDetail() {
               <Text>{Number(service.rating) > 10 ? Number(service.rating) : Number(service.rating) * 20}%好评</Text>
             </View>
             <View className='stat-item'>
-              <Icon name='file-text' size={16} color='#1890ff' />
+              <Icon name='file-text' size={16} color={getPrimaryColor()} />
               <Text>{service.orderCount || 0}单</Text>
             </View>
           </View>
@@ -294,31 +295,31 @@ export default function ServiceDetail() {
           <View className='requirements-list'>
             {service.needPatient && (
               <View className='requirement-item'>
-                <Icon name='user' size={16} color='#1890ff' />
+                <Icon name='user' size={16} color={getPrimaryColor()} />
                 <Text>需要填写就诊人信息</Text>
               </View>
             )}
             {service.needHospital && (
               <View className='requirement-item'>
-                <Icon name='hospital' size={16} color='#1890ff' />
+                <Icon name='hospital' size={16} color={getPrimaryColor()} />
                 <Text>需要选择就诊医院</Text>
               </View>
             )}
             {service.needDepartment && (
               <View className='requirement-item'>
-                <Icon name='layers' size={16} color='#1890ff' />
+                <Icon name='layers' size={16} color={getPrimaryColor()} />
                 <Text>需要选择就诊科室</Text>
               </View>
             )}
             {service.needDoctor && (
               <View className='requirement-item'>
-                <Icon name='stethoscope' size={16} color='#1890ff' />
+                <Icon name='stethoscope' size={16} color={getPrimaryColor()} />
                 <Text>需要选择就诊医生</Text>
               </View>
             )}
             {service.needAppointment && (
               <View className='requirement-item'>
-                <Icon name='calendar' size={16} color='#1890ff' />
+                <Icon name='calendar' size={16} color={getPrimaryColor()} />
                 <Text>需要选择预约时间</Text>
               </View>
             )}

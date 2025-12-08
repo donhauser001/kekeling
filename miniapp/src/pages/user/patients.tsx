@@ -2,6 +2,7 @@ import { View, Text, Button, Input, Picker } from '@tarojs/components'
 import Taro, { useRouter, useDidShow } from '@tarojs/taro'
 import { useState, useEffect } from 'react'
 import Icon from '@/components/Icon'
+import { getPrimaryColor } from '@/utils/theme'
 import { patientsApi } from '@/services/api'
 import { isLoggedIn } from '@/services/request'
 import './patients.scss'
@@ -261,7 +262,7 @@ export default function Patients() {
                   <Icon 
                     name='user' 
                     size={24} 
-                    color={patient.gender === 'male' ? '#1890ff' : '#eb2f96'} 
+                    color={patient.gender === 'male' ? getPrimaryColor() : '#eb2f96'} 
                   />
                 </View>
                 <View className='patient-info'>
@@ -294,7 +295,7 @@ export default function Patients() {
                     className='action-btn'
                     onClick={() => handleSetDefault(patient)}
                   >
-                    <Icon name='check-circle' size={16} color='#1890ff' />
+                    <Icon name='check-circle' size={16} color={getPrimaryColor()} />
                     <Text>设为默认</Text>
                   </View>
                 )}

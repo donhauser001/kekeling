@@ -2,6 +2,7 @@ import { View, Text, Button } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import { useState } from 'react'
 import Icon from '@/components/Icon'
+import { getPrimaryColor } from '@/utils/theme'
 import './login.scss'
 
 export default function Login() {
@@ -66,7 +67,7 @@ export default function Login() {
     <View className='login-page'>
       <View className='login-header'>
         <View className='logo'>
-          <Icon name='hospital' size={48} color='#1890ff' />
+          <Icon name='hospital' size={48} color={getPrimaryColor()} />
         </View>
         <Text className='app-name'>科科灵陪诊</Text>
         <Text className='app-slogan'>专业陪诊服务，让就医更轻松</Text>
@@ -105,7 +106,7 @@ export default function Login() {
           onGetPhoneNumber={handleGetPhoneNumber}
           loading={loading}
         >
-          <Icon name='phone' size={20} color='#1890ff' />
+          <Icon name='phone' size={20} color={getPrimaryColor()} />
           <Text>手机号快捷登录</Text>
         </Button>
 

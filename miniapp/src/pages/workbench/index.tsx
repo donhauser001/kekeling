@@ -2,6 +2,7 @@ import { View, Text } from '@tarojs/components'
 import Taro, { useDidShow } from '@tarojs/taro'
 import { useState, useEffect } from 'react'
 import Icon from '@/components/Icon'
+import { getPrimaryColor } from '@/utils/theme'
 import { isLoggedIn, getToken } from '@/services/request'
 import { get } from '@/services/request'
 import './index.scss'
@@ -171,7 +172,7 @@ export default function Workbench() {
   }
 
   const statusMap: Record<string, { text: string; color: string }> = {
-    assigned: { text: '待服务', color: '#1890ff' },
+    assigned: { text: '待服务', color: getPrimaryColor() },
     in_progress: { text: '服务中', color: '#52c41a' },
     completed: { text: '已完成', color: '#8c8c8c' },
   }
@@ -248,7 +249,7 @@ export default function Workbench() {
           onClick={() => Taro.navigateTo({ url: '/pages/orders/index' })}
         >
           <View className='action-icon orders'>
-            <Icon name='clipboard-list' size={28} color='#1890ff' />
+            <Icon name='clipboard-list' size={28} color={getPrimaryColor()} />
           </View>
           <Text className='action-title'>我的订单</Text>
           <Text className='action-desc'>查看订单列表</Text>

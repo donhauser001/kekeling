@@ -2,6 +2,7 @@ import { View, Text, Button } from '@tarojs/components'
 import Taro, { useRouter } from '@tarojs/taro'
 import { useState, useEffect } from 'react'
 import Icon from '@/components/Icon'
+import { getPrimaryColor } from '@/utils/theme'
 import './detail.scss'
 
 // Mock 数据
@@ -73,7 +74,7 @@ export default function HospitalDetail() {
       {/* 头部信息 */}
       <View className='header-section'>
         <View className='hospital-icon-large'>
-          <Icon name='building' size={48} color='#1890ff' />
+          <Icon name='building' size={48} color={getPrimaryColor()} />
         </View>
         <Text className='hospital-name'>{hospital.name}</Text>
         <View className='tag-row'>
@@ -85,7 +86,7 @@ export default function HospitalDetail() {
       {/* 基本信息 */}
       <View className='section card'>
         <View className='info-item' onClick={handleNavigation}>
-          <Icon name='map-pin' size={18} color='#1890ff' />
+          <Icon name='map-pin' size={18} color={getPrimaryColor()} />
           <Text className='info-text'>{hospital.address}</Text>
           <Text className='info-action'>导航</Text>
         </View>
@@ -156,7 +157,7 @@ export default function HospitalDetail() {
       <View className='section card'>
         <Text className='section-title'>交通指南</Text>
         <View className='guide-item'>
-          <Icon name='map-pin' size={16} color='#1890ff' />
+          <Icon name='map-pin' size={16} color={getPrimaryColor()} />
           <Text className='guide-text'>{hospital.trafficGuide}</Text>
         </View>
         <View className='guide-item'>
@@ -168,7 +169,7 @@ export default function HospitalDetail() {
       {/* 底部按钮 */}
       <View className='bottom-bar safe-area-bottom'>
         <Button className='nav-btn' onClick={handleNavigation}>
-          <Icon name='map-pin' size={18} color='#1890ff' />
+          <Icon name='map-pin' size={18} color={getPrimaryColor()} />
           <Text>导航</Text>
         </Button>
         <Button className='book-btn' onClick={handleBook}>

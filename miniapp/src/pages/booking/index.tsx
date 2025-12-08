@@ -2,6 +2,7 @@ import { View, Text, Button, Picker, Textarea } from '@tarojs/components'
 import Taro, { useRouter, useDidShow } from '@tarojs/taro'
 import { useState, useEffect } from 'react'
 import Icon from '@/components/Icon'
+import { getPrimaryColor } from '@/utils/theme'
 import { servicesApi, hospitalsApi, patientsApi, ordersApi } from '@/services/api'
 import { isLoggedIn } from '@/services/request'
 import './index.scss'
@@ -529,7 +530,7 @@ export default function Booking() {
         <View className='section-header'>
           <Text className='section-title'>就诊人信息</Text>
           <View className='add-btn' onClick={handleAddPatient}>
-            <Icon name='plus' size={14} color='#1890ff' />
+            <Icon name='plus' size={14} color={getPrimaryColor()} />
             <Text>新增</Text>
           </View>
         </View>

@@ -2,6 +2,7 @@ import { View, Text, Button } from '@tarojs/components'
 import Taro, { useRouter, useDidShow } from '@tarojs/taro'
 import { useState, useEffect } from 'react'
 import Icon from '@/components/Icon'
+import { getPrimaryColor } from '@/utils/theme'
 import { get, post } from '@/services/request'
 import { MapView } from '@/components'
 import './detail.scss'
@@ -37,13 +38,13 @@ interface OrderDetail {
 }
 
 // 状态映射
-const statusMap: Record<string, { text: string; color: string; nextAction?: string; nextStatus?: string }> = {
-  assigned: { text: '待服务', color: '#1890ff', nextAction: '确认到达', nextStatus: 'arrived' },
+const getStatusMap = () => ({
+  assigned: { text: '待服务', color: getPrimaryColor(), nextAction: '确认到达', nextStatus: 'arrived' },
   arrived: { text: '已到达', color: '#722ed1', nextAction: '开始服务', nextStatus: 'in_progress' },
   in_progress: { text: '服务中', color: '#52c41a', nextAction: '完成服务', nextStatus: 'completed' },
   completed: { text: '已完成', color: '#8c8c8c' },
   cancelled: { text: '已取消', color: '#ff4d4f' },
-}
+})
 
 export default function EscortOrderDetail() {
   const router = useRouter()
@@ -84,7 +85,7 @@ export default function EscortOrderDetail() {
   const handleUpdateStatus = async () => {
     if (!order) return
     
-    const statusInfo = statusMap[order.status]
+    const statusInfo = getStatusMap()[order.status]
     if (!statusInfo?.nextStatus) return
 
     const actionMap: Record<string, string> = {
@@ -165,7 +166,7 @@ export default function EscortOrderDetail() {
     )
   }
 
-  const statusInfo = statusMap[order.status] || { text: order.status, color: '#999' }
+  const statusInfo = getStatusMap()[order.status] || { text: order.status, color: '#999' }
 
   return (
     <View className='escort-detail-page'>
@@ -201,7 +202,7 @@ export default function EscortOrderDetail() {
           <Text className='section-title'>就诊地点</Text>
           {order.hospital && (
             <View className='nav-btn' onClick={handleNavigate}>
-              <Icon name='navigation' size={16} color='#1890ff' />
+              <Icon name='navigation' size={16} color={getPrimaryColor()} />
               <Text>导航</Text>
             </View>
           )}

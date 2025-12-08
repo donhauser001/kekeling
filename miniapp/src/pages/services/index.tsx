@@ -2,6 +2,7 @@ import { View, Text, ScrollView } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import { useState } from 'react'
 import Icon from '@/components/Icon'
+import { getPrimaryColor } from '@/utils/theme'
 import './index.scss'
 
 // Mock 分类数据
@@ -123,7 +124,7 @@ export default function Services() {
                 <image src={service.coverImage} mode='aspectFill' />
               ) : (
                 <View className='cover-placeholder'>
-                  <Icon name='hospital' size={40} color='#1890ff' />
+                  <Icon name='hospital' size={40} color={getPrimaryColor()} />
                 </View>
               )}
               {service.tags.includes('热门') && (

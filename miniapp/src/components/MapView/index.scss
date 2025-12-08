@@ -27,7 +27,7 @@
     .map-view__placeholder-text {
       font-size: 32px;
       font-weight: 500;
-      color: #1890ff;
+      color: var(--primary-color);
       margin-bottom: 8px;
     }
 
@@ -75,7 +75,7 @@
   .map-view__nav-text {
     font-size: 28px;
     font-weight: 500;
-    color: #1890ff;
+    color: var(--primary-color);
   }
 }
 

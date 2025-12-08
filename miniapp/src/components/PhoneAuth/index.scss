@@ -40,8 +40,8 @@
       height: 88px;
       padding: 0 24px;
       font-size: 28px;
-      color: #1890ff;
-      background: #e6f7ff;
+      color: var(--primary-color);
+      background: var(--primary-color-light);
       border: none;
       border-radius: 12px;
 
@@ -58,7 +58,7 @@
       font-size: 32px;
       font-weight: 500;
       color: #fff;
-      background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
+      background: var(--primary-color);
       border: none;
       border-radius: 48px;
 

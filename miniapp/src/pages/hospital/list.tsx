@@ -2,6 +2,7 @@ import { View, Text, Input } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import { useState } from 'react'
 import Icon from '@/components/Icon'
+import { getPrimaryColor } from '@/utils/theme'
 import './list.scss'
 
 // Mock 数据
@@ -110,7 +111,7 @@ export default function HospitalList() {
             >
               <View className='hospital-header'>
                 <View className='hospital-icon'>
-                  <Icon name='building' size={24} color='#1890ff' />
+                  <Icon name='building' size={24} color={getPrimaryColor()} />
                 </View>
                 <View className='hospital-info'>
                   <View className='name-row'>

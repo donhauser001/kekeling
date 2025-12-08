@@ -2,6 +2,7 @@ import { View, Text, Image } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import { useState } from 'react'
 import Icon from '@/components/Icon'
+import { getPrimaryColor } from '@/utils/theme'
 import './list.scss'
 
 // Mock 数据
@@ -59,7 +60,7 @@ export default function EscortList() {
       {/* 筛选栏 */}
       <View className='filter-bar'>
         <View className='filter-item active'>
-          <Icon name='star-filled' size={16} color='#1890ff' />
+          <Icon name='star-filled' size={16} color={getPrimaryColor()} />
           <Text>好评优先</Text>
         </View>
         <View className='filter-item'>
@@ -101,7 +102,7 @@ export default function EscortList() {
                     <Text>{escort.rating}%</Text>
                   </View>
                   <View className='stat-item'>
-                    <Icon name='file-text' size={14} color='#1890ff' />
+                    <Icon name='file-text' size={14} color={getPrimaryColor()} />
                     <Text>{escort.orderCount}单</Text>
                   </View>
                   <View className='stat-item'>

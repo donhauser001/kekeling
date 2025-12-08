@@ -3,6 +3,7 @@ import Taro, { useDidShow } from '@tarojs/taro'
 import { useState, useEffect } from 'react'
 import Icon from '@/components/Icon'
 import { get, post } from '@/services/request'
+import { getPrimaryColor } from '@/utils/theme'
 import './pool.scss'
 
 // 可抢订单类型
@@ -107,7 +108,7 @@ export default function OrderPool() {
     <View className='pool-page'>
       {/* 提示信息 */}
       <View className='tip-bar'>
-        <Icon name='info' size={16} color='#1890ff' />
+        <Icon name='info' size={16} color={getPrimaryColor()} />
         <Text>以下订单可抢，手快有手慢无！</Text>
       </View>
 
@@ -118,7 +119,7 @@ export default function OrderPool() {
           <Text className='empty-text'>暂无可抢订单</Text>
           <Text className='empty-desc'>稍后再来看看吧</Text>
           <View className='refresh-btn' onClick={loadOrders}>
-            <Icon name='refresh-cw' size={16} color='#1890ff' />
+            <Icon name='refresh-cw' size={16} color={getPrimaryColor()} />
             <Text>刷新</Text>
           </View>
         </View>
@@ -175,7 +176,7 @@ export default function OrderPool() {
           
           {/* 底部刷新 */}
           <View className='refresh-tip' onClick={loadOrders}>
-            <Icon name='refresh-cw' size={16} color='#1890ff' />
+            <Icon name='refresh-cw' size={16} color={getPrimaryColor()} />
             <Text>点击刷新</Text>
           </View>
         </View>

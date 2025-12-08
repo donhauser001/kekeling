@@ -2,6 +2,7 @@ import { View, Text } from '@tarojs/components'
 import Taro, { useDidShow } from '@tarojs/taro'
 import { useState, useEffect } from 'react'
 import Icon from '@/components/Icon'
+import { getPrimaryColor } from '@/utils/theme'
 import { ordersApi } from '@/services/api'
 import { isLoggedIn } from '@/services/request'
 import { mockRequestPayment, isH5 } from '@/utils/env-adapter'
@@ -17,10 +18,10 @@ const orderTabs = [
   { key: 'completed', label: '已完成' },
 ]
 
-// 状态映射
-const statusMap: Record<string, { text: string; color: string }> = {
+// 状态映射 - 使用函数以获取动态主题色
+const getStatusMap = () => ({
   pending: { text: '待支付', color: '#faad14' },
-  paid: { text: '待接单', color: '#1890ff' },
+  paid: { text: '待接单', color: getPrimaryColor() },
   confirmed: { text: '已确认', color: '#722ed1' },
   assigned: { text: '已派单', color: '#13c2c2' },
   in_progress: { text: '服务中', color: '#52c41a' },
@@ -28,7 +29,7 @@ const statusMap: Record<string, { text: string; color: string }> = {
   cancelled: { text: '已取消', color: '#ff4d4f' },
   refunding: { text: '退款中', color: '#fa8c16' },
   refunded: { text: '已退款', color: '#8c8c8c' },
-}
+})
 
 // 订单类型
 interface Order {
@@ -254,7 +255,7 @@ export default function Orders() {
           <>
             {/* 下拉刷新提示 */}
             <View className='refresh-tip' onClick={handleRefresh}>
-              <Icon name='refresh-cw' size={16} color='#1890ff' />
+              <Icon name='refresh-cw' size={16} color={getPrimaryColor()} />
               <Text>点击刷新</Text>
             </View>
             
@@ -268,9 +269,9 @@ export default function Orders() {
                   <Text className='order-no'>订单号: {order.orderNo}</Text>
                   <Text 
                     className='order-status'
-                    style={{ color: statusMap[order.status]?.color || '#999' }}
+                    style={{ color: getStatusMap()[order.status]?.color || '#999' }}
                   >
-                    {statusMap[order.status]?.text || order.status}
+                    {getStatusMap()[order.status]?.text || order.status}
                   </Text>
                 </View>
 

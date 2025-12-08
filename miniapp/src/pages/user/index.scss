@@ -6,7 +6,7 @@
 
 // 用户头部
 .user-header {
-  background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
+  background: var(--primary-color);
   padding: 60px 32px 40px;
 }
 
@@ -161,6 +161,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  color: var(--primary-color); // 图标使用主题色
 
   .badge {
     position: absolute;

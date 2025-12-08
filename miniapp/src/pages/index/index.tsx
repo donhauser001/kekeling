@@ -236,10 +236,10 @@ export default function Index() {
                   >
                     <View className='pinned-content'>
                       <View className='pinned-header'>
-                        <Text className='pinned-name' style={{ color: category.color || '#1890ff' }}>{category.name}</Text>
+                        <Text className='pinned-name' style={{ color: category.color || themeSettings.primaryColor }}>{category.name}</Text>
                         <Text 
                           className='pinned-count'
-                          style={{ color: category.color || '#1890ff', background: `${category.color || '#1890ff'}15` }}
+                          style={{ color: category.color || themeSettings.primaryColor, background: `${category.color || themeSettings.primaryColor}15` }}
                         >
                           {category.serviceCount || category.services?.length || 0}项
                         </Text>
@@ -248,9 +248,9 @@ export default function Index() {
                     </View>
                     <View 
                       className='pinned-icon'
-                      style={{ background: `${category.color || '#1890ff'}15` }}
+                      style={{ background: `${category.color || themeSettings.primaryColor}15` }}
                     >
-                      <Icon name={getCategoryIcon(category)} size={28} color={category.color || '#1890ff'} />
+                      <Icon name={getCategoryIcon(category)} size={28} color={category.color || themeSettings.primaryColor} />
                     </View>
                   </View>
                 ))}
@@ -264,8 +264,8 @@ export default function Index() {
                   .map((category) => {
                     // 提取颜色（如果是渐变取第一个颜色，否则直接使用）
                     const baseColor = category.color?.includes('gradient') 
-                      ? category.color.match(/#[a-fA-F0-9]{6}/)?.[0] || '#1890ff'
-                      : category.color || '#1890ff'
+                      ? category.color.match(/#[a-fA-F0-9]{6}/)?.[0] || themeSettings.primaryColor
+                      : category.color || themeSettings.primaryColor
                     return (
                       <View 
                         key={category.id}
@@ -324,7 +324,7 @@ export default function Index() {
           {brandValues.map((value, index) => (
             <View key={index} className='value-item'>
               <View className='value-icon'>
-                <Icon name={value.icon} size={24} color='#1890ff' />
+                <Icon name={value.icon} size={24} color={themeSettings.primaryColor} />
               </View>
               <Text className='value-title'>{value.title}</Text>
               <Text className='value-desc'>{value.desc}</Text>

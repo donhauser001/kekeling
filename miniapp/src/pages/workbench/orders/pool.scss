@@ -40,8 +40,8 @@
   gap: 8px;
   padding: 16px 24px;
   font-size: 26px;
-  color: #1890ff;
-  background-color: #e6f7ff;
+  color: var(--primary-color);
+  background-color: var(--primary-color-light);
 }
 
 // 空状态
@@ -71,8 +71,8 @@
   margin-top: 32px;
   padding: 16px 32px;
   font-size: 28px;
-  color: #1890ff;
-  background-color: #e6f7ff;
+  color: var(--primary-color);
+  background-color: var(--primary-color-light);
   border-radius: 40px;
 }
 

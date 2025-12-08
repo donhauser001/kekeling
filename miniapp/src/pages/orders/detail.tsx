@@ -2,15 +2,16 @@ import { View, Text, Button, Image } from '@tarojs/components'
 import Taro, { useRouter, useDidShow } from '@tarojs/taro'
 import { useState, useEffect } from 'react'
 import Icon from '@/components/Icon'
+import { getPrimaryColor } from '@/utils/theme'
 import { ordersApi } from '@/services/api'
 import { mockRequestPayment, isH5 } from '@/utils/env-adapter'
 import { post } from '@/services/request'
 import './detail.scss'
 
 // 状态映射
-const statusMap: Record<string, { text: string; color: string; desc: string }> = {
+const getStatusMap = () => ({
   pending: { text: '待支付', color: '#faad14', desc: '请尽快完成支付' },
-  paid: { text: '待接单', color: '#1890ff', desc: '订单已支付，等待陪诊员接单' },
+  paid: { text: '待接单', color: getPrimaryColor(), desc: '订单已支付，等待陪诊员接单' },
   confirmed: { text: '已确认', color: '#722ed1', desc: '订单已确认，等待派单' },
   assigned: { text: '已派单', color: '#13c2c2', desc: '已为您分配陪诊员' },
   in_progress: { text: '服务中', color: '#52c41a', desc: '陪诊员正在为您服务' },
@@ -18,7 +19,7 @@ const statusMap: Record<string, { text: string; color: string; desc: string }> =
   cancelled: { text: '已取消', color: '#ff4d4f', desc: '订单已取消' },
   refunding: { text: '退款中', color: '#fa8c16', desc: '退款申请处理中' },
   refunded: { text: '已退款', color: '#8c8c8c', desc: '退款已完成' },
-}
+})
 
 // 订单类型
 interface OrderDetail {
@@ -240,7 +241,7 @@ export default function OrderDetail() {
     )
   }
 
-  const statusInfo = statusMap[order.status] || { text: order.status, color: '#999', desc: '' }
+  const statusInfo = getStatusMap()[order.status] || { text: order.status, color: '#999', desc: '' }
 
   return (
     <View className='detail-page'>
@@ -317,7 +318,7 @@ export default function OrderDetail() {
               )}
             </View>
             <View className='call-btn' onClick={handleContactEscort}>
-              <Icon name='phone' size={16} color='#1890ff' />
+              <Icon name='phone' size={16} color={getPrimaryColor()} />
               <Text>联系</Text>
             </View>
           </View>

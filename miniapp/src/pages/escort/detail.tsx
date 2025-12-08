@@ -2,6 +2,7 @@ import { View, Text, Image, Button } from '@tarojs/components'
 import Taro, { useRouter } from '@tarojs/taro'
 import { useState, useEffect } from 'react'
 import Icon from '@/components/Icon'
+import { getPrimaryColor } from '@/utils/theme'
 import './detail.scss'
 
 // Mock 数据
@@ -132,7 +133,7 @@ export default function EscortDetail() {
           {escort.hospitals.map(hospital => (
             <View key={hospital.id} className='hospital-item'>
               <View className='hospital-header'>
-                <Icon name='hospital' size={18} color='#1890ff' />
+                <Icon name='hospital' size={18} color={getPrimaryColor()} />
                 <Text className='hospital-name'>{hospital.name}</Text>
               </View>
               <View className='hospital-depts'>

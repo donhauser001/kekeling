@@ -2,6 +2,7 @@ import { View, Text, Image, Button } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import { useState, useEffect } from 'react'
 import Icon from '@/components/Icon'
+import { getPrimaryColor } from '@/utils/theme'
 import './index.scss'
 
 // Mock 用户数据
@@ -165,7 +166,7 @@ export default function User() {
               onClick={() => handleOrderClick(entry.key)}
             >
               <View className='entry-icon-wrap'>
-                <Icon name={entry.icon} size={24} color='#1890ff' />
+                <Icon name={entry.icon} size={24} />
                 {user?.orderStats?.[entry.key] > 0 && (
                   <Text className='badge'>{user.orderStats[entry.key]}</Text>
                 )}
