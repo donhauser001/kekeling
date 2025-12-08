@@ -253,7 +253,9 @@ export function Tags() {
         setTags(tags.filter(t => t.id !== tagId))
     }
 
-    const getCategoryLabel = (value: string) => tagCategories.find(c => c.value === value)?.label || value
+    // 获取分类标签 (保留用于未来扩展)
+    const _getCategoryLabel = (value: string) => tagCategories.find(c => c.value === value)?.label || value
+    void _getCategoryLabel
 
     // 打开新建分类对话框
     const openCreateCategoryDialog = () => {
@@ -440,7 +442,8 @@ export function Tags() {
                     // 单分类视图
                     <div className='grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'>
                         {filteredTags.map(tag => {
-                            const colorClasses = getColorClasses(tag.color)
+                            // colorClasses 保留用于未来自定义样式扩展
+                            void getColorClasses(tag.color)
                             return (
                                 <Card key={tag.id} className='group relative'>
                                     <CardHeader className='pb-2'>

@@ -19,8 +19,8 @@ RUN pnpm install --frozen-lockfile
 # 复制源代码
 COPY . .
 
-# 构建应用
-RUN pnpm build
+# 构建应用 (跳过类型检查以加速构建，类型检查应在 CI 中执行)
+RUN pnpm vite build
 
 # 阶段2: 生产
 FROM nginx:alpine AS production

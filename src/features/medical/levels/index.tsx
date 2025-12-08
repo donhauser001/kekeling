@@ -5,7 +5,6 @@ import {
     MoreHorizontal,
     Pencil,
     Trash2,
-    GripVertical,
     ChevronUp,
     ChevronDown,
     Building2,
@@ -250,7 +249,9 @@ export function MedicalLevels() {
             if (newIndex < 0 || newIndex >= levels.length) return c
 
             // 交换位置
-            [levels[index], levels[newIndex]] = [levels[newIndex], levels[index]]
+            const temp = levels[index]
+            levels[index] = levels[newIndex]
+            levels[newIndex] = temp
 
             // 更新 order
             return {

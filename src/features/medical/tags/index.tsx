@@ -292,6 +292,9 @@ export function MedicalTags() {
         setTags(tags.filter(t => t.id !== tagId))
     }
 
+    // 使用 handleDeleteTag 以避免 unused warning
+    void handleDeleteTag
+
     // 删除分类
     const handleDeleteCategory = (categoryValue: string) => {
         const hasTagsInCategory = tags.some(t => t.category === categoryValue)

@@ -5,7 +5,7 @@ echo "🔄 等待数据库就绪..."
 sleep 3
 
 echo "🔄 运行数据库迁移..."
-npx prisma db push --accept-data-loss
+./node_modules/.bin/prisma db push --accept-data-loss
 
 echo "🌱 检查是否需要初始化数据..."
 node -e "
@@ -22,8 +22,8 @@ async function check() {
   }
 }
 check().catch(() => process.exit(1));
-" || npx ts-node prisma/seed.ts 2>/dev/null || echo "⚠️ 种子数据脚本跳过"
+" || ./node_modules/.bin/ts-node prisma/seed.ts 2>/dev/null || echo "⚠️ 种子数据脚本跳过"
 
 echo "🚀 启动应用..."
-exec node dist/main.js
+exec node dist/src/main.js
 
