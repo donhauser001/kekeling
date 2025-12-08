@@ -9,7 +9,6 @@ import {
     X,
     Stethoscope,
     Loader2,
-    ChevronRight,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -125,15 +124,28 @@ export function Departments() {
     const updateMutation = useUpdateDepartmentTemplate()
     const deleteMutation = useDeleteDepartmentTemplate()
 
+    // 提取所有具体科室（二级科室），按分类分组
+    const allDepartments: DepartmentTemplate[] = []
+    ;(templates || []).forEach(parent => {
+        // 添加子科室
+        if (parent.children && parent.children.length > 0) {
+            parent.children.forEach(child => {
+                allDepartments.push({
+                    ...child,
+                    category: parent.category, // 确保子科室也有分类
+                })
+            })
+        }
+    })
+
     // 按分类分组
     const groupedDepartments = categoryOptions.map(category => {
-        const depts = (templates || []).filter(d => d.category === category)
-        const totalChildren = depts.reduce((sum, d) => sum + (d.children?.length || 0), 0)
+        const depts = allDepartments.filter(d => d.category === category)
         return {
             category,
             color: categoryColors[category] || 'bg-gray-500',
             departments: depts,
-            totalCount: depts.length + totalChildren,
+            totalCount: depts.length,
         }
     }).filter(g => g.departments.length > 0)
 
@@ -332,19 +344,19 @@ export function Departments() {
                                 </div>
                                 <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'>
                                     {group.departments.map(dept => (
-                                        <Card key={dept.id} className='group'>
+                                        <Card key={dept.id} className='group hover:shadow-md transition-shadow'>
                                             <CardHeader className='pb-2'>
                                                 <div className='flex items-start justify-between'>
-                                                    <div className='flex items-center gap-2'>
-                                                        <div className={cn('flex h-8 w-8 items-center justify-center rounded-md', dept.color || 'bg-blue-500')}>
-                                                            <Stethoscope className='h-4 w-4 text-white' />
+                                                    <div className='flex items-center gap-3'>
+                                                        <div className={cn('flex h-10 w-10 items-center justify-center rounded-lg', dept.color || 'bg-blue-500')}>
+                                                            <Stethoscope className='h-5 w-5 text-white' />
                                                         </div>
                                                         <div>
-                                                            <CardTitle className='text-sm font-medium'>{dept.name}</CardTitle>
-                                                            {dept.children && dept.children.length > 0 && (
-                                                                <span className='text-muted-foreground text-xs'>
-                                                                    {dept.children.length} 个子科室
-                                                                </span>
+                                                            <CardTitle className='text-base font-medium'>{dept.name}</CardTitle>
+                                                            {dept.description && (
+                                                                <CardDescription className='line-clamp-1 text-xs'>
+                                                                    {dept.description}
+                                                                </CardDescription>
                                                             )}
                                                         </div>
                                                     </div>
@@ -371,49 +383,23 @@ export function Departments() {
                                                     </DropdownMenu>
                                                 </div>
                                             </CardHeader>
-                                            <CardContent className='pt-0'>
-                                                {dept.description && (
-                                                    <CardDescription className='mb-2 line-clamp-1 text-xs'>
-                                                        {dept.description}
-                                                    </CardDescription>
-                                                )}
-                                                {/* 子科室列表 */}
-                                                {dept.children && dept.children.length > 0 && (
-                                                    <div className='mt-2 space-y-1'>
-                                                        {dept.children.slice(0, 4).map(child => (
-                                                            <div
-                                                                key={child.id}
-                                                                className='text-muted-foreground hover:text-foreground flex cursor-pointer items-center gap-1 text-xs'
-                                                                onClick={() => openEditDialog(child)}
-                                                            >
-                                                                <ChevronRight className='h-3 w-3' />
-                                                                <span className={cn('h-1.5 w-1.5 rounded-full', child.color || 'bg-gray-400')} />
-                                                                {child.name}
-                                                            </div>
-                                                        ))}
-                                                        {dept.children.length > 4 && (
-                                                            <div className='text-muted-foreground text-xs pl-4'>
-                                                                还有 {dept.children.length - 4} 个...
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                )}
-                                                {/* 常见疾病 */}
-                                                {dept.diseases && dept.diseases.length > 0 && (
-                                                    <div className='mt-2 flex flex-wrap gap-1'>
-                                                        {dept.diseases.slice(0, 3).map(d => (
-                                                            <Badge key={d} variant='outline' className='text-xs'>
+                                            {/* 常见疾病标签 */}
+                                            {dept.diseases && dept.diseases.length > 0 && (
+                                                <CardContent className='pt-0'>
+                                                    <div className='flex flex-wrap gap-1'>
+                                                        {dept.diseases.slice(0, 4).map(d => (
+                                                            <Badge key={d} variant='secondary' className='text-xs font-normal'>
                                                                 {d}
                                                             </Badge>
                                                         ))}
-                                                        {dept.diseases.length > 3 && (
+                                                        {dept.diseases.length > 4 && (
                                                             <Badge variant='outline' className='text-xs'>
-                                                                +{dept.diseases.length - 3}
+                                                                +{dept.diseases.length - 4}
                                                             </Badge>
                                                         )}
                                                     </div>
-                                                )}
-                                            </CardContent>
+                                                </CardContent>
+                                            )}
                                         </Card>
                                     ))}
                                 </div>
