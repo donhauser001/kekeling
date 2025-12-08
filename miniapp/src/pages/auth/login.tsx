@@ -68,7 +68,7 @@ export default function Login() {
         <View className='logo'>
           <Icon name='hospital' size={48} color='#1890ff' />
         </View>
-        <Text className='app-name'>可客灵陪诊</Text>
+        <Text className='app-name'>科科灵陪诊</Text>
         <Text className='app-slogan'>专业陪诊服务，让就医更轻松</Text>
       </View>
 

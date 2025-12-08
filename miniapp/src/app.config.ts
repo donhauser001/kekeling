@@ -18,7 +18,7 @@ export default defineAppConfig({
   window: {
     backgroundTextStyle: 'light',
     navigationBarBackgroundColor: '#fff',
-    navigationBarTitleText: '可客灵陪诊',
+    navigationBarTitleText: '科科灵陪诊',
     navigationBarTextStyle: 'black',
   },
   tabBar: {

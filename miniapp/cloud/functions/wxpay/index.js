@@ -46,7 +46,7 @@ exports.main = async (event, context) => {
 
       // 调用微信支付统一下单
       const res = await cloud.cloudPay.unifiedOrder({
-        body: `可客灵陪诊-${order.serviceName}`,
+        body: `科科灵陪诊-${order.serviceName}`,
         outTradeNo: order.orderNo,
         spbillCreateIp: '127.0.0.1',
         subMchId: '商户号', // 需要替换为真实商户号

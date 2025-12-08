@@ -105,7 +105,7 @@ export default function Index() {
             <Icon name='hospital' size={32} color='#fff' />
           </View>
           <View className='brand-text'>
-            <Text className='brand-name'>可客灵</Text>
+            <Text className='brand-name'>科科灵</Text>
             <Text className='brand-slogan'>让就医不再孤单</Text>
           </View>
         </View>
@@ -225,7 +225,7 @@ export default function Index() {
       {/* 品牌理念 */}
       <View className='values-section'>
         <View className='section-header'>
-          <Text className='section-title'>为什么选择可客灵</Text>
+          <Text className='section-title'>为什么选择科科灵</Text>
           <Text className='section-subtitle'>专业、贴心、可信赖</Text>
         </View>
         <View className='values-list'>
@@ -245,7 +245,7 @@ export default function Index() {
       <View className='footer-section'>
         <View className='footer-brand'>
           <Icon name='hospital' size={20} color='#999' />
-          <Text className='footer-name'>可客灵陪诊</Text>
+          <Text className='footer-name'>科科灵陪诊</Text>
         </View>
         <Text className='footer-slogan'>让每一次就医都有温暖陪伴</Text>
         <Text className='footer-contact'>客服热线：400-123-4567</Text>
