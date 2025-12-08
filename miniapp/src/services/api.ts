@@ -117,6 +117,36 @@ export const ordersApi = {
     post(`/orders/${id}/cancel`, { reason }),
 }
 
+// ========== 支付模块 ==========
+export const paymentApi = {
+  // 创建预支付订单
+  prepay: (orderId: string) => 
+    post<{
+      appId: string
+      timeStamp: string
+      nonceStr: string
+      package: string
+      signType: string
+      paySign: string
+    }>('/payment/prepay', { orderId }),
+  
+  // 查询支付状态
+  queryStatus: (orderId: string) => 
+    get<{
+      paid: boolean
+      status: string
+      transactionId?: string
+    }>(`/payment/status/${orderId}`),
+  
+  // 模拟支付（仅开发环境）
+  mockPay: (orderId: string) =>
+    post('/payment/mock-pay', { orderId }),
+  
+  // 申请退款
+  refund: (orderId: string, reason: string) =>
+    post('/payment/refund', { orderId, reason }),
+}
+
 // ========== 用户模块 ==========
 export const usersApi = {
   // 获取用户信息
