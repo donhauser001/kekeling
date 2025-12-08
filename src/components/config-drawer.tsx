@@ -1,6 +1,7 @@
-import { type SVGProps } from 'react'
+import { type SVGProps, useEffect } from 'react'
 import { Root as Radio, Item } from '@radix-ui/react-radio-group'
 import { Check, CircleCheck, RotateCcw, Settings } from 'lucide-react'
+import { toast } from 'sonner'
 import { IconDir } from '@/assets/custom/icon-dir'
 import { IconLayoutCompact } from '@/assets/custom/icon-layout-compact'
 import { IconLayoutDefault } from '@/assets/custom/icon-layout-default'
@@ -12,7 +13,8 @@ import { IconThemeDark } from '@/assets/custom/icon-theme-dark'
 import { IconThemeLight } from '@/assets/custom/icon-theme-light'
 import { IconThemeSystem } from '@/assets/custom/icon-theme-system'
 import { cn } from '@/lib/utils'
-import { ACCENT_OPTIONS, useAccent } from '@/context/accent-provider'
+import { configApi } from '@/lib/api'
+import { ACCENT_OPTIONS, useAccent, type Accent } from '@/context/accent-provider'
 import { useDirection } from '@/context/direction-provider'
 import { type Collapsible, useLayout } from '@/context/layout-provider'
 import { useTheme } from '@/context/theme-provider'
@@ -359,12 +361,55 @@ function DirConfig() {
 
 function AccentConfig() {
   const { defaultAccent, accent, setAccent } = useAccent()
+
+  // 从后台加载主色调
+  useEffect(() => {
+    const loadThemeSettings = async () => {
+      try {
+        const data = await configApi.getThemeSettings()
+        if (data?.primaryColor) {
+          const matchedAccent = ACCENT_OPTIONS.find(o => o.color === data.primaryColor)
+          if (matchedAccent && matchedAccent.value !== accent) {
+            setAccent(matchedAccent.value)
+          }
+        }
+      } catch (err) {
+        console.error('加载主题设置失败:', err)
+      }
+    }
+    loadThemeSettings()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 选择颜色并同步到后台
+  const handleAccentChange = async (value: Accent) => {
+    setAccent(value)
+    try {
+      const selectedColor = ACCENT_OPTIONS.find(o => o.value === value)?.color || '#71717a'
+      await configApi.updateThemeSettings({ primaryColor: selectedColor })
+      toast.success('主题色已同步到所有终端')
+    } catch (err) {
+      console.error('保存主题设置失败:', err)
+      toast.error('保存失败')
+    }
+  }
+
+  // 重置并同步
+  const handleReset = async () => {
+    setAccent(defaultAccent)
+    try {
+      const defaultColor = ACCENT_OPTIONS.find(o => o.value === defaultAccent)?.color || '#71717a'
+      await configApi.updateThemeSettings({ primaryColor: defaultColor })
+    } catch (err) {
+      console.error('重置主题设置失败:', err)
+    }
+  }
+
   return (
     <div>
       <SectionTitle
-        title='主色调'
+        title='主色调（同步所有终端）'
         showReset={accent !== defaultAccent}
-        onReset={() => setAccent(defaultAccent)}
+        onReset={handleReset}
       />
       <div
         className='grid w-full max-w-md grid-cols-7 gap-2'
@@ -375,7 +420,7 @@ function AccentConfig() {
           <button
             key={option.value}
             type='button'
-            onClick={() => setAccent(option.value)}
+            onClick={() => handleAccentChange(option.value)}
             className={cn(
               'group relative flex h-10 w-10 items-center justify-center rounded-full transition-all',
               'ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',

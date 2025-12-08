@@ -1,16 +1,7 @@
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
-import { useEffect } from 'react'
-import { Check } from 'lucide-react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
-import { cn } from '@/lib/utils'
-import { configApi } from '@/lib/api'
-import {
-  type Accent,
-  ACCENT_OPTIONS,
-  useAccent,
-} from '@/context/accent-provider'
 import { useTheme } from '@/context/theme-provider'
 import { Button } from '@/components/ui/button'
 import {
@@ -26,65 +17,23 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 
 const appearanceFormSchema = z.object({
   theme: z.enum(['light', 'dark']),
-  accent: z.enum([
-    'zinc',
-    'blue',
-    'green',
-    'violet',
-    'orange',
-    'rose',
-    'cyan',
-  ] as const),
 })
 
 type AppearanceFormValues = z.infer<typeof appearanceFormSchema>
 
 export function AppearanceForm() {
   const { theme, setTheme } = useTheme()
-  const { accent, setAccent } = useAccent()
 
   const form = useForm<AppearanceFormValues>({
     resolver: zodResolver(appearanceFormSchema),
     defaultValues: {
       theme: theme as 'light' | 'dark',
-      accent,
     },
   })
 
-  // 从后台加载主色调设置
-  useEffect(() => {
-    const loadThemeSettings = async () => {
-      try {
-        const data = await configApi.getThemeSettings()
-        if (data?.primaryColor) {
-          // 根据颜色值找到对应的 accent
-          const matchedAccent = ACCENT_OPTIONS.find(o => o.color === data.primaryColor)
-          if (matchedAccent) {
-            form.setValue('accent', matchedAccent.value)
-            setAccent(matchedAccent.value)
-          }
-        }
-      } catch (err) {
-        console.error('加载主题设置失败:', err)
-      }
-    }
-    loadThemeSettings()
-  }, [form, setAccent])
-
-  async function onSubmit(data: AppearanceFormValues) {
-    // 更新本地主题
+  function onSubmit(data: AppearanceFormValues) {
     if (data.theme !== theme) setTheme(data.theme)
-    if (data.accent !== accent) setAccent(data.accent)
-
-    // 同步主色调到后台数据库（所有终端共享）
-    try {
-      const selectedColor = ACCENT_OPTIONS.find(o => o.value === data.accent)?.color || '#71717a'
-      await configApi.updateThemeSettings({ primaryColor: selectedColor })
-      toast.success('主题设置已保存，所有终端将同步更新')
-    } catch (err) {
-      console.error('保存主题设置失败:', err)
-      toast.error('保存失败，请重试')
-    }
+    toast.success('主题设置已保存')
   }
 
   return (
@@ -160,50 +109,11 @@ export function AppearanceForm() {
           )}
         />
 
-        <FormField
-          control={form.control}
-          name='accent'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>主色调</FormLabel>
-              <FormDescription>选择应用的主色调，将同步到所有终端（管理后台、小程序、App等）。</FormDescription>
-              <FormMessage />
-              <FormControl>
-                <div className='flex flex-wrap gap-3 pt-2'>
-                  {ACCENT_OPTIONS.map((option) => (
-                    <button
-                      key={option.value}
-                      type='button'
-                      onClick={() => field.onChange(option.value as Accent)}
-                      className={cn(
-                        'group relative flex h-12 w-12 items-center justify-center rounded-full transition-all',
-                        'ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-                        'hover:scale-110',
-                        field.value === option.value &&
-                        'ring-2 ring-ring ring-offset-2'
-                      )}
-                      style={{ backgroundColor: option.color }}
-                      aria-label={option.label}
-                      aria-pressed={field.value === option.value}
-                    >
-                      {field.value === option.value && (
-                        <Check className='h-5 w-5 text-white drop-shadow-md' />
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </FormControl>
-              <div className='text-muted-foreground pt-2 text-sm'>
-                当前选择:{' '}
-                <span className='font-medium'>
-                  {ACCENT_OPTIONS.find((o) => o.value === field.value)?.label}
-                </span>
-              </div>
-            </FormItem>
-          )}
-        />
+        <div className='text-muted-foreground text-sm'>
+          💡 主色调请通过右上角的「主题设置」按钮配置，修改后将同步到所有终端。
+        </div>
 
-        <Button type='submit'>更新偏好设置</Button>
+        <Button type='submit'>更新主题</Button>
       </form>
     </Form>
   )
