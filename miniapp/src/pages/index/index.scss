@@ -139,33 +139,43 @@
 }
 
 .pinned-icon {
-  position: absolute;
-  top: 24px;
-  right: 24px;
-  width: 80px;
-  height: 80px;
+  width: 64px;
+  height: 64px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: rgba(255, 255, 255, 0.2);
-  border-radius: 16px;
+  border-radius: 14px;
+  margin-bottom: 16px;
+}
+
+.pinned-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
 }
 
 .pinned-name {
-  display: block;
-  font-size: 40px;
+  font-size: 36px;
   font-weight: 600;
   color: #fff;
-  margin-bottom: 12px;
-  padding-right: 90px; // 避免与右上角图标重叠
+}
+
+.pinned-count {
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.2);
+  padding: 3px 10px;
+  border-radius: 16px;
 }
 
 .pinned-desc {
   display: block;
-  font-size: 22px;
-  color: rgba(255, 255, 255, 0.8);
-  line-height: 1.4;
-  margin-bottom: 16px;
+  font-size: 28px;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.5;
+  margin-bottom: 0;
   // 限制两行
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -173,23 +183,7 @@
   overflow: hidden;
 }
 
-.pinned-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.pinned-tag {
-  padding: 4px 12px;
-  font-size: 20px;
-  color: #fff;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
-  
-  &.more {
-    background: rgba(255, 255, 255, 0.3);
-  }
-}
+// 服务标签样式已移除，改为在标题后显示服务数量
 
 // 非置顶分类 - 横向标签
 .other-categories {

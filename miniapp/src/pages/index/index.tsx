@@ -206,16 +206,11 @@ export default function Index() {
                     <View className='pinned-icon'>
                       <Icon name={getCategoryIcon(category)} size={28} color='#fff' />
                     </View>
-                    <Text className='pinned-name'>{category.name}</Text>
-                    <Text className='pinned-desc'>{category.description || ''}</Text>
-                    <View className='pinned-tags'>
-                      {(category.services || []).slice(0, 2).map((service: Service) => (
-                        <Text key={service.id} className='pinned-tag'>{service.name}</Text>
-                      ))}
-                      {(category.services || []).length > 2 && (
-                        <Text className='pinned-tag more'>+{(category.services?.length || 0) - 2}</Text>
-                      )}
+                    <View className='pinned-header'>
+                      <Text className='pinned-name'>{category.name}</Text>
+                      <Text className='pinned-count'>{category.serviceCount || category.services?.length || 0}项</Text>
                     </View>
+                    <Text className='pinned-desc'>{category.description || ''}</Text>
                   </View>
                 ))}
             </View>
