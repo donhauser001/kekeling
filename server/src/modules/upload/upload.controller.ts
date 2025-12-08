@@ -24,10 +24,10 @@ export class UploadController {
       },
     },
   })
-  async upload(@UploadedFile() file: Express.Multer.File) {
+  async upload(@UploadedFile() file: any) {
     // TODO: 实际环境应上传到 OSS/COS
     // 这里暂时返回 mock URL
-    const url = `/uploads/${Date.now()}_${file.originalname}`;
+    const url = `/uploads/${Date.now()}_${file?.originalname || 'file'}`;
     
     return ApiResponse.success({ url });
   }

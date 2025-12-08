@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -69,17 +69,17 @@ model Service {
   id               String    @id @default(uuid())
   categoryId       String    @map("category_id")
   name             String
-  description      String?   @db.Text
-  price            Decimal   @db.Decimal(10, 2)
-  originalPrice    Decimal?  @map("original_price") @db.Decimal(10, 2)
+  description      String?
+  price            Float
+  originalPrice    Float?    @map("original_price")
   duration         String?   // 服务时长
   coverImage       String?   @map("cover_image")
-  detailImages     Json?     @map("detail_images")
-  serviceIncludes  Json?     @map("service_includes")  // 服务包含项
-  serviceNotes     Json?     @map("service_notes")     // 注意事项
+  detailImages     String?   @map("detail_images")
+  serviceIncludes  String?   @map("service_includes")  // 服务包含项 JSON
+  serviceNotes     String?   @map("service_notes")     // 注意事项 JSON
   orderCount       Int       @default(0) @map("order_count")
-  rating           Decimal   @default(98.0) @db.Decimal(5, 2)
-  tags             Json?
+  rating           Float     @default(98.0)
+  tags             String?   // JSON
   sort             Int       @default(0)
   status           String    @default("active") // active, inactive
   createdAt        DateTime  @default(now()) @map("created_at")
@@ -100,11 +100,11 @@ model Hospital {
   type         String   // 综合、专科
   address      String
   phone        String?
-  latitude     Decimal? @db.Decimal(10, 7)
-  longitude    Decimal? @db.Decimal(10, 7)
-  introduction String?  @db.Text
-  departments  Json?    // 科室列表
-  trafficGuide String?  @map("traffic_guide") @db.Text
+  latitude     Float?
+  longitude    Float?
+  introduction String?
+  departments  String?  // JSON
+  trafficGuide String?  @map("traffic_guide")
   parkingInfo  String?  @map("parking_info")
   coverImage   String?  @map("cover_image")
   status       String   @default("active") // active, inactive
@@ -128,10 +128,10 @@ model Escort {
   idCard         String?   @map("id_card")
   level          String    // senior, intermediate, junior, trainee
   experience     String?   // 从业年限
-  introduction   String?   @db.Text
-  tags           Json?
-  certificates   Json?     // 资质证书
-  rating         Decimal   @default(98.0) @db.Decimal(5, 2)
+  introduction   String?
+  tags           String?   // JSON
+  certificates   String?   // JSON
+  rating         Float     @default(98.0)
   orderCount     Int       @default(0) @map("order_count")
   status         String    @default("active") // active, inactive, pending, suspended
   createdAt      DateTime  @default(now()) @map("created_at")
@@ -148,7 +148,7 @@ model EscortHospital {
   id           String   @id @default(uuid())
   escortId     String   @map("escort_id")
   hospitalId   String   @map("hospital_id")
-  familiarDepts Json?   @map("familiar_depts") // 熟悉的科室
+  familiarDepts String? @map("familiar_depts") // JSON
 
   escort       Escort   @relation(fields: [escortId], references: [id])
   hospital     Hospital @relation(fields: [hospitalId], references: [id])
@@ -169,14 +169,14 @@ model Order {
   escortId         String?   @map("escort_id")
   
   // 预约信息
-  appointmentDate  DateTime  @map("appointment_date") @db.Date
+  appointmentDate  DateTime  @map("appointment_date")
   appointmentTime  String    @map("appointment_time")
   departmentName   String?   @map("department_name")
   
   // 金额信息
-  totalAmount      Decimal   @map("total_amount") @db.Decimal(10, 2)
-  discountAmount   Decimal   @default(0) @map("discount_amount") @db.Decimal(10, 2)
-  paidAmount       Decimal   @default(0) @map("paid_amount") @db.Decimal(10, 2)
+  totalAmount      Float     @map("total_amount")
+  discountAmount   Float     @default(0) @map("discount_amount")
+  paidAmount       Float     @default(0) @map("paid_amount")
   
   // 状态
   status           String    @default("pending") // pending, paid, confirmed, assigned, in_progress, completed, cancelled, refunded
@@ -187,8 +187,8 @@ model Order {
   transactionId    String?   @map("transaction_id")
   
   // 备注
-  userRemark       String?   @map("user_remark") @db.Text
-  adminRemark      String?   @map("admin_remark") @db.Text
+  userRemark       String?   @map("user_remark")
+  adminRemark      String?   @map("admin_remark")
   cancelReason     String?   @map("cancel_reason")
   
   createdAt        DateTime  @default(now()) @map("created_at")
@@ -209,7 +209,7 @@ model Order {
 model Config {
   id        String   @id @default(uuid())
   key       String   @unique
-  value     Json
+  value     String   // JSON
   remark    String?
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -247,4 +247,3 @@ model Admin {
 
   @@map("admins")
 }
-

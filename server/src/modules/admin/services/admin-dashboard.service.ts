@@ -46,7 +46,7 @@ export class AdminDashboardService {
   // 获取订单趋势（最近7天）
   async getOrderTrend() {
     const days = 7;
-    const result = [];
+    const result: { date: string; count: number }[] = [];
 
     for (let i = days - 1; i >= 0; i--) {
       const date = new Date();
@@ -77,7 +77,7 @@ export class AdminDashboardService {
   // 获取订单状态分布
   async getOrderStatusDistribution() {
     const statuses = ['pending', 'paid', 'confirmed', 'assigned', 'in_progress', 'completed', 'cancelled'];
-    const result = [];
+    const result: { status: string; count: number }[] = [];
 
     for (const status of statuses) {
       const count = await this.prisma.order.count({
