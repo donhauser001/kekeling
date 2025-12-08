@@ -51,6 +51,46 @@ export const hospitalsApi = {
   
   // 获取医院详情
   getDetail: (id: string) => get(`/hospitals/${id}`),
+  
+  // 获取医院科室树
+  getDepartments: (id: string) => get(`/hospitals/${id}/departments`),
+  
+  // 获取医院医生列表
+  getDoctors: (id: string, params?: { departmentId?: string; page?: number; pageSize?: number }) =>
+    get(`/hospitals/${id}/doctors`, params),
+}
+
+// ========== 科室模块 ==========
+export const departmentsApi = {
+  // 获取科室列表 (管理端)
+  getList: (params?: { hospitalId?: string; status?: string; keyword?: string; page?: number; pageSize?: number }) =>
+    get('/departments', params),
+  
+  // 获取科室详情
+  getDetail: (id: string) => get(`/departments/${id}`),
+}
+
+// ========== 医生模块 ==========
+export const doctorsApi = {
+  // 获取医生列表
+  getList: (params?: {
+    hospitalId?: string
+    departmentId?: string
+    keyword?: string
+    title?: string
+    sort?: 'rating' | 'consultCount' | 'default'
+    page?: number
+    pageSize?: number
+  }) => get('/doctors', params),
+  
+  // 搜索医生
+  search: (keyword: string, limit?: number) => get('/doctors/search', { keyword, limit }),
+  
+  // 获取推荐医生
+  getRecommended: (limit?: number) => get('/doctors/recommended', { limit }),
+  
+  // 获取医生详情
+  getDetail: (id: string) => get(`/doctors/${id}`),
 }
 
 // ========== 陪诊员模块 ==========

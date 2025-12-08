@@ -103,18 +103,87 @@ model Hospital {
   latitude     Float?
   longitude    Float?
   introduction String?
-  departments  String?  // JSON
   trafficGuide String?  @map("traffic_guide")
   parkingInfo  String?  @map("parking_info")
   coverImage   String?  @map("cover_image")
+  images       String?  // 更多图片 JSON
   status       String   @default("active") // active, inactive
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
+  // 关联 - 移除 departments JSON，改为关系
+  departments  Department[]
+  doctors      Doctor[]
   orders       Order[]
   escorts      EscortHospital[]
 
   @@map("hospitals")
+}
+
+// ========== 科室模块 ==========
+
+model Department {
+  id           String   @id @default(uuid())
+  name         String
+  code         String?                          // 科室编码
+  hospitalId   String   @map("hospital_id")
+  parentId     String?  @map("parent_id")       // 父科室ID (支持层级)
+  
+  introduction String?                          // 科室简介
+  location     String?                          // 位置 (如 门诊楼3层)
+  phone        String?                          // 科室电话
+  
+  sort         Int      @default(0)
+  status       String   @default("active")      // active, inactive
+  
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // 关联
+  hospital     Hospital     @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  parent       Department?  @relation("SubDepartments", fields: [parentId], references: [id])
+  children     Department[] @relation("SubDepartments")
+  doctors      Doctor[]
+  orders       Order[]
+
+  @@map("departments")
+}
+
+// ========== 医生模块 ==========
+
+model Doctor {
+  id             String   @id @default(uuid())
+  name           String
+  avatar         String?
+  gender         String?                          // male, female
+  
+  hospitalId     String   @map("hospital_id")
+  departmentId   String   @map("department_id")
+  
+  title          String                           // chief, associate_chief, attending, resident
+  level          String?                          // expert, senior, normal
+  
+  introduction   String?                          // 个人简介
+  specialties    String[]                         // 擅长领域 (PostgreSQL 数组)
+  education      String?                          // 学历背景
+  experience     String?                          // 从医年限
+  
+  consultCount   Int      @default(0) @map("consult_count")
+  rating         Float    @default(5.0)
+  reviewCount    Int      @default(0) @map("review_count")
+  
+  phone          String?                          // 联系电话 (内部使用)
+  status         String   @default("active")      // active, inactive
+  
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  // 关联
+  hospital       Hospital   @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  department     Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  orders         Order[]
+
+  @@map("doctors")
 }
 
 // ========== 陪诊员模块 ==========
@@ -166,12 +235,14 @@ model Order {
   patientId        String    @map("patient_id")
   serviceId        String    @map("service_id")
   hospitalId       String    @map("hospital_id")
+  departmentId     String?   @map("department_id")    // 新增: 科室关联
+  doctorId         String?   @map("doctor_id")        // 新增: 医生关联
   escortId         String?   @map("escort_id")
   
   // 预约信息
   appointmentDate  DateTime  @map("appointment_date")
   appointmentTime  String    @map("appointment_time")
-  departmentName   String?   @map("department_name")
+  departmentName   String?   @map("department_name")   // 保留: 兼容旧数据
   
   // 金额信息
   totalAmount      Float     @map("total_amount")
@@ -199,6 +270,8 @@ model Order {
   patient          Patient   @relation(fields: [patientId], references: [id])
   service          Service   @relation(fields: [serviceId], references: [id])
   hospital         Hospital  @relation(fields: [hospitalId], references: [id])
+  department       Department? @relation(fields: [departmentId], references: [id])
+  doctor           Doctor?   @relation(fields: [doctorId], references: [id])
   escort           Escort?   @relation(fields: [escortId], references: [id])
 
   @@map("orders")
