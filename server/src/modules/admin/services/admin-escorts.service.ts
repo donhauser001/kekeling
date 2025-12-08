@@ -314,8 +314,8 @@ export class AdminEscortsService {
    * 更新陪诊员状态
    */
   async updateStatus(id: string, status: string) {
-    const escort = await this.prisma.escort.findUnique({
-      where: { id },
+    const escort = await this.prisma.escort.findFirst({
+      where: { id, deletedAt: null },  // ✅ 过滤已软删除的记录
     });
 
     if (!escort) {
@@ -332,8 +332,8 @@ export class AdminEscortsService {
    * 更新接单状态
    */
   async updateWorkStatus(id: string, workStatus: string) {
-    const escort = await this.prisma.escort.findUnique({
-      where: { id },
+    const escort = await this.prisma.escort.findFirst({
+      where: { id, deletedAt: null },  // ✅ 过滤已软删除的记录
     });
 
     if (!escort) {
@@ -360,8 +360,8 @@ export class AdminEscortsService {
    */
   async associateHospital(escortId: string, dto: AssociateHospitalDto) {
     // 检查陪诊员是否存在
-    const escort = await this.prisma.escort.findUnique({
-      where: { id: escortId },
+    const escort = await this.prisma.escort.findFirst({
+      where: { id: escortId, deletedAt: null },  // ✅ 过滤已软删除的记录
     });
 
     if (!escort) {
