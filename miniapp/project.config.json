@@ -1,19 +1,44 @@
 {
   "miniprogramRoot": "dist/",
+  "cloudfunctionRoot": "cloud/functions/",
   "projectname": "kekeling-miniapp",
   "description": "Kekeling 陪诊服务小程序",
-  "appid": "请填写小程序AppID",
+  "appid": "wx6e10ab2c3b2c8c73",
   "setting": {
     "urlCheck": true,
     "es6": false,
     "enhance": false,
     "compileHotReLoad": false,
     "postcss": false,
-    "minified": false
+    "minified": false,
+    "compileWorklet": false,
+    "uglifyFileName": false,
+    "uploadWithSourceMap": true,
+    "packNpmManually": false,
+    "packNpmRelationList": [],
+    "minifyWXSS": true,
+    "minifyWXML": true,
+    "localPlugins": false,
+    "disableUseStrict": false,
+    "useCompilerPlugins": false,
+    "condition": false,
+    "swc": false,
+    "disableSWC": true,
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    }
   },
   "compileType": "miniprogram",
   "simulatorType": "wechat",
   "simulatorPluginLibVersion": {},
-  "condition": {}
+  "condition": {},
+  "cloudfunctionTemplateRoot": "cloud/template/",
+  "cloudbaseRoot": "cloud/",
+  "packOptions": {
+    "ignore": [],
+    "include": []
+  },
+  "editorSetting": {}
 }
-
