@@ -1,70 +1,91 @@
 # 科科灵陪诊后端 API
 
-基于 NestJS + Prisma + MySQL 的后端服务。
+基于 NestJS + Prisma + PostgreSQL 的后端服务。
 
-## 🚀 快速开始
+## 🐳 Docker 部署（推荐）
 
-### 1. 安装依赖
+### 一键启动全部服务
 
 ```bash
-cd server
-pnpm install
+# 在项目根目录执行
+docker-compose up -d
+
+# 查看服务状态
+docker-compose ps
+
+# 查看日志
+docker-compose logs -f api
+```
+
+服务启动后：
+- **API 服务**: http://localhost:3000/api
+- **API 文档**: http://localhost:3000/api/docs
+- **数据库管理**: http://localhost:8080 (Adminer)
+  - 服务器: `postgres`
+  - 用户名: `kekeling`
+  - 密码: `kekeling123`
+  - 数据库: `kekeling`
+
+### 停止服务
+
+```bash
+docker-compose down
+
+# 删除数据卷（清空数据库）
+docker-compose down -v
+```
+
+---
+
+## 💻 本地开发
+
+### 1. 启动数据库（Docker）
+
+```bash
+# 仅启动 PostgreSQL
+docker-compose -f docker-compose.dev.yml up -d
 ```
 
 ### 2. 配置环境变量
 
-复制 `.env.example` 为 `.env`，并填写配置：
-
 ```bash
-# 数据库配置
-DATABASE_URL="mysql://root:password@localhost:3306/kekeling"
+cd server
 
-# JWT 配置
-JWT_SECRET="your-super-secret-jwt-key"
+# 创建 .env 文件
+cat > .env << 'EOF'
+DATABASE_URL="postgresql://kekeling:kekeling123@localhost:5432/kekeling?schema=public"
+JWT_SECRET="kekeling-jwt-secret-key-dev"
 JWT_EXPIRES_IN="7d"
-
-# 微信小程序配置
 WECHAT_APPID="wx6e10ab2c3b2c8c73"
 WECHAT_SECRET="your-wechat-secret"
-
-# 微信支付配置 (可选，后续配置)
-WECHAT_PAY_MCHID="your-merchant-id"
-WECHAT_PAY_SERIAL_NO="your-serial-no"
-WECHAT_PAY_PRIVATE_KEY_PATH="./certs/apiclient_key.pem"
-WECHAT_PAY_API_V3_KEY="your-api-v3-key"
-
-# 服务配置
 PORT=3000
 NODE_ENV=development
+EOF
 ```
 
-### 3. 初始化数据库
+### 3. 安装依赖 & 初始化
 
 ```bash
+# 安装依赖
+pnpm install
+
 # 生成 Prisma Client
-pnpm db:generate
+npx prisma generate
 
 # 同步数据库结构
-pnpm db:push
+npx prisma db push
 
-# 或使用迁移（生产环境推荐）
-pnpm db:migrate
+# 添加测试数据
+npx ts-node prisma/seed.ts
 ```
 
-### 4. 启动服务
+### 4. 启动开发服务
 
 ```bash
-# 开发模式（热重载）
 pnpm dev
-
-# 生产模式
-pnpm build
-pnpm start:prod
 ```
 
-服务启动后：
-- API 地址：http://localhost:3000/api
-- Swagger 文档：http://localhost:3000/api/docs
+---
 
 ## 📋 API 接口
 
@@ -92,62 +113,81 @@ pnpm start:prod
 | `/api/admin/orders` | GET | 订单列表 |
 | `/api/admin/orders/:id/assign` | POST | 订单派单 |
 | `/api/admin/escorts` | GET | 陪诊员列表 |
-| `/api/admin/escorts/available` | GET | 可派单陪诊员 |
 
-## 🗄️ 数据库结构
+---
 
-- `users` - 用户表
-- `patients` - 就诊人表
-- `service_categories` - 服务分类表
-- `services` - 服务表
-- `hospitals` - 医院表
-- `escorts` - 陪诊员表
-- `escort_hospitals` - 陪诊员-医院关联表
-- `orders` - 订单表
-- `banners` - 轮播图表
-- `configs` - 系统配置表
-- `admins` - 管理员表
+## 🗄️ 数据库
 
-## 🔧 开发说明
+### 连接信息
 
-### 目录结构
+| 项目 | 值 |
+|------|------|
+| 类型 | PostgreSQL 15 |
+| 主机 | localhost (开发) / postgres (Docker) |
+| 端口 | 5432 |
+| 用户名 | kekeling |
+| 密码 | kekeling123 |
+| 数据库 | kekeling |
 
-```
-server/
-├── prisma/
-│   └── schema.prisma    # 数据库模型定义
-├── src/
-│   ├── common/          # 公共模块
-│   ├── modules/         # 业务模块
-│   │   ├── auth/        # 认证模块
-│   │   ├── users/       # 用户模块
-│   │   ├── services/    # 服务模块
-│   │   ├── hospitals/   # 医院模块
-│   │   ├── escorts/     # 陪诊员模块
-│   │   ├── orders/      # 订单模块
-│   │   ├── patients/    # 就诊人模块
-│   │   ├── home/        # 首页模块
-│   │   ├── upload/      # 上传模块
-│   │   └── admin/       # 管理端模块
-│   ├── prisma/          # Prisma 服务
-│   ├── app.module.ts    # 主模块
-│   └── main.ts          # 入口文件
-└── package.json
-```
-
-### 添加测试数据
-
-可以通过 Prisma Studio 添加测试数据：
+### 数据库管理
 
 ```bash
-pnpm db:studio
+# Prisma Studio (GUI)
+npx prisma studio
+
+# 或使用 Adminer
+# http://localhost:8080
 ```
 
-## 📝 待办事项
+### 数据库迁移
 
-- [ ] 微信支付对接
-- [ ] 管理员认证
-- [ ] 文件上传到 OSS
-- [ ] 短信验证码
-- [ ] 订单通知推送
+```bash
+# 同步 schema 到数据库
+npx prisma db push
 
+# 创建迁移文件（生产环境推荐）
+npx prisma migrate dev --name init
+
+# 应用迁移
+npx prisma migrate deploy
+```
+
+---
+
+## 🔮 未来规划：AI 向量索引
+
+PostgreSQL + pgvector 支持向量搜索，可用于：
+
+1. **智能搜索** - 语义匹配服务
+2. **推荐系统** - 医院/医生推荐
+3. **智能客服** - RAG 问答
+
+```sql
+-- 启用 pgvector 扩展
+CREATE EXTENSION vector;
+
+-- 添加向量列
+ALTER TABLE services ADD COLUMN embedding vector(1536);
+```
+
+---
+
+## 📝 常用命令
+
+```bash
+# 开发
+pnpm dev          # 启动开发服务器
+pnpm build        # 构建生产版本
+pnpm start:prod   # 启动生产服务器
+
+# 数据库
+pnpm db:generate  # 生成 Prisma Client
+pnpm db:push      # 同步数据库
+pnpm db:studio    # 打开数据库管理界面
+
+# Docker
+docker-compose up -d              # 启动全部服务
+docker-compose -f docker-compose.dev.yml up -d  # 仅启动数据库
+docker-compose logs -f api        # 查看日志
+docker-compose down               # 停止服务
+```

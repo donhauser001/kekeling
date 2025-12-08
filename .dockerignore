@@ -1,0 +1,31 @@
+# 前端项目
+src/
+miniapp/
+packages/
+public/
+docs/
+
+# 配置文件
+*.config.js
+*.config.ts
+tsconfig*.json
+components.json
+
+# 依赖
+node_modules
+.pnpm-store
+
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+.vscode
+.cursor
+
+# 其他
+*.md
+*.log
+.DS_Store
+

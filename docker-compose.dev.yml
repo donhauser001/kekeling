@@ -1,0 +1,44 @@
+# ============================================
+# 科科灵陪诊平台 Docker Compose (开发环境)
+# ============================================
+# 仅启动数据库，后端本地开发
+# 启动: docker-compose -f docker-compose.dev.yml up -d
+# ============================================
+
+services:
+  # PostgreSQL 数据库
+  postgres:
+    image: postgres:15-alpine
+    container_name: kekeling-postgres-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: kekeling
+      POSTGRES_PASSWORD: kekeling123
+      POSTGRES_DB: kekeling
+      TZ: Asia/Shanghai
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kekeling -d kekeling"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Adminer - 数据库管理工具
+  adminer:
+    image: adminer:latest
+    container_name: kekeling-adminer-dev
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+
+volumes:
+  postgres_dev_data:
+    driver: local
+

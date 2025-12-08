@@ -1,0 +1,32 @@
+# 依赖
+node_modules
+.pnpm-store
+
+# 构建产物
+dist
+
+# 开发文件
+*.log
+.env
+.env.*
+!.env.example
+
+# 数据库文件
+prisma/*.db
+prisma/*.db-journal
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# 测试
+coverage
+.nyc_output
+
+# 其他
+.DS_Store
+Thumbs.db
+*.md
+
