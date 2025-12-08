@@ -336,13 +336,16 @@ export interface HospitalDepartment {
 export interface Hospital {
   id: string
   name: string
+  shortName: string | null  // 医院简称
   level: string
+  levelDetail: string | null  // 详细级别描述
   type: string
   address: string
   phone: string | null
   latitude: number | null
   longitude: number | null
   introduction: string | null
+  specialties: string[]  // 优势专科
   trafficGuide: string | null
   parkingInfo: string | null
   coverImage: string | null
@@ -354,11 +357,14 @@ export interface Hospital {
 
 export interface CreateHospitalData {
   name: string
+  shortName?: string
   level: string
+  levelDetail?: string
   type: string
   address: string
   phone?: string
   introduction?: string
+  specialties?: string[]
   departmentTemplateIds?: string[]
 }
 

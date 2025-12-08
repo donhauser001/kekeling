@@ -87,21 +87,27 @@ const typeLabels: Record<string, string> = {
 
 interface HospitalFormData {
     name: string
+    shortName: string
     level: string
+    levelDetail: string
     type: string
     address: string
     phone: string
     introduction: string
+    specialties: string
     departmentTemplateIds: string[]
 }
 
 const defaultFormData: HospitalFormData = {
     name: '',
+    shortName: '',
     level: '三甲',
+    levelDetail: '',
     type: '综合',
     address: '',
     phone: '',
     introduction: '',
+    specialties: '',
     departmentTemplateIds: [],
 }
 
@@ -168,11 +174,14 @@ export function Hospitals() {
         if (editingHospital && dialogMode === 'edit') {
             setFormData({
                 name: editingHospital.name,
+                shortName: editingHospital.shortName || '',
                 level: editingHospital.level,
+                levelDetail: editingHospital.levelDetail || '',
                 type: editingHospital.type,
                 address: editingHospital.address,
                 phone: editingHospital.phone || '',
                 introduction: editingHospital.introduction || '',
+                specialties: editingHospital.specialties?.join('、') || '',
                 departmentTemplateIds: editingHospital.departments?.map(d => d.templateId).filter(Boolean) as string[] || [],
             })
         }
@@ -214,13 +223,18 @@ export function Hospitals() {
     const handleSave = async () => {
         if (!validateForm()) return
 
+        const data = {
+            ...formData,
+            specialties: formData.specialties.split(/[、,，]/).map(s => s.trim()).filter(Boolean),
+        }
+
         try {
             if (dialogMode === 'create') {
-                await createMutation.mutateAsync(formData)
+                await createMutation.mutateAsync(data)
             } else if (editingHospitalId) {
                 await updateMutation.mutateAsync({
                     id: editingHospitalId,
-                    data: formData,
+                    data,
                 })
             }
             setDialogOpen(false)
@@ -392,11 +406,14 @@ export function Hospitals() {
                                                 <div className={cn('flex h-12 w-12 items-center justify-center rounded-lg', levelColors[hospital.level] || 'bg-gray-500')}>
                                                     <Building2 className='h-6 w-6 text-white' />
                                                 </div>
-                                                <div>
+                                                <div className='flex-1 min-w-0'>
                                                     <CardTitle className='flex items-center gap-2 text-base'>
-                                                        {hospital.name}
+                                                        <span className='truncate'>{hospital.shortName || hospital.name}</span>
                                                     </CardTitle>
-                                                    <div className='flex items-center gap-2'>
+                                                    {hospital.shortName && (
+                                                        <p className='text-muted-foreground text-xs truncate'>{hospital.name}</p>
+                                                    )}
+                                                    <div className='mt-1 flex flex-wrap items-center gap-1'>
                                                         <Badge variant='outline' className='text-xs'>
                                                             {levelLabels[hospital.level] || hospital.level}
                                                         </Badge>
@@ -430,6 +447,25 @@ export function Hospitals() {
                                         </div>
                                     </CardHeader>
                                     <CardContent className='space-y-3'>
+                                        {hospital.levelDetail && (
+                                            <p className='text-primary text-xs font-medium'>
+                                                {hospital.levelDetail}
+                                            </p>
+                                        )}
+                                        {hospital.specialties && hospital.specialties.length > 0 && (
+                                            <div className='flex flex-wrap gap-1'>
+                                                {hospital.specialties.slice(0, 4).map(s => (
+                                                    <Badge key={s} variant='outline' className='text-xs'>
+                                                        {s}
+                                                    </Badge>
+                                                ))}
+                                                {hospital.specialties.length > 4 && (
+                                                    <Badge variant='outline' className='text-xs'>
+                                                        +{hospital.specialties.length - 4}
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                        )}
                                         <div className='text-muted-foreground flex items-center gap-2 text-sm'>
                                             <MapPin className='h-4 w-4 shrink-0' />
                                             <span className='line-clamp-1'>{city} · {hospital.address}</span>
@@ -439,11 +475,6 @@ export function Hospitals() {
                                                 <Stethoscope className='h-4 w-4' />
                                                 <span>已关联 {deptCount} 个科室</span>
                                             </div>
-                                        )}
-                                        {hospital.introduction && (
-                                            <p className='text-muted-foreground line-clamp-2 text-sm'>
-                                                {hospital.introduction}
-                                            </p>
                                         )}
                                     </CardContent>
                                 </Card>
@@ -475,15 +506,25 @@ export function Hospitals() {
                     <div className='grid grid-cols-2 gap-6'>
                         {/* 左侧：基本信息 */}
                         <div className='space-y-4'>
-                            <div className='space-y-2'>
-                                <Label>医院名称 <span className='text-destructive'>*</span></Label>
-                                <Input
-                                    placeholder='请输入医院名称'
-                                    value={formData.name}
-                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                    className={formErrors.name ? 'border-destructive' : ''}
-                                />
-                                {formErrors.name && <p className='text-destructive text-sm'>{formErrors.name}</p>}
+                            <div className='grid grid-cols-3 gap-4'>
+                                <div className='col-span-2 space-y-2'>
+                                    <Label>医院名称 <span className='text-destructive'>*</span></Label>
+                                    <Input
+                                        placeholder='请输入医院全称'
+                                        value={formData.name}
+                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                        className={formErrors.name ? 'border-destructive' : ''}
+                                    />
+                                    {formErrors.name && <p className='text-destructive text-sm'>{formErrors.name}</p>}
+                                </div>
+                                <div className='space-y-2'>
+                                    <Label>简称</Label>
+                                    <Input
+                                        placeholder='如：协和'
+                                        value={formData.shortName}
+                                        onChange={(e) => setFormData({ ...formData, shortName: e.target.value })}
+                                    />
+                                </div>
                             </div>
 
                             <div className='grid grid-cols-2 gap-4'>
@@ -514,6 +555,24 @@ export function Hospitals() {
                             </div>
 
                             <div className='space-y-2'>
+                                <Label>级别详情</Label>
+                                <Input
+                                    placeholder='如：国家心血管病中心'
+                                    value={formData.levelDetail}
+                                    onChange={(e) => setFormData({ ...formData, levelDetail: e.target.value })}
+                                />
+                            </div>
+
+                            <div className='space-y-2'>
+                                <Label>优势专科</Label>
+                                <Input
+                                    placeholder='用顿号分隔，如：心血管内科、骨科'
+                                    value={formData.specialties}
+                                    onChange={(e) => setFormData({ ...formData, specialties: e.target.value })}
+                                />
+                            </div>
+
+                            <div className='space-y-2'>
                                 <Label>详细地址 <span className='text-destructive'>*</span></Label>
                                 <Input
                                     placeholder='请输入详细地址'
@@ -530,17 +589,6 @@ export function Hospitals() {
                                     placeholder='请输入联系电话'
                                     value={formData.phone}
                                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                />
-                            </div>
-
-                            <div className='space-y-2'>
-                                <Label>医院简介</Label>
-                                <Textarea
-                                    placeholder='请输入医院简介'
-                                    value={formData.introduction}
-                                    onChange={(e) => setFormData({ ...formData, introduction: e.target.value })}
-                                    className='resize-none'
-                                    rows={3}
                                 />
                             </div>
                         </div>

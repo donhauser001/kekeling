@@ -18,7 +18,9 @@ export class HospitalsService {
     if (keyword) {
       where.OR = [
         { name: { contains: keyword } },
+        { shortName: { contains: keyword } },
         { address: { contains: keyword } },
+        { specialties: { has: keyword } },
       ];
     }
 
@@ -83,11 +85,14 @@ export class HospitalsService {
   // 创建医院
   async create(data: {
     name: string;
+    shortName?: string;
     level: string;
+    levelDetail?: string;
     type: string;
     address: string;
     phone?: string;
     introduction?: string;
+    specialties?: string[];
     departmentTemplateIds?: string[]; // 关联的科室模板ID
   }) {
     const { departmentTemplateIds, ...hospitalData } = data;
@@ -110,11 +115,14 @@ export class HospitalsService {
     id: string,
     data: {
       name?: string;
+      shortName?: string;
       level?: string;
+      levelDetail?: string;
       type?: string;
       address?: string;
       phone?: string;
       introduction?: string;
+      specialties?: string[];
       status?: string;
       departmentTemplateIds?: string[]; // 关联的科室模板ID
     },

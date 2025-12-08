@@ -96,13 +96,16 @@ model Service {
 model Hospital {
   id           String   @id @default(uuid())
   name         String
+  shortName    String?  @map("short_name") // 医院简称，如"协和"、"301"
   level        String   // 三甲、三乙、二甲等
+  levelDetail  String?  @map("level_detail") // 详细级别描述，如"综合类国家医学中心"
   type         String   // 综合、专科
   address      String
   phone        String?
   latitude     Float?
   longitude    Float?
   introduction String?
+  specialties  String[] // 优势专科列表
   trafficGuide String?  @map("traffic_guide")
   parkingInfo  String?  @map("parking_info")
   coverImage   String?  @map("cover_image")
