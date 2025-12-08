@@ -63,6 +63,14 @@ export function useOrders(query: OrderQuery = {}) {
   })
 }
 
+export function useOrderStats() {
+  return useQuery({
+    queryKey: ['orders', 'stats'],
+    queryFn: () => orderApi.getStats(),
+    staleTime: 60 * 1000,
+  })
+}
+
 export function useOrder(id: string) {
   return useQuery({
     queryKey: ['orders', id],
@@ -83,12 +91,33 @@ export function useAssignOrder() {
   })
 }
 
-export function useUpdateOrderStatus() {
+export function useConfirmOrder() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ id, status }: { id: string; status: string }) =>
-      orderApi.updateStatus(id, status),
+    mutationFn: (id: string) => orderApi.confirm(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] })
+    },
+  })
+}
+
+export function useStartOrderService() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) => orderApi.startService(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] })
+    },
+  })
+}
+
+export function useCompleteOrder() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) => orderApi.complete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] })
     },
@@ -101,6 +130,41 @@ export function useCancelOrder() {
   return useMutation({
     mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
       orderApi.cancel(id, reason),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] })
+    },
+  })
+}
+
+export function useRequestRefund() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
+      orderApi.requestRefund(id, reason),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] })
+    },
+  })
+}
+
+export function useConfirmRefund() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) => orderApi.confirmRefund(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] })
+    },
+  })
+}
+
+export function useUpdateOrderRemark() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, remark }: { id: string; remark: string }) =>
+      orderApi.updateRemark(id, remark),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] })
     },
@@ -404,11 +468,47 @@ export function useUsers(query: Parameters<typeof userApi.getList>[0] = {}) {
   })
 }
 
+export function useUserStats() {
+  return useQuery({
+    queryKey: ['users', 'stats'],
+    queryFn: () => userApi.getStats(),
+    staleTime: 60 * 1000,
+  })
+}
+
 export function useUser(id: string) {
   return useQuery({
     queryKey: ['users', id],
     queryFn: () => userApi.getById(id),
     enabled: !!id,
+  })
+}
+
+export function useUpdateUser() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: { nickname?: string; phone?: string } }) =>
+      userApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+    },
+  })
+}
+
+export function useUserPatients(userId: string) {
+  return useQuery({
+    queryKey: ['users', userId, 'patients'],
+    queryFn: () => userApi.getPatients(userId),
+    enabled: !!userId,
+  })
+}
+
+export function useUserOrders(userId: string, query: { page?: number; pageSize?: number } = {}) {
+  return useQuery({
+    queryKey: ['users', userId, 'orders', query],
+    queryFn: () => userApi.getOrders(userId, query),
+    enabled: !!userId,
   })
 }
 

@@ -1,5 +1,5 @@
-import { Controller, Get, Post, Patch, Param, Query, Body } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import { Controller, Get, Post, Put, Param, Query, Body } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiQuery, ApiParam, ApiBody } from '@nestjs/swagger';
 import { AdminOrdersService } from '../services/admin-orders.service';
 import { ApiResponse } from '../../../common/response/api-response';
 
@@ -8,74 +8,144 @@ import { ApiResponse } from '../../../common/response/api-response';
 export class AdminOrdersController {
   constructor(private readonly ordersService: AdminOrdersService) {}
 
+  // ============================================
+  // 查询
+  // ============================================
+
   @Get()
   @ApiOperation({ summary: '获取订单列表' })
-  @ApiQuery({ name: 'status', required: false })
-  @ApiQuery({ name: 'keyword', required: false })
+  @ApiQuery({ name: 'status', required: false, description: '订单状态' })
+  @ApiQuery({ name: 'keyword', required: false, description: '搜索关键词' })
+  @ApiQuery({ name: 'escortId', required: false, description: '陪诊员ID' })
+  @ApiQuery({ name: 'hospitalId', required: false, description: '医院ID' })
+  @ApiQuery({ name: 'startDate', required: false, description: '开始日期' })
+  @ApiQuery({ name: 'endDate', required: false, description: '结束日期' })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'pageSize', required: false })
   async findAll(
     @Query('status') status?: string,
     @Query('keyword') keyword?: string,
+    @Query('escortId') escortId?: string,
+    @Query('hospitalId') hospitalId?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
     @Query('page') page?: number,
     @Query('pageSize') pageSize?: number,
   ) {
     const result = await this.ordersService.findAll({
       status,
       keyword,
+      escortId,
+      hospitalId,
+      startDate,
+      endDate,
       page: page ? Number(page) : 1,
       pageSize: pageSize ? Number(pageSize) : 10,
     });
     return ApiResponse.success(result);
   }
 
+  @Get('stats')
+  @ApiOperation({ summary: '获取订单统计' })
+  @ApiQuery({ name: 'startDate', required: false })
+  @ApiQuery({ name: 'endDate', required: false })
+  async getStats(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    const data = await this.ordersService.getStats({ startDate, endDate });
+    return ApiResponse.success(data);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: '获取订单详情' })
+  @ApiParam({ name: 'id', description: '订单ID' })
   async findOne(@Param('id') id: string) {
     const data = await this.ordersService.findById(id);
     return ApiResponse.success(data);
   }
 
+  // ============================================
+  // 状态流转
+  // ============================================
+
   @Post(':id/assign')
   @ApiOperation({ summary: '派单（分配陪诊员）' })
+  @ApiParam({ name: 'id', description: '订单ID' })
+  @ApiBody({ schema: { properties: { escortId: { type: 'string' } } } })
   async assign(
     @Param('id') id: string,
     @Body('escortId') escortId: string,
   ) {
     const data = await this.ordersService.assignEscort(id, escortId);
-    return ApiResponse.success(data);
+    return ApiResponse.success(data, '派单成功');
   }
 
   @Post(':id/confirm')
   @ApiOperation({ summary: '确认订单' })
+  @ApiParam({ name: 'id', description: '订单ID' })
   async confirm(@Param('id') id: string) {
     const data = await this.ordersService.confirm(id);
-    return ApiResponse.success(data);
+    return ApiResponse.success(data, '订单已确认');
   }
 
   @Post(':id/start')
   @ApiOperation({ summary: '开始服务' })
+  @ApiParam({ name: 'id', description: '订单ID' })
   async startService(@Param('id') id: string) {
     const data = await this.ordersService.startService(id);
-    return ApiResponse.success(data);
+    return ApiResponse.success(data, '服务已开始');
   }
 
   @Post(':id/complete')
   @ApiOperation({ summary: '完成订单' })
+  @ApiParam({ name: 'id', description: '订单ID' })
   async complete(@Param('id') id: string) {
     const data = await this.ordersService.complete(id);
-    return ApiResponse.success(data);
+    return ApiResponse.success(data, '订单已完成');
   }
 
-  @Patch(':id/status')
-  @ApiOperation({ summary: '更新订单状态' })
-  async updateStatus(
+  @Post(':id/cancel')
+  @ApiOperation({ summary: '取消订单' })
+  @ApiParam({ name: 'id', description: '订单ID' })
+  @ApiBody({ schema: { properties: { reason: { type: 'string' } } } })
+  async cancel(
     @Param('id') id: string,
-    @Body('status') status: string,
-    @Body('remark') remark?: string,
+    @Body('reason') reason?: string,
   ) {
-    const data = await this.ordersService.updateStatus(id, status, remark);
-    return ApiResponse.success(data);
+    const data = await this.ordersService.cancel(id, reason);
+    return ApiResponse.success(data, '订单已取消');
+  }
+
+  @Post(':id/refund/request')
+  @ApiOperation({ summary: '申请退款' })
+  @ApiParam({ name: 'id', description: '订单ID' })
+  @ApiBody({ schema: { properties: { reason: { type: 'string' } } } })
+  async requestRefund(
+    @Param('id') id: string,
+    @Body('reason') reason?: string,
+  ) {
+    const data = await this.ordersService.requestRefund(id, reason);
+    return ApiResponse.success(data, '退款申请已提交');
+  }
+
+  @Post(':id/refund/confirm')
+  @ApiOperation({ summary: '确认退款' })
+  @ApiParam({ name: 'id', description: '订单ID' })
+  async confirmRefund(@Param('id') id: string) {
+    const data = await this.ordersService.confirmRefund(id);
+    return ApiResponse.success(data, '退款已确认');
+  }
+
+  @Put(':id/remark')
+  @ApiOperation({ summary: '更新订单备注' })
+  @ApiParam({ name: 'id', description: '订单ID' })
+  @ApiBody({ schema: { properties: { remark: { type: 'string' } } } })
+  async updateRemark(
+    @Param('id') id: string,
+    @Body('remark') remark: string,
+  ) {
+    const data = await this.ordersService.updateRemark(id, remark);
+    return ApiResponse.success(data, '备注已更新');
   }
 }
-

@@ -121,47 +121,72 @@ export const dashboardApi = {
 // 订单 API
 // ============================================
 
+export type OrderStatus = 'pending' | 'paid' | 'confirmed' | 'assigned' | 'in_progress' | 'completed' | 'cancelled' | 'refunding' | 'refunded'
+
 export interface Order {
   id: string
   orderNo: string
-  serviceName: string
-  serviceCategory: string
-  customerName: string
-  customerPhone: string
-  escortName: string | null
-  escortPhone: string | null
-  hospital: string
-  department: string
+  userId: string
+  serviceId: string
+  hospitalId: string
+  patientId: string
+  escortId: string | null
   appointmentDate: string
   appointmentTime: string
-  status: 'pending' | 'accepted' | 'in_progress' | 'completed' | 'cancelled' | 'refunded'
-  amount: number
+  departmentName: string | null
+  totalAmount: number
   paidAmount: number
+  status: OrderStatus
+  userRemark: string | null
+  adminRemark: string | null
+  cancelReason: string | null
+  paymentMethod: string | null
+  paymentTime: string | null
+  transactionId: string | null
+  refundAmount: number | null
+  refundTime: string | null
   createdAt: string
   updatedAt: string
-  remark: string
+  // 关联数据
   user?: {
     id: string
-    nickname: string
-    phone: string
+    nickname: string | null
+    phone: string | null
+    avatar: string | null
   }
   service?: {
     id: string
     name: string
+    price: number
+    unit: string
   }
-  escort?: {
+  hospital?: {
     id: string
     name: string
-    phone: string
+    address: string | null
   }
-  hospitalInfo?: {
+  department?: {
     id: string
     name: string
+  }
+  doctor?: {
+    id: string
+    name: string
+    title: string
   }
   patient?: {
     id: string
     name: string
     phone: string
+    gender: string | null
+    age: number | null
+  }
+  escort?: {
+    id: string
+    name: string
+    phone: string
+    avatar: string | null
+    level: string
   }
 }
 
@@ -170,35 +195,92 @@ export interface OrderQuery {
   pageSize?: number
   status?: string
   keyword?: string
+  escortId?: string
+  hospitalId?: string
   startDate?: string
   endDate?: string
 }
 
+export interface OrderStats {
+  totalOrders: number
+  todayOrders: number
+  yesterdayOrders: number
+  orderGrowth: number
+  pendingOrders: number
+  inProgressOrders: number
+  completedOrders: number
+  cancelledOrders: number
+  todayRevenue: number
+  yesterdayRevenue: number
+  revenueGrowth: number
+  totalRevenue: number
+}
+
 export const orderApi = {
+  // 获取列表
   getList: (query: OrderQuery = {}) =>
     request<PaginatedData<Order>>('/admin/orders', {
       params: query as Record<string, string | number | boolean | undefined>,
     }),
 
+  // 获取统计
+  getStats: (params?: { startDate?: string; endDate?: string }) =>
+    request<OrderStats>('/admin/orders/stats', { params }),
+
+  // 获取详情
   getById: (id: string) =>
     request<Order>(`/admin/orders/${id}`),
 
+  // 派单
   assign: (id: string, escortId: string) =>
     request<Order>(`/admin/orders/${id}/assign`, {
       method: 'POST',
       body: JSON.stringify({ escortId }),
     }),
 
-  updateStatus: (id: string, status: string) =>
-    request<Order>(`/admin/orders/${id}/status`, {
-      method: 'PATCH',
-      body: JSON.stringify({ status }),
+  // 确认订单
+  confirm: (id: string) =>
+    request<Order>(`/admin/orders/${id}/confirm`, {
+      method: 'POST',
     }),
 
+  // 开始服务
+  startService: (id: string) =>
+    request<Order>(`/admin/orders/${id}/start`, {
+      method: 'POST',
+    }),
+
+  // 完成订单
+  complete: (id: string) =>
+    request<Order>(`/admin/orders/${id}/complete`, {
+      method: 'POST',
+    }),
+
+  // 取消订单
   cancel: (id: string, reason?: string) =>
     request<Order>(`/admin/orders/${id}/cancel`, {
       method: 'POST',
       body: JSON.stringify({ reason }),
+    }),
+
+  // 申请退款
+  requestRefund: (id: string, reason?: string) =>
+    request<Order>(`/admin/orders/${id}/refund/request`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    }),
+
+  // 确认退款
+  confirmRefund: (id: string) =>
+    request<Order>(`/admin/orders/${id}/refund/confirm`, {
+      method: 'POST',
+    }),
+
+  // 更新备注
+  updateRemark: (id: string, remark: string) =>
+    request<Order>(`/admin/orders/${id}/remark`, {
+      method: 'PUT',
+      body: JSON.stringify({ remark }),
     }),
 }
 
@@ -448,22 +530,114 @@ export const hospitalApi = {
 export interface User {
   id: string
   openid: string
+  unionid: string | null
   nickname: string | null
   avatar: string | null
   phone: string | null
-  gender: string | null
+  orderCount: number
+  patientCount: number
+  isEscort: boolean
+  escortInfo?: {
+    id: string
+    level: string
+    status: string
+  } | null
   createdAt: string
   updatedAt: string
 }
 
+export interface UserDetail extends User {
+  completedOrders: number
+  totalSpent: number
+  patients: Array<{
+    id: string
+    name: string
+    phone: string
+    gender: string | null
+    age: number | null
+    relationship: string
+  }>
+  orders: Array<{
+    id: string
+    orderNo: string
+    status: string
+    totalAmount: number
+    paidAmount: number
+    createdAt: string
+    service?: { name: string }
+    hospital?: { name: string }
+  }>
+  escort?: {
+    id: string
+    name: string
+    level: string
+    status: string
+    hospitals: Array<{
+      hospital: { id: string; name: string }
+    }>
+  }
+}
+
+export interface UserQuery {
+  page?: number
+  pageSize?: number
+  keyword?: string
+  hasPhone?: boolean
+  startDate?: string
+  endDate?: string
+}
+
+export interface UserStats {
+  totalUsers: number
+  todayUsers: number
+  yesterdayUsers: number
+  userGrowth: number
+  thisMonthUsers: number
+  lastMonthUsers: number
+  monthlyGrowth: number
+  withPhone: number
+  withPhoneRate: number
+  escortCount: number
+}
+
 export const userApi = {
-  getList: (query: { page?: number; pageSize?: number; keyword?: string } = {}) =>
-    request<PaginatedData<User>>('/users', {
-      params: query,
+  // 获取列表
+  getList: (query: UserQuery = {}) =>
+    request<PaginatedData<User>>('/admin/users', {
+      params: query as Record<string, string | number | boolean | undefined>,
     }),
 
+  // 获取统计
+  getStats: () =>
+    request<UserStats>('/admin/users/stats'),
+
+  // 获取详情
   getById: (id: string) =>
-    request<User>(`/users/${id}`),
+    request<UserDetail>(`/admin/users/${id}`),
+
+  // 更新用户
+  update: (id: string, data: { nickname?: string; phone?: string }) =>
+    request<User>(`/admin/users/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // 获取用户就诊人
+  getPatients: (userId: string) =>
+    request<Array<{
+      id: string
+      name: string
+      phone: string
+      gender: string | null
+      age: number | null
+      relationship: string
+    }>>(`/admin/users/${userId}/patients`),
+
+  // 获取用户订单
+  getOrders: (userId: string, query: { page?: number; pageSize?: number } = {}) =>
+    request<PaginatedData<Order>>(`/admin/users/${userId}/orders`, {
+      params: query,
+    }),
 }
 
 // ============================================
