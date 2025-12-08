@@ -757,28 +757,27 @@ async function main() {
   // 4. 创建服务分类和服务
   console.log('\n📦 正在创建服务分类和服务...');
 
-  // 服务分类 - 匹配后台配置
+  // 服务分类 - 扁平化设计纯色
   // isPinned: 置顶分类（最多2个席位，显示为左右并列大卡片）
-  // color: 主题颜色（支持渐变色，格式：linear-gradient(135deg, #color1 0%, #color2 100%)）
   const serviceCategories = await Promise.all([
-    // 置顶分类 1 - 陪诊服务（紫色渐变）
+    // 置顶分类 1 - 陪诊服务（靛蓝色）
     prisma.serviceCategory.create({
       data: {
         name: '陪诊服务',
         icon: 'stethoscope',
-        color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        color: '#6366f1',
         description: '医院陪诊相关服务，包括门诊、住院、检查等全程陪同',
         isPinned: true,
         sort: 1,
         status: 'active',
       },
     }),
-    // 置顶分类 2 - 跑腿服务（粉红渐变）
+    // 置顶分类 2 - 跑腿服务（粉色）
     prisma.serviceCategory.create({
       data: {
         name: '跑腿服务',
         icon: 'truck',
-        color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+        color: '#ec4899',
         description: '医疗相关跑腿代办，药品代购、病历代办等',
         isPinned: true,
         sort: 2,
@@ -790,19 +789,19 @@ async function main() {
       data: {
         name: '诊断服务',
         icon: 'message-square',
-        color: '#10b981',
+        color: '#22c55e',
         description: '在线诊断咨询服务，提供专业医疗咨询',
         isPinned: false,
         sort: 3,
         status: 'active',
       },
     }),
-    // 非置顶分类 - 酒店服务（蓝色）
+    // 非置顶分类 - 酒店服务（天蓝色）
     prisma.serviceCategory.create({
       data: {
         name: '酒店服务',
         icon: 'building',
-        color: '#3b82f6',
+        color: '#0ea5e9',
         description: '医院周边住宿服务，方便就医住宿',
         isPinned: false,
         sort: 4,

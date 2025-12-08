@@ -103,20 +103,20 @@ const getIconComponent = (iconName: string | null) => {
     return option?.icon || Layers
 }
 
-// 预设颜色选项（支持渐变和纯色）
+// 预设颜色选项（扁平化纯色）
 const colorPresets = [
-    { value: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', label: '紫色渐变', preview: 'bg-gradient-to-br from-[#667eea] to-[#764ba2]' },
-    { value: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', label: '粉红渐变', preview: 'bg-gradient-to-br from-[#f093fb] to-[#f5576c]' },
-    { value: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', label: '蓝色渐变', preview: 'bg-gradient-to-br from-[#4facfe] to-[#00f2fe]' },
-    { value: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', label: '绿色渐变', preview: 'bg-gradient-to-br from-[#43e97b] to-[#38f9d7]' },
-    { value: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', label: '橙粉渐变', preview: 'bg-gradient-to-br from-[#fa709a] to-[#fee140]' },
-    { value: '#3b82f6', label: '蓝色', preview: 'bg-[#3b82f6]' },
-    { value: '#10b981', label: '绿色', preview: 'bg-[#10b981]' },
-    { value: '#f97316', label: '橙色', preview: 'bg-[#f97316]' },
+    { value: '#6366f1', label: '靛蓝', preview: 'bg-[#6366f1]' },
     { value: '#8b5cf6', label: '紫色', preview: 'bg-[#8b5cf6]' },
     { value: '#ec4899', label: '粉色', preview: 'bg-[#ec4899]' },
+    { value: '#f43f5e', label: '玫红', preview: 'bg-[#f43f5e]' },
     { value: '#ef4444', label: '红色', preview: 'bg-[#ef4444]' },
-    { value: '#6b7280', label: '灰色', preview: 'bg-[#6b7280]' },
+    { value: '#f97316', label: '橙色', preview: 'bg-[#f97316]' },
+    { value: '#eab308', label: '黄色', preview: 'bg-[#eab308]' },
+    { value: '#22c55e', label: '绿色', preview: 'bg-[#22c55e]' },
+    { value: '#14b8a6', label: '青色', preview: 'bg-[#14b8a6]' },
+    { value: '#0ea5e9', label: '天蓝', preview: 'bg-[#0ea5e9]' },
+    { value: '#3b82f6', label: '蓝色', preview: 'bg-[#3b82f6]' },
+    { value: '#64748b', label: '灰色', preview: 'bg-[#64748b]' },
 ] as const
 
 interface FormData {

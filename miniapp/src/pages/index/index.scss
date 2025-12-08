@@ -124,41 +124,29 @@
 
 .pinned-card {
   flex: 1;
-  border-radius: 20px;
+  border-radius: 16px;
   padding: 24px;
   position: relative;
   overflow: hidden;
   animation: slideIn 0.4s ease forwards;
   opacity: 0;
   transform: translateY(20px);
-  // 默认渐变（如果没有设置颜色）
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  // 默认纯色（扁平化设计）
+  background: #6366f1;
   
   &:nth-child(1) { animation-delay: 0s; }
   &:nth-child(2) { animation-delay: 0.1s; }
-  
-  // 装饰圆
-  &::after {
-    content: '';
-    position: absolute;
-    top: -30px;
-    right: -30px;
-    width: 100px;
-    height: 100px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 50%;
-  }
 }
 
 .pinned-icon {
-  width: 56px;
-  height: 56px;
+  width: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 16px;
-  margin-bottom: 16px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  margin-bottom: 12px;
 }
 
 .pinned-name {
