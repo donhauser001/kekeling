@@ -164,30 +164,8 @@ page {
   }
 }
 
-// TabBar 样式覆盖（H5 模式）
-.taro-tabbar__tabbar-border {
-  border-top-color: var(--border-color) !important;
-}
-
-// 覆盖 Taro H5 tabBar 选中状态颜色
-.weui-tabbar__label,
-.taro-tabbar__tabbar-item-title {
-  &[style*="color: rgb(24, 144, 255)"],
-  &[style*="color:#1890ff"],
-  &[style*="color: #1890ff"] {
-    color: var(--primary-color) !important;
-  }
-}
-
-// 选中状态的 tabBar 项
-[class*="tabbar"][class*="selected"],
-[class*="tabbar"][class*="active"],
-.taro-tabbar__tabbar-item--active,
-.taro-tabbar__tabbar-item-active {
-  color: var(--primary-color) !important;
-  
-  * {
-    color: var(--primary-color) !important;
-  }
+// 隐藏默认 TabBar，使用自定义 TabBar
+.taro-tabbar__tabbar {
+  display: none !important;
 }
 

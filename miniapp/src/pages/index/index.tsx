@@ -2,6 +2,7 @@ import { View, Text } from '@tarojs/components'
 import Taro, { useDidShow } from '@tarojs/taro'
 import { useState, useEffect } from 'react'
 import Icon from '@/components/Icon'
+import CustomTabBar from '@/components/CustomTabBar'
 import { servicesApi, homeApi, configApi } from '@/services/api'
 import { checkDebugCommand } from '@/utils/env-adapter'
 import './index.scss'
@@ -342,6 +343,9 @@ export default function Index() {
         <Text className='footer-slogan'>让每一次就医都有温暖陪伴</Text>
         <Text className='footer-contact'>客服热线：400-123-4567</Text>
       </View>
+
+      {/* 自定义 TabBar */}
+      <CustomTabBar />
     </View>
   )
 }

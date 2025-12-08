@@ -2,6 +2,7 @@ import { View, Text, Image, Button } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import { useState, useEffect } from 'react'
 import Icon from '@/components/Icon'
+import CustomTabBar from '@/components/CustomTabBar'
 import { getPrimaryColor } from '@/utils/theme'
 import './index.scss'
 
@@ -210,6 +211,9 @@ export default function User() {
           立即咨询
         </Button>
       </View>
+
+      {/* 自定义 TabBar */}
+      <CustomTabBar />
     </View>
   )
 }

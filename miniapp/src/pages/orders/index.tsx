@@ -2,6 +2,7 @@ import { View, Text } from '@tarojs/components'
 import Taro, { useDidShow } from '@tarojs/taro'
 import { useState, useEffect } from 'react'
 import Icon from '@/components/Icon'
+import CustomTabBar from '@/components/CustomTabBar'
 import { getPrimaryColor } from '@/utils/theme'
 import { ordersApi } from '@/services/api'
 import { isLoggedIn } from '@/services/request'
@@ -214,6 +215,8 @@ export default function Orders() {
             去登录
           </View>
         </View>
+        {/* 自定义 TabBar */}
+        <CustomTabBar />
       </View>
     )
   }
@@ -335,6 +338,9 @@ export default function Orders() {
           </>
         )}
       </View>
+      
+      {/* 自定义 TabBar */}
+      <CustomTabBar />
     </View>
   )
 }
