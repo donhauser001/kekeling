@@ -7,7 +7,7 @@ export default defineConfig<'webpack5'>(async (merge) => {
   const baseConfig: UserConfigExport<'webpack5'> = {
     projectName: 'kekeling-miniapp',
     date: '2024-12-08',
-    designWidth: 375,
+    designWidth: 750,
     deviceRatio: {
       640: 2.34 / 2,
       750: 1,
