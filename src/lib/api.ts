@@ -373,7 +373,7 @@ export interface UpdateHospitalData extends Partial<CreateHospitalData> {
 }
 
 export const hospitalApi = {
-  getList: (query: { keyword?: string; page?: number; pageSize?: number } = {}) =>
+  getList: (query: { keyword?: string; level?: string; page?: number; pageSize?: number } = {}) =>
     request<PaginatedData<Hospital>>('/hospitals', {
       params: query,
     }),

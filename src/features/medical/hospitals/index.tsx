@@ -56,6 +56,7 @@ import { Main } from '@/components/layout/main'
 import { MessageButton } from '@/components/message-button'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
+import { SimplePagination } from '@/components/simple-pagination'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { cn } from '@/lib/utils'
 
@@ -139,17 +140,37 @@ export function Hospitals() {
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedLevel, setSelectedLevel] = useState<string | null>(null)
     const [page, setPage] = useState(1)
-    const pageSize = 12
+    const [pageSize, setPageSize] = useState(12)
 
     // 从后端获取医院数据
     const { data: hospitalsData, isLoading, error, refetch } = useHospitals({
         keyword: searchQuery || undefined,
+        level: selectedLevel || undefined,
         page,
         pageSize,
     })
 
     const hospitals = hospitalsData?.data ?? []
     const total = hospitalsData?.total ?? 0
+    const totalPages = Math.ceil(total / pageSize)
+
+    // 翻页时重置到第一页
+    const handlePageSizeChange = (newPageSize: number) => {
+        setPageSize(newPageSize)
+        setPage(1)
+    }
+
+    // 搜索时重置到第一页
+    const handleSearchChange = (query: string) => {
+        setSearchQuery(query)
+        setPage(1)
+    }
+
+    // 筛选时重置到第一页
+    const handleLevelChange = (level: string | null) => {
+        setSelectedLevel(level)
+        setPage(1)
+    }
 
     // 获取科室库数据
     const { data: departmentTemplates } = useDepartmentTemplates()
@@ -187,11 +208,6 @@ export function Hospitals() {
         }
     }, [editingHospital, dialogMode])
 
-    // 过滤医院 (按级别)
-    const filteredHospitals = hospitals.filter(hospital => {
-        const matchesLevel = !selectedLevel || hospital.level === selectedLevel
-        return matchesLevel
-    })
 
     // 打开新建对话框
     const openCreateDialog = () => {
@@ -321,15 +337,15 @@ export function Hospitals() {
                     <div className='relative flex-1 min-w-[200px] max-w-md'>
                         <SearchIcon className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
                         <Input
-                            placeholder='搜索医院名称或科室...'
+                            placeholder='搜索医院名称、简称或专科...'
                             value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onChange={(e) => handleSearchChange(e.target.value)}
                             className='pl-9'
                         />
                         {searchQuery && (
                             <button
                                 className='text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2'
-                                onClick={() => setSearchQuery('')}
+                                onClick={() => handleSearchChange('')}
                             >
                                 <X className='h-4 w-4' />
                             </button>
@@ -340,7 +356,7 @@ export function Hospitals() {
                         <Badge
                             variant={selectedLevel === null ? 'default' : 'outline'}
                             className='cursor-pointer'
-                            onClick={() => setSelectedLevel(null)}
+                            onClick={() => handleLevelChange(null)}
                         >
                             全部级别
                         </Badge>
@@ -349,7 +365,7 @@ export function Hospitals() {
                                 key={level.value}
                                 variant={selectedLevel === level.value ? 'default' : 'outline'}
                                 className='cursor-pointer gap-1.5'
-                                onClick={() => setSelectedLevel(level.value)}
+                                onClick={() => handleLevelChange(level.value)}
                             >
                                 <span className={cn('h-2 w-2 rounded-full', levelColors[level.value])} />
                                 {level.label}
@@ -395,7 +411,7 @@ export function Hospitals() {
                 {/* 医院列表 */}
                 {!isLoading && !error && (
                     <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
-                        {filteredHospitals.map(hospital => {
+                        {hospitals.map(hospital => {
                             const city = getCityFromAddress(hospital.address)
                             const deptCount = hospital.departments?.length || 0
                             return (
@@ -483,10 +499,24 @@ export function Hospitals() {
                     </div>
                 )}
 
-                {!isLoading && !error && filteredHospitals.length === 0 && (
+                {!isLoading && !error && hospitals.length === 0 && (
                     <div className='text-muted-foreground py-12 text-center'>
                         暂无匹配的医院
                     </div>
+                )}
+
+                {/* 分页 */}
+                {!isLoading && !error && total > 0 && (
+                    <SimplePagination
+                        currentPage={page}
+                        totalPages={totalPages}
+                        pageSize={pageSize}
+                        totalItems={total}
+                        onPageChange={setPage}
+                        onPageSizeChange={handlePageSizeChange}
+                        pageSizeOptions={[12, 24, 36, 48]}
+                        className='mt-4'
+                    />
                 )}
             </Main>
 
