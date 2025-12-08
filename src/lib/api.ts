@@ -767,3 +767,45 @@ export const serviceApi = {
     }),
 }
 
+// ============================================
+// 系统配置 API
+// ============================================
+
+export interface OrderSettings {
+  autoCancelMinutes: number     // 未支付自动取消时间（分钟）
+  autoCompleteHours: number     // 服务自动完成时间（小时）
+  platformFeeRate: number       // 平台抽成比例 (0-1)
+  dispatchMode: 'grab' | 'assign' | 'mixed'  // 派单模式
+  grabTimeoutMinutes: number    // 抢单超时时间（分钟）
+  allowRefundBeforeStart: boolean  // 允许服务前退款
+  refundFeeRate: number         // 取消扣款比例 (0-1)
+}
+
+export const configApi = {
+  // 获取所有配置
+  getAll: () =>
+    request<Record<string, any>>('/config'),
+
+  // 获取单个配置
+  get: (key: string) =>
+    request<any>(`/config/${encodeURIComponent(key)}`),
+
+  // 设置单个配置
+  set: (key: string, value: any, remark?: string) =>
+    request<void>(`/config/${encodeURIComponent(key)}`, {
+      method: 'PUT',
+      body: JSON.stringify({ value, remark }),
+    }),
+
+  // 获取订单设置
+  getOrderSettings: () =>
+    request<OrderSettings>('/config/order/settings'),
+
+  // 更新订单设置
+  updateOrderSettings: (data: Partial<OrderSettings>) =>
+    request<OrderSettings>('/config/order/settings', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+}
+

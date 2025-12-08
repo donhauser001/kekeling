@@ -15,6 +15,7 @@ import {
   homeApi,
   departmentTemplateApi,
   doctorApi,
+  configApi,
   type OrderQuery,
   type EscortQuery,
   type DoctorQuery,
@@ -500,6 +501,29 @@ export function useDeleteDoctor() {
     mutationFn: doctorApi.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['doctors'] })
+    },
+  })
+}
+
+// ============================================
+// 系统配置
+// ============================================
+
+export function useOrderSettings() {
+  return useQuery({
+    queryKey: ['config', 'orderSettings'],
+    queryFn: () => configApi.getOrderSettings(),
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useUpdateOrderSettings() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: configApi.updateOrderSettings,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['config', 'orderSettings'] })
     },
   })
 }

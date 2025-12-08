@@ -16,6 +16,7 @@ import { AdminModule } from './modules/admin/admin.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { HomeModule } from './modules/home/home.module';
 import { PaymentModule } from './modules/payment/payment.module';
+import { SystemConfigModule } from './modules/config/config.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { PaymentModule } from './modules/payment/payment.module';
     UploadModule,
     HomeModule,
     PaymentModule,
+    SystemConfigModule,
   ],
 })
 export class AppModule {}
