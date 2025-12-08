@@ -18,6 +18,7 @@ import { HomeModule } from './modules/home/home.module';
 import { PaymentModule } from './modules/payment/payment.module';
 import { SystemConfigModule } from './modules/config/config.module';
 import { TestModule } from './modules/test/test.module'; // ⚠️ 仅开发环境，生产环境请注释
+import { EscortAppModule } from './modules/escort-app/escort-app.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { TestModule } from './modules/test/test.module'; // ⚠️ 仅开发环�
     HomeModule,
     PaymentModule,
     SystemConfigModule,
+    EscortAppModule, // 陪诊员端 API
     TestModule, // ⚠️ 仅开发环境，生产环境请注释
   ],
 })

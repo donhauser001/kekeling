@@ -4,13 +4,50 @@
   padding-bottom: 160px;
 }
 
-.loading-container {
+.loading-container,
+.error-container {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   min-height: 100vh;
+  padding: 48px;
+  background-color: var(--background-color);
+}
+
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #f0f0f0;
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-text {
   font-size: 28px;
   color: var(--text-color-secondary);
+  margin-top: 24px;
+}
+
+.error-text {
+  font-size: 28px;
+  color: var(--text-color-secondary);
+  margin-top: 24px;
+  margin-bottom: 32px;
+}
+
+.retry-btn {
+  padding: 16px 48px;
+  font-size: 28px;
+  color: #fff;
+  background-color: var(--primary-color);
+  border: none;
+  border-radius: 44px;
 }
 
 // 状态卡片
@@ -87,7 +124,7 @@
   border-radius: 50%;
   overflow: hidden;
 
-  image {
+  .avatar-img {
     width: 100%;
     height: 100%;
   }
@@ -206,4 +243,16 @@
 .btn-primary {
   color: #fff;
   background-color: var(--primary-color);
+}
+
+// 开发提示
+.dev-tip {
+  margin: 24px;
+  padding: 24px;
+  font-size: 24px;
+  color: #faad14;
+  background-color: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 12px;
+  text-align: center;
 }

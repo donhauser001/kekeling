@@ -14,6 +14,10 @@ export default defineAppConfig({
     'pages/escort/list',
     'pages/escort/detail',
     'pages/auth/login',
+    // 陪诊员工作台
+    'pages/workbench/index',
+    'pages/workbench/orders/pool',
+    'pages/workbench/orders/detail',
   ],
   window: {
     backgroundTextStyle: 'light',

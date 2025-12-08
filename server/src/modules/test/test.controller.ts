@@ -35,12 +35,14 @@ export class TestController {
       throw new BadRequestException(`订单状态不是待支付，当前状态: ${order.status}`);
     }
 
+    const now = new Date();
     const updatedOrder = await this.prisma.order.update({
       where: { id },
       data: {
         status: 'paid',
         paymentMethod: 'mock_h5',
-        paymentTime: new Date(),
+        paymentTime: now,
+        paidAt: now,
         transactionId: 'MOCK_' + Date.now(),
       },
     });
@@ -314,6 +316,142 @@ export class TestController {
       deletedOrders: deletedOrders.count,
       deletedUsers: deletedUsers.count,
     }, '测试数据已清理');
+  }
+
+  /**
+   * 🏃 模拟陪诊员抢单
+   * H5 开发时调用，直接将订单分配给陪诊员
+   */
+  @Post('assign-escort/:orderId')
+  @ApiOperation({ summary: '模拟陪诊员抢单 (H5调试用)' })
+  @ApiParam({ name: 'orderId', description: '订单ID' })
+  @ApiBody({
+    schema: {
+      properties: {
+        escortId: { type: 'string', description: '陪诊员ID (可选, 不传则随机分配)' },
+      },
+    },
+  })
+  async mockAssignEscort(
+    @Param('orderId') orderId: string,
+    @Body('escortId') escortId?: string,
+  ) {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+    });
+
+    if (!order) {
+      throw new BadRequestException('订单不存在');
+    }
+
+    if (order.status !== 'paid') {
+      throw new BadRequestException(`订单状态不是待分配，当前状态: ${order.status}`);
+    }
+
+    // 获取陪诊员
+    const escort = escortId
+      ? await this.prisma.escort.findUnique({ where: { id: escortId } })
+      : await this.prisma.escort.findFirst({ where: { status: 'active', deletedAt: null } });
+
+    if (!escort) {
+      throw new BadRequestException('找不到可用陪诊员');
+    }
+
+    const updatedOrder = await this.prisma.order.update({
+      where: { id: orderId },
+      data: {
+        status: 'assigned',
+        escortId: escort.id,
+        assignedAt: new Date(),
+      },
+      include: {
+        service: true,
+        hospital: true,
+        escort: true,
+      },
+    });
+
+    console.log(`🧪 [Test] 订单已分配给陪诊员: ${order.orderNo} -> ${escort.name}`);
+
+    return ApiResponse.success(updatedOrder, `订单已分配给 ${escort.name}`);
+  }
+
+  /**
+   * 📋 获取可抢订单列表
+   */
+  @Get('pool-orders')
+  @ApiOperation({ summary: '获取可抢订单列表 (H5调试用)' })
+  async getPoolOrders(@Query('limit') limit?: number) {
+    const orders = await this.prisma.order.findMany({
+      where: {
+        status: 'paid',
+        escortId: null,
+      },
+      include: {
+        service: { select: { name: true } },
+        hospital: { select: { name: true, shortName: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit || 20,
+    });
+
+    return ApiResponse.success(orders.map(o => ({
+      ...o,
+      totalAmount: Number(o.totalAmount),
+      paidAmount: Number(o.paidAmount),
+    })));
+  }
+
+  /**
+   * 🔗 关联陪诊员账号到用户
+   * H5 开发时调用，让测试用户成为陪诊员
+   */
+  @Post('link-escort-user')
+  @ApiOperation({ summary: '关联陪诊员账号到用户 (H5调试用)' })
+  @ApiBody({
+    schema: {
+      properties: {
+        userId: { type: 'string', description: '用户ID' },
+        escortId: { type: 'string', description: '陪诊员ID (可选, 不传则查找手机号匹配的)' },
+      },
+    },
+  })
+  async linkEscortUser(
+    @Body('userId') userId: string,
+    @Body('escortId') escortId?: string,
+  ) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new BadRequestException('用户不存在');
+    }
+
+    let escort: any;
+
+    if (escortId) {
+      escort = await this.prisma.escort.findUnique({ where: { id: escortId } });
+    } else if (user.phone) {
+      // 尝试通过手机号匹配
+      escort = await this.prisma.escort.findFirst({
+        where: { phone: user.phone, deletedAt: null },
+      });
+    }
+
+    if (!escort) {
+      throw new BadRequestException('找不到对应的陪诊员记录');
+    }
+
+    // 关联
+    const updatedEscort = await this.prisma.escort.update({
+      where: { id: escort.id },
+      data: { userId: user.id },
+    });
+
+    console.log(`🧪 [Test] 已关联: 用户 ${user.phone} <-> 陪诊员 ${escort.name}`);
+
+    return ApiResponse.success(updatedEscort, `用户已关联为陪诊员 ${escort.name}`);
   }
 }
 

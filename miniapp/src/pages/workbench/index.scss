@@ -1,0 +1,322 @@
+.workbench-page {
+  min-height: 100vh;
+  background-color: var(--background-color);
+  padding-bottom: 32px;
+}
+
+// 加载和错误状态
+.loading-container,
+.error-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+}
+
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #f0f0f0;
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-size: 28px;
+  color: var(--text-color-secondary);
+  margin-top: 24px;
+}
+
+.error-title {
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--text-color);
+  margin-top: 24px;
+}
+
+.error-desc {
+  font-size: 26px;
+  color: var(--text-color-secondary);
+  margin-top: 12px;
+}
+
+.action-btn {
+  margin-top: 32px;
+  padding: 16px 48px;
+  font-size: 28px;
+  color: #fff;
+  background-color: var(--primary-color);
+  border-radius: 40px;
+
+  &.secondary {
+    color: var(--text-color-secondary);
+    background-color: #f5f5f5;
+  }
+}
+
+// 头部
+.header-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 40px 32px;
+  background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%);
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.avatar {
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+
+  .avatar-img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+  }
+}
+
+.user-text {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.user-name {
+  font-size: 36px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.user-level {
+  font-size: 24px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.work-status-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  font-size: 26px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 24px;
+
+  &.working {
+    background: rgba(82, 196, 26, 0.3);
+  }
+
+  &.resting {
+    background: rgba(250, 173, 20, 0.3);
+  }
+}
+
+// 统计卡片
+.stats-section {
+  margin: -32px 24px 24px;
+  position: relative;
+  z-index: 10;
+}
+
+.stats-card {
+  display: flex;
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px 0;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.stat-item {
+  flex: 1;
+  text-align: center;
+}
+
+.stat-value {
+  display: block;
+  font-size: 40px;
+  font-weight: 700;
+  color: var(--text-color);
+  margin-bottom: 8px;
+}
+
+.stat-label {
+  font-size: 24px;
+  color: var(--text-color-secondary);
+}
+
+.stat-divider {
+  width: 1px;
+  background: var(--border-color);
+}
+
+// 快捷入口
+.quick-actions {
+  display: flex;
+  gap: 16px;
+  padding: 0 24px;
+  margin-bottom: 24px;
+}
+
+.action-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px;
+  background: #fff;
+  border-radius: 16px;
+}
+
+.action-icon {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  margin-bottom: 12px;
+
+  &.grab {
+    background: linear-gradient(135deg, #fff1f0 0%, #ffccc7 100%);
+  }
+
+  &.orders {
+    background: linear-gradient(135deg, #e6f7ff 0%, #bae7ff 100%);
+  }
+}
+
+.action-title {
+  font-size: 30px;
+  font-weight: 600;
+  color: var(--text-color);
+  margin-bottom: 6px;
+}
+
+.action-desc {
+  font-size: 24px;
+  color: var(--text-color-secondary);
+}
+
+// Section
+.section {
+  padding: 0 24px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.section-title {
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.section-more {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 26px;
+  color: var(--text-color-secondary);
+}
+
+// 订单列表
+.order-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.order-card {
+  display: flex;
+  align-items: center;
+  padding: 20px;
+  background: #fff;
+  border-radius: 12px;
+}
+
+.order-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-right: 20px;
+  border-right: 1px solid var(--border-color);
+  margin-right: 20px;
+  min-width: 100px;
+}
+
+.order-time {
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--text-color);
+  margin-bottom: 6px;
+}
+
+.order-status {
+  font-size: 22px;
+}
+
+.order-content {
+  flex: 1;
+}
+
+.order-service {
+  display: block;
+  font-size: 28px;
+  font-weight: 500;
+  color: var(--text-color);
+  margin-bottom: 6px;
+}
+
+.order-hospital {
+  display: block;
+  font-size: 26px;
+  color: var(--text-color-secondary);
+  margin-bottom: 4px;
+}
+
+.order-patient {
+  font-size: 24px;
+  color: var(--text-color-placeholder);
+}
+
+.order-arrow {
+  margin-left: 12px;
+}
+
+// 空状态
+.empty-orders {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px 24px;
+  background: #fff;
+  border-radius: 12px;
+}
+
+.empty-text {
+  font-size: 28px;
+  color: var(--text-color-placeholder);
+  margin-top: 16px;
+}
+

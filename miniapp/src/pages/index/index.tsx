@@ -1,64 +1,47 @@
-import { View, Text, Image } from '@tarojs/components'
-import Taro from '@tarojs/taro'
-import { useState } from 'react'
+import { View, Text } from '@tarojs/components'
+import Taro, { useDidShow } from '@tarojs/taro'
+import { useState, useEffect } from 'react'
 import Icon from '@/components/Icon'
+import { servicesApi, homeApi } from '@/services/api'
+import { checkDebugCommand } from '@/utils/env-adapter'
 import './index.scss'
 
-// 陪诊服务内容
-const escortServices = [
-  {
-    id: '1',
-    title: '全程陪诊',
-    desc: '专业陪诊员全程陪同，挂号、问诊、检查、取药一站式服务',
-    icon: 'stethoscope',
-    price: 299,
-    highlight: '最受欢迎',
-  },
-  {
-    id: '2',
-    title: '检查陪同',
-    desc: '陪同完成各项检查，协助排队、取报告',
-    icon: 'flask-conical',
-    price: 199,
-    highlight: '',
-  },
-  {
-    id: '3',
-    title: '住院陪护',
-    desc: '住院期间全程陪护，协助日常护理',
-    icon: 'bed',
-    price: 399,
-    highlight: '24小时',
-  },
-]
+// 服务数据类型
+interface Service {
+  id: string
+  name: string
+  description?: string
+  price: number
+  originalPrice?: number
+  coverImage?: string
+  orderCount?: number
+  rating?: number
+  category?: {
+    id: string
+    name: string
+    icon?: string
+  }
+}
 
-// 代办服务内容
-const agencyServices = [
-  {
-    id: '1',
-    title: '代办挂号',
-    desc: '专家号、普通号代挂，免去凌晨排队之苦',
-    icon: 'clipboard-list',
-    price: 99,
-    highlight: '热门',
-  },
-  {
-    id: '2',
-    title: '代取报告',
-    desc: '检查报告代取代寄，省时省力',
-    icon: 'file-text',
-    price: 49,
-    highlight: '',
-  },
-  {
-    id: '3',
-    title: '代办病历',
-    desc: '病历复印、邮寄一站式服务',
-    icon: 'file-stack',
-    price: 79,
-    highlight: '',
-  },
-]
+// 服务分类数据类型
+interface ServiceCategory {
+  id: string
+  name: string
+  icon?: string
+  sort?: number
+}
+
+// 图标映射
+const iconMap: Record<string, string> = {
+  '陪诊服务': 'user-check',
+  '代办服务': 'rocket',
+  '全程陪诊': 'stethoscope',
+  '检查陪同': 'flask-conical',
+  '住院陪护': 'bed',
+  '代办挂号': 'clipboard-list',
+  '代取报告': 'file-text',
+  '代办病历': 'file-stack',
+}
 
 // 品牌理念
 const brandValues = [
@@ -80,12 +63,104 @@ const brandValues = [
 ]
 
 export default function Index() {
-  const [activeTab, setActiveTab] = useState<'escort' | 'agency'>('escort')
+  const [activeTab, setActiveTab] = useState<string>('')
+  const [categories, setCategories] = useState<ServiceCategory[]>([])
+  const [services, setServices] = useState<Service[]>([])
+  const [loading, setLoading] = useState(true)
+  const [stats, setStats] = useState({ userCount: 50000, hospitalCount: 50, rating: 98.5 })
+  const [searchValue, setSearchValue] = useState('')
 
-  const currentServices = activeTab === 'escort' ? escortServices : agencyServices
+  // 加载服务分类
+  const loadCategories = async () => {
+    try {
+      const data = await servicesApi.getCategories()
+      if (data && data.length > 0) {
+        setCategories(data)
+        setActiveTab(data[0].id)
+      }
+    } catch (err) {
+      console.error('加载分类失败:', err)
+      // 使用默认分类
+      setCategories([
+        { id: 'escort', name: '陪诊服务', icon: 'user-check' },
+        { id: 'agency', name: '代办服务', icon: 'rocket' },
+      ])
+      setActiveTab('escort')
+    }
+  }
+
+  // 加载服务列表
+  const loadServices = async (categoryId?: string) => {
+    try {
+      setLoading(true)
+      const params: any = { pageSize: 10 }
+      if (categoryId) {
+        params.categoryId = categoryId
+      }
+      const result = await servicesApi.getList(params)
+      // 处理返回的数据格式
+      const data = result?.data || result || []
+      setServices(Array.isArray(data) ? data : [])
+    } catch (err) {
+      console.error('加载服务失败:', err)
+      setServices([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // 加载统计数据
+  const loadStats = async () => {
+    try {
+      const data = await homeApi.getStats()
+      if (data) {
+        setStats({
+          userCount: data.userCount || 50000,
+          hospitalCount: data.hospitalCount || 50,
+          rating: data.rating || 98.5,
+        })
+      }
+    } catch (err) {
+      console.error('加载统计失败:', err)
+    }
+  }
+
+  // 初始化加载
+  useEffect(() => {
+    loadCategories()
+    loadStats()
+  }, [])
+
+  // 分类切换时加载对应服务
+  useEffect(() => {
+    if (activeTab) {
+      loadServices(activeTab)
+    }
+  }, [activeTab])
+
+  // 页面显示时刷新
+  useDidShow(() => {
+    if (activeTab) {
+      loadServices(activeTab)
+    }
+  })
 
   const handleSearch = () => {
+    // 检查调试命令
+    if (checkDebugCommand(searchValue)) {
+      setSearchValue('')
+      return
+    }
     Taro.navigateTo({ url: '/pages/search/index' })
+  }
+
+  const handleSearchInput = (e: any) => {
+    const value = e.detail.value
+    setSearchValue(value)
+    // 检查调试命令
+    if (checkDebugCommand(value)) {
+      setSearchValue('')
+    }
   }
 
   const handleServiceClick = (id: string) => {
@@ -93,7 +168,23 @@ export default function Index() {
   }
 
   const handleViewAll = () => {
-    Taro.switchTab({ url: '/pages/services/index' })
+    Taro.navigateTo({ url: '/pages/services/index' })
+  }
+
+  // 获取服务图标
+  const getServiceIcon = (service: Service) => {
+    return iconMap[service.name] || iconMap[service.category?.name || ''] || 'stethoscope'
+  }
+
+  // 获取分类图标
+  const getCategoryIcon = (category: ServiceCategory) => {
+    return category.icon || iconMap[category.name] || 'grid'
+  }
+
+  // 当前分类是否为代办类
+  const isAgencyCategory = () => {
+    const currentCategory = categories.find(c => c.id === activeTab)
+    return currentCategory?.name?.includes('代办') || false
   }
 
   return (
@@ -115,86 +206,97 @@ export default function Index() {
       <View className='search-section'>
         <View className='search-bar' onClick={handleSearch}>
           <Icon name='search' size={18} color='#999' />
-          <Text className='search-placeholder'>搜索服务、医院、医生</Text>
+          <input 
+            className='search-input'
+            placeholder='搜索服务、医院、医生'
+            value={searchValue}
+            onInput={handleSearchInput}
+          />
         </View>
       </View>
 
       {/* 服务选项卡 */}
       <View className='tabs-section'>
         <View className='tabs-container'>
-          <View 
-            className={`tab-item ${activeTab === 'escort' ? 'active' : ''}`}
-            onClick={() => setActiveTab('escort')}
-          >
-            <View className='tab-content'>
-              <View className='tab-icon'>
-                <Icon name='user-check' size={24} color={activeTab === 'escort' ? '#1890ff' : '#999'} />
-              </View>
-              <View className='tab-text'>
-                <Text className='tab-title'>陪诊</Text>
-                <Text className='tab-desc'>少花冤枉钱</Text>
-              </View>
-            </View>
-            {activeTab === 'escort' && <View className='tab-indicator' />}
-          </View>
-          
-          <View className='tab-divider' />
-          
-          <View 
-            className={`tab-item ${activeTab === 'agency' ? 'active' : ''}`}
-            onClick={() => setActiveTab('agency')}
-          >
-            <View className='tab-content'>
-              <View className='tab-icon'>
-                <Icon name='rocket' size={24} color={activeTab === 'agency' ? '#52c41a' : '#999'} />
-              </View>
-              <View className='tab-text'>
-                <Text className='tab-title'>代办</Text>
-                <Text className='tab-desc'>少跑冤枉路</Text>
+          {categories.map((category, index) => (
+            <View key={category.id}>
+              {index > 0 && <View className='tab-divider' />}
+              <View 
+                className={`tab-item ${activeTab === category.id ? 'active' : ''}`}
+                onClick={() => setActiveTab(category.id)}
+              >
+                <View className='tab-content'>
+                  <View className='tab-icon'>
+                    <Icon 
+                      name={getCategoryIcon(category)} 
+                      size={24} 
+                      color={activeTab === category.id ? (category.name.includes('代办') ? '#52c41a' : '#1890ff') : '#999'} 
+                    />
+                  </View>
+                  <View className='tab-text'>
+                    <Text className='tab-title'>{category.name.replace('服务', '')}</Text>
+                    <Text className='tab-desc'>
+                      {category.name.includes('代办') ? '少跑冤枉路' : '少花冤枉钱'}
+                    </Text>
+                  </View>
+                </View>
+                {activeTab === category.id && (
+                  <View className={`tab-indicator ${category.name.includes('代办') ? 'green' : ''}`} />
+                )}
               </View>
             </View>
-            {activeTab === 'agency' && <View className='tab-indicator green' />}
-          </View>
+          ))}
         </View>
       </View>
 
       {/* 服务内容卡片 */}
       <View className='services-section'>
-        <View className='services-list'>
-          {currentServices.map((service, index) => (
-            <View 
-              key={service.id}
-              className={`service-card ${activeTab === 'agency' ? 'green' : ''}`}
-              onClick={() => handleServiceClick(service.id)}
-              style={{ animationDelay: `${index * 0.1}s` }}
-            >
-              {service.highlight && (
-                <View className={`service-tag ${activeTab === 'agency' ? 'green' : ''}`}>
-                  {service.highlight}
+        {loading ? (
+          <View className='loading-container'>
+            <Text className='loading-text'>加载中...</Text>
+          </View>
+        ) : services.length === 0 ? (
+          <View className='empty-container'>
+            <Icon name='inbox' size={48} color='#d9d9d9' />
+            <Text className='empty-text'>暂无服务</Text>
+          </View>
+        ) : (
+          <View className='services-list'>
+            {services.map((service, index) => (
+              <View 
+                key={service.id}
+                className={`service-card ${isAgencyCategory() ? 'green' : ''}`}
+                onClick={() => handleServiceClick(service.id)}
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
+                {service.orderCount && service.orderCount > 100 && (
+                  <View className={`service-tag ${isAgencyCategory() ? 'green' : ''}`}>
+                    热门
+                  </View>
+                )}
+                <View className='service-icon'>
+                  <Icon 
+                    name={getServiceIcon(service)} 
+                    size={28} 
+                    color={isAgencyCategory() ? '#52c41a' : '#1890ff'} 
+                  />
                 </View>
-              )}
-              <View className='service-icon'>
-                <Icon 
-                  name={service.icon} 
-                  size={28} 
-                  color={activeTab === 'escort' ? '#1890ff' : '#52c41a'} 
-                />
-              </View>
-              <Text className='service-title'>{service.title}</Text>
-              <Text className='service-desc'>{service.desc}</Text>
-              <View className='service-footer'>
-                <Text className='service-price'>
-                  <Text className='price-symbol'>¥</Text>
-                  {service.price}
-                  <Text className='price-unit'>起</Text>
-                </Text>
-                <View className='service-arrow'>
-                  <Icon name='chevron-right' size={16} color='#d9d9d9' />
+                <Text className='service-title'>{service.name}</Text>
+                <Text className='service-desc'>{service.description || '专业陪诊服务'}</Text>
+                <View className='service-footer'>
+                  <Text className='service-price'>
+                    <Text className='price-symbol'>¥</Text>
+                    {Number(service.price)}
+                    <Text className='price-unit'>起</Text>
+                  </Text>
+                  <View className='service-arrow'>
+                    <Icon name='chevron-right' size={16} color='#d9d9d9' />
+                  </View>
                 </View>
               </View>
-            </View>
-          ))}
-        </View>
+            ))}
+          </View>
+        )}
         
         <View className='view-all' onClick={handleViewAll}>
           <Text>查看全部服务</Text>
@@ -206,17 +308,17 @@ export default function Index() {
       <View className='stats-section'>
         <View className='stats-card'>
           <View className='stat-item'>
-            <Text className='stat-value'>50,000+</Text>
+            <Text className='stat-value'>{stats.userCount.toLocaleString()}+</Text>
             <Text className='stat-label'>服务用户</Text>
           </View>
           <View className='stat-divider' />
           <View className='stat-item'>
-            <Text className='stat-value'>200+</Text>
+            <Text className='stat-value'>{stats.hospitalCount}+</Text>
             <Text className='stat-label'>合作医院</Text>
           </View>
           <View className='stat-divider' />
           <View className='stat-item'>
-            <Text className='stat-value'>98.5%</Text>
+            <Text className='stat-value'>{stats.rating}%</Text>
             <Text className='stat-label'>好评率</Text>
           </View>
         </View>

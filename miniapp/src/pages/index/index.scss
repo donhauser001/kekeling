@@ -91,6 +91,20 @@
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
 }
 
+.search-input {
+  flex: 1;
+  height: 100%;
+  font-size: 28px;
+  color: #262626;
+  background: transparent;
+  border: none;
+  outline: none;
+
+  &::placeholder {
+    color: #bfbfbf;
+  }
+}
+
 .search-placeholder {
   font-size: 28px;
   color: #bfbfbf;
@@ -200,6 +214,24 @@
 // 服务列表区域
 .services-section {
   padding: 32px 24px;
+}
+
+.loading-container,
+.empty-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 32px;
+  background: #fff;
+  border-radius: 20px;
+}
+
+.loading-text,
+.empty-text {
+  font-size: 28px;
+  color: #8c8c8c;
+  margin-top: 16px;
 }
 
 .services-list {

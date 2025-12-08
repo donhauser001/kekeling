@@ -326,8 +326,15 @@ model Order {
   adminRemark      String?   @map("admin_remark")
   cancelReason     String?   @map("cancel_reason")
   
+  // 时间节点
   createdAt        DateTime  @default(now()) @map("created_at")
   updatedAt        DateTime  @updatedAt @map("updated_at")
+  paidAt           DateTime? @map("paid_at")        // 支付时间
+  assignedAt       DateTime? @map("assigned_at")    // 派单时间
+  arrivedAt        DateTime? @map("arrived_at")     // 陪诊员到达时间
+  startedAt        DateTime? @map("started_at")     // 服务开始时间
+  completedAt      DateTime? @map("completed_at")   // 服务完成时间
+  cancelledAt      DateTime? @map("cancelled_at")   // 取消时间
 
   // 关联
   user             User      @relation(fields: [userId], references: [id])

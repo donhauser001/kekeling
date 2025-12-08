@@ -1,95 +1,331 @@
-import { View, Text, Button, Picker } from '@tarojs/components'
-import Taro, { useRouter } from '@tarojs/taro'
+import { View, Text, Button, Picker, Textarea } from '@tarojs/components'
+import Taro, { useRouter, useDidShow } from '@tarojs/taro'
 import { useState, useEffect } from 'react'
 import Icon from '@/components/Icon'
+import { servicesApi, hospitalsApi, patientsApi, ordersApi } from '@/services/api'
+import { isLoggedIn } from '@/services/request'
 import './index.scss'
 
-// Mock 数据
-const mockServices = [
-  { id: '1', name: '全程陪诊', price: 299 },
-  { id: '2', name: '代办挂号', price: 99 },
-  { id: '3', name: '检查陪同', price: 199 },
-]
+// 数据类型定义
+interface Service {
+  id: string
+  name: string
+  price: number
+  needHospital?: boolean
+  needDepartment?: boolean
+  needDoctor?: boolean
+  needPatient?: boolean
+  needAppointment?: boolean
+}
 
-const mockHospitals = [
-  { id: '1', name: '上海市第一人民医院' },
-  { id: '2', name: '复旦大学附属华山医院' },
-  { id: '3', name: '上海交通大学医学院附属瑞金医院' },
-]
+interface Hospital {
+  id: string
+  name: string
+  shortName?: string
+}
 
-const mockPatients = [
-  { id: '1', name: '张三', phone: '13888888888', relation: '本人' },
-  { id: '2', name: '李四', phone: '13999999999', relation: '父亲' },
-]
+interface Department {
+  id: string
+  name: string
+  hospitalId?: string
+}
+
+interface Doctor {
+  id: string
+  name: string
+  title?: string
+  departmentId?: string
+}
+
+interface Patient {
+  id: string
+  name: string
+  phone: string
+  relation: string
+  gender?: string
+  birthday?: string
+}
 
 export default function Booking() {
   const router = useRouter()
   
-  // 表单状态
-  const [selectedService, setSelectedService] = useState<typeof mockServices[0] | null>(null)
-  const [selectedHospital, setSelectedHospital] = useState<typeof mockHospitals[0] | null>(null)
-  const [selectedPatient, setSelectedPatient] = useState<typeof mockPatients[0] | null>(null)
+  // 数据列表
+  const [services, setServices] = useState<Service[]>([])
+  const [hospitals, setHospitals] = useState<Hospital[]>([])
+  const [departments, setDepartments] = useState<Department[]>([])
+  const [doctors, setDoctors] = useState<Doctor[]>([])
+  const [patients, setPatients] = useState<Patient[]>([])
+  
+  // 选中状态
+  const [selectedService, setSelectedService] = useState<Service | null>(null)
+  const [selectedHospital, setSelectedHospital] = useState<Hospital | null>(null)
+  const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null)
+  const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null)
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null)
   const [selectedDate, setSelectedDate] = useState('')
   const [selectedTime, setSelectedTime] = useState('')
   const [remark, setRemark] = useState('')
+  
+  // 加载状态
+  const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
 
   // 时间选项
-  const timeOptions = ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00']
+  const timeOptions = [
+    '08:00-09:00', '09:00-10:00', '10:00-11:00', '11:00-12:00',
+    '14:00-15:00', '15:00-16:00', '16:00-17:00', '17:00-18:00'
+  ]
 
+  // 加载服务列表
+  const loadServices = async () => {
+    try {
+      const result = await servicesApi.getList({ pageSize: 50 })
+      const data = result?.data || result || []
+      setServices(Array.isArray(data) ? data : [])
+    } catch (err) {
+      console.error('加载服务失败:', err)
+    }
+  }
+
+  // 加载医院列表
+  const loadHospitals = async () => {
+    try {
+      const result = await hospitalsApi.getList({ pageSize: 100 })
+      const data = result?.data || result || []
+      setHospitals(Array.isArray(data) ? data : [])
+    } catch (err) {
+      console.error('加载医院失败:', err)
+    }
+  }
+
+  // 加载科室列表
+  const loadDepartments = async (hospitalId: string) => {
+    try {
+      const data = await hospitalsApi.getDepartments(hospitalId)
+      // 扁平化科室树
+      const flatDepts: Department[] = []
+      const flatten = (items: any[]) => {
+        items.forEach(item => {
+          flatDepts.push({ id: item.id, name: item.name, hospitalId })
+          if (item.children?.length) {
+            flatten(item.children)
+          }
+        })
+      }
+      if (Array.isArray(data)) {
+        flatten(data)
+      }
+      setDepartments(flatDepts)
+    } catch (err) {
+      console.error('加载科室失败:', err)
+      setDepartments([])
+    }
+  }
+
+  // 加载医生列表
+  const loadDoctors = async (hospitalId: string, departmentId?: string) => {
+    try {
+      const result = await hospitalsApi.getDoctors(hospitalId, { departmentId, pageSize: 100 })
+      const data = result?.data || result || []
+      setDoctors(Array.isArray(data) ? data : [])
+    } catch (err) {
+      console.error('加载医生失败:', err)
+      setDoctors([])
+    }
+  }
+
+  // 加载就诊人列表
+  const loadPatients = async () => {
+    try {
+      const data = await patientsApi.getList()
+      setPatients(Array.isArray(data) ? data : [])
+    } catch (err) {
+      console.error('加载就诊人失败:', err)
+    }
+  }
+
+  // 初始化
   useEffect(() => {
-    const { serviceId, hospitalId, serviceName, price } = router.params
-    
-    if (serviceId) {
-      const service = mockServices.find(s => s.id === serviceId)
-      if (service) setSelectedService(service)
+    const init = async () => {
+      setLoading(true)
+      await Promise.all([loadServices(), loadHospitals()])
+      
+      // 处理路由参数
+      const { serviceId, serviceName, price, hospitalId } = router.params
+      
+      if (serviceId) {
+        // 从参数构建服务对象或从列表中查找
+        const service = services.find(s => s.id === serviceId) || {
+          id: serviceId,
+          name: decodeURIComponent(serviceName || ''),
+          price: Number(price) || 0,
+        }
+        setSelectedService(service as Service)
+      }
+      
+      if (hospitalId) {
+        const hospital = hospitals.find(h => h.id === hospitalId)
+        if (hospital) {
+          setSelectedHospital(hospital)
+          await loadDepartments(hospitalId)
+        }
+      }
+      
+      // 登录后加载就诊人
+      if (isLoggedIn()) {
+        await loadPatients()
+      }
+      
+      setLoading(false)
     }
     
-    if (hospitalId) {
-      const hospital = mockHospitals.find(h => h.id === hospitalId)
-      if (hospital) setSelectedHospital(hospital)
-    }
-  }, [router.params])
+    init()
+  }, [])
 
+  // 服务选择后更新
+  useEffect(() => {
+    if (services.length > 0 && router.params.serviceId) {
+      const service = services.find(s => s.id === router.params.serviceId)
+      if (service) {
+        setSelectedService(service)
+      }
+    }
+  }, [services])
+
+  // 医院选择后更新
+  useEffect(() => {
+    if (hospitals.length > 0 && router.params.hospitalId) {
+      const hospital = hospitals.find(h => h.id === router.params.hospitalId)
+      if (hospital) {
+        setSelectedHospital(hospital)
+        loadDepartments(hospital.id)
+      }
+    }
+  }, [hospitals])
+
+  // 页面显示时刷新就诊人列表
+  useDidShow(() => {
+    if (isLoggedIn()) {
+      loadPatients()
+    }
+  })
+
+  // 服务选择
   const handleServiceSelect = (e: any) => {
     const index = e.detail.value
-    setSelectedService(mockServices[index])
+    setSelectedService(services[index])
   }
 
+  // 医院选择
   const handleHospitalSelect = (e: any) => {
     const index = e.detail.value
-    setSelectedHospital(mockHospitals[index])
+    const hospital = hospitals[index]
+    setSelectedHospital(hospital)
+    setSelectedDepartment(null)
+    setSelectedDoctor(null)
+    setDepartments([])
+    setDoctors([])
+    
+    if (hospital) {
+      loadDepartments(hospital.id)
+    }
   }
 
+  // 科室选择
+  const handleDepartmentSelect = (e: any) => {
+    const index = e.detail.value
+    const department = departments[index]
+    setSelectedDepartment(department)
+    setSelectedDoctor(null)
+    setDoctors([])
+    
+    if (department && selectedHospital) {
+      loadDoctors(selectedHospital.id, department.id)
+    }
+  }
+
+  // 医生选择
+  const handleDoctorSelect = (e: any) => {
+    const index = e.detail.value
+    setSelectedDoctor(doctors[index])
+  }
+
+  // 日期选择
   const handleDateSelect = (e: any) => {
     setSelectedDate(e.detail.value)
   }
 
+  // 时间选择
   const handleTimeSelect = (e: any) => {
     const index = e.detail.value
     setSelectedTime(timeOptions[index])
   }
 
+  // 就诊人选择
   const handlePatientSelect = () => {
-    // 如果没有就诊人，先添加
-    if (mockPatients.length === 0) {
-      Taro.navigateTo({ url: '/pages/user/patients?action=add' })
+    if (!isLoggedIn()) {
+      Taro.showModal({
+        title: '提示',
+        content: '请先登录后再选择就诊人',
+        confirmText: '去登录',
+        success: (res) => {
+          if (res.confirm) {
+            Taro.navigateTo({ url: '/pages/auth/login' })
+          }
+        }
+      })
+      return
+    }
+    
+    if (patients.length === 0) {
+      Taro.showModal({
+        title: '提示',
+        content: '您还没有添加就诊人，是否立即添加？',
+        confirmText: '立即添加',
+        success: (res) => {
+          if (res.confirm) {
+            Taro.navigateTo({ url: '/pages/user/patients?action=add' })
+          }
+        }
+      })
       return
     }
     
     Taro.showActionSheet({
-      itemList: mockPatients.map(p => `${p.name} (${p.relation})`),
+      itemList: patients.map(p => `${p.name} (${p.relation})`),
       success: (res) => {
-        setSelectedPatient(mockPatients[res.tapIndex])
+        setSelectedPatient(patients[res.tapIndex])
       }
     })
   }
 
+  // 添加就诊人
   const handleAddPatient = () => {
+    if (!isLoggedIn()) {
+      Taro.navigateTo({ url: '/pages/auth/login' })
+      return
+    }
     Taro.navigateTo({ url: '/pages/user/patients?action=add' })
   }
 
-  const handleSubmit = () => {
-    // 验证表单
+  // 提交订单
+  const handleSubmit = async () => {
+    // 登录检查
+    if (!isLoggedIn()) {
+      Taro.showModal({
+        title: '提示',
+        content: '请先登录后再提交订单',
+        confirmText: '去登录',
+        success: (res) => {
+          if (res.confirm) {
+            Taro.navigateTo({ url: '/pages/auth/login' })
+          }
+        }
+      })
+      return
+    }
+    
+    // 表单验证
     if (!selectedService) {
       Taro.showToast({ title: '请选择服务类型', icon: 'none' })
       return
@@ -111,15 +347,40 @@ export default function Booking() {
       return
     }
 
-    // TODO: 提交订单
-    Taro.showLoading({ title: '提交中...' })
-    
-    setTimeout(() => {
-      Taro.hideLoading()
-      Taro.navigateTo({
-        url: `/pages/booking/result?orderId=KKL${Date.now()}&amount=${selectedService.price}`
+    try {
+      setSubmitting(true)
+      
+      // 构建订单数据
+      const orderData = {
+        serviceId: selectedService.id,
+        hospitalId: selectedHospital.id,
+        patientId: selectedPatient.id,
+        appointmentDate: selectedDate,
+        appointmentTime: selectedTime,
+        departmentName: selectedDepartment?.name,
+        remark: remark.trim() || undefined,
+      }
+      
+      // 调用 API 创建订单
+      const result = await ordersApi.create(orderData)
+      
+      if (result?.id) {
+        // 跳转到支付/结果页
+        Taro.navigateTo({
+          url: `/pages/booking/result?orderId=${result.id}&orderNo=${result.orderNo}&amount=${Number(selectedService.price)}`
+        })
+      } else {
+        throw new Error('创建订单失败')
+      }
+    } catch (err: any) {
+      console.error('提交订单失败:', err)
+      Taro.showToast({ 
+        title: err.message || '提交失败，请重试', 
+        icon: 'none' 
       })
-    }, 1000)
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   // 获取最小日期（明天）
@@ -136,6 +397,15 @@ export default function Booking() {
     return maxDate.toISOString().split('T')[0]
   }
 
+  if (loading) {
+    return (
+      <View className='loading-container'>
+        <View className='loading-spinner' />
+        <Text className='loading-text'>加载中...</Text>
+      </View>
+    )
+  }
+
   return (
     <View className='booking-page'>
       {/* 服务选择 */}
@@ -144,7 +414,7 @@ export default function Booking() {
         
         <Picker
           mode='selector'
-          range={mockServices}
+          range={services}
           rangeKey='name'
           onChange={handleServiceSelect}
         >
@@ -161,7 +431,7 @@ export default function Booking() {
 
         <Picker
           mode='selector'
-          range={mockHospitals}
+          range={hospitals}
           rangeKey='name'
           onChange={handleHospitalSelect}
         >
@@ -169,12 +439,51 @@ export default function Booking() {
             <Text className='form-label'>就诊医院</Text>
             <View className='form-value'>
               <Text className={selectedHospital ? '' : 'placeholder'}>
-                {selectedHospital ? selectedHospital.name : '请选择医院'}
+                {selectedHospital ? (selectedHospital.shortName || selectedHospital.name) : '请选择医院'}
               </Text>
               <Icon name='chevron-right' size={16} color='#d9d9d9' />
             </View>
           </View>
         </Picker>
+
+        {/* 科室选择 (仅当有科室数据时显示) */}
+        {departments.length > 0 && (
+          <Picker
+            mode='selector'
+            range={departments}
+            rangeKey='name'
+            onChange={handleDepartmentSelect}
+          >
+            <View className='form-item'>
+              <Text className='form-label'>就诊科室</Text>
+              <View className='form-value'>
+                <Text className={selectedDepartment ? '' : 'placeholder'}>
+                  {selectedDepartment ? selectedDepartment.name : '请选择科室（可选）'}
+                </Text>
+                <Icon name='chevron-right' size={16} color='#d9d9d9' />
+              </View>
+            </View>
+          </Picker>
+        )}
+
+        {/* 医生选择 (仅当有医生数据时显示) */}
+        {doctors.length > 0 && (
+          <Picker
+            mode='selector'
+            range={doctors.map(d => `${d.name}${d.title ? ` (${d.title})` : ''}`)}
+            onChange={handleDoctorSelect}
+          >
+            <View className='form-item'>
+              <Text className='form-label'>就诊医生</Text>
+              <View className='form-value'>
+                <Text className={selectedDoctor ? '' : 'placeholder'}>
+                  {selectedDoctor ? `${selectedDoctor.name}${selectedDoctor.title ? ` (${selectedDoctor.title})` : ''}` : '请选择医生（可选）'}
+                </Text>
+                <Icon name='chevron-right' size={16} color='#d9d9d9' />
+              </View>
+            </View>
+          </Picker>
+        )}
       </View>
 
       {/* 时间选择 */}
@@ -207,7 +516,7 @@ export default function Booking() {
             <Text className='form-label'>预约时间</Text>
             <View className='form-value'>
               <Text className={selectedTime ? '' : 'placeholder'}>
-                {selectedTime || '请选择时间'}
+                {selectedTime || '请选择时间段'}
               </Text>
               <Icon name='chevron-right' size={16} color='#d9d9d9' />
             </View>
@@ -245,7 +554,7 @@ export default function Booking() {
       <View className='section card'>
         <Text className='section-title'>备注信息</Text>
         <View className='remark-input'>
-          <textarea
+          <Textarea
             className='textarea'
             placeholder='请输入特殊需求或备注（如需要轮椅、有忌口等）'
             value={remark}
@@ -260,11 +569,11 @@ export default function Booking() {
       <View className='price-summary card'>
         <View className='price-row'>
           <Text className='price-label'>服务费用</Text>
-          <Text className='price-value'>¥{selectedService?.price || 0}</Text>
+          <Text className='price-value'>¥{selectedService ? Number(selectedService.price) : 0}</Text>
         </View>
         <View className='price-row total'>
           <Text className='price-label'>应付金额</Text>
-          <Text className='price-value price'>{selectedService?.price || 0}</Text>
+          <Text className='price-value price'>¥{selectedService ? Number(selectedService.price) : 0}</Text>
         </View>
       </View>
 
@@ -272,10 +581,14 @@ export default function Booking() {
       <View className='bottom-bar safe-area-bottom'>
         <View className='total-price'>
           <Text className='label'>合计:</Text>
-          <Text className='price'>{selectedService?.price || 0}</Text>
+          <Text className='price'>¥{selectedService ? Number(selectedService.price) : 0}</Text>
         </View>
-        <Button className='submit-btn' onClick={handleSubmit}>
-          提交订单
+        <Button 
+          className='submit-btn' 
+          onClick={handleSubmit}
+          disabled={submitting}
+        >
+          {submitting ? '提交中...' : '提交订单'}
         </Button>
       </View>
     </View>

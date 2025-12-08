@@ -149,12 +149,14 @@ export class OrdersService {
 
   // 支付成功回调
   async paymentSuccess(orderNo: string, transactionId: string) {
+    const now = new Date();
     return this.prisma.order.update({
       where: { orderNo },
       data: {
         status: 'paid',
         paymentMethod: 'wechat',
-        paymentTime: new Date(),
+        paymentTime: now,
+        paidAt: now,
         transactionId,
       },
     });
