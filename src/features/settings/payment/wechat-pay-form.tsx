@@ -42,7 +42,7 @@ const defaultValues: Partial<PaymentFormValues> = {
   notifyUrl: '',
 }
 
-export function PaymentForm() {
+export function WechatPayForm() {
   const [showApiKey, setShowApiKey] = useState(false)
   const [copied, setCopied] = useState(false)
   const [isConfigured, setIsConfigured] = useState(false)
