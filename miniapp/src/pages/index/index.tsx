@@ -202,22 +202,24 @@ export default function Index() {
                     className='pinned-card'
                     onClick={() => Taro.navigateTo({ url: `/pages/services/index?categoryId=${category.id}` })}
                   >
+                    <View className='pinned-content'>
+                      <View className='pinned-header'>
+                        <Text className='pinned-name' style={{ color: category.color || '#1890ff' }}>{category.name}</Text>
+                        <Text 
+                          className='pinned-count'
+                          style={{ color: category.color || '#1890ff', background: `${category.color || '#1890ff'}15` }}
+                        >
+                          {category.serviceCount || category.services?.length || 0}项
+                        </Text>
+                      </View>
+                      <Text className='pinned-desc'>{category.description || ''}</Text>
+                    </View>
                     <View 
                       className='pinned-icon'
-                      style={{ background: `${category.color || '#1890ff'}20` }}
+                      style={{ background: `${category.color || '#1890ff'}15` }}
                     >
                       <Icon name={getCategoryIcon(category)} size={28} color={category.color || '#1890ff'} />
                     </View>
-                    <View className='pinned-header'>
-                      <Text className='pinned-name' style={{ color: category.color || '#1890ff' }}>{category.name}</Text>
-                      <Text 
-                        className='pinned-count'
-                        style={{ color: category.color || '#1890ff', background: `${category.color || '#1890ff'}15` }}
-                      >
-                        {category.serviceCount || category.services?.length || 0}项
-                      </Text>
-                    </View>
-                    <Text className='pinned-desc'>{category.description || ''}</Text>
                   </View>
                 ))}
             </View>
