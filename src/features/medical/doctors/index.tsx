@@ -62,6 +62,7 @@ import { Main } from '@/components/layout/main'
 import { MessageButton } from '@/components/message-button'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
+import { SimplePagination } from '@/components/simple-pagination'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { cn } from '@/lib/utils'
 
@@ -117,18 +118,37 @@ export function Doctors() {
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedHospital, setSelectedHospital] = useState<string>('')
     const [page, setPage] = useState(1)
-    const pageSize = 12
+    const [pageSize, setPageSize] = useState(12)
 
     // 从后端获取医生数据
     const { data: doctorsData, isLoading, error } = useDoctors({
         keyword: searchQuery || undefined,
-        hospitalId: selectedHospital || undefined,
+        hospitalId: selectedHospital && selectedHospital !== 'all' ? selectedHospital : undefined,
         page,
         pageSize,
     })
 
     const doctors = doctorsData?.data ?? []
     const total = doctorsData?.total ?? 0
+    const totalPages = Math.ceil(total / pageSize)
+
+    // 翻页时重置到第一页
+    const handlePageSizeChange = (newPageSize: number) => {
+        setPageSize(newPageSize)
+        setPage(1)
+    }
+
+    // 搜索时重置到第一页
+    const handleSearchChange = (query: string) => {
+        setSearchQuery(query)
+        setPage(1)
+    }
+
+    // 筛选医院时重置到第一页
+    const handleHospitalFilter = (hospitalId: string) => {
+        setSelectedHospital(hospitalId)
+        setPage(1)
+    }
 
     // 获取医院列表（用于筛选和选择）
     const { data: hospitalsData } = useHospitals({ pageSize: 100 })
@@ -347,20 +367,20 @@ export function Doctors() {
                         <Input
                             placeholder='搜索医生姓名或擅长...'
                             value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onChange={(e) => handleSearchChange(e.target.value)}
                             className='pl-9'
                         />
                         {searchQuery && (
                             <button
                                 className='text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2'
-                                onClick={() => setSearchQuery('')}
+                                onClick={() => handleSearchChange('')}
                             >
                                 <X className='h-4 w-4' />
                             </button>
                         )}
                     </div>
 
-                    <Select value={selectedHospital} onValueChange={setSelectedHospital}>
+                    <Select value={selectedHospital} onValueChange={handleHospitalFilter}>
                         <SelectTrigger className='w-[200px]'>
                             <SelectValue placeholder='选择医院筛选' />
                         </SelectTrigger>
@@ -490,6 +510,20 @@ export function Doctors() {
                     <div className='text-muted-foreground py-12 text-center'>
                         暂无医师数据
                     </div>
+                )}
+
+                {/* 分页 */}
+                {!isLoading && !error && total > 0 && (
+                    <SimplePagination
+                        currentPage={page}
+                        totalPages={totalPages}
+                        pageSize={pageSize}
+                        totalItems={total}
+                        onPageChange={setPage}
+                        onPageSizeChange={handlePageSizeChange}
+                        pageSizeOptions={[12, 24, 36, 48]}
+                        className='mt-6'
+                    />
                 )}
             </Main>
 
