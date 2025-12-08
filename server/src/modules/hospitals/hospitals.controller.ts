@@ -1,4 +1,13 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Param,
+  Query,
+  Body,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { HospitalsService } from './hospitals.service';
 import { ApiResponse } from '../../common/response/api-response';
@@ -42,6 +51,51 @@ export class HospitalsController {
     return ApiResponse.success(data);
   }
 
+  @Post()
+  @ApiOperation({ summary: '创建医院' })
+  async create(
+    @Body()
+    body: {
+      name: string;
+      level: string;
+      type: string;
+      address: string;
+      phone?: string;
+      introduction?: string;
+      departmentTemplateIds?: string[];
+    },
+  ) {
+    const data = await this.hospitalsService.create(body);
+    return ApiResponse.success(data, '创建成功');
+  }
+
+  @Put(':id')
+  @ApiOperation({ summary: '更新医院' })
+  async update(
+    @Param('id') id: string,
+    @Body()
+    body: {
+      name?: string;
+      level?: string;
+      type?: string;
+      address?: string;
+      phone?: string;
+      introduction?: string;
+      status?: string;
+      departmentTemplateIds?: string[];
+    },
+  ) {
+    const data = await this.hospitalsService.update(id, body);
+    return ApiResponse.success(data, '更新成功');
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: '删除医院' })
+  async remove(@Param('id') id: string) {
+    await this.hospitalsService.remove(id);
+    return ApiResponse.success(null, '删除成功');
+  }
+
   @Get(':id/departments')
   @ApiOperation({ summary: '获取医院科室树' })
   async getDepartments(@Param('id') id: string) {
@@ -69,4 +123,3 @@ export class HospitalsController {
     return ApiResponse.success(data);
   }
 }
-

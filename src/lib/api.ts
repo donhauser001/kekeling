@@ -325,6 +325,14 @@ export const serviceApi = {
 // 医院 API
 // ============================================
 
+export interface HospitalDepartment {
+  id: string
+  hospitalId: string
+  templateId: string | null
+  name: string
+  template?: DepartmentTemplate
+}
+
 export interface Hospital {
   id: string
   name: string
@@ -335,13 +343,27 @@ export interface Hospital {
   latitude: number | null
   longitude: number | null
   introduction: string | null
-  departments: string | null
   trafficGuide: string | null
   parkingInfo: string | null
   coverImage: string | null
   status: string
   createdAt: string
   updatedAt: string
+  departments?: HospitalDepartment[]
+}
+
+export interface CreateHospitalData {
+  name: string
+  level: string
+  type: string
+  address: string
+  phone?: string
+  introduction?: string
+  departmentTemplateIds?: string[]
+}
+
+export interface UpdateHospitalData extends Partial<CreateHospitalData> {
+  status?: string
 }
 
 export const hospitalApi = {
@@ -352,6 +374,23 @@ export const hospitalApi = {
 
   getById: (id: string) =>
     request<Hospital>(`/hospitals/${id}`),
+
+  create: (data: CreateHospitalData) =>
+    request<Hospital>('/hospitals', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  update: (id: string, data: UpdateHospitalData) =>
+    request<Hospital>(`/hospitals/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  delete: (id: string) =>
+    request<void>(`/hospitals/${id}`, {
+      method: 'DELETE',
+    }),
 }
 
 // ============================================

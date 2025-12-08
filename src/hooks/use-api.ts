@@ -211,6 +211,40 @@ export function useHospital(id: string) {
   })
 }
 
+export function useCreateHospital() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: hospitalApi.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['hospitals'] })
+    },
+  })
+}
+
+export function useUpdateHospital() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Parameters<typeof hospitalApi.update>[1] }) =>
+      hospitalApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['hospitals'] })
+    },
+  })
+}
+
+export function useDeleteHospital() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: hospitalApi.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['hospitals'] })
+    },
+  })
+}
+
 // ============================================
 // 用户
 // ============================================
