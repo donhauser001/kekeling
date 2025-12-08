@@ -1,24 +1,58 @@
-.escort-page {
+.escort-list-page {
   min-height: 100vh;
   background-color: var(--background-color);
+  padding-bottom: 40px;
 }
 
+// 筛选栏
+.filter-bar {
+  display: flex;
+  background-color: #fff;
+  padding: 20px 24px;
+  gap: 32px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.filter-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 26px;
+  color: var(--text-color-secondary);
+
+  &.active {
+    color: var(--primary-color);
+  }
+}
+
+// 陪诊员列表
 .escort-list {
-  padding: 24px;
+  padding: 16px 24px;
 }
 
 .escort-card {
+  margin-bottom: 16px;
+}
+
+.escort-header {
   display: flex;
   gap: 20px;
   margin-bottom: 16px;
 }
 
 .escort-avatar {
-  width: 140px;
-  height: 140px;
-  border-radius: 16px;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
   overflow: hidden;
   flex-shrink: 0;
+
+  image {
+    width: 100%;
+    height: 100%;
+  }
 }
 
 .avatar-placeholder {
@@ -27,7 +61,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 64px;
   background: linear-gradient(135deg, #f6ffed 0%, #d9f7be 100%);
 }
 
@@ -35,9 +68,10 @@
   flex: 1;
   display: flex;
   flex-direction: column;
+  justify-content: center;
 }
 
-.escort-header {
+.name-row {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -50,23 +84,43 @@
   color: var(--text-color);
 }
 
+.stats-row {
+  display: flex;
+  gap: 20px;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 24px;
+  color: var(--text-color-secondary);
+}
+
 .escort-intro {
+  display: block;
   font-size: 26px;
   color: var(--text-color-secondary);
+  line-height: 1.5;
+  margin-bottom: 16px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  margin-bottom: 12px;
 }
 
-.escort-stats {
+.escort-tags {
   display: flex;
-  gap: 24px;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
-.stat-item {
+.escort-hospitals {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
   font-size: 24px;
   color: var(--text-color-placeholder);
+  line-height: 1.4;
 }
-

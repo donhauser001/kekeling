@@ -1,19 +1,20 @@
 import { View, Text, Image, Swiper, SwiperItem } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import { useState, useEffect } from 'react'
+import Icon from '@/components/Icon'
 import './index.scss'
 
 // Mock 数据 - 后续替换为真实 API
 const mockBanners = [
-  { id: '1', image: 'https://via.placeholder.com/750x300/1890ff/fff?text=专业陪诊服务', link: '' },
-  { id: '2', image: 'https://via.placeholder.com/750x300/52c41a/fff?text=新用户专享', link: '' },
+  { id: '1', image: '', link: '' },
+  { id: '2', image: '', link: '' },
 ]
 
 const mockServiceEntries = [
-  { id: '1', name: '全程陪诊', icon: '🏥', link: '/pages/services/detail?id=1' },
-  { id: '2', name: '代办挂号', icon: '📋', link: '/pages/services/detail?id=2' },
-  { id: '3', name: '陪检服务', icon: '🔬', link: '/pages/services/detail?id=3' },
-  { id: '4', name: '住院陪护', icon: '🛏️', link: '/pages/services/detail?id=4' },
+  { id: '1', name: '全程陪诊', icon: 'stethoscope', link: '/pages/services/detail?id=1' },
+  { id: '2', name: '代办挂号', icon: 'clipboard-list', link: '/pages/services/detail?id=2' },
+  { id: '3', name: '陪检服务', icon: 'flask-conical', link: '/pages/services/detail?id=3' },
+  { id: '4', name: '住院陪护', icon: 'bed', link: '/pages/services/detail?id=4' },
 ]
 
 const mockHotServices = [
@@ -23,8 +24,8 @@ const mockHotServices = [
 ]
 
 const mockRecommendEscorts = [
-  { id: '1', name: '张护士', level: '高级', rating: 98.5, orderCount: 568, avatar: '' },
-  { id: '2', name: '李护士', level: '中级', rating: 97.2, orderCount: 423, avatar: '' },
+  { id: '1', name: '张护士', level: '高级', rating: 98.5, orderCount: 568, avatar: '', gender: 'female' },
+  { id: '2', name: '李护士', level: '中级', rating: 97.2, orderCount: 423, avatar: '', gender: 'female' },
 ]
 
 export default function Index() {
@@ -61,7 +62,7 @@ export default function Index() {
       {/* 搜索栏 */}
       <View className='search-bar' onClick={handleSearch}>
         <View className='search-input'>
-          <Text className='search-icon'>🔍</Text>
+          <Icon name='search' size={18} color='#999' />
           <Text className='search-placeholder'>搜索服务、医院、医生</Text>
         </View>
       </View>
@@ -79,11 +80,18 @@ export default function Index() {
         >
           {banners.map((banner) => (
             <SwiperItem key={banner.id}>
-              <Image
-                className='banner-image'
-                src={banner.image}
-                mode='aspectFill'
-              />
+              {banner.image ? (
+                <Image
+                  className='banner-image'
+                  src={banner.image}
+                  mode='aspectFill'
+                />
+              ) : (
+                <View className='banner-placeholder'>
+                  <Icon name='hospital' size={48} color='#fff' />
+                  <Text className='banner-text'>专业陪诊服务</Text>
+                </View>
+              )}
             </SwiperItem>
           ))}
         </Swiper>
@@ -97,7 +105,9 @@ export default function Index() {
             className='entry-item'
             onClick={() => handleServiceClick(entry.link)}
           >
-            <View className='entry-icon'>{entry.icon}</View>
+            <View className='entry-icon'>
+              <Icon name={entry.icon} size={28} color='#1890ff' />
+            </View>
             <Text className='entry-name'>{entry.name}</Text>
           </View>
         ))}
@@ -107,9 +117,10 @@ export default function Index() {
       <View className='section'>
         <View className='section-header'>
           <Text className='section-title'>热门服务</Text>
-          <Text className='section-more' onClick={() => Taro.switchTab({ url: '/pages/services/index' })}>
-            更多 →
-          </Text>
+          <View className='section-more' onClick={() => Taro.switchTab({ url: '/pages/services/index' })}>
+            <Text>更多</Text>
+            <Icon name='chevron-right' size={16} color='#999' />
+          </View>
         </View>
         <View className='hot-services'>
           {hotServices.map((service) => (
@@ -122,7 +133,9 @@ export default function Index() {
                 {service.coverImage ? (
                   <Image src={service.coverImage} mode='aspectFill' />
                 ) : (
-                  <View className='service-cover-placeholder'>🏥</View>
+                  <View className='service-cover-placeholder'>
+                    <Icon name='hospital' size={36} color='#1890ff' />
+                  </View>
                 )}
               </View>
               <View className='service-info'>
@@ -141,9 +154,10 @@ export default function Index() {
       <View className='section'>
         <View className='section-header'>
           <Text className='section-title'>推荐陪诊员</Text>
-          <Text className='section-more' onClick={() => Taro.navigateTo({ url: '/pages/escort/list' })}>
-            更多 →
-          </Text>
+          <View className='section-more' onClick={() => Taro.navigateTo({ url: '/pages/escort/list' })}>
+            <Text>更多</Text>
+            <Icon name='chevron-right' size={16} color='#999' />
+          </View>
         </View>
         <View className='escort-list'>
           {recommendEscorts.map((escort) => (
@@ -156,7 +170,9 @@ export default function Index() {
                 {escort.avatar ? (
                   <Image src={escort.avatar} mode='aspectFill' />
                 ) : (
-                  <View className='avatar-placeholder'>👩‍⚕️</View>
+                  <View className='avatar-placeholder'>
+                    <Icon name='user-check' size={28} color='#52c41a' />
+                  </View>
                 )}
               </View>
               <View className='escort-info'>
@@ -165,7 +181,10 @@ export default function Index() {
                   <Text className='escort-level tag tag-primary'>{escort.level}</Text>
                 </View>
                 <View className='escort-stats'>
-                  <Text className='stat-item'>⭐ {escort.rating}%</Text>
+                  <View className='stat-item'>
+                    <Icon name='star-filled' size={14} color='#faad14' />
+                    <Text>{escort.rating}%</Text>
+                  </View>
                   <Text className='stat-item'>接单 {escort.orderCount}</Text>
                 </View>
               </View>
@@ -176,4 +195,3 @@ export default function Index() {
     </View>
   )
 }
-

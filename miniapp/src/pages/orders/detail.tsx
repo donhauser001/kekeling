@@ -1,6 +1,7 @@
 import { View, Text, Button } from '@tarojs/components'
 import Taro, { useRouter } from '@tarojs/taro'
 import { useState, useEffect } from 'react'
+import Icon from '@/components/Icon'
 import './detail.scss'
 
 // Mock 数据
@@ -143,7 +144,9 @@ export default function OrderDetail() {
               {order.escortAvatar ? (
                 <image src={order.escortAvatar} mode='aspectFill' />
               ) : (
-                <View className='avatar-placeholder'>👩‍⚕️</View>
+                <View className='avatar-placeholder'>
+                  <Icon name='user-check' size={24} color='#52c41a' />
+                </View>
               )}
             </View>
             <View className='escort-detail'>
@@ -151,7 +154,8 @@ export default function OrderDetail() {
               <Text className='escort-phone'>{order.escortPhone}</Text>
             </View>
             <View className='call-btn' onClick={() => handleCall(order.escortPhone)}>
-              📞 联系
+              <Icon name='phone' size={16} color='#1890ff' />
+              <Text>联系</Text>
             </View>
           </View>
         </View>
@@ -223,4 +227,3 @@ export default function OrderDetail() {
     </View>
   )
 }
-

@@ -4,132 +4,214 @@
   padding-bottom: 160px;
 }
 
-// 服务头部
-.service-header {
-  margin: 24px;
+// 封面
+.cover-section {
+  position: relative;
+  height: 400px;
 }
 
-.header-top {
+.cover-image {
+  width: 100%;
+  height: 100%;
+}
+
+.cover-placeholder {
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
-  gap: 16px;
-  margin-bottom: 16px;
+  justify-content: center;
+  background: linear-gradient(135deg, #e6f7ff 0%, #bae7ff 100%);
+}
+
+.cover-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 24px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.5));
+}
+
+.cover-tag {
+  display: inline-block;
+  padding: 8px 20px;
+  font-size: 24px;
+  color: #fff;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 24px;
+}
+
+// 基本信息
+.info-section {
+  margin: -40px 24px 24px;
+  position: relative;
+  z-index: 10;
 }
 
 .service-name {
+  display: block;
   font-size: 40px;
   font-weight: 600;
   color: var(--text-color);
+  margin-bottom: 16px;
 }
 
 .service-desc {
+  display: block;
   font-size: 28px;
   color: var(--text-color-secondary);
   line-height: 1.6;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .price-row {
   display: flex;
-  align-items: baseline;
-  margin-bottom: 16px;
-}
-
-.current-price {
-  font-size: 48px;
-}
-
-.price-unit {
-  font-size: 26px;
-  color: var(--text-color-secondary);
-  margin-left: 4px;
-}
-
-.original-price {
-  font-size: 26px;
-  color: var(--text-color-placeholder);
-  text-decoration: line-through;
-  margin-left: 16px;
-}
-
-.stats-row {
-  display: flex;
-  gap: 24px;
-  padding-top: 16px;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 20px;
   border-top: 1px solid var(--border-color);
 }
 
+.price-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.original-price {
+  font-size: 28px;
+  color: var(--text-color-placeholder);
+  text-decoration: line-through;
+}
+
+.stats {
+  display: flex;
+  gap: 24px;
+}
+
 .stat-item {
-  font-size: 24px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 26px;
   color: var(--text-color-secondary);
 }
 
-// Section
-.section {
-  margin: 24px;
-}
-
+// Section 通用
 .section-title {
+  display: block;
   font-size: 32px;
   font-weight: 600;
   color: var(--text-color);
   margin-bottom: 24px;
+}
+
+// 服务内容
+.content-section {
+  margin: 0 24px 24px;
+}
+
+.content-subtitle {
   display: block;
+  font-size: 26px;
+  color: var(--text-color-secondary);
+  margin: 16px 0 12px;
+
+  &:first-of-type {
+    margin-top: 0;
+  }
+}
+
+.content-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  font-size: 28px;
+  color: var(--text-color);
 }
 
 // 服务流程
+.process-section {
+  margin: 0 24px 24px;
+}
+
 .process-list {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  padding-left: 8px;
 }
 
 .process-item {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  position: relative;
-  flex: 1;
+  gap: 20px;
 }
 
-.process-number {
+.process-step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.step-num {
   width: 48px;
   height: 48px;
-  border-radius: 50%;
-  background-color: var(--primary-color);
-  color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 600;
-  margin-bottom: 12px;
-}
-
-.process-text {
-  font-size: 22px;
-  color: var(--text-color);
-  text-align: center;
-}
-
-.process-line {
-  position: absolute;
-  top: 24px;
-  left: calc(50% + 24px);
-  width: calc(100% - 48px);
-  height: 2px;
+  color: #fff;
   background-color: var(--primary-color);
+  border-radius: 50%;
 }
 
-// 详情内容
-.detail-content {
-  font-size: 28px;
+.step-line {
+  flex: 1;
+  width: 2px;
+  min-height: 48px;
+  background-color: var(--border-color);
+  margin: 8px 0;
+}
+
+.process-content {
+  flex: 1;
+  padding-bottom: 24px;
+}
+
+.process-title {
+  display: block;
+  font-size: 30px;
+  font-weight: 500;
   color: var(--text-color);
-  line-height: 1.8;
-  white-space: pre-wrap;
+  margin-bottom: 8px;
 }
 
-// 底部栏
+.process-desc {
+  font-size: 26px;
+  color: var(--text-color-secondary);
+}
+
+// 注意事项
+.notes-section {
+  margin: 0 24px 24px;
+}
+
+.note-item {
+  display: flex;
+  gap: 8px;
+  padding: 8px 0;
+  font-size: 26px;
+  color: var(--text-color-secondary);
+  line-height: 1.5;
+}
+
+.note-num {
+  flex-shrink: 0;
+  color: var(--text-color-placeholder);
+}
+
+// 底部按钮
 .bottom-bar {
   position: fixed;
   bottom: 0;
@@ -137,44 +219,33 @@
   right: 0;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   padding: 16px 24px;
   background-color: #fff;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+  border-top: 1px solid var(--border-color);
 }
 
-.price-info {
+.action-btns {
   display: flex;
-  align-items: baseline;
+  gap: 32px;
+  margin-right: 24px;
+}
 
-  .label {
-    font-size: 26px;
-    color: var(--text-color-secondary);
-    margin-right: 8px;
-  }
-
-  .price {
-    font-size: 40px;
-  }
-
-  .unit {
-    font-size: 24px;
-    color: var(--text-color-secondary);
-  }
+.action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 22px;
+  color: var(--text-color-secondary);
 }
 
 .book-btn {
-  width: 280px;
+  flex: 1;
   height: 88px;
-  background-color: var(--primary-color);
-  color: #fff;
   font-size: 32px;
   font-weight: 500;
+  color: #fff;
+  background-color: var(--primary-color);
   border-radius: 44px;
   border: none;
-  
-  &::after {
-    border: none;
-  }
 }
-

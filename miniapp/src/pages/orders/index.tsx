@@ -1,6 +1,7 @@
 import { View, Text } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import { useState } from 'react'
+import Icon from '@/components/Icon'
 import './index.scss'
 
 // 订单状态 Tab
@@ -98,7 +99,7 @@ export default function Orders() {
       <View className='order-list'>
         {filteredOrders.length === 0 ? (
           <View className='empty-container'>
-            <Text className='empty-icon'>📦</Text>
+            <Icon name='package-search' size={64} color='#d9d9d9' />
             <Text className='empty-text'>暂无订单</Text>
           </View>
         ) : (
@@ -124,11 +125,15 @@ export default function Orders() {
                   <Text className='hospital-name'>{order.hospitalName}</Text>
                 </View>
                 <View className='appointment-info'>
-                  <Text className='appointment-time'>
-                    📅 {order.appointmentDate} {order.appointmentTime}
-                  </Text>
+                  <View className='info-item'>
+                    <Icon name='clock' size={14} color='#999' />
+                    <Text>{order.appointmentDate} {order.appointmentTime}</Text>
+                  </View>
                   {order.escortName && (
-                    <Text className='escort-name'>👩‍⚕️ {order.escortName}</Text>
+                    <View className='info-item'>
+                      <Icon name='user-check' size={14} color='#999' />
+                      <Text>{order.escortName}</Text>
+                    </View>
                   )}
                 </View>
               </View>
@@ -157,4 +162,3 @@ export default function Orders() {
     </View>
   )
 }
-

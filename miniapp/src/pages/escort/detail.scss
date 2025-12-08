@@ -1,21 +1,31 @@
-.escort-detail {
+.detail-page {
   min-height: 100vh;
   background-color: var(--background-color);
   padding-bottom: 160px;
 }
 
-.escort-header {
+// 头部信息
+.header-section {
   display: flex;
-  gap: 24px;
-  padding: 32px 24px;
-  background-color: #fff;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px 32px;
+  background: linear-gradient(135deg, #f6ffed 0%, #d9f7be 100%);
 }
 
-.escort-avatar {
+.escort-avatar-large {
   width: 160px;
   height: 160px;
-  border-radius: 24px;
+  border-radius: 50%;
   overflow: hidden;
+  margin-bottom: 24px;
+  border: 6px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 8px 24px rgba(82, 196, 26, 0.2);
+
+  image {
+    width: 100%;
+    height: 100%;
+  }
 }
 
 .avatar-placeholder {
@@ -24,22 +34,19 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 80px;
-  background: linear-gradient(135deg, #f6ffed 0%, #d9f7be 100%);
+  background-color: #fff;
 }
 
-.escort-info {
-  flex: 1;
+.escort-basic {
+  text-align: center;
+}
+
+.name-row {
   display: flex;
-  flex-direction: column;
   justify-content: center;
-}
-
-.info-row {
-  display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 16px;
+  margin-bottom: 24px;
 }
 
 .escort-name {
@@ -50,82 +57,223 @@
 
 .stats-row {
   display: flex;
-  gap: 24px;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
 }
 
 .stat-item {
-  font-size: 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 32px;
+}
+
+.stat-value {
+  font-size: 36px;
+  font-weight: 600;
+  color: var(--text-color);
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  font-size: 24px;
   color: var(--text-color-secondary);
 }
 
+.stat-divider {
+  width: 1px;
+  height: 48px;
+  background-color: #d9d9d9;
+}
+
+// Section 通用
 .section {
   margin: 24px;
 }
 
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
 .section-title {
-  font-size: 30px;
+  display: block;
+  font-size: 32px;
   font-weight: 600;
   color: var(--text-color);
-  margin-bottom: 16px;
-  display: block;
+  margin-bottom: 20px;
 }
 
-.section-content {
+.section-header .section-title {
+  margin-bottom: 0;
+}
+
+.more-link {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 26px;
+  color: var(--text-color-secondary);
+}
+
+// 个人介绍
+.intro-text {
+  display: block;
   font-size: 28px;
   color: var(--text-color-secondary);
-  line-height: 1.8;
+  line-height: 1.6;
+  margin-bottom: 20px;
 }
 
-.tag-list {
+.tags-wrap {
   display: flex;
   flex-wrap: wrap;
-  gap: 16px;
-}
-
-.specialty-tag {
-  padding: 12px 24px;
-  background-color: var(--primary-color-light);
-  color: var(--primary-color);
-  border-radius: 8px;
-  font-size: 26px;
-}
-
-.hospital-list {
-  display: flex;
-  flex-direction: column;
   gap: 12px;
 }
 
-.hospital-item {
-  font-size: 28px;
-  color: var(--text-color);
-  padding: 16px;
-  background-color: var(--background-color);
-  border-radius: 8px;
+// 资质证书
+.cert-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
+.cert-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 28px;
+  color: var(--text-color);
+}
+
+// 熟悉医院
+.hospital-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.hospital-item {
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-color);
+
+  &:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+}
+
+.hospital-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.hospital-name {
+  font-size: 28px;
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+.hospital-depts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-left: 30px;
+}
+
+.dept-tag {
+  padding: 6px 16px;
+  font-size: 24px;
+  color: var(--text-color-secondary);
+  background-color: #f5f5f5;
+  border-radius: 20px;
+}
+
+// 用户评价
+.review-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.review-item {
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border-color);
+
+  &:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+}
+
+.review-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.review-user {
+  font-size: 26px;
+  color: var(--text-color);
+}
+
+.review-rating {
+  display: flex;
+  gap: 4px;
+}
+
+.review-content {
+  display: block;
+  font-size: 28px;
+  color: var(--text-color-secondary);
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+.review-date {
+  font-size: 24px;
+  color: var(--text-color-placeholder);
+}
+
+// 底部按钮
 .bottom-bar {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
+  display: flex;
+  align-items: center;
   padding: 16px 24px;
   background-color: #fff;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+  border-top: 1px solid var(--border-color);
+}
+
+.action-btns {
+  margin-right: 24px;
+}
+
+.action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 22px;
+  color: var(--text-color-secondary);
 }
 
 .book-btn {
-  width: 100%;
+  flex: 1;
   height: 88px;
-  background-color: var(--primary-color);
-  color: #fff;
   font-size: 32px;
   font-weight: 500;
+  color: #fff;
+  background-color: #52c41a;
   border-radius: 44px;
   border: none;
-
-  &::after {
-    border: none;
-  }
 }
-

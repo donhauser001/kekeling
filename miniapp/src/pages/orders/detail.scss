@@ -4,48 +4,61 @@
   padding-bottom: 160px;
 }
 
+.loading-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  font-size: 28px;
+  color: var(--text-color-secondary);
+}
+
 // 状态卡片
 .status-card {
-  padding: 40px 24px;
+  padding: 40px 32px;
   color: #fff;
 }
 
 .status-text {
+  display: block;
   font-size: 40px;
   font-weight: 600;
-  display: block;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 
 .status-desc {
-  font-size: 26px;
+  font-size: 28px;
   opacity: 0.9;
 }
 
-// Section
+// Section 通用
 .section {
   margin: 24px;
 }
 
 .section-title {
-  font-size: 30px;
+  display: block;
+  font-size: 32px;
   font-weight: 600;
   color: var(--text-color);
   margin-bottom: 20px;
-  display: block;
 }
 
 // 信息列表
 .info-list {
-  .info-item {
-    display: flex;
-    justify-content: space-between;
-    padding: 12px 0;
-    border-bottom: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+}
 
-    &:last-child {
-      border-bottom: none;
-    }
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border-color);
+
+  &:last-child {
+    border-bottom: none;
   }
 
   .label {
@@ -56,6 +69,8 @@
   .value {
     font-size: 28px;
     color: var(--text-color);
+    text-align: right;
+    max-width: 400px;
   }
 }
 
@@ -63,15 +78,14 @@
 .escort-info {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 16px;
 }
 
 .escort-avatar {
-  width: 96px;
-  height: 96px;
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
   overflow: hidden;
-  background-color: var(--background-color);
 
   image {
     width: 100%;
@@ -85,7 +99,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 40px;
   background: linear-gradient(135deg, #f6ffed 0%, #d9f7be 100%);
 }
 
@@ -94,11 +107,11 @@
 }
 
 .escort-name {
+  display: block;
   font-size: 30px;
   font-weight: 500;
   color: var(--text-color);
-  display: block;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .escort-phone {
@@ -107,25 +120,32 @@
 }
 
 .call-btn {
-  padding: 16px 24px;
-  background-color: var(--primary-color-light);
-  color: var(--primary-color);
-  border-radius: 32px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 24px;
   font-size: 26px;
+  color: var(--primary-color);
+  background-color: var(--primary-color-light);
+  border-radius: 24px;
 }
 
-// 费用列表
+// 费用明细
 .fee-list {
-  .fee-item {
-    display: flex;
-    justify-content: space-between;
-    padding: 12px 0;
+  display: flex;
+  flex-direction: column;
+}
 
-    &.total {
-      padding-top: 16px;
-      margin-top: 8px;
-      border-top: 1px solid var(--border-color);
-    }
+.fee-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 0;
+
+  &.total {
+    padding-top: 20px;
+    margin-top: 12px;
+    border-top: 1px solid var(--border-color);
   }
 
   .label {
@@ -138,7 +158,7 @@
     color: var(--text-color);
 
     &.discount {
-      color: var(--success-color);
+      color: #ff4d4f;
     }
 
     &.price {
@@ -154,36 +174,36 @@
   left: 0;
   right: 0;
   display: flex;
-  gap: 24px;
+  gap: 16px;
   padding: 16px 24px;
   background-color: #fff;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+  border-top: 1px solid var(--border-color);
 }
 
 .btn {
   flex: 1;
   height: 88px;
-  font-size: 30px;
+  font-size: 32px;
   font-weight: 500;
   border-radius: 44px;
   border: none;
+  background-color: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
-
-  &.btn-cancel {
-    background-color: var(--background-color);
-    color: var(--text-color-secondary);
-  }
-
-  &.btn-pay,
-  &.btn-primary {
-    background-color: var(--primary-color);
-    color: #fff;
-  }
-
-  &::after {
-    border: none;
-  }
 }
 
+.btn-cancel {
+  color: var(--text-color-secondary);
+  background-color: #f5f5f5;
+}
+
+.btn-pay {
+  color: #fff;
+  background-color: #52c41a;
+}
+
+.btn-primary {
+  color: #fff;
+  background-color: var(--primary-color);
+}

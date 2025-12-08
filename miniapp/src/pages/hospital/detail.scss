@@ -1,83 +1,246 @@
-.hospital-detail {
+.detail-page {
   min-height: 100vh;
   background-color: var(--background-color);
   padding-bottom: 160px;
 }
 
-.hospital-header {
-  margin: 24px;
+// 头部信息
+.header-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px 32px;
+  background: linear-gradient(135deg, #e6f7ff 0%, #bae7ff 100%);
+}
+
+.hospital-icon-large {
+  width: 120px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #fff;
+  border-radius: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 8px 24px rgba(24, 144, 255, 0.15);
 }
 
 .hospital-name {
   font-size: 40px;
   font-weight: 600;
   color: var(--text-color);
-  display: block;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
+  text-align: center;
 }
 
-.hospital-address,
-.hospital-phone {
-  font-size: 28px;
-  color: var(--text-color-secondary);
-  display: block;
-  margin-top: 12px;
+.tag-row {
+  display: flex;
+  gap: 12px;
 }
 
+// Section 通用
 .section {
   margin: 24px;
 }
 
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
 .section-title {
-  font-size: 30px;
+  display: block;
+  font-size: 32px;
   font-weight: 600;
   color: var(--text-color);
-  margin-bottom: 16px;
-  display: block;
+  margin-bottom: 20px;
 }
 
-.section-content {
+.section-header .section-title {
+  margin-bottom: 0;
+}
+
+.more-link {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 26px;
+  color: var(--text-color-secondary);
+}
+
+// 基本信息
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--border-color);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.info-text {
+  flex: 1;
+  font-size: 28px;
+  color: var(--text-color);
+}
+
+.info-action {
+  font-size: 26px;
+  color: var(--primary-color);
+}
+
+// 简介
+.intro-text {
   font-size: 28px;
   color: var(--text-color-secondary);
-  line-height: 1.8;
+  line-height: 1.6;
 }
 
-.department-list {
-  display: flex;
-  flex-wrap: wrap;
+// 科室网格
+.dept-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 16px;
 }
 
-.department-item {
-  padding: 12px 24px;
-  background-color: var(--background-color);
-  border-radius: 8px;
-  font-size: 26px;
+.dept-card {
+  padding: 20px;
+  background-color: #f5f5f5;
+  border-radius: 12px;
+}
+
+.dept-name {
+  display: block;
+  font-size: 28px;
+  font-weight: 500;
+  color: var(--text-color);
+  margin-bottom: 8px;
+}
+
+.dept-desc {
+  font-size: 24px;
+  color: var(--text-color-secondary);
+}
+
+// 陪诊员列表
+.escort-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.escort-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background-color: #f9f9f9;
+  border-radius: 12px;
+}
+
+.escort-avatar {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f6ffed;
+  border-radius: 50%;
+}
+
+.escort-info {
+  flex: 1;
+}
+
+.escort-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.escort-name {
+  font-size: 28px;
+  font-weight: 500;
   color: var(--text-color);
 }
 
+.tag-sm {
+  padding: 2px 10px;
+  font-size: 20px;
+}
+
+.escort-stats {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 24px;
+  color: var(--text-color-secondary);
+
+  .divider {
+    color: var(--border-color);
+    margin: 0 4px;
+  }
+}
+
+// 交通指南
+.guide-item {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.guide-text {
+  flex: 1;
+  font-size: 26px;
+  color: var(--text-color-secondary);
+  line-height: 1.5;
+}
+
+// 底部按钮
 .bottom-bar {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
+  display: flex;
+  align-items: center;
+  gap: 16px;
   padding: 16px 24px;
   background-color: #fff;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+  border-top: 1px solid var(--border-color);
+}
+
+.nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 160px;
+  height: 88px;
+  font-size: 28px;
+  color: var(--primary-color);
+  background-color: var(--primary-color-light);
+  border-radius: 44px;
+  border: none;
 }
 
 .book-btn {
-  width: 100%;
+  flex: 1;
   height: 88px;
-  background-color: var(--primary-color);
-  color: #fff;
   font-size: 32px;
   font-weight: 500;
+  color: #fff;
+  background-color: var(--primary-color);
   border-radius: 44px;
   border: none;
-
-  &::after {
-    border: none;
-  }
 }
-

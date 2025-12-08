@@ -1,10 +1,54 @@
-.hospital-page {
+.hospital-list-page {
   min-height: 100vh;
   background-color: var(--background-color);
+  padding-bottom: 40px;
 }
 
+// 搜索栏
+.search-bar {
+  padding: 16px 24px;
+  background-color: #fff;
+}
+
+.search-input {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 72px;
+  padding: 0 24px;
+  background-color: #f5f5f5;
+  border-radius: 36px;
+
+  .input {
+    flex: 1;
+    font-size: 28px;
+  }
+}
+
+// 筛选栏
+.filter-bar {
+  display: flex;
+  background-color: #fff;
+  padding: 16px 24px;
+  gap: 24px;
+  border-top: 1px solid var(--border-color);
+}
+
+.filter-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 26px;
+  color: var(--text-color-secondary);
+
+  &.active {
+    color: var(--primary-color);
+  }
+}
+
+// 医院列表
 .hospital-list {
-  padding: 24px;
+  padding: 16px 24px;
 }
 
 .hospital-card {
@@ -13,9 +57,27 @@
 
 .hospital-header {
   display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.hospital-icon {
+  width: 72px;
+  height: 72px;
+  display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
+  justify-content: center;
+  background-color: var(--primary-color-light);
+  border-radius: 16px;
+  flex-shrink: 0;
+}
+
+.hospital-info {
+  flex: 1;
+}
+
+.name-row {
+  margin-bottom: 8px;
 }
 
 .hospital-name {
@@ -24,22 +86,89 @@
   color: var(--text-color);
 }
 
+.tag-row {
+  display: flex;
+  gap: 8px;
+}
+
 .hospital-address {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.address-text {
+  flex: 1;
   font-size: 26px;
   color: var(--text-color-secondary);
+}
+
+.distance {
+  font-size: 26px;
+  color: var(--primary-color);
+}
+
+.hospital-depts {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin-bottom: 16px;
+}
+
+.dept-label {
+  font-size: 26px;
+  color: var(--text-color-secondary);
+  flex-shrink: 0;
+}
+
+.dept-list {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.dept-item {
+  font-size: 24px;
+  color: var(--text-color-secondary);
+  padding: 4px 12px;
+  background-color: #f5f5f5;
+  border-radius: 16px;
+}
+
+.dept-more {
+  font-size: 24px;
+  color: var(--primary-color);
 }
 
 .hospital-footer {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   padding-top: 16px;
   border-top: 1px solid var(--border-color);
 }
 
-.hospital-distance,
-.hospital-count {
-  font-size: 24px;
-  color: var(--text-color-placeholder);
+.escort-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 26px;
+  color: #52c41a;
 }
 
+// 空状态
+.empty-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 120px 40px;
+
+  .empty-text {
+    margin-top: 24px;
+    font-size: 28px;
+    color: var(--text-color-placeholder);
+  }
+}
