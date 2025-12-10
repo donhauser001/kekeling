@@ -12,7 +12,12 @@ describe('HomeController', () => {
             totalEscorts: 3,
             totalOrders: 100,
         } as any),
-        getBanners: async () => [{ id: '1', title: 't', image: '/x.png' } as any],
+        getBanners: async () => ({
+            enabled: true,
+            width: 750,
+            height: 360,
+            items: [{ id: '1', title: 't', imageUrl: '/x.png', linkUrl: null }],
+        }),
         getHomeConfig: async () => ({ theme: 'default' } as any),
     }
 
@@ -34,7 +39,9 @@ describe('HomeController', () => {
     it('should get banners wrapped in ApiResponse', async () => {
         const res = await controller.getBanners()
         expect(res.code).toBe(0)
-        expect(Array.isArray(res.data)).toBe(true)
+        expect(res.data).toHaveProperty('enabled', true)
+        expect(res.data).toHaveProperty('items')
+        expect(Array.isArray(res.data.items)).toBe(true)
     })
 
     it('should get config wrapped in ApiResponse', async () => {

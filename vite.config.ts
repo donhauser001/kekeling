@@ -8,6 +8,16 @@ import { tanstackRouter } from '@tanstack/router-plugin/vite'
 export default defineConfig({
   server: {
     port: 9527, // 周星驰经典号码 🎬
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+      '/uploads': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+    },
   },
   plugins: [
     tanstackRouter({

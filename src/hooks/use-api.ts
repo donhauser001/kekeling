@@ -679,3 +679,22 @@ export function useUpdateOrderSettings() {
   })
 }
 
+export function useThemeSettings() {
+  return useQuery({
+    queryKey: ['config', 'themeSettings'],
+    queryFn: () => configApi.getThemeSettings(),
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useUpdateThemeSettings() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: configApi.updateThemeSettings,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['config', 'themeSettings'] })
+    },
+  })
+}
+

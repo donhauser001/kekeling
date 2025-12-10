@@ -11,26 +11,55 @@ const isDev = process.env.NODE_ENV === 'development'
 // 环境配置
 const ENV_CONFIG = {
   // 开发环境：本地后端
-  development: isH5 
+  development: isH5
     ? '/api'  // H5 使用代理，避免跨域
     : 'http://localhost:3000/api', // 小程序直连（需开启"不校验合法域名"）
   // 生产环境：线上后端（备案后替换）
   production: 'https://api.yourdomain.com/api',
 }
 
+// 资源服务器配置
+const RESOURCE_CONFIG = {
+  development: isH5
+    ? ''  // H5 使用代理，相对路径即可
+    : 'http://localhost:3000', // 小程序需要完整地址
+  production: 'https://api.yourdomain.com',
+}
+
 // 获取 BASE_URL
 const getBaseUrl = () => {
   const env = process.env.NODE_ENV || 'development'
   const baseUrl = ENV_CONFIG[env] || ENV_CONFIG.development
-  
+
   if (isDev) {
     console.log(`🔗 [Request] BASE_URL: ${baseUrl} (ENV: ${env}, H5: ${isH5})`)
   }
-  
+
   return baseUrl
 }
 
 const BASE_URL = getBaseUrl()
+
+// 获取资源服务器地址
+const getResourceBaseUrl = () => {
+  const env = process.env.NODE_ENV || 'development'
+  return RESOURCE_CONFIG[env] || RESOURCE_CONFIG.development
+}
+
+/**
+ * 获取资源完整 URL
+ * 将相对路径转换为完整的资源 URL（主要用于图片等静态资源）
+ */
+export const getResourceUrl = (path: string): string => {
+  if (!path) return ''
+  // 如果已经是完整 URL，直接返回
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    return path
+  }
+  // 拼接资源服务器地址
+  const baseUrl = getResourceBaseUrl()
+  return `${baseUrl}${path.startsWith('/') ? path : '/' + path}`
+}
 
 // 响应数据类型
 interface ApiResponse<T = any> {
@@ -188,5 +217,6 @@ export default {
   setToken,
   clearToken,
   isLoggedIn,
+  getResourceUrl,
 }
 

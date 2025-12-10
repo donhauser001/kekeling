@@ -5,16 +5,28 @@ import { CreateServiceDto, UpdateServiceDto, QueryServiceDto } from './dto/servi
 
 @Injectable()
 export class ServicesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   /**
    * 获取服务分类列表（兼容旧接口）
    */
   async getCategories() {
-    return this.prisma.serviceCategory.findMany({
+    const categories = await this.prisma.serviceCategory.findMany({
       where: { status: 'active' },
-      orderBy: { sort: 'asc' },
+      orderBy: [{ isPinned: 'desc' }, { sort: 'asc' }],
+      include: {
+        _count: {
+          select: { services: true },
+        },
+      },
     });
+
+    // 返回包含服务数量的数据
+    return categories.map((cat) => ({
+      ...cat,
+      serviceCount: cat._count.services,
+      _count: undefined,
+    }));
   }
 
   /**

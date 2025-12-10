@@ -3,7 +3,7 @@
   background-color: #f5f7fa;
   padding-bottom: 120px;
   position: relative;
-  
+
   // 页面顶部渐变背景 - 首屏40%高度，从主色渐变到透明
   &::before {
     content: '';
@@ -12,12 +12,10 @@
     left: 0;
     right: 0;
     height: 40vh;
-    background: linear-gradient(
-      180deg, 
-      var(--primary-color, #f97316) 0%, 
-      var(--primary-color, #f97316) 15%,
-      transparent 100%
-    );
+    background: linear-gradient(180deg,
+        var(--primary-color, #f97316) 0%,
+        var(--primary-color, #f97316) 15%,
+        transparent 100%);
     z-index: 0;
     pointer-events: none;
   }
@@ -49,6 +47,29 @@
   gap: 20px;
   position: relative;
   z-index: 1;
+
+  &.brand-footer {
+    justify-content: center;
+    margin-bottom: 16px;
+
+    .logo {
+      width: 48px;
+      height: 48px;
+      background: rgba(0, 0, 0, 0.05);
+      border-radius: 12px;
+    }
+
+    .brand-logo {
+      height: 40px;
+      width: 40px;
+      object-fit: contain;
+      display: block;
+    }
+
+    .brand-text {
+      gap: 4px;
+    }
+  }
 }
 
 .logo {
@@ -60,6 +81,13 @@
   background: rgba(255, 255, 255, 0.2);
   border-radius: 24px;
   backdrop-filter: blur(10px);
+}
+
+.brand-logo {
+  height: 120px;
+  width: 200px;
+  object-fit: contain;
+  display: block;
 }
 
 .brand-text {
@@ -150,9 +178,14 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  
-  &:nth-child(1) { animation-delay: 0s; }
-  &:nth-child(2) { animation-delay: 0.1s; }
+
+  &:nth-child(1) {
+    animation-delay: 0s;
+  }
+
+  &:nth-child(2) {
+    animation-delay: 0.1s;
+  }
 }
 
 .pinned-content {
@@ -219,7 +252,7 @@
   gap: 16px;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  
+
   &::-webkit-scrollbar {
     display: none;
   }
@@ -235,7 +268,7 @@
   white-space: nowrap;
   flex-shrink: 0;
   transition: all 0.2s ease;
-  
+
   &:active {
     background: #e8e8e8;
     transform: scale(0.98);
@@ -408,6 +441,26 @@
   color: var(--primary-color);
 }
 
+// 轮播图区域
+.banner-section {
+  padding: 0 24px 24px;
+  position: relative;
+  z-index: 1;
+}
+
+.banner-swiper {
+  width: 100%;
+  // 高度由动态样式设置
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.banner-image {
+  width: 100%;
+  height: 100%;
+  border-radius: 20px;
+}
+
 // 数据统计区域
 .stats-section {
   padding: 0 24px 32px;
@@ -420,6 +473,12 @@
   background: var(--primary-color, #1890ff);
   border-radius: 20px;
   padding: 32px 16px;
+}
+
+.stat-item-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
 }
 
 .stat-item {
@@ -445,71 +504,151 @@
   background: rgba(255, 255, 255, 0.2);
 }
 
-// 品牌理念区域
-.values-section {
+// 内容区（HTML 渲染）
+.content-section {
   padding: 32px 24px;
   background: #fff;
   position: relative;
   z-index: 1;
 }
 
-.section-header {
-  text-align: center;
-  margin-bottom: 32px;
+// 服务推荐区域
+.service-recommend-section {
+  background: #fff;
+  padding: 32px 24px;
+  position: relative;
+  z-index: 1;
 }
 
-.section-title {
-  display: block;
-  font-size: 36px;
-  font-weight: 700;
+.recommend-tabs {
+  display: flex;
+  gap: 24px;
+  border-bottom: 1px solid #f0f0f0;
+  margin-bottom: 24px;
+}
+
+.recommend-tab {
+  padding-bottom: 16px;
+  position: relative;
+  cursor: pointer;
+
+  .tab-title {
+    font-size: 28px;
+    color: #8c8c8c;
+    transition: color 0.3s;
+  }
+
+  &.active {
+    .tab-title {
+      color: #262626;
+      font-weight: 600;
+    }
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 40px;
+      height: 4px;
+      background: var(--primary-color, #f97316);
+      border-radius: 2px;
+    }
+  }
+}
+
+.recommend-services {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.recommend-service-item {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  background: #f9fafb;
+  border-radius: 16px;
+  transition: transform 0.2s;
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+.recommend-service-item .service-image {
+  width: 160px;
+  height: 160px;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.recommend-service-item .service-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.recommend-service-item .service-name {
+  font-size: 28px;
+  font-weight: 600;
   color: #262626;
-  margin-bottom: 12px;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-.section-subtitle {
-  font-size: 26px;
+.recommend-service-item .service-desc {
+  font-size: 24px;
+  color: #8c8c8c;
+  margin-top: 8px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.recommend-service-item .service-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.recommend-service-item .service-price {
+  font-size: 32px;
+  font-weight: 700;
+  color: #f97316;
+}
+
+.recommend-service-item .service-original-price {
+  font-size: 22px;
+  color: #bfbfbf;
+  text-decoration: line-through;
+}
+
+.recommend-service-item .service-sales {
+  font-size: 22px;
   color: #8c8c8c;
 }
 
-.values-list {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.value-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  padding: 24px;
-  background: #f9fafb;
-  border-radius: 16px;
-}
-
-.value-icon {
-  width: 64px;
-  height: 64px;
+.recommend-more {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #e6f7ff 0%, #bae7ff 100%);
-  border-radius: 20px;
-  margin-bottom: 16px;
-}
+  gap: 8px;
+  padding: 24px 0;
+  margin-top: 16px;
+  border-top: 1px solid #f0f0f0;
 
-.value-title {
-  display: block;
-  font-size: 30px;
-  font-weight: 600;
-  color: #262626;
-  margin-bottom: 8px;
-}
-
-.value-desc {
-  font-size: 26px;
-  color: #8c8c8c;
-  line-height: 1.5;
+  .more-text {
+    font-size: 26px;
+    color: #666;
+  }
 }
 
 // 底部区域
@@ -521,6 +660,12 @@
   background: #f9fafb;
   position: relative;
   z-index: 1;
+
+  .brand-footer {
+    .brand-text {
+      align-items: flex-start;
+    }
+  }
 }
 
 .footer-brand {
@@ -532,18 +677,18 @@
 
 .footer-name {
   font-size: 28px;
-  font-weight: 500;
-  color: #8c8c8c;
+  font-weight: 600;
+  color: #595959;
 }
 
 .footer-slogan {
   display: block;
-  font-size: 26px;
-  color: #bfbfbf;
-  margin-bottom: 12px;
+  font-size: 24px;
+  color: #8c8c8c;
 }
 
 .footer-contact {
   font-size: 24px;
   color: #bfbfbf;
+  margin-top: 16px;
 }

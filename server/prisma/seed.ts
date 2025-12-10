@@ -754,7 +754,442 @@ async function main() {
 
   console.log('✅ 医院和科室创建完成');
 
-  // 4. 创建服务分类和服务
+  // 4. 创建医生数据
+  console.log('\n👨‍⚕️ 正在创建医生数据...');
+
+  // 查询各医院的科室用于关联医生
+  const xiehe_xinneike = await prisma.department.findFirst({ where: { hospitalId: xiehe.id, name: '心内科' } });
+  const xiehe_xiaohuaneike = await prisma.department.findFirst({ where: { hospitalId: xiehe.id, name: '消化内科' } });
+  const xiehe_fengshimianyike = await prisma.department.findFirst({ where: { hospitalId: xiehe.id, name: '风湿免疫科' } });
+  const xiehe_pifuke = await prisma.department.findFirst({ where: { hospitalId: xiehe.id, name: '皮肤科' } });
+  const xiehe_guke = await prisma.department.findFirst({ where: { hospitalId: xiehe.id, name: '骨科' } });
+
+  const beiyiyuan_shenneike = await prisma.department.findFirst({ where: { hospitalId: beiyiyuan.id, name: '肾脏内科' } });
+  const beiyiyuan_miniaoke = await prisma.department.findFirst({ where: { hospitalId: beiyiyuan.id, name: '泌尿外科' } });
+
+  const beisanyuan_guke = await prisma.department.findFirst({ where: { hospitalId: beisanyuan.id, name: '骨科' } });
+  const beisanyuan_shengzhi = await prisma.department.findFirst({ where: { hospitalId: beisanyuan.id, name: '生殖医学中心' } });
+
+  const tiantan_shenjingneike = await prisma.department.findFirst({ where: { hospitalId: tiantan.id, name: '神经内科' } });
+  const tiantan_shenjingzhongliuwaike = await prisma.department.findFirst({ where: { hospitalId: tiantan.id, name: '神经肿瘤外科' } });
+
+  const h301_guke = await prisma.department.findFirst({ where: { hospitalId: h301.id, name: '骨科' } });
+  const h301_erbihou = await prisma.department.findFirst({ where: { hospitalId: h301.id, name: '耳鼻咽喉头颈外科' } });
+
+  const fuwai_guanxinbing = await prisma.department.findFirst({ where: { hospitalId: fuwai.id, name: '冠心病诊治中心' } });
+  const fuwai_xinzangyizhi = await prisma.department.findFirst({ where: { hospitalId: fuwai.id, name: '心脏移植中心' } });
+
+  const jishuitan_chuangguke = await prisma.department.findFirst({ where: { hospitalId: jishuitan.id, name: '创伤骨科' } });
+  const jishuitan_yundongyixue = await prisma.department.findFirst({ where: { hospitalId: jishuitan.id, name: '运动医学科' } });
+
+  const tongren_baineizhang = await prisma.department.findFirst({ where: { hospitalId: tongren.id, name: '白内障中心' } });
+  const tongren_erke = await prisma.department.findFirst({ where: { hospitalId: tongren.id, name: '耳科' } });
+
+  const anzhen_guanxinbing = await prisma.department.findFirst({ where: { hospitalId: anzhen.id, name: '冠心病中心' } });
+  const anzhen_daxueguan = await prisma.department.findFirst({ where: { hospitalId: anzhen.id, name: '大血管中心' } });
+
+  const xuanwu_shenjingneike = await prisma.department.findFirst({ where: { hospitalId: xuanwu.id, name: '神经内科' } });
+  const xuanwu_shenjingwaike = await prisma.department.findFirst({ where: { hospitalId: xuanwu.id, name: '神经外科' } });
+
+  await Promise.all([
+    // ========== 北京协和医院医生 ==========
+    prisma.doctor.create({
+      data: {
+        name: '张抒扬',
+        gender: 'male',
+        hospitalId: xiehe.id,
+        departmentId: xiehe_xinneike!.id,
+        title: 'chief',
+        level: 'expert',
+        specialties: ['冠心病', '心力衰竭', '高血压', '心肌病'],
+        introduction: '北京协和医院心内科主任医师、博士生导师，在心血管疾病诊治领域有深厚造诣，尤其擅长冠心病和心力衰竭的诊治。',
+        education: '北京协和医学院博士',
+        experience: '30年',
+        rating: 4.9,
+        consultCount: 2568,
+        reviewCount: 856,
+      },
+    }),
+    prisma.doctor.create({
+      data: {
+        name: '曾小峰',
+        gender: 'male',
+        hospitalId: xiehe.id,
+        departmentId: xiehe_fengshimianyike!.id,
+        title: 'chief',
+        level: 'expert',
+        specialties: ['系统性红斑狼疮', '类风湿关节炎', '强直性脊柱炎', '干燥综合征'],
+        introduction: '北京协和医院风湿免疫科主任，中国风湿病学界领军人物，在系统性红斑狼疮等自身免疫病领域有突出贡献。',
+        education: '北京协和医学院博士',
+        experience: '35年',
+        rating: 5.0,
+        consultCount: 3256,
+        reviewCount: 1023,
+      },
+    }),
+    prisma.doctor.create({
+      data: {
+        name: '钱家鸣',
+        gender: 'female',
+        hospitalId: xiehe.id,
+        departmentId: xiehe_xiaohuaneike!.id,
+        title: 'chief',
+        level: 'expert',
+        specialties: ['炎症性肠病', '消化道肿瘤', '胃肠镜诊治', '功能性胃肠病'],
+        introduction: '北京协和医院消化内科主任医师，在炎症性肠病、消化道早癌诊治方面经验丰富。',
+        education: '北京医科大学博士',
+        experience: '28年',
+        rating: 4.9,
+        consultCount: 1892,
+        reviewCount: 567,
+      },
+    }),
+    prisma.doctor.create({
+      data: {
+        name: '晋红中',
+        gender: 'male',
+        hospitalId: xiehe.id,
+        departmentId: xiehe_pifuke!.id,
+        title: 'chief',
+        level: 'expert',
+        specialties: ['银屑病', '白癜风', '皮肤肿瘤', '过敏性皮肤病'],
+        introduction: '北京协和医院皮肤科主任医师，皮肤病诊治专家，在银屑病、白癜风等疑难皮肤病领域有丰富经验。',
+        education: '中国医学科学院博士',
+        experience: '25年',
+        rating: 4.8,
+        consultCount: 1567,
+        reviewCount: 423,
+      },
+    }),
+
+    // ========== 北京大学第一医院医生 ==========
+    prisma.doctor.create({
+      data: {
+        name: '赵明辉',
+        gender: 'male',
+        hospitalId: beiyiyuan.id,
+        departmentId: beiyiyuan_shenneike!.id,
+        title: 'chief',
+        level: 'expert',
+        specialties: ['IgA肾病', '糖尿病肾病', '慢性肾脏病', '肾小球肾炎'],
+        introduction: '北京大学第一医院肾内科主任，全国肾脏病学界知名专家，在IgA肾病、糖尿病肾病诊治方面国内领先。',
+        education: '北京大学医学部博士',
+        experience: '32年',
+        rating: 5.0,
+        consultCount: 2876,
+        reviewCount: 934,
+      },
+    }),
+    prisma.doctor.create({
+      data: {
+        name: '周利群',
+        gender: 'male',
+        hospitalId: beiyiyuan.id,
+        departmentId: beiyiyuan_miniaoke!.id,
+        title: 'chief',
+        level: 'expert',
+        specialties: ['前列腺癌', '肾癌', '膀胱癌', '微创泌尿外科'],
+        introduction: '北京大学第一医院泌尿外科主任，泌尿系肿瘤微创手术专家，在前列腺癌、肾癌诊治方面经验丰富。',
+        education: '北京大学医学部博士',
+        experience: '28年',
+        rating: 4.9,
+        consultCount: 1923,
+        reviewCount: 612,
+      },
+    }),
+
+    // ========== 北京大学第三医院医生 ==========
+    prisma.doctor.create({
+      data: {
+        name: '乔杰',
+        gender: 'female',
+        hospitalId: beisanyuan.id,
+        departmentId: beisanyuan_shengzhi!.id,
+        title: 'chief',
+        level: 'expert',
+        specialties: ['试管婴儿', '不孕不育', '多囊卵巢综合征', '子宫内膜异位症'],
+        introduction: '北京大学第三医院院长、生殖医学中心主任，中国工程院院士，在辅助生殖技术领域世界知名。',
+        education: '北京医科大学博士',
+        experience: '35年',
+        rating: 5.0,
+        consultCount: 4567,
+        reviewCount: 1523,
+      },
+    }),
+    prisma.doctor.create({
+      data: {
+        name: '刘忠军',
+        gender: 'male',
+        hospitalId: beisanyuan.id,
+        departmentId: beisanyuan_guke!.id,
+        title: 'chief',
+        level: 'expert',
+        specialties: ['脊柱侧弯', '颈椎病', '腰椎间盘突出', '脊柱肿瘤'],
+        introduction: '北京大学第三医院骨科主任医师，脊柱外科专家，在脊柱畸形矫正、微创脊柱手术方面国内领先。',
+        education: '北京大学医学部博士',
+        experience: '30年',
+        rating: 4.9,
+        consultCount: 2134,
+        reviewCount: 678,
+      },
+    }),
+
+    // ========== 北京天坛医院医生 ==========
+    prisma.doctor.create({
+      data: {
+        name: '王拥军',
+        gender: 'male',
+        hospitalId: tiantan.id,
+        departmentId: tiantan_shenjingneike!.id,
+        title: 'chief',
+        level: 'expert',
+        specialties: ['脑血管病', '卒中', '脑梗死', '脑出血'],
+        introduction: '首都医科大学附属北京天坛医院院长，国家神经系统疾病临床医学研究中心主任，脑血管病领域国际知名专家。',
+        education: '首都医科大学博士',
+        experience: '35年',
+        rating: 5.0,
+        consultCount: 3892,
+        reviewCount: 1234,
+      },
+    }),
+    prisma.doctor.create({
+      data: {
+        name: '江涛',
+        gender: 'male',
+        hospitalId: tiantan.id,
+        departmentId: tiantan_shenjingzhongliuwaike!.id,
+        title: 'chief',
+        level: 'expert',
+        specialties: ['脑胶质瘤', '脑膜瘤', '垂体瘤', '颅底肿瘤'],
+        introduction: '北京天坛医院神经外科主任医师，脑肿瘤手术专家，年手术量超过500台，在脑胶质瘤诊治方面国内领先。',
+        education: '首都医科大学博士',
+        experience: '28年',
+        rating: 4.9,
+        consultCount: 2567,
+        reviewCount: 823,
+      },
+    }),
+
+    // ========== 301医院医生 ==========
+    prisma.doctor.create({
+      data: {
+        name: '唐佩福',
+        gender: 'male',
+        hospitalId: h301.id,
+        departmentId: h301_guke!.id,
+        title: 'chief',
+        level: 'expert',
+        specialties: ['骨折', '关节置换', '脊柱外科', '运动损伤'],
+        introduction: '解放军总医院骨科主任医师，全军骨科研究所所长，在复杂骨折、关节置换手术方面经验丰富。',
+        education: '第四军医大学博士',
+        experience: '32年',
+        rating: 4.9,
+        consultCount: 2345,
+        reviewCount: 756,
+      },
+    }),
+    prisma.doctor.create({
+      data: {
+        name: '杨仕明',
+        gender: 'male',
+        hospitalId: h301.id,
+        departmentId: h301_erbihou!.id,
+        title: 'chief',
+        level: 'expert',
+        specialties: ['人工耳蜗', '耳聋', '中耳炎', '耳鸣'],
+        introduction: '解放军总医院耳鼻咽喉头颈外科主任，全军耳鼻咽喉头颈外科中心主任，人工耳蜗植入手术专家。',
+        education: '解放军医学院博士',
+        experience: '30年',
+        rating: 5.0,
+        consultCount: 1876,
+        reviewCount: 567,
+      },
+    }),
+
+    // ========== 阜外医院医生 ==========
+    prisma.doctor.create({
+      data: {
+        name: '乔树宾',
+        gender: 'male',
+        hospitalId: fuwai.id,
+        departmentId: fuwai_guanxinbing!.id,
+        title: 'chief',
+        level: 'expert',
+        specialties: ['冠心病介入', '心肌梗死', '心绞痛', '支架植入'],
+        introduction: '中国医学科学院阜外医院冠心病诊治中心主任，冠心病介入治疗专家，年介入手术量超过1000台。',
+        education: '北京协和医学院博士',
+        experience: '28年',
+        rating: 4.9,
+        consultCount: 3234,
+        reviewCount: 1023,
+      },
+    }),
+    prisma.doctor.create({
+      data: {
+        name: '胡盛寿',
+        gender: 'male',
+        hospitalId: fuwai.id,
+        departmentId: fuwai_xinzangyizhi!.id,
+        title: 'chief',
+        level: 'expert',
+        specialties: ['心脏移植', '冠脉搭桥', '瓣膜置换', '先心病'],
+        introduction: '中国医学科学院阜外医院院长，中国工程院院士，心脏外科顶级专家，心脏移植手术量全国领先。',
+        education: '中国协和医科大学博士',
+        experience: '38年',
+        rating: 5.0,
+        consultCount: 4567,
+        reviewCount: 1456,
+      },
+    }),
+
+    // ========== 积水潭医院医生 ==========
+    prisma.doctor.create({
+      data: {
+        name: '王满宜',
+        gender: 'male',
+        hospitalId: jishuitan.id,
+        departmentId: jishuitan_chuangguke!.id,
+        title: 'chief',
+        level: 'expert',
+        specialties: ['复杂骨折', '骨盆骨折', '髋臼骨折', '创伤骨科'],
+        introduction: '北京积水潭医院创伤骨科主任医师，创伤骨科专家，在复杂骨盆骨折、髋臼骨折手术方面国内领先。',
+        education: '首都医科大学博士',
+        experience: '32年',
+        rating: 4.9,
+        consultCount: 2678,
+        reviewCount: 845,
+      },
+    }),
+    prisma.doctor.create({
+      data: {
+        name: '王雪松',
+        gender: 'male',
+        hospitalId: jishuitan.id,
+        departmentId: jishuitan_yundongyixue!.id,
+        title: 'chief',
+        level: 'expert',
+        specialties: ['运动损伤', '膝关节镜', '肩关节镜', 'ACL重建'],
+        introduction: '北京积水潭医院运动医学科主任，运动损伤诊治专家，多次担任国家队医疗保障工作。',
+        education: '北京大学医学部博士',
+        experience: '25年',
+        rating: 4.8,
+        consultCount: 1987,
+        reviewCount: 623,
+      },
+    }),
+
+    // ========== 同仁医院医生 ==========
+    prisma.doctor.create({
+      data: {
+        name: '朱思泉',
+        gender: 'male',
+        hospitalId: tongren.id,
+        departmentId: tongren_baineizhang!.id,
+        title: 'chief',
+        level: 'expert',
+        specialties: ['白内障', '人工晶体植入', '复杂白内障', '高度近视'],
+        introduction: '首都医科大学附属北京同仁医院白内障中心主任，白内障手术专家，年手术量超过3000台。',
+        education: '首都医科大学博士',
+        experience: '28年',
+        rating: 4.9,
+        consultCount: 4123,
+        reviewCount: 1234,
+      },
+    }),
+    prisma.doctor.create({
+      data: {
+        name: '龚树生',
+        gender: 'male',
+        hospitalId: tongren.id,
+        departmentId: tongren_erke!.id,
+        title: 'chief',
+        level: 'expert',
+        specialties: ['耳聋', '人工耳蜗', '中耳炎', '耳鸣'],
+        introduction: '北京同仁医院耳科主任，耳科学专家，在耳聋诊治、人工耳蜗植入方面经验丰富。',
+        education: '首都医科大学博士',
+        experience: '30年',
+        rating: 4.9,
+        consultCount: 2345,
+        reviewCount: 756,
+      },
+    }),
+
+    // ========== 安贞医院医生 ==========
+    prisma.doctor.create({
+      data: {
+        name: '聂绍平',
+        gender: 'male',
+        hospitalId: anzhen.id,
+        departmentId: anzhen_guanxinbing!.id,
+        title: 'chief',
+        level: 'expert',
+        specialties: ['冠心病', '心肌梗死', '介入治疗', '急性冠脉综合征'],
+        introduction: '首都医科大学附属北京安贞医院急诊危重症中心主任，冠心病急救专家，在急性心肌梗死救治方面经验丰富。',
+        education: '首都医科大学博士',
+        experience: '28年',
+        rating: 4.9,
+        consultCount: 2567,
+        reviewCount: 812,
+      },
+    }),
+    prisma.doctor.create({
+      data: {
+        name: '孙立忠',
+        gender: 'male',
+        hospitalId: anzhen.id,
+        departmentId: anzhen_daxueguan!.id,
+        title: 'chief',
+        level: 'expert',
+        specialties: ['主动脉夹层', '主动脉瘤', '大血管手术', '心脏外科'],
+        introduction: '北京安贞医院心脏外科中心主任，大血管外科专家，在主动脉夹层手术方面全国领先。',
+        education: '首都医科大学博士',
+        experience: '35年',
+        rating: 5.0,
+        consultCount: 3456,
+        reviewCount: 1098,
+      },
+    }),
+
+    // ========== 宣武医院医生 ==========
+    prisma.doctor.create({
+      data: {
+        name: '贾建平',
+        gender: 'male',
+        hospitalId: xuanwu.id,
+        departmentId: xuanwu_shenjingneike!.id,
+        title: 'chief',
+        level: 'expert',
+        specialties: ['阿尔茨海默病', '帕金森病', '认知障碍', '神经退行性疾病'],
+        introduction: '首都医科大学宣武医院神经内科主任，国家老年疾病临床医学研究中心主任，认知障碍领域国际知名专家。',
+        education: '首都医科大学博士',
+        experience: '35年',
+        rating: 5.0,
+        consultCount: 3789,
+        reviewCount: 1156,
+      },
+    }),
+    prisma.doctor.create({
+      data: {
+        name: '凌锋',
+        gender: 'female',
+        hospitalId: xuanwu.id,
+        departmentId: xuanwu_shenjingwaike!.id,
+        title: 'chief',
+        level: 'expert',
+        specialties: ['脑血管病', '颈动脉狭窄', '脑动脉瘤', '介入神经外科'],
+        introduction: '首都医科大学宣武医院神经外科主任医师，介入神经外科专家，在脑血管病介入治疗方面经验丰富。',
+        education: '法国巴黎第六大学博士',
+        experience: '38年',
+        rating: 5.0,
+        consultCount: 2987,
+        reviewCount: 923,
+      },
+    }),
+  ]);
+
+  console.log('✅ 医生创建完成');
+
+  // 5. 创建服务分类和服务
   console.log('\n📦 正在创建服务分类和服务...');
 
   // 服务分类 - 扁平化设计纯色
@@ -1503,6 +1938,7 @@ async function main() {
 
   const categoryCount = await prisma.serviceCategory.count();
   const serviceCount = await prisma.service.count();
+  const doctorCount = await prisma.doctor.count();
   const escortCount = await prisma.escort.count();
   const activeEscorts = await prisma.escort.count({ where: { status: 'active' } });
   const workingEscorts = await prisma.escort.count({ where: { workStatus: 'working' } });
@@ -1513,6 +1949,7 @@ async function main() {
   console.log(`   医院科室: ${departmentCount} 个`);
   console.log(`   - 一级科室: ${topLevelDepts} 个`);
   console.log(`   - 二级科室: ${subDepts} 个`);
+  console.log(`   医生: ${doctorCount} 位`);
   console.log(`   服务分类: ${categoryCount} 个`);
   console.log(`   服务项目: ${serviceCount} 个`);
   console.log(`   陪诊员: ${escortCount} 人 (在岗: ${activeEscorts}, 接单中: ${workingEscorts})`);

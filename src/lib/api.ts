@@ -2,7 +2,13 @@
  * 科科灵管理后台 API 客户端
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'
+import { getCookie } from './cookies'
+
+// 使用代理路径，由 Vite 代理到后端
+const API_BASE_URL = '/api'
+
+// Token 存储的 cookie 名称（与 auth-store 保持一致）
+const ACCESS_TOKEN_KEY = 'thisisjustarandomstring'
 
 // 通用响应类型
 interface ApiResponse<T> {
@@ -24,9 +30,17 @@ interface RequestConfig extends RequestInit {
   params?: Record<string, string | number | boolean | undefined>
 }
 
-// 获取 token
+// 获取 token（从 cookie 获取，与 auth-store 保持一致）
 const getToken = (): string | null => {
-  return localStorage.getItem('admin_token')
+  const cookieValue = getCookie(ACCESS_TOKEN_KEY)
+  if (cookieValue) {
+    try {
+      return JSON.parse(cookieValue)
+    } catch {
+      return cookieValue
+    }
+  }
+  return null
 }
 
 // 通用请求函数
@@ -646,12 +660,15 @@ export const userApi = {
 
 export interface Banner {
   id: string
-  title: string
-  imageUrl: string
-  linkUrl: string | null
-  linkType: string | null
-  sortOrder: number
+  title: string | null
+  image: string
+  link: string | null
+  linkType?: string | null
+  position: string
+  sort: number
   status: string
+  createdAt: string
+  updatedAt: string
 }
 
 export interface HomeStats {
@@ -667,6 +684,76 @@ export const homeApi = {
 
   getStats: () =>
     request<HomeStats>('/home/stats'),
+}
+
+// ============================================
+// 轮播图管理 API
+// ============================================
+
+export interface BannerQuery {
+  position?: string
+  status?: string
+  keyword?: string
+  page?: number
+  pageSize?: number
+}
+
+export interface CreateBannerData {
+  title?: string
+  image: string
+  link?: string
+  linkType?: string
+  position?: string
+  sort?: number
+  status?: string
+}
+
+export interface UpdateBannerData extends Partial<CreateBannerData> { }
+
+export const bannerApi = {
+  // 获取列表
+  getList: (query: BannerQuery = {}) =>
+    request<PaginatedData<Banner>>('/admin/banners', {
+      params: query as Record<string, string | number | boolean | undefined>,
+    }),
+
+  // 获取详情
+  getById: (id: string) =>
+    request<Banner>(`/admin/banners/${id}`),
+
+  // 创建
+  create: (data: CreateBannerData) =>
+    request<Banner>('/admin/banners', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // 更新
+  update: (id: string, data: UpdateBannerData) =>
+    request<Banner>(`/admin/banners/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // 删除
+  delete: (id: string) =>
+    request<void>(`/admin/banners/${id}`, {
+      method: 'DELETE',
+    }),
+
+  // 批量更新排序
+  updateSort: (items: { id: string; sort: number }[]) =>
+    request<{ success: boolean }>('/admin/banners/batch/sort', {
+      method: 'PUT',
+      body: JSON.stringify(items),
+    }),
+
+  // 批量更新状态
+  batchUpdateStatus: (ids: string[], status: string) =>
+    request<{ success: boolean; count: number }>('/admin/banners/batch/status', {
+      method: 'PUT',
+      body: JSON.stringify({ ids, status }),
+    }),
 }
 
 // ============================================
@@ -990,7 +1077,7 @@ export interface CreateServiceData {
   status?: string
 }
 
-export interface UpdateServiceData extends Partial<CreateServiceData> {}
+export interface UpdateServiceData extends Partial<CreateServiceData> { }
 
 export const serviceApi = {
   // 获取服务列表 (分页)
@@ -1051,10 +1138,31 @@ export interface OrderSettings {
   refundFeeRate: number         // 取消扣款比例 (0-1)
 }
 
+// 品牌布局模式
+export type BrandLayout = 'logo-only' | 'logo-name' | 'logo-slogan' | 'logo-name-slogan' | 'name-only' | 'name-slogan'
+
+// 主题模式
+export type ThemeMode = 'light' | 'dark' | 'system'
+
 export interface ThemeSettings {
   primaryColor: string          // 主色调
+  defaultThemeMode: ThemeMode   // 默认主题模式
   brandName: string             // 品牌名称
   brandSlogan: string           // 品牌标语
+  // 顶部 Logo
+  headerLogo: string            // 顶部 Logo（亮色模式）
+  headerLogoDark: string        // 顶部 Logo（暗色模式）
+  // 页脚 Logo
+  footerLogo: string            // 页脚 Logo（亮色模式）
+  footerLogoDark: string        // 页脚 Logo（暗色模式）
+  // 显示开关
+  headerShowName: boolean       // 顶部显示名称
+  headerShowSlogan: boolean     // 顶部显示标语
+  footerShowName: boolean       // 页脚显示名称
+  footerShowSlogan: boolean     // 页脚显示标语
+  // 组合模式
+  headerLayout: BrandLayout     // 顶部布局模式
+  footerLayout: BrandLayout     // 页脚布局模式
 }
 
 export const configApi = {

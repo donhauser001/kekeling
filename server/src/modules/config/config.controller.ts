@@ -2,12 +2,12 @@ import { Controller, Get, Put, Body, Param, Delete } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam, ApiBody } from '@nestjs/swagger';
 import { ConfigService } from './config.service';
 import { ApiResponse } from '../../common/response/api-response';
-import { type OrderSettings, type ThemeSettings } from './dto/config.dto';
+import { type OrderSettings, type ThemeSettings, type BannerPosition, type BannerAreaConfig, type HomePageSettings } from './dto/config.dto';
 
 @ApiTags('系统配置')
 @Controller('config')
 export class ConfigController {
-  constructor(private readonly configService: ConfigService) {}
+  constructor(private readonly configService: ConfigService) { }
 
   @Get()
   @ApiOperation({ summary: '获取所有配置' })
@@ -110,6 +110,60 @@ export class ConfigController {
   @ApiOperation({ summary: '更新主题设置' })
   async updateThemeSettings(@Body() body: Partial<ThemeSettings>) {
     const data = await this.configService.updateThemeSettings(body);
+    return ApiResponse.success(data, '保存成功');
+  }
+
+  // ============================================
+  // 轮播图设置专用接口
+  // ============================================
+
+  @Get('banner/settings')
+  @ApiOperation({ summary: '获取所有轮播图区域设置' })
+  async getBannerSettings() {
+    const data = await this.configService.getBannerSettings();
+    return ApiResponse.success(data);
+  }
+
+  @Get('banner/settings/:position')
+  @ApiOperation({ summary: '获取指定区域轮播图设置' })
+  @ApiParam({
+    name: 'position',
+    description: '轮播图位置：home, services, profile, service-detail, cases',
+  })
+  async getBannerAreaConfig(@Param('position') position: BannerPosition) {
+    const data = await this.configService.getBannerAreaConfig(position);
+    return ApiResponse.success(data);
+  }
+
+  @Put('banner/settings/:position')
+  @ApiOperation({ summary: '更新指定区域轮播图设置' })
+  @ApiParam({
+    name: 'position',
+    description: '轮播图位置：home, services, profile, service-detail, cases',
+  })
+  async updateBannerAreaConfig(
+    @Param('position') position: BannerPosition,
+    @Body() body: Partial<Pick<BannerAreaConfig, 'enabled' | 'width' | 'height'>>,
+  ) {
+    const data = await this.configService.updateBannerAreaConfig(position, body);
+    return ApiResponse.success(data, '保存成功');
+  }
+
+  // ============================================
+  // 首页设置专用接口
+  // ============================================
+
+  @Get('homepage/settings')
+  @ApiOperation({ summary: '获取首页设置' })
+  async getHomePageSettings() {
+    const data = await this.configService.getHomePageSettings();
+    return ApiResponse.success(data);
+  }
+
+  @Put('homepage/settings')
+  @ApiOperation({ summary: '更新首页设置' })
+  async updateHomePageSettings(@Body() body: Partial<HomePageSettings>) {
+    const data = await this.configService.updateHomePageSettings(body);
     return ApiResponse.success(data, '保存成功');
   }
 }

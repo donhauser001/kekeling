@@ -366,6 +366,16 @@ export const sidebarData: SidebarData = {
               url: '/app/switches',
               icon: ToggleLeft,
             },
+            {
+              title: '品牌设置',
+              url: '/app/settings/brand',
+              icon: Sparkles,
+            },
+            {
+              title: '首页管理',
+              url: '/app/settings/homepage',
+              icon: LayoutGrid,
+            },
           ],
         },
       ],

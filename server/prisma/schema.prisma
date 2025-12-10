@@ -363,12 +363,13 @@ model Config {
   @@map("configs")
 }
 
-// 首页轮播图
+// 轮播图（支持多位置）
 model Banner {
   id        String   @id @default(uuid())
   title     String?
   image     String
   link      String?
+  position  String   @default("home") // home=首页, services=服务页, profile=个人中心, service-detail=服务详情, cases=病例页
   sort      Int      @default(0)
   status    String   @default("active") // active, inactive
   createdAt DateTime @default(now()) @map("created_at")

@@ -57,6 +57,9 @@ import { Route as AuthenticatedSettingsDisplayRouteImport } from './routes/_auth
 import { Route as AuthenticatedSettingsAppearanceRouteImport } from './routes/_authenticated/settings/appearance'
 import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated/settings/account'
 import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
+import { Route as AuthenticatedAppBannersRouteImport } from './routes/_authenticated/app/banners'
+import { Route as AuthenticatedAppSettingsHomepageRouteImport } from './routes/_authenticated/app/settings/homepage'
+import { Route as AuthenticatedAppSettingsBrandRouteImport } from './routes/_authenticated/app/settings/brand'
 
 const ClerkRouteRoute = ClerkRouteRouteImport.update({
   id: '/clerk',
@@ -321,6 +324,23 @@ const AuthenticatedErrorsErrorRoute =
     path: '/errors/$error',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAppBannersRoute = AuthenticatedAppBannersRouteImport.update({
+  id: '/app/banners',
+  path: '/app/banners',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAppSettingsHomepageRoute =
+  AuthenticatedAppSettingsHomepageRouteImport.update({
+    id: '/app/settings/homepage',
+    path: '/app/settings/homepage',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAppSettingsBrandRoute =
+  AuthenticatedAppSettingsBrandRouteImport.update({
+    id: '/app/settings/brand',
+    path: '/app/settings/brand',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/clerk': typeof ClerkAuthenticatedRouteRouteWithChildren
@@ -336,6 +356,7 @@ export interface FileRoutesByFullPath {
   '/500': typeof errors500Route
   '/503': typeof errors503Route
   '/': typeof AuthenticatedIndexRoute
+  '/app/banners': typeof AuthenticatedAppBannersRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
@@ -368,6 +389,8 @@ export interface FileRoutesByFullPath {
   '/tags': typeof AuthenticatedTagsIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
   '/workflows': typeof AuthenticatedWorkflowsIndexRoute
+  '/app/settings/brand': typeof AuthenticatedAppSettingsBrandRoute
+  '/app/settings/homepage': typeof AuthenticatedAppSettingsHomepageRoute
 }
 export interface FileRoutesByTo {
   '/clerk': typeof ClerkAuthenticatedRouteRouteWithChildren
@@ -382,6 +405,7 @@ export interface FileRoutesByTo {
   '/500': typeof errors500Route
   '/503': typeof errors503Route
   '/': typeof AuthenticatedIndexRoute
+  '/app/banners': typeof AuthenticatedAppBannersRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
@@ -414,6 +438,8 @@ export interface FileRoutesByTo {
   '/tags': typeof AuthenticatedTagsIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
   '/workflows': typeof AuthenticatedWorkflowsIndexRoute
+  '/app/settings/brand': typeof AuthenticatedAppSettingsBrandRoute
+  '/app/settings/homepage': typeof AuthenticatedAppSettingsHomepageRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -433,6 +459,7 @@ export interface FileRoutesById {
   '/(errors)/500': typeof errors500Route
   '/(errors)/503': typeof errors503Route
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/app/banners': typeof AuthenticatedAppBannersRoute
   '/_authenticated/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/_authenticated/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
@@ -465,6 +492,8 @@ export interface FileRoutesById {
   '/_authenticated/tags/': typeof AuthenticatedTagsIndexRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
   '/_authenticated/workflows/': typeof AuthenticatedWorkflowsIndexRoute
+  '/_authenticated/app/settings/brand': typeof AuthenticatedAppSettingsBrandRoute
+  '/_authenticated/app/settings/homepage': typeof AuthenticatedAppSettingsHomepageRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -482,6 +511,7 @@ export interface FileRouteTypes {
     | '/500'
     | '/503'
     | '/'
+    | '/app/banners'
     | '/errors/$error'
     | '/settings/account'
     | '/settings/appearance'
@@ -514,6 +544,8 @@ export interface FileRouteTypes {
     | '/tags'
     | '/users'
     | '/workflows'
+    | '/app/settings/brand'
+    | '/app/settings/homepage'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/clerk'
@@ -528,6 +560,7 @@ export interface FileRouteTypes {
     | '/500'
     | '/503'
     | '/'
+    | '/app/banners'
     | '/errors/$error'
     | '/settings/account'
     | '/settings/appearance'
@@ -560,6 +593,8 @@ export interface FileRouteTypes {
     | '/tags'
     | '/users'
     | '/workflows'
+    | '/app/settings/brand'
+    | '/app/settings/homepage'
   id:
     | '__root__'
     | '/_authenticated'
@@ -578,6 +613,7 @@ export interface FileRouteTypes {
     | '/(errors)/500'
     | '/(errors)/503'
     | '/_authenticated/'
+    | '/_authenticated/app/banners'
     | '/_authenticated/errors/$error'
     | '/_authenticated/settings/account'
     | '/_authenticated/settings/appearance'
@@ -610,6 +646,8 @@ export interface FileRouteTypes {
     | '/_authenticated/tags/'
     | '/_authenticated/users/'
     | '/_authenticated/workflows/'
+    | '/_authenticated/app/settings/brand'
+    | '/_authenticated/app/settings/homepage'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -965,6 +1003,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedErrorsErrorRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/app/banners': {
+      id: '/_authenticated/app/banners'
+      path: '/app/banners'
+      fullPath: '/app/banners'
+      preLoaderRoute: typeof AuthenticatedAppBannersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/app/settings/homepage': {
+      id: '/_authenticated/app/settings/homepage'
+      path: '/app/settings/homepage'
+      fullPath: '/app/settings/homepage'
+      preLoaderRoute: typeof AuthenticatedAppSettingsHomepageRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/app/settings/brand': {
+      id: '/_authenticated/app/settings/brand'
+      path: '/app/settings/brand'
+      fullPath: '/app/settings/brand'
+      preLoaderRoute: typeof AuthenticatedAppSettingsBrandRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -996,6 +1055,7 @@ const AuthenticatedSettingsRouteRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedAppBannersRoute: typeof AuthenticatedAppBannersRoute
   AuthenticatedErrorsErrorRoute: typeof AuthenticatedErrorsErrorRoute
   AuthenticatedChatsIndexRoute: typeof AuthenticatedChatsIndexRoute
   AuthenticatedDepartmentsIndexRoute: typeof AuthenticatedDepartmentsIndexRoute
@@ -1019,11 +1079,14 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedTagsIndexRoute: typeof AuthenticatedTagsIndexRoute
   AuthenticatedUsersIndexRoute: typeof AuthenticatedUsersIndexRoute
   AuthenticatedWorkflowsIndexRoute: typeof AuthenticatedWorkflowsIndexRoute
+  AuthenticatedAppSettingsBrandRoute: typeof AuthenticatedAppSettingsBrandRoute
+  AuthenticatedAppSettingsHomepageRoute: typeof AuthenticatedAppSettingsHomepageRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRouteRoute: AuthenticatedSettingsRouteRouteWithChildren,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedAppBannersRoute: AuthenticatedAppBannersRoute,
   AuthenticatedErrorsErrorRoute: AuthenticatedErrorsErrorRoute,
   AuthenticatedChatsIndexRoute: AuthenticatedChatsIndexRoute,
   AuthenticatedDepartmentsIndexRoute: AuthenticatedDepartmentsIndexRoute,
@@ -1050,6 +1113,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedTagsIndexRoute: AuthenticatedTagsIndexRoute,
   AuthenticatedUsersIndexRoute: AuthenticatedUsersIndexRoute,
   AuthenticatedWorkflowsIndexRoute: AuthenticatedWorkflowsIndexRoute,
+  AuthenticatedAppSettingsBrandRoute: AuthenticatedAppSettingsBrandRoute,
+  AuthenticatedAppSettingsHomepageRoute: AuthenticatedAppSettingsHomepageRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
