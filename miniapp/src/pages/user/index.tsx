@@ -1,9 +1,10 @@
 import { View, Text, Image, Button } from '@tarojs/components'
-import Taro from '@tarojs/taro'
+import Taro, { useDidShow } from '@tarojs/taro'
 import { useState, useEffect } from 'react'
 import Icon from '@/components/Icon'
 import CustomTabBar from '@/components/CustomTabBar'
 import { getPrimaryColor } from '@/utils/theme'
+import { useEscortIdentity, getEscortStatusText, getWorkStatusText, getWorkStatusColor } from '@/hooks/useEscortIdentity'
 import './index.scss'
 
 // Mock 用户数据
@@ -25,42 +26,60 @@ const mockUser = {
 
 // 菜单项
 const menuItems = [
-  { 
-    key: 'patients', 
-    title: '就诊人管理', 
-    icon: 'users', 
-    link: '/pages/user/patients' 
+  {
+    key: 'patients',
+    title: '就诊人管理',
+    icon: 'users',
+    link: '/pages/user/patients'
   },
-  { 
-    key: 'address', 
-    title: '地址管理', 
-    icon: 'map-pin', 
-    link: '/pages/user/address' 
+  {
+    key: 'membership',
+    title: '会员中心',
+    icon: 'crown',
+    link: '/pages/marketing/membership/index'
   },
-  { 
-    key: 'coupons', 
-    title: '我的优惠券', 
-    icon: 'ticket', 
-    badge: '2', 
-    link: '/pages/user/coupons' 
+  {
+    key: 'coupons',
+    title: '我的优惠券',
+    icon: 'ticket',
+    badge: '2',
+    link: '/pages/marketing/coupons/index'
   },
-  { 
-    key: 'feedback', 
-    title: '意见反馈', 
-    icon: 'headphones', 
-    link: '/pages/user/feedback' 
+  {
+    key: 'points',
+    title: '我的积分',
+    icon: 'award',
+    link: '/pages/marketing/points/index'
   },
-  { 
-    key: 'help', 
-    title: '帮助中心', 
-    icon: 'help-circle', 
-    link: '/pages/user/help' 
+  {
+    key: 'referrals',
+    title: '邀请好友',
+    icon: 'user-plus',
+    link: '/pages/marketing/referrals/index'
   },
-  { 
-    key: 'about', 
-    title: '关于我们', 
-    icon: 'building', 
-    link: '/pages/user/about' 
+  {
+    key: 'campaigns',
+    title: '优惠活动',
+    icon: 'sparkles',
+    link: '/pages/marketing/campaigns/index'
+  },
+  {
+    key: 'feedback',
+    title: '意见反馈',
+    icon: 'headphones',
+    link: '/pages/user/feedback'
+  },
+  {
+    key: 'help',
+    title: '帮助中心',
+    icon: 'help-circle',
+    link: '/pages/user/help'
+  },
+  {
+    key: 'about',
+    title: '关于我们',
+    icon: 'building',
+    link: '/pages/user/about'
   },
 ]
 
@@ -76,6 +95,18 @@ export default function User() {
   const [user, setUser] = useState<typeof mockUser | null>(null)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
 
+  // 陪诊员身份检测
+  const {
+    isEscort,
+    escortInfo,
+    isPending,
+    isActive,
+    isSuspended,
+    isWorking,
+    isBusy,
+    refresh: refreshEscortIdentity,
+  } = useEscortIdentity()
+
   useEffect(() => {
     // TODO: 检查登录状态
     const token = Taro.getStorageSync('token')
@@ -84,6 +115,13 @@ export default function User() {
       setUser(mockUser)
     }
   }, [])
+
+  // 页面显示时刷新陪诊员身份
+  useDidShow(() => {
+    if (isLoggedIn) {
+      refreshEscortIdentity()
+    }
+  })
 
   const handleLogin = () => {
     Taro.navigateTo({ url: '/pages/auth/login' })
@@ -177,6 +215,53 @@ export default function User() {
           ))}
         </View>
       </View>
+
+      {/* 陪诊员工作台入口 - 仅陪诊员可见 */}
+      {isLoggedIn && isEscort && (
+        <View
+          className='workbench-entry card'
+          onClick={() => {
+            if (isSuspended) {
+              Taro.showToast({ title: '账号已被封禁', icon: 'none' })
+              return
+            }
+            Taro.navigateTo({ url: '/pages/workbench/index' })
+          }}
+        >
+          <View className='workbench-left'>
+            <View className='workbench-icon'>
+              <Icon name='briefcase' size={28} color='#fff' />
+            </View>
+            <View className='workbench-info'>
+              <View className='workbench-title-row'>
+                <Text className='workbench-title'>陪诊员工作台</Text>
+                {isPending && (
+                  <View className='status-tag pending'>审核中</View>
+                )}
+                {isSuspended && (
+                  <View className='status-tag suspended'>已封禁</View>
+                )}
+                {isActive && (
+                  <View
+                    className='status-tag'
+                    style={{ backgroundColor: getWorkStatusColor(escortInfo?.workStatus || 'resting') }}
+                  >
+                    {getWorkStatusText(escortInfo?.workStatus || 'resting')}
+                  </View>
+                )}
+              </View>
+              <Text className='workbench-desc'>
+                {isPending ? '您的陪诊员资质正在审核中' :
+                  isSuspended ? '如有疑问请联系客服' :
+                    isBusy ? '您正在服务中' :
+                      isWorking ? '今日接单中，点击查看详情' :
+                        '点击进入工作台管理订单'}
+              </Text>
+            </View>
+          </View>
+          <Icon name='chevron-right' size={20} color='#999' />
+        </View>
+      )}
 
       {/* 功能菜单 */}
       <View className='menu-section card'>

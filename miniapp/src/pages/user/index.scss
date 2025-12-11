@@ -185,6 +185,68 @@
   color: var(--text-color-secondary);
 }
 
+// 陪诊员工作台入口
+.workbench-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 24px 24px;
+  padding: 24px;
+}
+
+.workbench-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.workbench-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #1890ff, #096dd9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.workbench-info {
+  flex: 1;
+}
+
+.workbench-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.workbench-title {
+  font-size: 30px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.status-tag {
+  padding: 4px 12px;
+  font-size: 20px;
+  color: #fff;
+  border-radius: 4px;
+
+  &.pending {
+    background-color: #faad14;
+  }
+
+  &.suspended {
+    background-color: #ff4d4f;
+  }
+}
+
+.workbench-desc {
+  font-size: 24px;
+  color: var(--text-color-secondary);
+}
+
 // 功能菜单
 .menu-section {
   margin: 0 24px 24px;

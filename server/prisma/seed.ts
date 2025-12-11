@@ -2,6 +2,85 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+// ========== 陪诊员系统种子数据 ==========
+
+// 陪诊员等级种子数据
+async function createEscortLevels() {
+  const levels = [
+    { code: 'senior', name: '资深陪诊员', commissionRate: 80, dispatchWeight: 20, minOrderCount: 500, minRating: 4.5, badge: '#f59e0b', description: '完成500+订单，评分4.5以上', sort: 1 },
+    { code: 'intermediate', name: '中级陪诊员', commissionRate: 70, dispatchWeight: 15, minOrderCount: 100, minRating: 4.0, badge: '#3b82f6', description: '完成100+订单，评分4.0以上', sort: 2 },
+    { code: 'junior', name: '初级陪诊员', commissionRate: 60, dispatchWeight: 10, minOrderCount: 10, minRating: 3.5, badge: '#22c55e', description: '完成10+订单', sort: 3 },
+    { code: 'trainee', name: '实习陪诊员', commissionRate: 50, dispatchWeight: 5, badge: '#9ca3af', description: '新加入平台的陪诊员', sort: 4 },
+  ];
+
+  for (const level of levels) {
+    await prisma.escortLevel.upsert({
+      where: { code: level.code },
+      update: level,
+      create: level,
+    });
+  }
+
+  console.log(`   陪诊员等级: ${levels.length} 个`);
+}
+
+// 陪诊员标签种子数据
+async function createEscortTags() {
+  const tags = [
+    // 特点标签
+    { name: '耐心细致', category: 'feature', icon: 'heart', color: '#ec4899' },
+    { name: '经验丰富', category: 'feature', icon: 'award', color: '#f59e0b' },
+    { name: '沟通能力强', category: 'feature', icon: 'message-circle', color: '#3b82f6' },
+    { name: '准时守信', category: 'feature', icon: 'clock', color: '#22c55e' },
+    { name: '亲和力强', category: 'feature', icon: 'smile', color: '#8b5cf6' },
+    { name: '责任心强', category: 'feature', icon: 'shield', color: '#06b6d4' },
+    // 技能标签
+    { name: '儿科专长', category: 'skill', icon: 'baby', color: '#f472b6' },
+    { name: '肿瘤科专长', category: 'skill', icon: 'activity', color: '#ef4444' },
+    { name: '妇产科专长', category: 'skill', icon: 'heart', color: '#ec4899' },
+    { name: '老年护理', category: 'skill', icon: 'users', color: '#0ea5e9' },
+    { name: '住院陪护', category: 'skill', icon: 'bed', color: '#6366f1' },
+    { name: '手术陪护', category: 'skill', icon: 'scissors', color: '#dc2626' },
+    { name: '康复指导', category: 'skill', icon: 'trending-up', color: '#16a34a' },
+    // 资质标签
+    { name: '护士执业证', category: 'cert', icon: 'file-check', color: '#0891b2' },
+    { name: '健康管理师', category: 'cert', icon: 'clipboard', color: '#059669' },
+    { name: '急救培训证', category: 'cert', icon: 'alert-circle', color: '#dc2626' },
+    { name: '养老护理证', category: 'cert', icon: 'home', color: '#7c3aed' },
+  ];
+
+  for (const tag of tags) {
+    await prisma.escortTag.upsert({
+      where: { name: tag.name },
+      update: tag,
+      create: tag,
+    });
+  }
+
+  console.log(`   陪诊员标签: ${tags.length} 个`);
+}
+
+// 分成配置种子数据
+async function createCommissionConfig() {
+  // 删除旧配置
+  await prisma.commissionConfig.deleteMany();
+
+  await prisma.commissionConfig.create({
+    data: {
+      defaultRate: 70,
+      minWithdrawAmount: 100,
+      withdrawFeeRate: 0,
+      withdrawFeeFixed: 0,
+      settlementMode: 'realtime',
+      withdrawDaysOfWeek: JSON.stringify([1, 2, 3, 4, 5]), // 周一到周五
+      withdrawTimeRange: JSON.stringify({ start: '09:00', end: '18:00' }),
+      remark: '默认分成配置：陪诊员70%，平台30%',
+    },
+  });
+
+  console.log(`   分成配置: 1 条`);
+}
+
 // 科室库数据 (科室类目字典)
 async function createDepartmentTemplates() {
   const templates: Array<{
@@ -236,6 +315,12 @@ async function main() {
   await prisma.escortHospital.deleteMany();
   await prisma.doctor.deleteMany();
   await prisma.department.deleteMany();
+  // 清理钱包相关数据
+  await prisma.walletTransaction.deleteMany().catch(() => { });
+  await prisma.withdrawal.deleteMany().catch(() => { });
+  await prisma.walletDebt.deleteMany().catch(() => { });
+  await prisma.escortWallet.deleteMany().catch(() => { });
+  await prisma.escortReview.deleteMany().catch(() => { });
   await prisma.escort.deleteMany();
   await prisma.hospital.deleteMany();
   await prisma.operationGuideOnService.deleteMany();
@@ -247,6 +332,13 @@ async function main() {
   await prisma.banner.deleteMany();
   await prisma.departmentTemplate.deleteMany();
   console.log('✅ 清理旧数据完成');
+
+  // 0.0 创建陪诊员系统基础配置
+  console.log('\n⚙️ 正在创建陪诊员系统配置...');
+  await createEscortLevels();
+  await createEscortTags();
+  await createCommissionConfig();
+  console.log('✅ 陪诊员系统配置创建完成');
 
   // 0. 创建科室库 (科室类目字典)
   const deptTemplates = await createDepartmentTemplates();
@@ -1764,7 +1856,7 @@ async function main() {
         gender: 'female',
         phone: '13800138001',
         cityCode: '110100',
-        level: 'senior',
+        levelCode: 'senior',
         experience: '8年',
         introduction: '从事医疗陪诊服务8年，熟悉北京各大三甲医院就诊流程，服务过上千位患者，深受好评。',
         tags: ['耐心细致', '经验丰富', '三甲医院专家'],
@@ -1780,7 +1872,7 @@ async function main() {
         gender: 'male',
         phone: '13800138002',
         cityCode: '110100',
-        level: 'senior',
+        levelCode: 'senior',
         experience: '6年',
         introduction: '专注肿瘤科陪诊，对北京肿瘤医院、中国医学科学院肿瘤医院非常熟悉。',
         tags: ['肿瘤科专家', '24小时服务', '住院陪护'],
@@ -1796,7 +1888,7 @@ async function main() {
         gender: 'female',
         phone: '13800138003',
         cityCode: '110100',
-        level: 'intermediate',
+        levelCode: 'intermediate',
         experience: '4年',
         introduction: '擅长儿科陪诊，有爱心，善于与小朋友沟通，让看病不再可怕。',
         tags: ['儿科专长', '亲和力强', '细心周到'],
@@ -1812,7 +1904,7 @@ async function main() {
         gender: 'male',
         phone: '13800138004',
         cityCode: '110100',
-        level: 'intermediate',
+        levelCode: 'intermediate',
         experience: '3年',
         introduction: '退伍军人，责任心强，擅长老年患者陪护。',
         tags: ['老年护理', '责任心强', '力量型服务'],
@@ -1828,7 +1920,7 @@ async function main() {
         gender: 'female',
         phone: '13800138005',
         cityCode: '110100',
-        level: 'junior',
+        levelCode: 'junior',
         experience: '2年',
         introduction: '护理专业毕业，持有护士资格证，专业素养高。',
         tags: ['护理专业', '持证上岗', '年轻活力'],
@@ -1844,7 +1936,7 @@ async function main() {
         gender: 'male',
         phone: '13800138006',
         cityCode: '110100',
-        level: 'junior',
+        levelCode: 'junior',
         experience: '1年',
         introduction: '认真负责，服务态度好，正在快速成长中。',
         tags: ['态度好', '守时', '学习能力强'],
@@ -1860,7 +1952,7 @@ async function main() {
         gender: 'female',
         phone: '13800138007',
         cityCode: '110100',
-        level: 'trainee',
+        levelCode: 'trainee',
         experience: '半年',
         introduction: '实习陪诊员，热情学习中。',
         tags: ['新人', '热情'],
@@ -1876,7 +1968,7 @@ async function main() {
         gender: 'male',
         phone: '13800138008',
         cityCode: '110100',
-        level: 'senior',
+        levelCode: 'senior',
         experience: '10年',
         introduction: '资深陪诊员，曾任医院护工组长，对医院运作非常了解。',
         tags: ['资深专家', '全科服务', 'VIP专属'],
@@ -1892,7 +1984,7 @@ async function main() {
         gender: 'female',
         phone: '13800138009',
         cityCode: '110100',
-        level: 'intermediate',
+        levelCode: 'intermediate',
         experience: '5年',
         introduction: '妇产科陪诊专家，陪伴过上百位准妈妈完成产检和分娩。',
         tags: ['妇产科', '产检陪同', '温柔体贴'],
@@ -1908,7 +2000,7 @@ async function main() {
         gender: 'male',
         phone: '13800138010',
         cityCode: '110100',
-        level: 'intermediate',
+        levelCode: 'intermediate',
         experience: '4年',
         introduction: '骨科陪诊专长，熟悉骨科检查和手术流程。',
         tags: ['骨科专长', '手术陪护', '康复指导'],
@@ -1982,6 +2074,20 @@ async function main() {
     data: { escortId: escorts[9].id, hospitalId: jishuitan.id, familiarDepts: JSON.stringify(['骨科', '脊柱外科']) },
   });
 
+  // 为每个陪诊员创建钱包
+  console.log('\n💰 正在创建陪诊员钱包...');
+  for (const escort of escorts) {
+    await prisma.escortWallet.create({
+      data: {
+        escortId: escort.id,
+        balance: 0,
+        frozenBalance: 0,
+        totalEarned: 0,
+        totalWithdrawn: 0,
+      },
+    });
+  }
+  console.log(`   陪诊员钱包: ${escorts.length} 个`);
   console.log('✅ 陪诊员数据创建完成');
 
   // 统计

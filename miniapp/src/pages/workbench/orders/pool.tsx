@@ -1,8 +1,9 @@
-import { View, Text, Button } from '@tarojs/components'
+import { View, Text, Button, Picker } from '@tarojs/components'
 import Taro, { useDidShow } from '@tarojs/taro'
 import { useState, useEffect } from 'react'
 import Icon from '@/components/Icon'
 import { get, post } from '@/services/request'
+import { hospitalsApi } from '@/services/api'
 import { getPrimaryColor } from '@/utils/theme'
 import './pool.scss'
 
@@ -19,17 +20,56 @@ interface PoolOrder {
   createdAt: string
 }
 
+// 城市列表（常用城市）
+const cityOptions = [
+  { code: '', name: '全部城市' },
+  { code: '110100', name: '北京市' },
+  { code: '310100', name: '上海市' },
+  { code: '440100', name: '广州市' },
+  { code: '440300', name: '深圳市' },
+  { code: '330100', name: '杭州市' },
+  { code: '320100', name: '南京市' },
+  { code: '510100', name: '成都市' },
+  { code: '420100', name: '武汉市' },
+]
+
 export default function OrderPool() {
   const [orders, setOrders] = useState<PoolOrder[]>([])
   const [loading, setLoading] = useState(true)
   const [grabbing, setGrabbing] = useState<string | null>(null)
 
+  // 筛选状态
+  const [cityCode, setCityCode] = useState<string>('')
+  const [hospitalId, setHospitalId] = useState<string>('')
+  const [hospitals, setHospitals] = useState<Array<{ id: string; name: string }>>([])
+  const [hospitalPickerOpen, setHospitalPickerOpen] = useState(false)
+
+  // 加载医院列表
+  const loadHospitals = async () => {
+    try {
+      const result = await hospitalsApi.getList({ pageSize: 100 })
+      const data = result?.data?.data || result?.data || []
+      setHospitals([{ id: '', name: '全部医院' }, ...data.map((h: any) => ({ id: h.id, name: h.name || h.shortName }))])
+    } catch (err) {
+      console.error('加载医院列表失败:', err)
+    }
+  }
+
+  useEffect(() => {
+    loadHospitals()
+  }, [])
+
   // 加载可抢订单
   const loadOrders = async () => {
     try {
       setLoading(true)
+      // 构建查询参数
+      const params: any = {}
+      if (cityCode) params.cityCode = cityCode
+      if (hospitalId) params.hospitalId = hospitalId
+
       // 获取待接单的订单 (status = 'paid')
-      const result = await get('/escort/orders/pool')
+      const result = await get('/escort/orders/pool', params)
       const data = result?.data || result || []
       setOrders(Array.isArray(data) ? data : [])
     } catch (err) {
@@ -42,7 +82,7 @@ export default function OrderPool() {
 
   useEffect(() => {
     loadOrders()
-  }, [])
+  }, [cityCode, hospitalId])
 
   useDidShow(() => {
     loadOrders()
@@ -52,11 +92,11 @@ export default function OrderPool() {
   const handleGrab = async (orderId: string) => {
     try {
       setGrabbing(orderId)
-      
+
       await post(`/escort/orders/${orderId}/grab`)
-      
+
       Taro.showToast({ title: '抢单成功！', icon: 'success' })
-      
+
       // 延迟后刷新列表
       setTimeout(() => {
         loadOrders()
@@ -82,14 +122,14 @@ export default function OrderPool() {
     const today = new Date()
     const tomorrow = new Date(today)
     tomorrow.setDate(tomorrow.getDate() + 1)
-    
+
     const dateOnly = date.toISOString().split('T')[0]
     const todayOnly = today.toISOString().split('T')[0]
     const tomorrowOnly = tomorrow.toISOString().split('T')[0]
-    
+
     if (dateOnly === todayOnly) return '今天'
     if (dateOnly === tomorrowOnly) return '明天'
-    
+
     return `${date.getMonth() + 1}/${date.getDate()}`
   }
 
@@ -104,12 +144,65 @@ export default function OrderPool() {
     )
   }
 
+  // 城市选择
+  const handleCityChange = (e: any) => {
+    const index = e.detail.value
+    const selectedCity = cityOptions[index]
+    setCityCode(selectedCity.code)
+    setHospitalId('') // 切换城市时清空医院筛选
+  }
+
+  // 医院选择
+  const handleHospitalChange = (e: any) => {
+    const index = e.detail.value
+    const selectedHospital = hospitals[index]
+    setHospitalId(selectedHospital.id)
+  }
+
+  const selectedCityName = cityOptions.find(c => c.code === cityCode)?.name || '全部城市'
+  const selectedHospitalName = hospitals.find(h => h.id === hospitalId)?.name || '全部医院'
+
   return (
     <View className='pool-page'>
       {/* 提示信息 */}
       <View className='tip-bar'>
         <Icon name='info' size={16} color={getPrimaryColor()} />
         <Text>以下订单可抢，手快有手慢无！</Text>
+      </View>
+
+      {/* 筛选栏 */}
+      <View className='filter-bar'>
+        <Picker
+          mode='selector'
+          range={cityOptions}
+          rangeKey='name'
+          value={cityOptions.findIndex(c => c.code === cityCode)}
+          onChange={handleCityChange}
+        >
+          <View className='filter-item'>
+            <Icon name='map-pin' size={16} color={getPrimaryColor()} />
+            <Text>{selectedCityName}</Text>
+            <Icon name='chevron-down' size={14} color='#999' />
+          </View>
+        </Picker>
+        <Picker
+          mode='selector'
+          range={hospitals}
+          rangeKey='name'
+          value={hospitals.findIndex(h => h.id === hospitalId)}
+          onChange={handleHospitalChange}
+        >
+          <View className='filter-item'>
+            <Icon name='hospital' size={16} color={getPrimaryColor()} />
+            <Text>{selectedHospitalName}</Text>
+            <Icon name='chevron-down' size={14} color='#999' />
+          </View>
+        </Picker>
+        {(cityCode || hospitalId) && (
+          <View className='filter-clear' onClick={() => { setCityCode(''); setHospitalId('') }}>
+            <Text>清除</Text>
+          </View>
+        )}
       </View>
 
       {/* 订单列表 */}
@@ -155,15 +248,15 @@ export default function OrderPool() {
                 <View className='order-meta'>
                   <Text className='order-no'>订单号：{order.orderNo}</Text>
                   <Text className='order-created'>
-                    {new Date(order.createdAt).toLocaleString('zh-CN', { 
-                      month: 'numeric', 
-                      day: 'numeric', 
-                      hour: '2-digit', 
-                      minute: '2-digit' 
+                    {new Date(order.createdAt).toLocaleString('zh-CN', {
+                      month: 'numeric',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
                     })} 下单
                   </Text>
                 </View>
-                <Button 
+                <Button
                   className='grab-btn'
                   onClick={() => handleGrab(order.id)}
                   disabled={grabbing === order.id}
@@ -173,7 +266,7 @@ export default function OrderPool() {
               </View>
             </View>
           ))}
-          
+
           {/* 底部刷新 */}
           <View className='refresh-tip' onClick={loadOrders}>
             <Icon name='refresh-cw' size={16} color={getPrimaryColor()} />

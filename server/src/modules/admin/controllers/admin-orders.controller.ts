@@ -2,11 +2,15 @@ import { Controller, Get, Post, Put, Param, Query, Body } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiQuery, ApiParam, ApiBody } from '@nestjs/swagger';
 import { AdminOrdersService } from '../services/admin-orders.service';
 import { ApiResponse } from '../../../common/response/api-response';
+import { DispatchService } from '../../escort-app/dispatch.service';
 
 @ApiTags('管理端-订单')
 @Controller('admin/orders')
 export class AdminOrdersController {
-  constructor(private readonly ordersService: AdminOrdersService) {}
+  constructor(
+    private readonly ordersService: AdminOrdersService,
+    private readonly dispatchService: DispatchService,
+  ) { }
 
   // ============================================
   // 查询
@@ -63,6 +67,49 @@ export class AdminOrdersController {
   async findOne(@Param('id') id: string) {
     const data = await this.ordersService.findById(id);
     return ApiResponse.success(data);
+  }
+
+  @Get(':id/logs')
+  @ApiOperation({ summary: '获取订单日志' })
+  @ApiParam({ name: 'id', description: '订单ID' })
+  async getLogs(@Param('id') id: string) {
+    const data = await this.ordersService.getOrderLogs(id);
+    return ApiResponse.success(data);
+  }
+
+  // ============================================
+  // 智能派单
+  // ============================================
+
+  @Get(':id/dispatch/recommendations')
+  @ApiOperation({ summary: '获取派单推荐（智能匹配陪诊员）' })
+  @ApiParam({ name: 'id', description: '订单ID' })
+  @ApiQuery({ name: 'limit', required: false, description: '返回数量' })
+  async getDispatchRecommendations(
+    @Param('id') id: string,
+    @Query('limit') limit?: number,
+  ) {
+    const data = await this.dispatchService.getDispatchRecommendations(id, limit ? Number(limit) : 5);
+    return ApiResponse.success(data);
+  }
+
+  @Post(':id/dispatch/auto')
+  @ApiOperation({ summary: '自动派单（系统智能匹配）' })
+  @ApiParam({ name: 'id', description: '订单ID' })
+  async autoDispatch(@Param('id') id: string) {
+    const success = await this.dispatchService.autoAssign(id);
+    if (success) {
+      return ApiResponse.success(null, '自动派单成功');
+    } else {
+      return ApiResponse.error('没有合适的陪诊员可分配');
+    }
+  }
+
+  @Post('dispatch/batch')
+  @ApiOperation({ summary: '批量自动派单（处理所有待派单订单）' })
+  async batchAutoDispatch() {
+    const result = await this.dispatchService.autoDispatchPendingOrders();
+    return ApiResponse.success(result, `处理 ${result.processed} 个订单，成功分配 ${result.assigned} 个`);
   }
 
   // ============================================

@@ -286,6 +286,158 @@ export function useUpdateEscortHospitals() {
   })
 }
 
+export function useReviewEscort() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, action, note }: { id: string; action: 'approve' | 'reject'; note?: string }) =>
+      escortApi.review(id, action, note),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['escorts'] })
+    },
+  })
+}
+
+// ============================================
+// 陪诊员等级
+// ============================================
+
+import { escortLevelApi, escortTagApi, withdrawalApi, type WithdrawalQuery } from '@/lib/api'
+
+export function useEscortLevels() {
+  return useQuery({
+    queryKey: ['escort-levels'],
+    queryFn: () => escortLevelApi.getList(),
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useEscortLevel(id: string) {
+  return useQuery({
+    queryKey: ['escort-levels', id],
+    queryFn: () => escortLevelApi.getById(id),
+    enabled: !!id,
+  })
+}
+
+export function useCreateEscortLevel() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: escortLevelApi.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['escort-levels'] })
+    },
+  })
+}
+
+export function useUpdateEscortLevel() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Parameters<typeof escortLevelApi.update>[1] }) =>
+      escortLevelApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['escort-levels'] })
+    },
+  })
+}
+
+export function useDeleteEscortLevel() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: escortLevelApi.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['escort-levels'] })
+    },
+  })
+}
+
+// ============================================
+// 陪诊员标签
+// ============================================
+
+export function useEscortTags(params?: { category?: string; status?: string }) {
+  return useQuery({
+    queryKey: ['escort-tags', params],
+    queryFn: () => escortTagApi.getList(params),
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useEscortTagsGrouped() {
+  return useQuery({
+    queryKey: ['escort-tags', 'grouped'],
+    queryFn: () => escortTagApi.getGrouped(),
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+// ============================================
+// 提现管理
+// ============================================
+
+export function useWithdrawals(query: WithdrawalQuery = {}) {
+  return useQuery({
+    queryKey: ['withdrawals', query],
+    queryFn: () => withdrawalApi.getList(query),
+    staleTime: 30 * 1000,
+  })
+}
+
+export function useWithdrawalStats() {
+  return useQuery({
+    queryKey: ['withdrawals', 'stats'],
+    queryFn: () => withdrawalApi.getStats(),
+    staleTime: 60 * 1000,
+  })
+}
+
+export function useWithdrawal(id: string) {
+  return useQuery({
+    queryKey: ['withdrawals', id],
+    queryFn: () => withdrawalApi.getById(id),
+    enabled: !!id,
+  })
+}
+
+export function useReviewWithdrawal() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, action, note }: { id: string; action: 'approve' | 'reject'; note?: string }) =>
+      withdrawalApi.review(id, action, note),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['withdrawals'] })
+    },
+  })
+}
+
+export function useConfirmWithdrawalTransfer() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, transferNo }: { id: string; transferNo: string }) =>
+      withdrawalApi.confirmTransfer(id, transferNo),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['withdrawals'] })
+    },
+  })
+}
+
+export function useMarkWithdrawalFailed() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+      withdrawalApi.markFailed(id, reason),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['withdrawals'] })
+    },
+  })
+}
+
 // ============================================
 // 服务分类
 // ============================================

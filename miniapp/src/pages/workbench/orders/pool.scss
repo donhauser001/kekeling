@@ -24,7 +24,9 @@
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .loading-text {
@@ -42,6 +44,36 @@
   font-size: 26px;
   color: var(--primary-color);
   background-color: var(--primary-color-light);
+}
+
+// 筛选栏
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 24px;
+  background-color: #fff;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.filter-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  font-size: 26px;
+  color: var(--text-color);
+  background-color: var(--background-color);
+  border-radius: 40px;
+  flex: 1;
+}
+
+.filter-clear {
+  padding: 12px 20px;
+  font-size: 26px;
+  color: var(--primary-color);
+  background-color: var(--primary-color-light);
+  border-radius: 40px;
 }
 
 // 空状态
@@ -192,4 +224,3 @@
   font-size: 26px;
   color: var(--primary-color);
 }
-

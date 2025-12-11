@@ -19,6 +19,9 @@ interface OrderDetail {
   departmentName?: string
   remark?: string
   createdAt: string
+  commissionRate?: number | null
+  commissionAmount?: number | null
+  platformAmount?: number | null
   service?: {
     name: string
     description?: string
@@ -84,7 +87,7 @@ export default function EscortOrderDetail() {
   // 更新订单状态
   const handleUpdateStatus = async () => {
     if (!order) return
-    
+
     const statusInfo = getStatusMap()[order.status]
     if (!statusInfo?.nextStatus) return
 
@@ -114,7 +117,7 @@ export default function EscortOrderDetail() {
       Taro.showToast({ title: '暂无联系方式', icon: 'none' })
       return
     }
-    Taro.makePhoneCall({ 
+    Taro.makePhoneCall({
       phoneNumber: phone,
       fail: () => {
         Taro.showToast({ title: phone, icon: 'none', duration: 3000 })
@@ -128,7 +131,7 @@ export default function EscortOrderDetail() {
       Taro.showToast({ title: '暂无位置信息', icon: 'none' })
       return
     }
-    
+
     Taro.openLocation({
       latitude: order.hospital.latitude,
       longitude: order.hospital.longitude,
@@ -185,7 +188,7 @@ export default function EscortOrderDetail() {
       {/* 地图 */}
       {order.hospital?.latitude && order.hospital?.longitude && (
         <View className='map-section'>
-          <MapView 
+          <MapView
             latitude={order.hospital.latitude}
             longitude={order.hospital.longitude}
             height={200}
@@ -268,10 +271,43 @@ export default function EscortOrderDetail() {
         </View>
       </View>
 
+      {/* 收入信息（已完成订单显示） */}
+      {order.status === 'completed' && (order.commissionRate !== null || order.commissionAmount !== null) && (
+        <View className='section card income-section'>
+          <Text className='section-title'>收入明细</Text>
+          <View className='income-info'>
+            {order.commissionRate !== null && (
+              <View className='info-row'>
+                <Text className='label'>分成比例</Text>
+                <Text className='value'>{order.commissionRate}%</Text>
+              </View>
+            )}
+            {order.commissionAmount !== null && (
+              <View className='info-row highlight'>
+                <Text className='label'>分成金额</Text>
+                <Text className='value price'>¥{order.commissionAmount.toFixed(2)}</Text>
+              </View>
+            )}
+            {order.platformAmount !== null && (
+              <View className='info-row'>
+                <Text className='label'>平台收入</Text>
+                <Text className='value'>¥{order.platformAmount.toFixed(2)}</Text>
+              </View>
+            )}
+            {order.commissionAmount !== null && (
+              <View className='info-row highlight'>
+                <Text className='label'>实际到账</Text>
+                <Text className='value price large'>¥{order.commissionAmount.toFixed(2)}</Text>
+              </View>
+            )}
+          </View>
+        </View>
+      )}
+
       {/* 底部操作 */}
       {statusInfo.nextAction && (
         <View className='bottom-bar safe-area-bottom'>
-          <Button 
+          <Button
             className='action-btn'
             onClick={handleUpdateStatus}
             disabled={updating}

@@ -1,5 +1,6 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { NotificationService } from '../notification/notification.service';
 import * as crypto from 'crypto';
 
 // 微信支付配置（从环境变量读取）
@@ -26,7 +27,144 @@ export interface WxPaymentParams {
 
 @Injectable()
 export class PaymentService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationService: NotificationService,
+    @Inject(forwardRef(() => import('../membership/membership.service').then(m => m.MembershipService)))
+    private membershipService?: any,
+  ) { }
+
+  /**
+   * 处理用户指定陪诊员的自动分配
+   * 在支付成功后调用
+   */
+  private async handleUserSelectEscort(orderId: string): Promise<boolean> {
+    try {
+      const order = await this.prisma.order.findUnique({
+        where: { id: orderId },
+        select: {
+          id: true,
+          orderNo: true,
+          userId: true,
+          assignMethod: true,
+          preAssignedEscortId: true,
+          status: true,
+          appointmentDate: true,
+          appointmentTime: true,
+        },
+      });
+
+      // 只处理用户指定模式且有预分配陪诊员的订单
+      if (!order || order.assignMethod !== 'user_select' || !order.preAssignedEscortId) {
+        return false;
+      }
+
+      // 检查陪诊员是否仍然可用
+      const escort = await this.prisma.escort.findUnique({
+        where: { id: order.preAssignedEscortId },
+      });
+
+      if (!escort || escort.status !== 'active') {
+        console.log(`[Payment] 指定陪诊员 ${order.preAssignedEscortId} 不可用，订单 ${order.orderNo} 将进入抢单池`);
+        // 清除预分配信息，让订单进入正常抢单流程
+        await this.prisma.order.update({
+          where: { id: orderId },
+          data: {
+            assignMethod: null,
+            preAssignedEscortId: null,
+          },
+        });
+        return false;
+      }
+
+      // 检查是否达到每日接单上限
+      if (escort.currentDailyOrders >= escort.maxDailyOrders) {
+        console.log(`[Payment] 指定陪诊员 ${escort.name} 已达每日上限，订单 ${order.orderNo} 将进入抢单池`);
+        await this.prisma.order.update({
+          where: { id: orderId },
+          data: {
+            assignMethod: null,
+            preAssignedEscortId: null,
+          },
+        });
+        return false;
+      }
+
+      // 自动分配给指定陪诊员
+      await this.prisma.$transaction(async (tx) => {
+        // 更新订单状态为已派单
+        await tx.order.update({
+          where: { id: orderId },
+          data: {
+            status: 'assigned',
+            escortId: escort.id,
+            assignedAt: new Date(),
+            preAssignWorkStatus: escort.workStatus,
+          },
+        });
+
+        // 更新陪诊员订单数
+        await tx.escort.update({
+          where: { id: escort.id },
+          data: {
+            orderCount: { increment: 1 },
+            currentDailyOrders: { increment: 1 },
+            lastActiveAt: new Date(),
+          },
+        });
+
+        // 记录订单日志
+        await tx.orderLog.create({
+          data: {
+            orderId,
+            action: 'user_select_assign',
+            fromStatus: 'paid',
+            toStatus: 'assigned',
+            operatorType: 'system',
+            remark: `用户指定陪诊员 ${escort.name} 自动派单`,
+          },
+        });
+      });
+
+      console.log(`[Payment] 订单 ${order.orderNo} 已自动分配给用户指定的陪诊员 ${escort.name}`);
+
+      // 发送通知
+      try {
+        // 通知用户
+        await this.notificationService.send({
+          event: 'order_assigned',
+          recipientId: order.userId,
+          recipientType: 'user',
+          data: { orderNo: order.orderNo, escortName: escort.name },
+          relatedType: 'order',
+          relatedId: orderId,
+        });
+
+        // 通知陪诊员
+        const escortUser = await this.prisma.escort.findUnique({
+          where: { id: escort.id },
+          include: { user: { select: { id: true } } },
+        });
+        if (escortUser?.user?.id) {
+          await this.notificationService.send({
+            event: 'order_grabbed',
+            recipientId: escortUser.user.id,
+            recipientType: 'escort',
+            data: { orderNo: order.orderNo },
+            relatedType: 'order',
+            relatedId: orderId,
+          });
+        }
+      } catch (err) {
+        console.error('[Payment] 发送派单通知失败:', err);
+      }
+
+      return true;
+    } catch (error) {
+      console.error('[Payment] 处理用户指定陪诊员分配失败:', error);
+      return false;
+    }
+  }
 
   // 生成随机字符串
   private generateNonceStr(length = 32): string {
@@ -44,7 +182,7 @@ export class PaymentService {
     const sortedKeys = Object.keys(params).sort();
     const stringA = sortedKeys.map(key => `${key}=${params[key]}`).join('&');
     const stringSignTemp = `${stringA}&key=${WECHAT_PAY_CONFIG.apiKey}`;
-    
+
     // MD5 签名
     return crypto.createHash('md5').update(stringSignTemp).digest('hex').toUpperCase();
   }
@@ -122,16 +260,48 @@ export class PaymentService {
         return { success: false, message: '支付失败' };
       }
 
-      // 更新订单状态
-      await this.prisma.order.update({
+      // 判断是普通订单还是会员订单
+      const order = await this.prisma.order.findUnique({
         where: { orderNo },
-        data: {
-          status: 'paid',
-          paymentMethod: 'wechat',
-          paymentTime: new Date(),
-          transactionId,
-        },
       });
+
+      const membershipOrder = await this.prisma.membershipOrder.findUnique({
+        where: { orderNo },
+      });
+
+      if (membershipOrder) {
+        // 会员订单支付回调
+        if (this.membershipService) {
+          await this.membershipService.paymentSuccess(orderNo, transactionId);
+        }
+      } else if (order) {
+        // 普通订单支付回调
+        await this.prisma.order.update({
+          where: { orderNo },
+          data: {
+            status: 'paid',
+            paymentMethod: 'wechat',
+            paymentTime: new Date(),
+            paidAt: new Date(),
+            transactionId,
+          },
+        });
+
+        // 发送支付成功通知
+        this.notificationService.send({
+          event: 'order_paid',
+          recipientId: order.userId,
+          recipientType: 'user',
+          data: { orderNo: order.orderNo },
+          relatedType: 'order',
+          relatedId: order.id,
+        }).catch((err) => {
+          console.error('[Payment] 发送支付成功通知失败:', err);
+        });
+
+        // 处理用户指定陪诊员的自动分配
+        await this.handleUserSelectEscort(order.id);
+      }
 
       console.log(`[Payment] 支付成功: orderNo=${orderNo}, transactionId=${transactionId}`);
 
@@ -163,16 +333,34 @@ export class PaymentService {
         status: 'paid',
         paymentMethod: 'wechat',
         paymentTime: new Date(),
+        paidAt: new Date(),
         transactionId: `MOCK_${Date.now()}`,
       },
       include: {
         service: true,
         hospital: true,
         patient: true,
+        escort: true,
       },
     });
 
     console.log(`[Payment] 模拟支付成功: orderNo=${order.orderNo}`);
+
+    // 处理用户指定陪诊员的自动分配
+    const assigned = await this.handleUserSelectEscort(orderId);
+
+    // 如果已自动分配，重新获取订单信息
+    if (assigned) {
+      return this.prisma.order.findUnique({
+        where: { id: orderId },
+        include: {
+          service: true,
+          hospital: true,
+          patient: true,
+          escort: true,
+        },
+      });
+    }
 
     return updatedOrder;
   }

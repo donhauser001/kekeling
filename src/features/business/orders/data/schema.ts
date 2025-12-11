@@ -71,6 +71,7 @@ export const orderSchema = z.object({
   serviceCategory: z.string(),
   customerName: z.string(),
   customerPhone: z.string(),
+  escortId: z.string().nullable(),
   escortName: z.string().nullable(),
   escortPhone: z.string().nullable(),
   hospital: z.string(),

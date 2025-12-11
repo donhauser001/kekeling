@@ -36,5 +36,24 @@ export class CreateOrderDto {
   @IsString()
   @IsOptional()
   remark?: string;
+
+  @ApiPropertyOptional({ description: '优惠券ID' })
+  @IsString()
+  @IsOptional()
+  couponId?: string;
+
+  @ApiPropertyOptional({ description: '活动ID' })
+  @IsString()
+  @IsOptional()
+  campaignId?: string;
+
+  @ApiPropertyOptional({ description: '使用积分数' })
+  @IsOptional()
+  pointsToUse?: number;
+
+  @ApiPropertyOptional({ description: '指定陪诊员ID（如果指定，订单将直接分配给该陪诊员）' })
+  @IsString()
+  @IsOptional()
+  escortId?: string;
 }
 

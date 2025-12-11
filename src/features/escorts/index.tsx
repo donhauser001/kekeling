@@ -62,6 +62,8 @@ import {
 } from '@/hooks/use-api'
 import type { Escort } from '@/lib/api'
 import { EscortFormDialog } from './components/escort-form-dialog'
+import { EscortReviewDialog } from './components/escort-review-dialog'
+import { BindEscortDialog } from './components/bind-escort-dialog'
 
 const route = getRouteApi('/_authenticated/escorts/')
 
@@ -72,6 +74,15 @@ const levelConfig = {
   junior: { label: '初级', color: 'bg-green-500' },
   trainee: { label: '实习', color: 'bg-gray-500' },
 }
+
+// 城市代码映射
+const cityCodes = [
+  { code: '110100', name: '北京市' },
+  { code: '310100', name: '上海市' },
+  { code: '440100', name: '广州市' },
+  { code: '440300', name: '深圳市' },
+  { code: '330100', name: '杭州市' },
+]
 
 // 状态配置
 const statusConfig = {
@@ -95,20 +106,27 @@ export function Escorts() {
   const [keyword, setKeyword] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('')
   const [levelFilter, setLevelFilter] = useState<string>('')
+  const [cityFilter, setCityFilter] = useState<string>('')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(12)
 
   // 对话框状态
   const [formDialogOpen, setFormDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false)
+  const [bindDialogOpen, setBindDialogOpen] = useState(false)
+  const [bindDialogMode, setBindDialogMode] = useState<'bind' | 'unbind'>('bind')
   const [editingEscort, setEditingEscort] = useState<Escort | null>(null)
   const [deletingEscort, setDeletingEscort] = useState<Escort | null>(null)
+  const [reviewingEscort, setReviewingEscort] = useState<Escort | null>(null)
+  const [bindingEscort, setBindingEscort] = useState<Escort | null>(null)
 
   // API hooks
   const { data, isLoading, error } = useEscorts({
     keyword: keyword || undefined,
     status: statusFilter || undefined,
     level: levelFilter || undefined,
+    cityCode: cityFilter || undefined,
     page,
     pageSize,
   })
@@ -136,6 +154,18 @@ export function Escorts() {
   const openDeleteDialog = (escort: Escort) => {
     setDeletingEscort(escort)
     setDeleteDialogOpen(true)
+  }
+
+  // 打开审核对话框
+  const openReviewDialog = (escort: Escort) => {
+    setReviewingEscort(escort)
+    setReviewDialogOpen(true)
+  }
+
+  const openBindDialog = (escort: Escort, mode: 'bind' | 'unbind') => {
+    setBindingEscort(escort)
+    setBindDialogMode(mode)
+    setBindDialogOpen(true)
   }
 
   // 删除陪诊员
@@ -296,6 +326,25 @@ export function Escorts() {
               <SelectItem value='trainee'>实习</SelectItem>
             </SelectContent>
           </Select>
+          <Select
+            value={cityFilter}
+            onValueChange={v => {
+              setCityFilter(v === 'all' ? '' : v)
+              setPage(1)
+            }}
+          >
+            <SelectTrigger className='w-[130px]'>
+              <SelectValue placeholder='全部城市' />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value='all'>全部城市</SelectItem>
+              {cityCodes.map(city => (
+                <SelectItem key={city.code} value={city.code}>
+                  {city.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* 陪诊员列表 */}
@@ -357,8 +406,8 @@ export function Escorts() {
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           {escort.status === 'pending' && (
-                            <DropdownMenuItem onClick={() => handleStatusChange(escort, 'active')}>
-                              通过审核
+                            <DropdownMenuItem onClick={() => openReviewDialog(escort)}>
+                              审核
                             </DropdownMenuItem>
                           )}
                           {escort.status === 'active' && (
@@ -369,6 +418,16 @@ export function Escorts() {
                           {escort.status === 'inactive' && (
                             <DropdownMenuItem onClick={() => handleStatusChange(escort, 'active')}>
                               重新激活
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuSeparator />
+                          {escort.userId ? (
+                            <DropdownMenuItem onClick={() => openBindDialog(escort, 'unbind')}>
+                              解除绑定
+                            </DropdownMenuItem>
+                          ) : (
+                            <DropdownMenuItem onClick={() => openBindDialog(escort, 'bind')}>
+                              绑定用户
                             </DropdownMenuItem>
                           )}
                           <DropdownMenuSeparator />
@@ -490,6 +549,23 @@ export function Escorts() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* 审核对话框 */}
+      <EscortReviewDialog
+        open={reviewDialogOpen}
+        onOpenChange={setReviewDialogOpen}
+        escort={reviewingEscort}
+        onSuccess={() => {
+          setReviewDialogOpen(false)
+          setReviewingEscort(null)
+        }}
+      />
+      <BindEscortDialog
+        open={bindDialogOpen}
+        onOpenChange={setBindDialogOpen}
+        escort={bindingEscort}
+        mode={bindDialogMode}
+      />
     </>
   )
 }

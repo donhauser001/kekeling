@@ -90,6 +90,7 @@ import {
   History,
   Lightbulb,
   HardDrive,
+  Crown,
 } from 'lucide-react'
 import { type SidebarData } from '../types'
 
@@ -285,6 +286,11 @@ export const sidebarData: SidebarData = {
           icon: Gift,
           items: [
             {
+              title: '会员管理',
+              url: '/marketing/membership',
+              icon: Crown,
+            },
+            {
               title: '优惠券管理',
               url: '/marketing/coupons',
               icon: Ticket,
@@ -303,6 +309,11 @@ export const sidebarData: SidebarData = {
               title: '邀请奖励',
               url: '/marketing/referrals',
               icon: UserPlus,
+            },
+            {
+              title: '价格配置',
+              url: '/marketing/pricing',
+              icon: SlidersHorizontal,
             },
           ],
         },

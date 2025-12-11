@@ -1,0 +1,210 @@
+.complaint-page {
+  min-height: 100vh;
+  background: #f5f5f5;
+  padding-bottom: 160px;
+}
+
+.section {
+  background: #fff;
+  margin: 24px;
+  padding: 32px;
+  border-radius: 16px;
+
+  .section-title {
+    font-size: 32px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 24px;
+
+    .required {
+      color: #ff4d4f;
+      margin-left: 4px;
+    }
+
+    .optional {
+      font-size: 24px;
+      font-weight: 400;
+      color: #999;
+      margin-left: 8px;
+    }
+  }
+}
+
+// 投诉类型
+.type-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.type-item {
+  position: relative;
+  padding: 24px;
+  border: 2px solid #e8e8e8;
+  border-radius: 12px;
+  transition: all 0.2s;
+
+  &.active {
+    background: rgba(var(--primary-rgb), 0.05);
+  }
+
+  .type-label {
+    font-size: 30px;
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 8px;
+  }
+
+  .type-desc {
+    font-size: 24px;
+    color: #999;
+  }
+
+  .type-check {
+    position: absolute;
+    top: 50%;
+    right: 24px;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    color: #fff;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+// 问题描述
+.description-input {
+  width: 100%;
+  min-height: 200px;
+  padding: 20px;
+  font-size: 28px;
+  color: #333;
+  background: #f8f8f8;
+  border-radius: 12px;
+  box-sizing: border-box;
+}
+
+.char-count {
+  text-align: right;
+  font-size: 24px;
+  color: #999;
+  margin-top: 12px;
+}
+
+// 图片证据
+.evidence-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.evidence-item {
+  position: relative;
+  width: 160px;
+  height: 160px;
+
+  .evidence-image {
+    width: 100%;
+    height: 100%;
+    border-radius: 12px;
+  }
+
+  .remove-btn {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    width: 40px;
+    height: 40px;
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    border-radius: 50%;
+    font-size: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+.add-evidence {
+  width: 160px;
+  height: 160px;
+  border: 2px dashed #ddd;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+
+  .add-icon {
+    font-size: 48px;
+    margin-bottom: 8px;
+  }
+
+  .add-text {
+    font-size: 24px;
+  }
+}
+
+// 温馨提示
+.tips {
+  margin: 24px;
+  padding: 24px;
+  background: #fffbe6;
+  border-radius: 12px;
+  border: 1px solid #ffe58f;
+
+  .tip-title {
+    font-size: 28px;
+    font-weight: 500;
+    color: #d48806;
+    margin-bottom: 16px;
+  }
+
+  .tip-item {
+    font-size: 24px;
+    color: #8c6d1f;
+    line-height: 1.8;
+  }
+}
+
+// 提交按钮
+.submit-area {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 24px 32px;
+  padding-bottom: calc(24px + env(safe-area-inset-bottom));
+  background: #fff;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.submit-btn {
+  height: 88px;
+  border-radius: 44px;
+  color: #fff;
+  font-size: 32px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &.disabled {
+    opacity: 0.6;
+  }
+}
+
+// 错误状态
+.error-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+  font-size: 28px;
+}

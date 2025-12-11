@@ -26,6 +26,7 @@ import { Route as ClerkAuthenticatedRouteRouteImport } from './routes/clerk/_aut
 import { Route as ClerkauthRouteRouteImport } from './routes/clerk/(auth)/route'
 import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authenticated/settings/route'
 import { Route as AuthenticatedWorkflowsIndexRouteImport } from './routes/_authenticated/workflows/index'
+import { Route as AuthenticatedWithdrawalsIndexRouteImport } from './routes/_authenticated/withdrawals/index'
 import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authenticated/users/index'
 import { Route as AuthenticatedTagsIndexRouteImport } from './routes/_authenticated/tags/index'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
@@ -45,6 +46,7 @@ import { Route as AuthenticatedHelpCenterIndexRouteImport } from './routes/_auth
 import { Route as AuthenticatedFilesIndexRouteImport } from './routes/_authenticated/files/index'
 import { Route as AuthenticatedEscortsIndexRouteImport } from './routes/_authenticated/escorts/index'
 import { Route as AuthenticatedEscortTagsIndexRouteImport } from './routes/_authenticated/escort-tags/index'
+import { Route as AuthenticatedEscortLevelsIndexRouteImport } from './routes/_authenticated/escort-levels/index'
 import { Route as AuthenticatedEscortCategoriesIndexRouteImport } from './routes/_authenticated/escort-categories/index'
 import { Route as AuthenticatedEmployeesIndexRouteImport } from './routes/_authenticated/employees/index'
 import { Route as AuthenticatedDoctorsIndexRouteImport } from './routes/_authenticated/doctors/index'
@@ -61,6 +63,12 @@ import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_auth
 import { Route as AuthenticatedServicesIdRouteImport } from './routes/_authenticated/services/$id'
 import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
 import { Route as AuthenticatedAppBannersRouteImport } from './routes/_authenticated/app/banners'
+import { Route as AuthenticatedMarketingReferralsIndexRouteImport } from './routes/_authenticated/marketing/referrals/index'
+import { Route as AuthenticatedMarketingPricingIndexRouteImport } from './routes/_authenticated/marketing/pricing/index'
+import { Route as AuthenticatedMarketingPointsIndexRouteImport } from './routes/_authenticated/marketing/points/index'
+import { Route as AuthenticatedMarketingMembershipIndexRouteImport } from './routes/_authenticated/marketing/membership/index'
+import { Route as AuthenticatedMarketingCouponsIndexRouteImport } from './routes/_authenticated/marketing/coupons/index'
+import { Route as AuthenticatedMarketingCampaignsIndexRouteImport } from './routes/_authenticated/marketing/campaigns/index'
 import { Route as AuthenticatedAppSettingsHomepageRouteImport } from './routes/_authenticated/app/settings/homepage'
 import { Route as AuthenticatedAppSettingsBrandRouteImport } from './routes/_authenticated/app/settings/brand'
 
@@ -146,6 +154,12 @@ const AuthenticatedWorkflowsIndexRoute =
   AuthenticatedWorkflowsIndexRouteImport.update({
     id: '/workflows/',
     path: '/workflows/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedWithdrawalsIndexRoute =
+  AuthenticatedWithdrawalsIndexRouteImport.update({
+    id: '/withdrawals/',
+    path: '/withdrawals/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedUsersIndexRoute = AuthenticatedUsersIndexRouteImport.update({
@@ -258,6 +272,12 @@ const AuthenticatedEscortTagsIndexRoute =
     path: '/escort-tags/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedEscortLevelsIndexRoute =
+  AuthenticatedEscortLevelsIndexRouteImport.update({
+    id: '/escort-levels/',
+    path: '/escort-levels/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedEscortCategoriesIndexRoute =
   AuthenticatedEscortCategoriesIndexRouteImport.update({
     id: '/escort-categories/',
@@ -349,6 +369,42 @@ const AuthenticatedAppBannersRoute = AuthenticatedAppBannersRouteImport.update({
   path: '/app/banners',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedMarketingReferralsIndexRoute =
+  AuthenticatedMarketingReferralsIndexRouteImport.update({
+    id: '/marketing/referrals/',
+    path: '/marketing/referrals/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedMarketingPricingIndexRoute =
+  AuthenticatedMarketingPricingIndexRouteImport.update({
+    id: '/marketing/pricing/',
+    path: '/marketing/pricing/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedMarketingPointsIndexRoute =
+  AuthenticatedMarketingPointsIndexRouteImport.update({
+    id: '/marketing/points/',
+    path: '/marketing/points/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedMarketingMembershipIndexRoute =
+  AuthenticatedMarketingMembershipIndexRouteImport.update({
+    id: '/marketing/membership/',
+    path: '/marketing/membership/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedMarketingCouponsIndexRoute =
+  AuthenticatedMarketingCouponsIndexRouteImport.update({
+    id: '/marketing/coupons/',
+    path: '/marketing/coupons/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedMarketingCampaignsIndexRoute =
+  AuthenticatedMarketingCampaignsIndexRouteImport.update({
+    id: '/marketing/campaigns/',
+    path: '/marketing/campaigns/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAppSettingsHomepageRoute =
   AuthenticatedAppSettingsHomepageRouteImport.update({
     id: '/app/settings/homepage',
@@ -392,6 +448,7 @@ export interface FileRoutesByFullPath {
   '/doctors': typeof AuthenticatedDoctorsIndexRoute
   '/employees': typeof AuthenticatedEmployeesIndexRoute
   '/escort-categories': typeof AuthenticatedEscortCategoriesIndexRoute
+  '/escort-levels': typeof AuthenticatedEscortLevelsIndexRoute
   '/escort-tags': typeof AuthenticatedEscortTagsIndexRoute
   '/escorts': typeof AuthenticatedEscortsIndexRoute
   '/files': typeof AuthenticatedFilesIndexRoute
@@ -411,9 +468,16 @@ export interface FileRoutesByFullPath {
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/tags': typeof AuthenticatedTagsIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
+  '/withdrawals': typeof AuthenticatedWithdrawalsIndexRoute
   '/workflows': typeof AuthenticatedWorkflowsIndexRoute
   '/app/settings/brand': typeof AuthenticatedAppSettingsBrandRoute
   '/app/settings/homepage': typeof AuthenticatedAppSettingsHomepageRoute
+  '/marketing/campaigns': typeof AuthenticatedMarketingCampaignsIndexRoute
+  '/marketing/coupons': typeof AuthenticatedMarketingCouponsIndexRoute
+  '/marketing/membership': typeof AuthenticatedMarketingMembershipIndexRoute
+  '/marketing/points': typeof AuthenticatedMarketingPointsIndexRoute
+  '/marketing/pricing': typeof AuthenticatedMarketingPricingIndexRoute
+  '/marketing/referrals': typeof AuthenticatedMarketingReferralsIndexRoute
 }
 export interface FileRoutesByTo {
   '/clerk': typeof ClerkAuthenticatedRouteRouteWithChildren
@@ -444,6 +508,7 @@ export interface FileRoutesByTo {
   '/doctors': typeof AuthenticatedDoctorsIndexRoute
   '/employees': typeof AuthenticatedEmployeesIndexRoute
   '/escort-categories': typeof AuthenticatedEscortCategoriesIndexRoute
+  '/escort-levels': typeof AuthenticatedEscortLevelsIndexRoute
   '/escort-tags': typeof AuthenticatedEscortTagsIndexRoute
   '/escorts': typeof AuthenticatedEscortsIndexRoute
   '/files': typeof AuthenticatedFilesIndexRoute
@@ -463,9 +528,16 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/tags': typeof AuthenticatedTagsIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
+  '/withdrawals': typeof AuthenticatedWithdrawalsIndexRoute
   '/workflows': typeof AuthenticatedWorkflowsIndexRoute
   '/app/settings/brand': typeof AuthenticatedAppSettingsBrandRoute
   '/app/settings/homepage': typeof AuthenticatedAppSettingsHomepageRoute
+  '/marketing/campaigns': typeof AuthenticatedMarketingCampaignsIndexRoute
+  '/marketing/coupons': typeof AuthenticatedMarketingCouponsIndexRoute
+  '/marketing/membership': typeof AuthenticatedMarketingMembershipIndexRoute
+  '/marketing/points': typeof AuthenticatedMarketingPointsIndexRoute
+  '/marketing/pricing': typeof AuthenticatedMarketingPricingIndexRoute
+  '/marketing/referrals': typeof AuthenticatedMarketingReferralsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -501,6 +573,7 @@ export interface FileRoutesById {
   '/_authenticated/doctors/': typeof AuthenticatedDoctorsIndexRoute
   '/_authenticated/employees/': typeof AuthenticatedEmployeesIndexRoute
   '/_authenticated/escort-categories/': typeof AuthenticatedEscortCategoriesIndexRoute
+  '/_authenticated/escort-levels/': typeof AuthenticatedEscortLevelsIndexRoute
   '/_authenticated/escort-tags/': typeof AuthenticatedEscortTagsIndexRoute
   '/_authenticated/escorts/': typeof AuthenticatedEscortsIndexRoute
   '/_authenticated/files/': typeof AuthenticatedFilesIndexRoute
@@ -520,9 +593,16 @@ export interface FileRoutesById {
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/tags/': typeof AuthenticatedTagsIndexRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
+  '/_authenticated/withdrawals/': typeof AuthenticatedWithdrawalsIndexRoute
   '/_authenticated/workflows/': typeof AuthenticatedWorkflowsIndexRoute
   '/_authenticated/app/settings/brand': typeof AuthenticatedAppSettingsBrandRoute
   '/_authenticated/app/settings/homepage': typeof AuthenticatedAppSettingsHomepageRoute
+  '/_authenticated/marketing/campaigns/': typeof AuthenticatedMarketingCampaignsIndexRoute
+  '/_authenticated/marketing/coupons/': typeof AuthenticatedMarketingCouponsIndexRoute
+  '/_authenticated/marketing/membership/': typeof AuthenticatedMarketingMembershipIndexRoute
+  '/_authenticated/marketing/points/': typeof AuthenticatedMarketingPointsIndexRoute
+  '/_authenticated/marketing/pricing/': typeof AuthenticatedMarketingPricingIndexRoute
+  '/_authenticated/marketing/referrals/': typeof AuthenticatedMarketingReferralsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -556,6 +636,7 @@ export interface FileRouteTypes {
     | '/doctors'
     | '/employees'
     | '/escort-categories'
+    | '/escort-levels'
     | '/escort-tags'
     | '/escorts'
     | '/files'
@@ -575,9 +656,16 @@ export interface FileRouteTypes {
     | '/settings/'
     | '/tags'
     | '/users'
+    | '/withdrawals'
     | '/workflows'
     | '/app/settings/brand'
     | '/app/settings/homepage'
+    | '/marketing/campaigns'
+    | '/marketing/coupons'
+    | '/marketing/membership'
+    | '/marketing/points'
+    | '/marketing/pricing'
+    | '/marketing/referrals'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/clerk'
@@ -608,6 +696,7 @@ export interface FileRouteTypes {
     | '/doctors'
     | '/employees'
     | '/escort-categories'
+    | '/escort-levels'
     | '/escort-tags'
     | '/escorts'
     | '/files'
@@ -627,9 +716,16 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tags'
     | '/users'
+    | '/withdrawals'
     | '/workflows'
     | '/app/settings/brand'
     | '/app/settings/homepage'
+    | '/marketing/campaigns'
+    | '/marketing/coupons'
+    | '/marketing/membership'
+    | '/marketing/points'
+    | '/marketing/pricing'
+    | '/marketing/referrals'
   id:
     | '__root__'
     | '/_authenticated'
@@ -664,6 +760,7 @@ export interface FileRouteTypes {
     | '/_authenticated/doctors/'
     | '/_authenticated/employees/'
     | '/_authenticated/escort-categories/'
+    | '/_authenticated/escort-levels/'
     | '/_authenticated/escort-tags/'
     | '/_authenticated/escorts/'
     | '/_authenticated/files/'
@@ -683,9 +780,16 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/'
     | '/_authenticated/tags/'
     | '/_authenticated/users/'
+    | '/_authenticated/withdrawals/'
     | '/_authenticated/workflows/'
     | '/_authenticated/app/settings/brand'
     | '/_authenticated/app/settings/homepage'
+    | '/_authenticated/marketing/campaigns/'
+    | '/_authenticated/marketing/coupons/'
+    | '/_authenticated/marketing/membership/'
+    | '/_authenticated/marketing/points/'
+    | '/_authenticated/marketing/pricing/'
+    | '/_authenticated/marketing/referrals/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -824,6 +928,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWorkflowsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/withdrawals/': {
+      id: '/_authenticated/withdrawals/'
+      path: '/withdrawals'
+      fullPath: '/withdrawals'
+      preLoaderRoute: typeof AuthenticatedWithdrawalsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/users/': {
       id: '/_authenticated/users/'
       path: '/users'
@@ -957,6 +1068,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEscortTagsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/escort-levels/': {
+      id: '/_authenticated/escort-levels/'
+      path: '/escort-levels'
+      fullPath: '/escort-levels'
+      preLoaderRoute: typeof AuthenticatedEscortLevelsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/escort-categories/': {
       id: '/_authenticated/escort-categories/'
       path: '/escort-categories'
@@ -1069,6 +1187,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppBannersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/marketing/referrals/': {
+      id: '/_authenticated/marketing/referrals/'
+      path: '/marketing/referrals'
+      fullPath: '/marketing/referrals'
+      preLoaderRoute: typeof AuthenticatedMarketingReferralsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/marketing/pricing/': {
+      id: '/_authenticated/marketing/pricing/'
+      path: '/marketing/pricing'
+      fullPath: '/marketing/pricing'
+      preLoaderRoute: typeof AuthenticatedMarketingPricingIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/marketing/points/': {
+      id: '/_authenticated/marketing/points/'
+      path: '/marketing/points'
+      fullPath: '/marketing/points'
+      preLoaderRoute: typeof AuthenticatedMarketingPointsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/marketing/membership/': {
+      id: '/_authenticated/marketing/membership/'
+      path: '/marketing/membership'
+      fullPath: '/marketing/membership'
+      preLoaderRoute: typeof AuthenticatedMarketingMembershipIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/marketing/coupons/': {
+      id: '/_authenticated/marketing/coupons/'
+      path: '/marketing/coupons'
+      fullPath: '/marketing/coupons'
+      preLoaderRoute: typeof AuthenticatedMarketingCouponsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/marketing/campaigns/': {
+      id: '/_authenticated/marketing/campaigns/'
+      path: '/marketing/campaigns'
+      fullPath: '/marketing/campaigns'
+      preLoaderRoute: typeof AuthenticatedMarketingCampaignsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/app/settings/homepage': {
       id: '/_authenticated/app/settings/homepage'
       path: '/app/settings/homepage'
@@ -1122,6 +1282,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDoctorsIndexRoute: typeof AuthenticatedDoctorsIndexRoute
   AuthenticatedEmployeesIndexRoute: typeof AuthenticatedEmployeesIndexRoute
   AuthenticatedEscortCategoriesIndexRoute: typeof AuthenticatedEscortCategoriesIndexRoute
+  AuthenticatedEscortLevelsIndexRoute: typeof AuthenticatedEscortLevelsIndexRoute
   AuthenticatedEscortTagsIndexRoute: typeof AuthenticatedEscortTagsIndexRoute
   AuthenticatedEscortsIndexRoute: typeof AuthenticatedEscortsIndexRoute
   AuthenticatedFilesIndexRoute: typeof AuthenticatedFilesIndexRoute
@@ -1140,9 +1301,16 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedServicesIndexRoute: typeof AuthenticatedServicesIndexRoute
   AuthenticatedTagsIndexRoute: typeof AuthenticatedTagsIndexRoute
   AuthenticatedUsersIndexRoute: typeof AuthenticatedUsersIndexRoute
+  AuthenticatedWithdrawalsIndexRoute: typeof AuthenticatedWithdrawalsIndexRoute
   AuthenticatedWorkflowsIndexRoute: typeof AuthenticatedWorkflowsIndexRoute
   AuthenticatedAppSettingsBrandRoute: typeof AuthenticatedAppSettingsBrandRoute
   AuthenticatedAppSettingsHomepageRoute: typeof AuthenticatedAppSettingsHomepageRoute
+  AuthenticatedMarketingCampaignsIndexRoute: typeof AuthenticatedMarketingCampaignsIndexRoute
+  AuthenticatedMarketingCouponsIndexRoute: typeof AuthenticatedMarketingCouponsIndexRoute
+  AuthenticatedMarketingMembershipIndexRoute: typeof AuthenticatedMarketingMembershipIndexRoute
+  AuthenticatedMarketingPointsIndexRoute: typeof AuthenticatedMarketingPointsIndexRoute
+  AuthenticatedMarketingPricingIndexRoute: typeof AuthenticatedMarketingPricingIndexRoute
+  AuthenticatedMarketingReferralsIndexRoute: typeof AuthenticatedMarketingReferralsIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -1157,6 +1325,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEmployeesIndexRoute: AuthenticatedEmployeesIndexRoute,
   AuthenticatedEscortCategoriesIndexRoute:
     AuthenticatedEscortCategoriesIndexRoute,
+  AuthenticatedEscortLevelsIndexRoute: AuthenticatedEscortLevelsIndexRoute,
   AuthenticatedEscortTagsIndexRoute: AuthenticatedEscortTagsIndexRoute,
   AuthenticatedEscortsIndexRoute: AuthenticatedEscortsIndexRoute,
   AuthenticatedFilesIndexRoute: AuthenticatedFilesIndexRoute,
@@ -1179,9 +1348,22 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedServicesIndexRoute: AuthenticatedServicesIndexRoute,
   AuthenticatedTagsIndexRoute: AuthenticatedTagsIndexRoute,
   AuthenticatedUsersIndexRoute: AuthenticatedUsersIndexRoute,
+  AuthenticatedWithdrawalsIndexRoute: AuthenticatedWithdrawalsIndexRoute,
   AuthenticatedWorkflowsIndexRoute: AuthenticatedWorkflowsIndexRoute,
   AuthenticatedAppSettingsBrandRoute: AuthenticatedAppSettingsBrandRoute,
   AuthenticatedAppSettingsHomepageRoute: AuthenticatedAppSettingsHomepageRoute,
+  AuthenticatedMarketingCampaignsIndexRoute:
+    AuthenticatedMarketingCampaignsIndexRoute,
+  AuthenticatedMarketingCouponsIndexRoute:
+    AuthenticatedMarketingCouponsIndexRoute,
+  AuthenticatedMarketingMembershipIndexRoute:
+    AuthenticatedMarketingMembershipIndexRoute,
+  AuthenticatedMarketingPointsIndexRoute:
+    AuthenticatedMarketingPointsIndexRoute,
+  AuthenticatedMarketingPricingIndexRoute:
+    AuthenticatedMarketingPricingIndexRoute,
+  AuthenticatedMarketingReferralsIndexRoute:
+    AuthenticatedMarketingReferralsIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

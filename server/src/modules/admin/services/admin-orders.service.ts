@@ -16,7 +16,7 @@ export const ORDER_STATUS = {
 
 @Injectable()
 export class AdminOrdersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   // ============================================
   // 查询方法
@@ -38,19 +38,19 @@ export class AdminOrdersService {
     const { status, keyword, escortId, hospitalId, startDate, endDate, page = 1, pageSize = 10 } = params;
 
     const where: any = {};
-    
+
     if (status && status !== 'all') {
       where.status = status;
     }
-    
+
     if (escortId) {
       where.escortId = escortId;
     }
-    
+
     if (hospitalId) {
       where.hospitalId = hospitalId;
     }
-    
+
     if (keyword) {
       where.OR = [
         { orderNo: { contains: keyword, mode: 'insensitive' } },
@@ -59,7 +59,7 @@ export class AdminOrdersService {
         { user: { nickname: { contains: keyword, mode: 'insensitive' } } },
       ];
     }
-    
+
     if (startDate || endDate) {
       where.createdAt = {};
       if (startDate) where.createdAt.gte = new Date(startDate);
@@ -160,7 +160,7 @@ export class AdminOrdersService {
    */
   async getStats(params?: { startDate?: string; endDate?: string }) {
     const { startDate, endDate } = params || {};
-    
+
     // 今日范围
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -225,8 +225,8 @@ export class AdminOrdersService {
       totalOrders,
       todayOrders,
       yesterdayOrders,
-      orderGrowth: yesterdayOrders > 0 
-        ? Math.round((todayOrders - yesterdayOrders) / yesterdayOrders * 100) 
+      orderGrowth: yesterdayOrders > 0
+        ? Math.round((todayOrders - yesterdayOrders) / yesterdayOrders * 100)
         : 0,
       pendingOrders,
       inProgressOrders,
@@ -248,7 +248,7 @@ export class AdminOrdersService {
   /**
    * 派单（分配陪诊员）
    */
-  async assignEscort(orderId: string, escortId: string) {
+  async assignEscort(orderId: string, escortId: string, adminId?: string) {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
     });
@@ -277,18 +277,55 @@ export class AdminOrdersService {
       throw new BadRequestException('该陪诊员正在服务中');
     }
 
-    // 更新订单
-    const updatedOrder = await this.prisma.order.update({
-      where: { id: orderId },
-      data: {
-        escortId,
-        status: 'assigned',
-      },
-      include: {
-        escort: true,
-        service: true,
-        hospital: true,
-      },
+    // 检查陪诊员当日接单数
+    if (escort.currentDailyOrders >= escort.maxDailyOrders) {
+      throw new BadRequestException(`该陪诊员今日已达最大接单数(${escort.maxDailyOrders})`);
+    }
+
+    const fromStatus = order.status;
+
+    // 使用事务更新订单和记录日志
+    const updatedOrder = await this.prisma.$transaction(async (tx) => {
+      // 更新订单
+      const updated = await tx.order.update({
+        where: { id: orderId },
+        data: {
+          escortId,
+          status: 'assigned',
+          assignMethod: 'manual', // 手动派单
+          assignedAt: new Date(),
+          preAssignWorkStatus: escort.workStatus,
+        },
+        include: {
+          escort: true,
+          service: true,
+          hospital: true,
+        },
+      });
+
+      // 更新陪诊员当日接单数
+      await tx.escort.update({
+        where: { id: escortId },
+        data: {
+          currentDailyOrders: { increment: 1 },
+        },
+      });
+
+      // 记录订单日志
+      await tx.orderLog.create({
+        data: {
+          orderId,
+          action: 'assign',
+          fromStatus,
+          toStatus: 'assigned',
+          operatorType: 'admin',
+          operatorId: adminId,
+          remark: `手动派单给陪诊员: ${escort.name}`,
+          extra: JSON.stringify({ escortId, escortName: escort.name }),
+        },
+      });
+
+      return updated;
     });
 
     return {
@@ -296,6 +333,52 @@ export class AdminOrdersService {
       totalAmount: Number(updatedOrder.totalAmount),
       paidAmount: Number(updatedOrder.paidAmount),
     };
+  }
+
+  /**
+   * 获取订单日志
+   */
+  async getOrderLogs(orderId: string) {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+    });
+
+    if (!order) {
+      throw new NotFoundException('订单不存在');
+    }
+
+    const logs = await this.prisma.orderLog.findMany({
+      where: { orderId },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return logs.map((log) => ({
+      ...log,
+      extra: log.extra ? JSON.parse(log.extra) : null,
+    }));
+  }
+
+  /**
+   * 添加订单日志
+   */
+  async addOrderLog(
+    orderId: string,
+    action: string,
+    operatorType: 'user' | 'escort' | 'admin' | 'system',
+    operatorId?: string,
+    remark?: string,
+    extra?: Record<string, any>,
+  ) {
+    return this.prisma.orderLog.create({
+      data: {
+        orderId,
+        action,
+        operatorType,
+        operatorId,
+        remark,
+        extra: extra ? JSON.stringify(extra) : null,
+      },
+    });
   }
 
   /**
@@ -393,6 +476,18 @@ export class AdminOrdersService {
       });
     }
 
+    // 检查消费升级（异步执行，不影响订单完成）
+    try {
+      const { MembershipService } = await import('../../membership/membership.service');
+      const membershipService = new MembershipService(this.prisma);
+      await membershipService.checkConsumeUpgrade(
+        order.userId,
+        Number(order.paidAmount),
+      );
+    } catch (error) {
+      console.error(`订单 ${orderId} 消费升级检查失败:`, error);
+    }
+
     return updatedOrder;
   }
 
@@ -472,6 +567,39 @@ export class AdminOrdersService {
     }
 
     // TODO: 调用支付接口进行退款
+
+    // 退回优惠券（如果使用了）
+    if (order.couponId) {
+      try {
+        const { CouponsService } = await import('../../coupons/coupons.service');
+        const couponsService = new CouponsService(this.prisma);
+        await couponsService.returnCoupon(orderId);
+      } catch (error) {
+        console.error(`订单 ${orderId} 优惠券退回失败:`, error);
+      }
+    }
+
+    // 退回积分（如果使用了）
+    if (order.pointsUsed > 0) {
+      try {
+        const { PointsService } = await import('../../points/points.service');
+        const pointsService = new PointsService(this.prisma);
+        await pointsService.refundPoints(orderId);
+      } catch (error) {
+        console.error(`订单 ${orderId} 积分退回失败:`, error);
+      }
+    }
+
+    // 释放秒杀库存（如果是秒杀订单）
+    if (order.campaignId && order.serviceId) {
+      try {
+        const { CampaignsService } = await import('../../campaigns/campaigns.service');
+        const campaignsService = new CampaignsService(this.prisma);
+        await campaignsService.releaseSeckillStock(order.campaignId, order.serviceId);
+      } catch (error) {
+        console.error(`订单 ${orderId} 秒杀库存释放失败:`, error);
+      }
+    }
 
     return this.prisma.order.update({
       where: { id: orderId },

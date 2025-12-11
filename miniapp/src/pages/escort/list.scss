@@ -124,3 +124,89 @@
   color: var(--text-color-placeholder);
   line-height: 1.4;
 }
+
+// 工作状态指示
+.status-dot {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 3px solid #fff;
+
+  &.online {
+    background-color: #52c41a;
+  }
+
+  &.busy {
+    background-color: #1890ff;
+  }
+
+  &.offline {
+    background-color: #999;
+  }
+}
+
+.escort-avatar {
+  position: relative;
+}
+
+// 骨架屏
+.skeleton {
+  .skeleton-avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+  }
+
+  .skeleton-text {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+    border-radius: 8px;
+  }
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+// 空状态
+.empty-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 100px 40px;
+
+  .empty-text {
+    margin-top: 24px;
+    font-size: 32px;
+    color: var(--text-color);
+  }
+
+  .empty-desc {
+    margin-top: 12px;
+    font-size: 26px;
+    color: var(--text-color-placeholder);
+  }
+}
+
+// 加载更多
+.loading-more,
+.no-more {
+  text-align: center;
+  padding: 24px;
+  font-size: 24px;
+  color: var(--text-color-placeholder);
+}

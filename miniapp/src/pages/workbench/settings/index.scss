@@ -1,0 +1,188 @@
+.settings-page {
+  min-height: 100vh;
+  background: #f5f5f5;
+  padding-bottom: 40rpx;
+
+  .header {
+    background: #fff;
+    padding: 40rpx 30rpx;
+    border-bottom: 1rpx solid #eee;
+
+    .title {
+      font-size: 36rpx;
+      font-weight: 600;
+      color: #333;
+    }
+  }
+
+  .loading {
+    text-align: center;
+    padding: 100rpx 0;
+    color: #999;
+  }
+
+  .section {
+    background: #fff;
+    margin: 30rpx;
+    padding: 30rpx;
+    border-radius: 16rpx;
+
+    .section-title {
+      font-size: 32rpx;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 10rpx;
+    }
+
+    .section-desc {
+      font-size: 26rpx;
+      color: #999;
+      margin-bottom: 30rpx;
+    }
+  }
+
+  .weekday-item {
+    margin-bottom: 20rpx;
+    border-bottom: 1rpx solid #f0f0f0;
+    padding-bottom: 20rpx;
+
+    &:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .weekday-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20rpx 0;
+
+      .weekday-toggle {
+        display: flex;
+        align-items: center;
+        gap: 20rpx;
+
+        .toggle-switch {
+          width: 80rpx;
+          height: 44rpx;
+          background: #d9d9d9;
+          border-radius: 22rpx;
+          position: relative;
+          transition: all 0.3s;
+
+          &.on {
+            background: #52c41a;
+          }
+
+          .toggle-dot {
+            width: 36rpx;
+            height: 36rpx;
+            background: #fff;
+            border-radius: 50%;
+            position: absolute;
+            top: 4rpx;
+            left: 4rpx;
+            transition: all 0.3s;
+          }
+
+          &.on .toggle-dot {
+            left: 40rpx;
+          }
+        }
+
+        .weekday-name {
+          font-size: 28rpx;
+          color: #333;
+        }
+      }
+    }
+
+    .time-slots {
+      padding: 20rpx 0 0 100rpx;
+
+      .time-slot {
+        display: flex;
+        align-items: center;
+        gap: 20rpx;
+        margin-bottom: 20rpx;
+
+        .time-picker {
+          display: flex;
+          align-items: center;
+          gap: 8rpx;
+          padding: 16rpx 24rpx;
+          background: #f5f5f5;
+          border-radius: 8rpx;
+          font-size: 28rpx;
+          color: #333;
+        }
+
+        .time-separator {
+          font-size: 28rpx;
+          color: #666;
+        }
+
+        .remove-slot {
+          padding: 8rpx;
+        }
+      }
+
+      .add-slot-btn {
+        margin-top: 10rpx;
+        background: #f0f0f0;
+        color: #1890ff;
+        border: none;
+      }
+    }
+  }
+
+  .radius-input,
+  .orders-input {
+    display: flex;
+    align-items: center;
+    gap: 20rpx;
+    padding: 20rpx;
+    background: #f5f5f5;
+    border-radius: 8rpx;
+    margin-bottom: 10rpx;
+
+    input {
+      flex: 1;
+      font-size: 28rpx;
+      color: #333;
+    }
+
+    .unit {
+      font-size: 28rpx;
+      color: #666;
+    }
+  }
+
+  .hint {
+    font-size: 24rpx;
+    color: #999;
+    margin-top: 10rpx;
+  }
+
+  .footer {
+    padding: 30rpx;
+    background: #fff;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    box-shadow: 0 -2rpx 8rpx rgba(0, 0, 0, 0.05);
+
+    .save-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #1890ff 0%, #40a9ff 100%);
+      color: #fff;
+      border: none;
+      border-radius: 12rpx;
+      padding: 24rpx;
+      font-size: 32rpx;
+      font-weight: 600;
+    }
+  }
+}

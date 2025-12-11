@@ -11,7 +11,7 @@ import { ApiResponse } from '../../common/response/api-response';
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class OrdersController {
-  constructor(private readonly ordersService: OrdersService) {}
+  constructor(private readonly ordersService: OrdersService) { }
 
   @Post()
   @ApiOperation({ summary: '创建订单' })
@@ -61,6 +61,45 @@ export class OrdersController {
   ) {
     const data = await this.ordersService.cancel(id, userId, reason);
     return ApiResponse.success(data);
+  }
+
+  @Post(':id/review')
+  @ApiOperation({ summary: '评价陪诊员' })
+  async reviewEscort(
+    @CurrentUser('sub') userId: string,
+    @Param('id') id: string,
+    @Body() body: {
+      rating: number;
+      content?: string;
+      tags?: string[];
+      images?: string[];
+      isAnonymous?: boolean;
+    },
+  ) {
+    const data = await this.ordersService.reviewEscort(userId, id, body);
+    return ApiResponse.success(data, '评价成功');
+  }
+
+  @Get(':id/review/status')
+  @ApiOperation({ summary: '检查订单是否已评价' })
+  async checkReviewed(@Param('id') id: string) {
+    const data = await this.ordersService.checkReviewed(id);
+    return ApiResponse.success(data);
+  }
+
+  @Post(':id/complaint')
+  @ApiOperation({ summary: '提交投诉' })
+  async submitComplaint(
+    @CurrentUser('sub') userId: string,
+    @Param('id') id: string,
+    @Body() body: {
+      type: string;
+      description: string;
+      evidence?: string[];
+    },
+  ) {
+    const data = await this.ordersService.submitComplaint(userId, id, body);
+    return ApiResponse.success(data, '投诉已提交');
   }
 }
 

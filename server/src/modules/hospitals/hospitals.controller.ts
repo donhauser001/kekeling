@@ -21,7 +21,7 @@ export class HospitalsController {
     private readonly hospitalsService: HospitalsService,
     private readonly departmentsService: DepartmentsService,
     private readonly doctorsService: DoctorsService,
-  ) {}
+  ) { }
 
   @Get()
   @ApiOperation({ summary: '获取医院列表' })
@@ -117,6 +117,28 @@ export class HospitalsController {
     const data = await this.doctorsService.findAll({
       hospitalId: id,
       departmentId,
+      page: page ? Number(page) : 1,
+      pageSize: pageSize ? Number(pageSize) : 10,
+    });
+    return ApiResponse.success(data);
+  }
+
+  @Get(':id/escorts')
+  @ApiOperation({ summary: '获取医院关联的陪诊员列表' })
+  @ApiQuery({ name: 'levelCode', required: false, description: '等级代码' })
+  @ApiQuery({ name: 'sortBy', required: false, description: '排序方式: rating/orderCount/experience' })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'pageSize', required: false })
+  async getEscorts(
+    @Param('id') id: string,
+    @Query('levelCode') levelCode?: string,
+    @Query('sortBy') sortBy?: 'rating' | 'orderCount' | 'experience',
+    @Query('page') page?: number,
+    @Query('pageSize') pageSize?: number,
+  ) {
+    const data = await this.hospitalsService.getEscorts(id, {
+      levelCode,
+      sortBy,
       page: page ? Number(page) : 1,
       pageSize: pageSize ? Number(pageSize) : 10,
     });

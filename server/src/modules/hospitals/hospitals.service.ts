@@ -3,7 +3,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class HospitalsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async findAll(params: {
     keyword?: string;
@@ -177,6 +177,91 @@ export class HospitalsService {
       },
       orderBy: { sort: 'asc' },
     });
+  }
+
+  // 获取医院关联的陪诊员列表
+  async getEscorts(
+    hospitalId: string,
+    params?: {
+      levelCode?: string;
+      sortBy?: 'rating' | 'orderCount' | 'experience';
+      page?: number;
+      pageSize?: number;
+    },
+  ) {
+    const { levelCode, sortBy = 'rating', page = 1, pageSize = 10 } = params || {};
+
+    const where: any = {
+      hospitals: {
+        some: { hospitalId },
+      },
+      status: 'active',
+      deletedAt: null,
+    };
+
+    if (levelCode) {
+      where.levelCode = levelCode;
+    }
+
+    // 排序方式
+    let orderBy: any[] = [];
+    switch (sortBy) {
+      case 'orderCount':
+        orderBy = [{ orderCount: 'desc' }, { rating: 'desc' }];
+        break;
+      case 'experience':
+        orderBy = [{ experience: 'desc' }, { rating: 'desc' }];
+        break;
+      default:
+        orderBy = [{ rating: 'desc' }, { orderCount: 'desc' }];
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.escort.findMany({
+        where,
+        include: {
+          level: {
+            select: { code: true, name: true, badge: true },
+          },
+          hospitals: {
+            where: { hospitalId },
+            select: { familiarDepts: true, isPrimary: true },
+            take: 1,
+          },
+          _count: {
+            select: { reviews: true },
+          },
+        },
+        orderBy,
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      this.prisma.escort.count({ where }),
+    ]);
+
+    // 转换数据格式
+    const formattedData = data.map((escort) => {
+      const hospitalRelation = escort.hospitals[0];
+      return {
+        id: escort.id,
+        name: escort.name,
+        avatar: escort.avatar,
+        level: escort.level,
+        rating: escort.rating,
+        ratingCount: escort._count.reviews,
+        orderCount: escort.orderCount,
+        experience: escort.experience,
+        familiarDepts: hospitalRelation?.familiarDepts || [],
+        isPrimary: hospitalRelation?.isPrimary || false,
+      };
+    });
+
+    return {
+      data: formattedData,
+      total,
+      page,
+      pageSize,
+    };
   }
 
   // 删除医院

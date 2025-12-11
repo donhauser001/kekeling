@@ -455,6 +455,243 @@ export const escortApi = {
       method: 'PUT',
       body: JSON.stringify({ hospitalIds, familiarDeptsMap }),
     }),
+
+  // 审核陪诊员
+  review: (id: string, action: 'approve' | 'reject', note?: string) =>
+    request<Escort>(`/admin/escorts/${id}/review`, {
+      method: 'PUT',
+      body: JSON.stringify({ action, note }),
+    }),
+
+  // 绑定用户
+  bind: (id: string, userId: string, reason?: string) =>
+    request<{ success: boolean; message: string }>(`/admin/escorts/${id}/bind`, {
+      method: 'POST',
+      body: JSON.stringify({ userId, reason }),
+    }),
+
+  // 解绑用户
+  unbind: (id: string, reason?: string) =>
+    request<{ success: boolean; message: string }>(`/admin/escorts/${id}/unbind`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    }),
+
+  // 获取审计日志
+  getAuditLogs: (id: string, page?: number, pageSize?: number) =>
+    request<{ data: any[]; total: number; page: number; pageSize: number }>(
+      `/admin/escorts/${id}/audit-logs`,
+      {
+        params: { page, pageSize },
+      }
+    ),
+}
+
+// ============================================
+// 陪诊员等级 API
+// ============================================
+
+export interface EscortLevel {
+  id: string
+  code: string
+  name: string
+  commissionRate: number
+  dispatchWeight: number
+  minExperience: number
+  minOrderCount: number
+  minRating: number
+  badge: string | null
+  description: string | null
+  sort: number
+  status: string
+  createdAt: string
+  updatedAt: string
+  _count?: {
+    escorts: number
+  }
+}
+
+export interface CreateEscortLevelData {
+  code: string
+  name: string
+  commissionRate?: number
+  dispatchWeight?: number
+  minExperience?: number
+  minOrderCount?: number
+  minRating?: number
+  badge?: string
+  description?: string
+  sort?: number
+  status?: string
+}
+
+export interface UpdateEscortLevelData extends Partial<CreateEscortLevelData> { }
+
+export const escortLevelApi = {
+  // 获取列表
+  getList: () =>
+    request<EscortLevel[]>('/admin/escort-levels'),
+
+  // 获取详情
+  getById: (id: string) =>
+    request<EscortLevel>(`/admin/escort-levels/${id}`),
+
+  // 创建
+  create: (data: CreateEscortLevelData) =>
+    request<EscortLevel>('/admin/escort-levels', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // 更新
+  update: (id: string, data: UpdateEscortLevelData) =>
+    request<EscortLevel>(`/admin/escort-levels/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // 删除
+  delete: (id: string) =>
+    request<void>(`/admin/escort-levels/${id}`, {
+      method: 'DELETE',
+    }),
+}
+
+// ============================================
+// 陪诊员标签 API
+// ============================================
+
+export interface EscortTag {
+  id: string
+  name: string
+  category: string
+  icon: string | null
+  color: string | null
+  sort: number
+  status: string
+  createdAt: string
+  updatedAt: string
+}
+
+export const escortTagApi = {
+  // 获取列表
+  getList: (params?: { category?: string; status?: string }) =>
+    request<EscortTag[]>('/admin/escort-tags', { params }),
+
+  // 获取分组列表
+  getGrouped: () =>
+    request<Record<string, EscortTag[]>>('/admin/escort-tags/grouped'),
+
+  // 获取详情
+  getById: (id: string) =>
+    request<EscortTag>(`/admin/escort-tags/${id}`),
+
+  // 创建
+  create: (data: Partial<EscortTag>) =>
+    request<EscortTag>('/admin/escort-tags', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // 更新
+  update: (id: string, data: Partial<EscortTag>) =>
+    request<EscortTag>(`/admin/escort-tags/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // 删除
+  delete: (id: string) =>
+    request<void>(`/admin/escort-tags/${id}`, {
+      method: 'DELETE',
+    }),
+}
+
+// ============================================
+// 提现管理 API
+// ============================================
+
+export interface Withdrawal {
+  id: string
+  walletId: string
+  amount: number
+  fee: number
+  actualAmount: number
+  method: string
+  account: string
+  status: 'pending' | 'approved' | 'rejected' | 'processing' | 'completed' | 'failed'
+  reviewedAt: string | null
+  reviewedBy: string | null
+  reviewNote: string | null
+  transferNo: string | null
+  transferAt: string | null
+  failReason: string | null
+  createdAt: string
+  updatedAt: string
+  wallet?: {
+    escort: {
+      id: string
+      name: string
+      phone: string
+      avatar: string | null
+    }
+  }
+}
+
+export interface WithdrawalQuery {
+  status?: string
+  method?: string
+  startDate?: string
+  endDate?: string
+  keyword?: string
+  page?: number
+  pageSize?: number
+}
+
+export interface WithdrawalStats {
+  pendingCount: number
+  pendingAmount: number
+  todayCount: number
+  todayAmount: number
+  monthCount: number
+  monthAmount: number
+}
+
+export const withdrawalApi = {
+  // 获取列表
+  getList: (query: WithdrawalQuery = {}) =>
+    request<PaginatedData<Withdrawal>>('/admin/withdrawals', {
+      params: query as Record<string, string | number | boolean | undefined>,
+    }),
+
+  // 获取统计
+  getStats: () =>
+    request<WithdrawalStats>('/admin/withdrawals/stats'),
+
+  // 获取详情
+  getById: (id: string) =>
+    request<Withdrawal>(`/admin/withdrawals/${id}`),
+
+  // 审核
+  review: (id: string, action: 'approve' | 'reject', note?: string) =>
+    request<Withdrawal>(`/admin/withdrawals/${id}/review`, {
+      method: 'PUT',
+      body: JSON.stringify({ action, note }),
+    }),
+
+  // 确认打款
+  confirmTransfer: (id: string, transferNo: string) =>
+    request<Withdrawal>(`/admin/withdrawals/${id}/transfer`, {
+      method: 'POST',
+      body: JSON.stringify({ transferNo }),
+    }),
+
+  // 标记失败
+  markFailed: (id: string, reason: string) =>
+    request<Withdrawal>(`/admin/withdrawals/${id}/fail`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    }),
 }
 
 // 服务 API - 在文件末尾定义
@@ -1156,6 +1393,39 @@ export interface CreateServiceData {
 
 export interface UpdateServiceData extends Partial<CreateServiceData> { }
 
+// 服务价格详情接口
+export interface ServicePriceDetail {
+  // 各层价格
+  originalPrice: number
+  campaignPrice: number | null
+  memberPrice: number | null
+  couponPrice: number | null
+  finalPrice: number
+
+  // 优惠明细
+  campaignDiscount: number
+  campaignName: string | null
+  campaignId: string | null
+  memberDiscount: number
+  memberLevelName: string | null
+  couponDiscount: number
+  couponName: string | null
+  couponId: string | null
+  pointsDiscount: number
+  pointsUsed: number
+
+  // 汇总
+  totalSavings: number
+
+  // 会员相关
+  isMember: boolean
+  membershipExpireAt: string | null
+  overtimeWaiverRate: number
+
+  // 价格快照（用于订单）
+  snapshot: any
+}
+
 export const serviceApi = {
   // 获取服务列表 (分页)
   getList: (query: ServiceQuery = {}) =>
@@ -1166,6 +1436,10 @@ export const serviceApi = {
   // 获取服务详情
   getById: (id: string) =>
     request<Service>(`/services/${id}`),
+
+  // 获取服务价格详情
+  getPrice: (id: string) =>
+    request<ServicePriceDetail>(`/services/${id}/price`),
 
   // 获取热门服务
   getHot: (limit = 6) =>
@@ -1571,6 +1845,746 @@ export const operationGuideApi = {
     request<{ success: boolean; count: number }>('/operation-guides/batch-status', {
       method: 'PUT',
       body: JSON.stringify({ ids, status }),
+    }),
+}
+
+// ============================================
+// 营销中心 API
+// ============================================
+
+// ========== 会员系统 API ==========
+
+export interface MembershipLevel {
+  id: string
+  name: string
+  level: number
+  discount: number
+  price: number
+  duration: number
+  bonusDays: number
+  description: string | null
+  benefits: string[]
+  status: 'active' | 'inactive'
+  createdAt: string
+  updatedAt: string
+}
+
+export interface MembershipPlan {
+  id: string
+  levelId: string
+  name: string
+  price: number
+  duration: number
+  bonusDays: number
+  description: string | null
+  status: 'active' | 'inactive'
+  createdAt: string
+  updatedAt: string
+  level?: MembershipLevel
+}
+
+export interface UserMembership {
+  id: string
+  userId: string
+  levelId: string
+  planId: string
+  status: 'active' | 'expired' | 'cancelled'
+  startAt: string
+  expiresAt: string
+  createdAt: string
+  level?: MembershipLevel
+  plan?: MembershipPlan
+  user?: {
+    id: string
+    nickname: string
+    phone: string
+  }
+}
+
+export interface MembershipQuery {
+  status?: string
+  page?: number
+  pageSize?: number
+}
+
+export interface CreateMembershipLevelData {
+  name: string
+  level: number
+  discount: number
+  price: number
+  duration: number
+  bonusDays?: number
+  description?: string
+  benefits?: string[]
+  status?: 'active' | 'inactive'
+}
+
+export interface UpdateMembershipLevelData extends Partial<CreateMembershipLevelData> { }
+
+export const membershipApi = {
+  // 获取会员等级列表
+  getLevels: (params?: MembershipQuery) =>
+    request<PaginatedData<MembershipLevel>>('/admin/membership/levels', { params }),
+
+  // 获取会员等级详情
+  getLevelById: (id: string) => request<MembershipLevel>(`/admin/membership/levels/${id}`),
+
+  // 创建会员等级
+  createLevel: (data: CreateMembershipLevelData) =>
+    request<MembershipLevel>('/admin/membership/levels', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // 更新会员等级
+  updateLevel: (id: string, data: UpdateMembershipLevelData) =>
+    request<MembershipLevel>(`/admin/membership/levels/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // 删除会员等级
+  deleteLevel: (id: string) =>
+    request<void>(`/admin/membership/levels/${id}`, {
+      method: 'DELETE',
+    }),
+
+  // 获取会员方案列表
+  getPlans: (levelId?: string, params?: MembershipQuery) =>
+    request<PaginatedData<MembershipPlan>>('/admin/membership/plans', {
+      params: { ...params, levelId },
+    }),
+
+  // 创建会员方案
+  createPlan: (data: Partial<MembershipPlan>) =>
+    request<MembershipPlan>('/admin/membership/plans', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // 更新会员方案
+  updatePlan: (id: string, data: Partial<MembershipPlan>) =>
+    request<MembershipPlan>(`/admin/membership/plans/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // 删除会员方案
+  deletePlan: (id: string) =>
+    request<void>(`/admin/membership/plans/${id}`, {
+      method: 'DELETE',
+    }),
+
+  // 获取用户会员列表
+  getUserMemberships: (params?: MembershipQuery & { userId?: string }) =>
+    request<PaginatedData<UserMembership>>('/admin/membership/user-memberships', { params }),
+}
+
+// ========== 优惠券系统 API ==========
+
+export interface CouponTemplate {
+  id: string
+  name: string
+  code: string | null
+  type: 'amount' | 'percent' | 'free'
+  value: number
+  maxDiscount: number | null
+  minAmount: number
+  applicableScope: 'all' | 'category' | 'service'
+  applicableIds: string[]
+  memberOnly: boolean
+  memberLevelIds: string[]
+  totalQuantity: number | null
+  perUserLimit: number
+  validityType: 'fixed' | 'relative'
+  startAt: string | null
+  endAt: string | null
+  validDays: number | null
+  stackWithMember: boolean
+  stackWithCampaign: boolean
+  description: string | null
+  tips: string | null
+  status: 'active' | 'inactive'
+  createdAt: string
+  updatedAt: string
+}
+
+export interface UserCoupon {
+  id: string
+  userId: string
+  templateId: string
+  name: string
+  type: 'amount' | 'percent' | 'free'
+  value: number
+  maxDiscount: number | null
+  minAmount: number
+  applicableScope: 'all' | 'category' | 'service'
+  applicableIds: string[]
+  stackWithMember: boolean
+  stackWithCampaign: boolean
+  startAt: string
+  expireAt: string
+  status: 'unused' | 'used' | 'expired' | 'returned'
+  usedAt: string | null
+  orderId: string | null
+  source: string
+  sourceId: string | null
+  createdAt: string
+  user?: {
+    id: string
+    nickname: string
+    phone: string
+  }
+}
+
+export interface CouponGrantRule {
+  id: string
+  name: string
+  templateId: string
+  trigger: string
+  triggerConfig: Record<string, any>
+  grantQuantity: number
+  status: 'active' | 'inactive'
+  createdAt: string
+  updatedAt: string
+  template?: CouponTemplate
+}
+
+export interface CouponQuery {
+  status?: string
+  type?: string
+  keyword?: string
+  page?: number
+  pageSize?: number
+}
+
+export interface CreateCouponTemplateData {
+  name: string
+  code?: string
+  type: 'amount' | 'percent' | 'free'
+  value: number
+  maxDiscount?: number
+  minAmount?: number
+  applicableScope?: 'all' | 'category' | 'service'
+  applicableIds?: string[]
+  memberOnly?: boolean
+  memberLevelIds?: string[]
+  totalQuantity?: number
+  perUserLimit?: number
+  validityType?: 'fixed' | 'relative'
+  startAt?: string
+  endAt?: string
+  validDays?: number
+  stackWithMember?: boolean
+  stackWithCampaign?: boolean
+  description?: string
+  tips?: string
+  status?: 'active' | 'inactive'
+}
+
+export interface UpdateCouponTemplateData extends Partial<CreateCouponTemplateData> { }
+
+export const couponApi = {
+  // 获取优惠券模板列表
+  getTemplates: (params?: CouponQuery) =>
+    request<PaginatedData<CouponTemplate>>('/admin/coupons/templates', { params }),
+
+  // 获取优惠券模板详情
+  getTemplateById: (id: string) => request<CouponTemplate>(`/admin/coupons/templates/${id}`),
+
+  // 创建优惠券模板
+  createTemplate: (data: CreateCouponTemplateData) =>
+    request<CouponTemplate>('/admin/coupons/templates', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // 更新优惠券模板
+  updateTemplate: (id: string, data: UpdateCouponTemplateData) =>
+    request<CouponTemplate>(`/admin/coupons/templates/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // 删除优惠券模板
+  deleteTemplate: (id: string) =>
+    request<void>(`/admin/coupons/templates/${id}`, {
+      method: 'DELETE',
+    }),
+
+  // 获取用户优惠券列表
+  getUserCoupons: (params?: CouponQuery & { userId?: string; status?: string }) =>
+    request<PaginatedData<UserCoupon>>('/admin/coupons/user-coupons', { params }),
+
+  // 获取发放规则列表
+  getGrantRules: (params?: CouponQuery) =>
+    request<PaginatedData<CouponGrantRule>>('/admin/coupons/grant-rules', { params }),
+
+  // 创建发放规则
+  createGrantRule: (data: Partial<CouponGrantRule>) =>
+    request<CouponGrantRule>('/admin/coupons/grant-rules', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // 更新发放规则
+  updateGrantRule: (id: string, data: Partial<CouponGrantRule>) =>
+    request<CouponGrantRule>(`/admin/coupons/grant-rules/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // 删除发放规则
+  deleteGrantRule: (id: string) =>
+    request<void>(`/admin/coupons/grant-rules/${id}`, {
+      method: 'DELETE',
+    }),
+
+  // 批量发放优惠券
+  batchGrant: (data: { templateId: string; userIds: string[] }) =>
+    request<{ success: boolean; count: number }>('/admin/coupons/batch-grant', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+}
+
+// ========== 积分系统 API ==========
+
+export interface PointRule {
+  id: string
+  name: string
+  code: string
+  points: number | null
+  pointsRate: number | null
+  dailyLimit: number | null
+  totalLimit: number | null
+  conditions: Record<string, any> | null
+  status: 'active' | 'inactive'
+  createdAt: string
+  updatedAt: string
+}
+
+export interface UserPoint {
+  id: string
+  userId: string
+  totalPoints: number
+  usedPoints: number
+  expiredPoints: number
+  currentPoints: number
+  createdAt: string
+  updatedAt: string
+  user?: {
+    id: string
+    nickname: string
+    phone: string
+  }
+}
+
+export interface PointRecord {
+  id: string
+  userId: string
+  type: 'earn' | 'use' | 'expire' | 'refund'
+  points: number
+  balance: number
+  source: string
+  sourceId: string | null
+  description: string | null
+  expireAt: string | null
+  createdAt: string
+  user?: {
+    id: string
+    nickname: string
+    phone: string
+  }
+}
+
+export interface PointQuery {
+  type?: string
+  page?: number
+  pageSize?: number
+}
+
+export interface CreatePointRuleData {
+  name: string
+  code: string
+  points?: number
+  pointsRate?: number
+  dailyLimit?: number
+  totalLimit?: number
+  conditions?: Record<string, any>
+  status?: 'active' | 'inactive'
+}
+
+export interface UpdatePointRuleData extends Partial<CreatePointRuleData> { }
+
+export const pointApi = {
+  // 获取积分规则列表
+  getRules: (params?: PointQuery) =>
+    request<PaginatedData<PointRule>>('/admin/points/rules', { params }),
+
+  // 获取积分规则详情
+  getRuleById: (id: string) => request<PointRule>(`/admin/points/rules/${id}`),
+
+  // 创建积分规则
+  createRule: (data: CreatePointRuleData) =>
+    request<PointRule>('/admin/points/rules', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // 更新积分规则
+  updateRule: (id: string, data: UpdatePointRuleData) =>
+    request<PointRule>(`/admin/points/rules/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // 删除积分规则
+  deleteRule: (id: string) =>
+    request<void>(`/admin/points/rules/${id}`, {
+      method: 'DELETE',
+    }),
+
+  // 获取用户积分列表
+  getUserPoints: (params?: PointQuery & { userId?: string }) =>
+    request<PaginatedData<UserPoint>>('/admin/points/user-points', { params }),
+
+  // 获取积分记录列表
+  getPointRecords: (params?: PointQuery & { userId?: string }) =>
+    request<PaginatedData<PointRecord>>('/admin/points/records', { params }),
+
+  // 手动调整积分
+  adjustPoints: (userId: string, data: { points: number; description: string }) =>
+    request<UserPoint>(`/admin/points/user-points/${userId}/adjust`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+}
+
+// ========== 邀请系统 API ==========
+
+export interface ReferralRule {
+  id: string
+  name: string
+  type: 'user' | 'patient'
+  inviterCouponId: string | null
+  inviterPoints: number
+  inviteeCouponId: string | null
+  inviteePoints: number
+  requireFirstOrder: boolean
+  dailyLimit: number | null
+  totalLimit: number | null
+  status: 'active' | 'inactive'
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ReferralRecord {
+  id: string
+  inviterId: string
+  inviteeId: string | null
+  inviteCode: string
+  type: 'user' | 'patient'
+  patientId: string | null
+  patientPhone: string | null
+  status: 'pending' | 'registered' | 'rewarded' | 'invalid'
+  registeredAt: string | null
+  rewardedAt: string | null
+  inviterReward: Record<string, any> | null
+  inviteeReward: Record<string, any> | null
+  createdAt: string
+  inviter?: {
+    id: string
+    nickname: string
+    phone: string
+  }
+  invitee?: {
+    id: string
+    nickname: string
+    phone: string
+  }
+}
+
+export interface ReferralQuery {
+  type?: string
+  status?: string
+  inviterId?: string
+  inviteeId?: string
+  page?: number
+  pageSize?: number
+}
+
+export interface CreateReferralRuleData {
+  name: string
+  type: 'user' | 'patient'
+  inviterCouponId?: string
+  inviterPoints?: number
+  inviteeCouponId?: string
+  inviteePoints?: number
+  requireFirstOrder?: boolean
+  dailyLimit?: number
+  totalLimit?: number
+  status?: 'active' | 'inactive'
+}
+
+export interface UpdateReferralRuleData extends Partial<CreateReferralRuleData> { }
+
+// 邀请链接接口
+export interface InviteLink {
+  inviteCode: string
+  inviteLink: string
+  inviterName: string
+  inviterAvatar: string | null
+}
+
+// 邀请海报接口
+export interface InvitePoster {
+  inviteCode: string
+  inviteLink: string
+  qrCodeUrl: string
+  inviterName: string
+  inviterAvatar: string | null
+  posterImageUrl: string | null
+  posterData: {
+    title: string
+    subtitle: string
+    inviteCode: string
+    qrCodeUrl: string
+  }
+}
+
+export const referralApi = {
+  // 获取邀请规则列表
+  getRules: (params?: ReferralQuery) =>
+    request<PaginatedData<ReferralRule>>('/admin/referrals/rules', { params }),
+
+  // 创建邀请规则
+  createRule: (data: CreateReferralRuleData) =>
+    request<ReferralRule>('/admin/referrals/rules', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // 更新邀请规则
+  updateRule: (id: string, data: UpdateReferralRuleData) =>
+    request<ReferralRule>(`/admin/referrals/rules/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // 删除邀请规则
+  deleteRule: (id: string) =>
+    request<void>(`/admin/referrals/rules/${id}`, {
+      method: 'DELETE',
+    }),
+
+  // 获取邀请记录列表
+  getRecords: (params?: ReferralQuery) =>
+    request<PaginatedData<ReferralRecord>>('/admin/referrals/records', { params }),
+
+  // 标记可疑记录
+  markSuspicious: (id: string, reason: string) =>
+    request<ReferralRecord>(`/admin/referrals/records/${id}/mark-suspicious`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    }),
+
+  // 获取邀请链接（用户端）
+  getInviteLink: () => request<InviteLink>('/referrals/link'),
+
+  // 获取邀请海报（用户端）
+  getInvitePoster: () => request<InvitePoster>('/referrals/poster'),
+}
+
+// ========== 活动系统 API ==========
+
+export interface Campaign {
+  id: string
+  name: string
+  code: string | null
+  type: 'flash_sale' | 'seckill' | 'threshold' | 'newcomer'
+  startAt: string
+  endAt: string
+  discountType: 'amount' | 'percent'
+  discountValue: number
+  maxDiscount: number | null
+  minAmount: number
+  applicableScope: 'all' | 'category' | 'service'
+  applicableIds: string[]
+  totalQuantity: number | null
+  perUserLimit: number
+  description: string | null
+  bannerUrl: string | null
+  detailUrl: string | null
+  sort: number
+  stackWithMember: boolean
+  status: 'pending' | 'active' | 'ended' | 'cancelled'
+  createdAt: string
+  updatedAt: string
+  participationCount?: number
+  seckillItemCount?: number
+}
+
+export interface SeckillItem {
+  id: string
+  campaignId: string
+  serviceId: string
+  seckillPrice: number
+  stockTotal: number
+  stockSold: number
+  perUserLimit: number
+  sort: number
+  status: 'active' | 'inactive'
+  service?: {
+    id: string
+    name: string
+    price: number
+    image: string | null
+  }
+}
+
+export interface CampaignQuery {
+  type?: string
+  status?: string
+  page?: number
+  pageSize?: number
+}
+
+export interface CreateCampaignData {
+  name: string
+  code?: string
+  type: 'flash_sale' | 'seckill' | 'threshold' | 'newcomer'
+  startAt: string
+  endAt: string
+  discountType: 'amount' | 'percent'
+  discountValue: number
+  maxDiscount?: number
+  minAmount?: number
+  applicableScope?: 'all' | 'category' | 'service'
+  applicableIds?: string[]
+  totalQuantity?: number
+  perUserLimit?: number
+  description?: string
+  bannerUrl?: string
+  detailUrl?: string
+  sort?: number
+  stackWithMember?: boolean
+  status?: 'pending' | 'active' | 'ended' | 'cancelled'
+}
+
+export interface UpdateCampaignData extends Partial<CreateCampaignData> { }
+
+export interface CampaignStats {
+  campaign: Campaign
+  stats: {
+    participationCount: number
+    totalDiscount: number
+    seckillItems: SeckillItem[]
+  }
+}
+
+export const campaignApi = {
+  // 获取活动列表
+  getCampaigns: (params?: CampaignQuery) =>
+    request<PaginatedData<Campaign>>('/admin/campaigns', { params }),
+
+  // 获取活动详情
+  getCampaignById: (id: string) => request<Campaign>(`/admin/campaigns/${id}`),
+
+  // 创建活动
+  createCampaign: (data: CreateCampaignData) =>
+    request<Campaign>('/admin/campaigns', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // 更新活动
+  updateCampaign: (id: string, data: UpdateCampaignData) =>
+    request<Campaign>(`/admin/campaigns/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // 删除活动
+  deleteCampaign: (id: string) =>
+    request<void>(`/admin/campaigns/${id}`, {
+      method: 'DELETE',
+    }),
+
+  // 取消活动
+  cancelCampaign: (id: string) =>
+    request<Campaign>(`/admin/campaigns/${id}/cancel`, {
+      method: 'POST',
+    }),
+
+  // 获取活动统计数据
+  getCampaignStats: (id: string) => request<CampaignStats>(`/admin/campaigns/${id}/stats`),
+
+  // 获取秒杀商品列表
+  getSeckillItems: (campaignId: string) =>
+    request<SeckillItem[]>(`/admin/campaigns/seckill/${campaignId}/items`),
+
+  // 添加秒杀商品
+  createSeckillItem: (campaignId: string, data: Partial<SeckillItem>) =>
+    request<SeckillItem>(`/admin/campaigns/seckill/${campaignId}/items`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // 更新秒杀商品
+  updateSeckillItem: (id: string, data: Partial<SeckillItem>) =>
+    request<SeckillItem>(`/admin/campaigns/seckill/items/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // 删除秒杀商品
+  deleteSeckillItem: (id: string) =>
+    request<void>(`/admin/campaigns/seckill/items/${id}`, {
+      method: 'DELETE',
+    }),
+}
+
+// ========== 价格引擎配置 API ==========
+
+export interface PricingConfig {
+  id: string
+  discountStackMode: 'multiply' | 'best'
+  couponStackWithMember: boolean
+  couponStackWithCampaign: boolean
+  pointsEnabled: boolean
+  pointsRate: number
+  pointsMaxRate: number
+  minPayAmount: number
+  showOriginalPrice: boolean
+  showMemberPrice: boolean
+  showSavings: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface UpdatePricingConfigData {
+  discountStackMode?: 'multiply' | 'best'
+  couponStackWithMember?: boolean
+  couponStackWithCampaign?: boolean
+  pointsEnabled?: boolean
+  pointsRate?: number
+  pointsMaxRate?: number
+  minPayAmount?: number
+  showOriginalPrice?: boolean
+  showMemberPrice?: boolean
+  showSavings?: boolean
+}
+
+export const pricingConfigApi = {
+  // 获取价格配置
+  get: () => request<PricingConfig>('/admin/pricing/config'),
+
+  // 更新价格配置
+  update: (data: UpdatePricingConfigData) =>
+    request<PricingConfig>('/admin/pricing/config', {
+      method: 'PUT',
+      body: JSON.stringify(data),
     }),
 }
 

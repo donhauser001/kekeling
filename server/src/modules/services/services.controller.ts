@@ -7,16 +7,23 @@ import {
   Body,
   Param,
   Query,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiQuery, ApiParam, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiQuery, ApiParam, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { ServicesService } from './services.service';
 import { CreateServiceDto, UpdateServiceDto, QueryServiceDto } from './dto/service.dto';
 import { ApiResponse } from '../../common/response/api-response';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { PricingService } from '../pricing/pricing.service';
 
 @ApiTags('服务')
 @Controller('services')
 export class ServicesController {
-  constructor(private readonly servicesService: ServicesService) {}
+  constructor(
+    private readonly servicesService: ServicesService,
+    private readonly pricingService: PricingService,
+  ) { }
 
   @Get('categories')
   @ApiOperation({ summary: '获取服务分类列表（兼容旧接口）' })
@@ -48,6 +55,23 @@ export class ServicesController {
   async findOne(@Param('id') id: string) {
     const data = await this.servicesService.findById(id);
     return ApiResponse.success(data);
+  }
+
+  @Get(':id/price')
+  @ApiOperation({ summary: '获取服务价格详情（含会员价预览）' })
+  @ApiParam({ name: 'id', description: '服务ID' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  async getServicePrice(
+    @Param('id') id: string,
+    @CurrentUser('sub') userId?: string,
+  ) {
+    const priceData = await this.pricingService.calculate({
+      serviceId: id,
+      userId,
+      quantity: 1,
+    });
+    return ApiResponse.success(priceData);
   }
 
   @Post()

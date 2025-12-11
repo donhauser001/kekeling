@@ -25,7 +25,9 @@
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .loading-text,
@@ -152,6 +154,35 @@
   flex-direction: column;
 }
 
+// 收入信息
+.income-section {
+  background: linear-gradient(135deg, #f6ffed 0%, #fff 100%);
+  border: 1px solid #b7eb8f;
+}
+
+.income-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.income-info .info-row {
+  &.highlight {
+    background-color: #f6ffed;
+    padding: 20px;
+    border-radius: 12px;
+    margin: 8px 0;
+    border-bottom: none;
+  }
+
+  .value {
+    &.price.large {
+      font-size: 40px;
+      font-weight: 700;
+      color: #52c41a;
+    }
+  }
+}
+
 .info-row {
   display: flex;
   justify-content: space-between;
@@ -218,4 +249,3 @@
     opacity: 0.6;
   }
 }
-

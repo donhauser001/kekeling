@@ -23,6 +23,14 @@ import { WorkflowsModule } from './modules/workflows/workflows.module';
 import { ServiceGuaranteesModule } from './modules/service-guarantees/service-guarantees.module';
 import { OperationGuideCategoriesModule } from './modules/operation-guide-categories/operation-guide-categories.module';
 import { OperationGuidesModule } from './modules/operation-guides/operation-guides.module';
+import { TasksModule } from './modules/tasks/tasks.module';
+import { MembershipModule } from './modules/membership/membership.module';
+import { PricingModule } from './modules/pricing/pricing.module';
+import { CouponsModule } from './modules/coupons/coupons.module';
+import { PointsModule } from './modules/points/points.module';
+import { ReferralsModule } from './modules/referrals/referrals.module';
+import { CampaignsModule } from './modules/campaigns/campaigns.module';
+import { DistributionModule } from './modules/distribution/distribution.module';
 
 @Module({
   imports: [
@@ -51,6 +59,14 @@ import { OperationGuidesModule } from './modules/operation-guides/operation-guid
     SystemConfigModule,
     WorkflowsModule,    // 流程管理
     EscortAppModule,    // 陪诊员端 API
+    TasksModule,        // 定时任务
+    PricingModule,      // 价格引擎
+    MembershipModule,   // 会员系统
+    CouponsModule,      // 优惠券系统
+    PointsModule,       // 积分系统
+    ReferralsModule,    // 邀请系统
+    CampaignsModule,    // 活动系统
+    DistributionModule, // 分销系统
     TestModule, // ⚠️ 仅开发环境，生产环境请注释
   ],
 })

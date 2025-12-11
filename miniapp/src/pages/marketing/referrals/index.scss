@@ -1,0 +1,225 @@
+.referrals-page {
+  min-height: 100vh;
+  background: #f5f5f5;
+  padding-bottom: 40rpx;
+
+  .header {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    padding: 40rpx 30rpx 60rpx;
+    color: #fff;
+
+    .title {
+      font-size: 36rpx;
+      font-weight: bold;
+    }
+  }
+
+  .invite-code-card {
+    margin: -40rpx 30rpx 30rpx;
+    padding: 40rpx;
+    background: #fff;
+    border-radius: 16rpx;
+    box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+
+    .code-section {
+      margin-bottom: 30rpx;
+
+      .code-label {
+        font-size: 26rpx;
+        color: #999;
+        display: block;
+        margin-bottom: 16rpx;
+      }
+
+      .code-value {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20rpx;
+        background: #f5f5f5;
+        border-radius: 12rpx;
+
+        .code-text {
+          font-size: 48rpx;
+          font-weight: bold;
+          color: #333;
+          letter-spacing: 4rpx;
+        }
+      }
+    }
+
+    .share-btn {
+      width: 100%;
+      padding: 24rpx;
+      background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+      color: #fff;
+      border-radius: 40rpx;
+      font-size: 30rpx;
+      border: none;
+    }
+  }
+
+  .stats-section {
+    margin: 0 30rpx 30rpx;
+    padding: 30rpx;
+    background: #fff;
+    border-radius: 16rpx;
+
+    .stats-grid {
+      display: flex;
+      justify-content: space-around;
+
+      .stat-item {
+        text-align: center;
+
+        .stat-value {
+          font-size: 48rpx;
+          font-weight: bold;
+          color: #fa709a;
+          display: block;
+        }
+
+        .stat-label {
+          font-size: 26rpx;
+          color: #999;
+          margin-top: 12rpx;
+          display: block;
+        }
+      }
+    }
+  }
+
+  .records-section {
+    margin: 0 30rpx 30rpx;
+
+    .section-title {
+      font-size: 32rpx;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 20rpx;
+      display: block;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 60rpx 0;
+      color: #999;
+      font-size: 28rpx;
+    }
+
+    .records-list {
+      .record-item {
+        background: #fff;
+        border-radius: 16rpx;
+        padding: 30rpx;
+        margin-bottom: 20rpx;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        .record-left {
+          display: flex;
+          align-items: center;
+          gap: 20rpx;
+
+          .record-avatar {
+            width: 80rpx;
+            height: 80rpx;
+            border-radius: 50%;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            .avatar-text {
+              font-size: 32rpx;
+              color: #333;
+              font-weight: bold;
+            }
+          }
+
+          .record-info {
+            .record-name {
+              font-size: 30rpx;
+              color: #333;
+              display: block;
+              margin-bottom: 8rpx;
+            }
+
+            .record-time {
+              font-size: 24rpx;
+              color: #999;
+              display: block;
+            }
+          }
+        }
+
+        .record-right {
+          .status-badge {
+            padding: 8rpx 20rpx;
+            border-radius: 20rpx;
+            font-size: 24rpx;
+
+            &.pending {
+              background: #fff7e6;
+              color: #faad14;
+            }
+
+            &.registered {
+              background: #e6f7ff;
+              color: #1890ff;
+            }
+
+            &.rewarded {
+              background: #f6ffed;
+              color: #52c41a;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .rules-section {
+    margin: 0 30rpx;
+    padding: 30rpx;
+    background: #fff;
+    border-radius: 16rpx;
+
+    .rules-title {
+      font-size: 30rpx;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 20rpx;
+      display: block;
+    }
+
+    .rules-list {
+      .rule-item {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 16rpx;
+
+        .rule-dot {
+          color: #fa709a;
+          margin-right: 12rpx;
+          font-size: 24rpx;
+        }
+
+        .rule-text {
+          flex: 1;
+          font-size: 26rpx;
+          color: #666;
+          line-height: 1.6;
+        }
+      }
+    }
+  }
+
+  .loading {
+    text-align: center;
+    padding: 100rpx 0;
+    color: #999;
+  }
+}
+

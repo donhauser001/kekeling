@@ -13,6 +13,11 @@ interface Stats {
   pendingOrders: number
   completedOrders: number
   monthEarnings: number
+  poolOrders: number
+  rating: number
+  ratingCount: number
+  totalOrders: number
+  balance: number
 }
 
 // 订单类型
@@ -35,6 +40,11 @@ export default function Workbench() {
     pendingOrders: 0,
     completedOrders: 0,
     monthEarnings: 0,
+    poolOrders: 0,
+    rating: 5.0,
+    ratingCount: 0,
+    totalOrders: 0,
+    balance: 0,
   })
   const [todayOrders, setTodayOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
@@ -78,6 +88,11 @@ export default function Workbench() {
           pendingOrders: data.pendingOrders || 0,
           completedOrders: data.completedOrders || 0,
           monthEarnings: data.monthEarnings || 0,
+          poolOrders: data.poolOrders || 0,
+          rating: data.rating || 5.0,
+          ratingCount: data.ratingCount || 0,
+          totalOrders: data.totalOrders || 0,
+          balance: data.balance || 0,
         })
       }
     } catch (err) {
@@ -103,9 +118,9 @@ export default function Workbench() {
     try {
       await get(`/escort/work-status?status=${newStatus}`, {}, { method: 'POST' } as any)
       setWorkStatus(newStatus)
-      Taro.showToast({ 
-        title: newStatus === 'working' ? '已开始接单' : '已停止接单', 
-        icon: 'success' 
+      Taro.showToast({
+        title: newStatus === 'working' ? '已开始接单' : '已停止接单',
+        icon: 'success'
       })
     } catch (err) {
       Taro.showToast({ title: '操作失败', icon: 'none' })
@@ -142,7 +157,7 @@ export default function Workbench() {
           <Icon name='user' size={64} color='#d9d9d9' />
           <Text className='error-title'>请先登录</Text>
           <Text className='error-desc'>登录后查看陪诊员工作台</Text>
-          <View 
+          <View
             className='action-btn'
             onClick={() => Taro.navigateTo({ url: '/pages/auth/login' })}
           >
@@ -160,7 +175,7 @@ export default function Workbench() {
           <Icon name='shield-alert' size={64} color='#faad14' />
           <Text className='error-title'>无访问权限</Text>
           <Text className='error-desc'>您不是陪诊员，无法访问工作台</Text>
-          <View 
+          <View
             className='action-btn secondary'
             onClick={() => Taro.navigateBack()}
           >
@@ -190,18 +205,26 @@ export default function Workbench() {
             )}
           </View>
           <View className='user-text'>
-            <Text className='user-name'>{escortInfo?.name || '陪诊员'}</Text>
-            <Text className='user-level'>{escortInfo?.level === 'senior' ? '高级陪诊员' : '陪诊员'}</Text>
+            <View className='user-name-row'>
+              <Text className='user-name'>{escortInfo?.name || '陪诊员'}</Text>
+              <View className='rating-badge'>
+                <Icon name='star-filled' size={12} color='#faad14' />
+                <Text>{stats.rating.toFixed(1)}</Text>
+              </View>
+            </View>
+            <Text className='user-level'>
+              {escortInfo?.level?.name || '陪诊员'} · 完成{stats.totalOrders}单
+            </Text>
           </View>
         </View>
-        <View 
+        <View
           className={`work-status-btn ${workStatus}`}
           onClick={toggleWorkStatus}
         >
-          <Icon 
-            name={workStatus === 'working' ? 'check-circle' : 'circle'} 
-            size={16} 
-            color={workStatus === 'working' ? '#52c41a' : '#faad14'} 
+          <Icon
+            name={workStatus === 'working' ? 'check-circle' : 'circle'}
+            size={16}
+            color={workStatus === 'working' ? '#52c41a' : '#faad14'}
           />
           <Text>{workStatus === 'working' ? '接单中' : '休息中'}</Text>
         </View>
@@ -234,7 +257,7 @@ export default function Workbench() {
 
       {/* 快捷入口 */}
       <View className='quick-actions'>
-        <View 
+        <View
           className='action-card'
           onClick={() => Taro.navigateTo({ url: '/pages/workbench/orders/pool' })}
         >
@@ -242,9 +265,12 @@ export default function Workbench() {
             <Icon name='zap' size={28} color='#ff4d4f' />
           </View>
           <Text className='action-title'>抢单大厅</Text>
-          <Text className='action-desc'>查看可抢订单</Text>
+          <Text className='action-desc'>
+            {stats.poolOrders > 0 ? `${stats.poolOrders}个可抢订单` : '暂无订单'}
+          </Text>
+          {stats.poolOrders > 0 && <View className='action-badge'>{stats.poolOrders}</View>}
         </View>
-        <View 
+        <View
           className='action-card'
           onClick={() => Taro.navigateTo({ url: '/pages/orders/index' })}
         >
@@ -254,13 +280,33 @@ export default function Workbench() {
           <Text className='action-title'>我的订单</Text>
           <Text className='action-desc'>查看订单列表</Text>
         </View>
+        <View
+          className='action-card'
+          onClick={() => Taro.navigateTo({ url: '/pages/workbench/earnings/index' })}
+        >
+          <View className='action-icon earnings'>
+            <Icon name='wallet' size={28} color='#52c41a' />
+          </View>
+          <Text className='action-title'>收入明细</Text>
+          <Text className='action-desc'>余额 ¥{stats.balance.toFixed(2)}</Text>
+        </View>
+        <View
+          className='action-card'
+          onClick={() => Taro.navigateTo({ url: '/pages/workbench/settings/index' })}
+        >
+          <View className='action-icon settings'>
+            <Icon name='settings' size={28} color='#1890ff' />
+          </View>
+          <Text className='action-title'>服务设置</Text>
+          <Text className='action-desc'>时段/半径/接单限制</Text>
+        </View>
       </View>
 
       {/* 今日任务 */}
       <View className='section'>
         <View className='section-header'>
           <Text className='section-title'>今日任务</Text>
-          <View 
+          <View
             className='section-more'
             onClick={() => Taro.navigateTo({ url: '/pages/orders/index' })}
           >
@@ -268,7 +314,7 @@ export default function Workbench() {
             <Icon name='chevron-right' size={16} color='#999' />
           </View>
         </View>
-        
+
         {todayOrders.length === 0 ? (
           <View className='empty-orders'>
             <Icon name='calendar-check' size={48} color='#d9d9d9' />
@@ -277,14 +323,14 @@ export default function Workbench() {
         ) : (
           <View className='order-list'>
             {todayOrders.map(order => (
-              <View 
-                key={order.id} 
+              <View
+                key={order.id}
                 className='order-card'
                 onClick={() => Taro.navigateTo({ url: `/pages/workbench/orders/detail?id=${order.id}` })}
               >
                 <View className='order-header'>
                   <Text className='order-time'>{order.appointmentTime}</Text>
-                  <Text 
+                  <Text
                     className='order-status'
                     style={{ color: statusMap[order.status]?.color || '#999' }}
                   >

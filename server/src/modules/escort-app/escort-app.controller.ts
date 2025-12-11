@@ -5,7 +5,7 @@ import { EscortAppService } from './escort-app.service';
 @Controller('escort')
 @UseGuards(JwtAuthGuard)
 export class EscortAppController {
-  constructor(private readonly escortAppService: EscortAppService) {}
+  constructor(private readonly escortAppService: EscortAppService) { }
 
   // 获取陪诊员信息
   @Get('profile')
@@ -84,6 +84,98 @@ export class EscortAppController {
     @Query('status') status: 'working' | 'resting',
   ) {
     return this.escortAppService.updateWorkStatus(req.user.userId, status);
+  }
+
+  // ============================================
+  // 钱包相关 API
+  // ============================================
+
+  // 获取钱包信息
+  @Get('wallet')
+  async getWallet(@Request() req) {
+    return this.escortAppService.getWallet(req.user.userId);
+  }
+
+  // 获取收入明细
+  @Get('wallet/earnings')
+  async getEarnings(
+    @Request() req,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+  ) {
+    return this.escortAppService.getEarnings(req.user.userId, {
+      startDate,
+      endDate,
+      page: page ? parseInt(page) : undefined,
+      pageSize: pageSize ? parseInt(pageSize) : undefined,
+    });
+  }
+
+  // 获取交易流水
+  @Get('wallet/transactions')
+  async getTransactions(
+    @Request() req,
+    @Query('type') type?: string,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+  ) {
+    return this.escortAppService.getTransactions(req.user.userId, {
+      type,
+      page: page ? parseInt(page) : undefined,
+      pageSize: pageSize ? parseInt(pageSize) : undefined,
+    });
+  }
+
+  // 获取提现记录
+  @Get('wallet/withdrawals')
+  async getWithdrawals(
+    @Request() req,
+    @Query('status') status?: string,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+  ) {
+    return this.escortAppService.getWithdrawals(req.user.userId, {
+      status,
+      page: page ? parseInt(page) : undefined,
+      pageSize: pageSize ? parseInt(pageSize) : undefined,
+    });
+  }
+
+  // 申请提现
+  @Post('wallet/withdraw')
+  async requestWithdrawal(
+    @Request() req,
+    @Body() body: { amount: number; method: string; account: string },
+  ) {
+    return this.escortAppService.requestWithdrawal(req.user.userId, body);
+  }
+
+  // 更新提现账户
+  @Post('wallet/account')
+  async updateWithdrawAccount(
+    @Request() req,
+    @Body() body: { method: string; account: string },
+  ) {
+    return this.escortAppService.updateWithdrawAccount(req.user.userId, body.method, body.account);
+  }
+
+  // ============================================
+  // 服务设置相关 API
+  // ============================================
+
+  // 更新服务设置
+  @Post('settings/service')
+  async updateServiceSettings(
+    @Request() req,
+    @Body() body: {
+      serviceHours?: Record<string, Array<{ start: string; end: string }>>;
+      serviceRadius?: number;
+      maxDailyOrders?: number;
+    },
+  ) {
+    return this.escortAppService.updateServiceSettings(req.user.userId, body);
   }
 }
 

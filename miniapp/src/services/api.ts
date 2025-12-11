@@ -155,6 +155,27 @@ export const configApi = {
 }
 
 // ========== 服务模块 ==========
+export interface ServicePriceDetail {
+  originalPrice: number
+  campaignPrice: number | null
+  memberPrice: number | null
+  couponPrice: number | null
+  finalPrice: number
+  campaignDiscount: number
+  campaignName: string | null
+  memberDiscount: number
+  memberLevelName: string | null
+  couponDiscount: number
+  couponName: string | null
+  pointsDiscount: number
+  pointsUsed: number
+  totalSavings: number
+  isMember: boolean
+  membershipExpireAt: Date | null
+  overtimeWaiverRate: number
+  snapshot: any
+}
+
 export const servicesApi = {
   // 获取分类列表
   getCategories: () => get('/services/categories'),
@@ -168,6 +189,9 @@ export const servicesApi = {
 
   // 获取服务详情
   getDetail: (id: string) => get(`/services/${id}`),
+
+  // 获取服务价格详情
+  getPrice: (id: string) => get<ServicePriceDetail>(`/services/${id}/price`),
 }
 
 // ========== 医院模块 ==========
@@ -185,6 +209,17 @@ export const hospitalsApi = {
   // 获取医院医生列表
   getDoctors: (id: string, params?: { departmentId?: string; page?: number; pageSize?: number }) =>
     get(`/hospitals/${id}/doctors`, params),
+
+  // 获取医院关联的陪诊员列表
+  getEscorts: (
+    id: string,
+    params?: {
+      levelCode?: string
+      sortBy?: 'rating' | 'orderCount' | 'experience'
+      page?: number
+      pageSize?: number
+    },
+  ) => get(`/hospitals/${id}/escorts`, params),
 }
 
 // ========== 科室模块 ==========
@@ -270,6 +305,9 @@ export const ordersApi = {
     appointmentTime: string
     departmentName?: string
     remark?: string
+    couponId?: string
+    campaignId?: string
+    pointsToUse?: number
   }) => post('/orders', data, { showLoading: true, loadingText: '提交中...' }),
 
   // 获取订单列表
@@ -282,6 +320,25 @@ export const ordersApi = {
   // 取消订单
   cancel: (id: string, reason?: string) =>
     post(`/orders/${id}/cancel`, { reason }),
+
+  // 评价陪诊员
+  review: (id: string, data: {
+    rating: number
+    content?: string
+    tags?: string[]
+    images?: string[]
+    isAnonymous?: boolean
+  }) => post(`/orders/${id}/review`, data, { showLoading: true, loadingText: '提交中...' }),
+
+  // 检查是否已评价
+  checkReviewed: (id: string) => get<{ reviewed: boolean }>(`/orders/${id}/review/status`),
+
+  // 提交投诉
+  submitComplaint: (id: string, data: {
+    type: string
+    description: string
+    evidence?: string[]
+  }) => post(`/orders/${id}/complaint`, data, { showLoading: true, loadingText: '提交中...' }),
 }
 
 // ========== 支付模块 ==========
@@ -354,6 +411,234 @@ export const uploadApi = {
       })
     })
   },
+}
+
+// ========== 营销中心 API ==========
+
+// 会员系统
+export const membershipApi = {
+  // 获取会员等级列表
+  getLevels: () => get('/membership/levels'),
+
+  // 获取会员方案列表
+  getPlans: (levelId?: string) => get('/membership/plans', { levelId }),
+
+  // 获取我的会员信息
+  getMyMembership: () => get('/membership/my'),
+
+  // 购买会员
+  purchase: (planId: string) => post('/membership/purchase', { planId }),
+}
+
+// 优惠券系统
+export interface UserCoupon {
+  id: string
+  name: string
+  type: 'amount' | 'percent' | 'free'
+  value: number
+  maxDiscount?: number
+  minAmount: number
+  applicableScope: 'all' | 'category' | 'service'
+  startAt: string
+  expireAt: string
+  status: 'unused' | 'used' | 'expired' | 'returned'
+  usedAt?: string
+}
+
+export const couponApi = {
+  // 获取可领取的优惠券列表
+  getAvailable: () => get<UserCoupon[]>('/coupons/available'),
+
+  // 领取优惠券
+  claim: (templateId: string) => post('/coupons/claim', { templateId }),
+
+  // 兑换码兑换优惠券
+  exchange: (code: string) => post('/coupons/exchange', { code }),
+
+  // 获取我的优惠券列表
+  getMyCoupons: (params?: { status?: string; page?: number; pageSize?: number }) =>
+    get<{ data: UserCoupon[]; total: number; page: number; pageSize: number }>('/coupons/my', params),
+
+  // 获取下单时可用优惠券列表
+  getUsableCoupons: (serviceId: string, currentPrice: number) =>
+    get<UserCoupon[]>('/coupons/usable', { serviceId, currentPrice }),
+}
+
+// 积分系统
+export interface UserPoint {
+  totalPoints: number
+  usedPoints: number
+  expiredPoints: number
+  currentPoints: number
+}
+
+export interface PointRecord {
+  id: string
+  type: 'earn' | 'use' | 'expire' | 'refund'
+  points: number
+  balance: number
+  source: string
+  description?: string
+  createdAt: string
+}
+
+export const pointApi = {
+  // 获取我的积分概览
+  getMyPoints: () => get<UserPoint>('/points/my'),
+
+  // 获取积分明细
+  getRecords: (params?: { type?: string; page?: number; pageSize?: number }) =>
+    get<{ data: PointRecord[]; total: number; page: number; pageSize: number }>('/points/records', params),
+
+  // 每日签到
+  dailyCheckin: () => post<{ pointsEarned: number; currentPoints: number }>('/points/checkin'),
+}
+
+// 邀请系统
+export interface ReferralStats {
+  inviteCode: string
+  totalInvites: number
+  registeredCount: number
+  rewardedCount: number
+  inviteCount: number
+  rewardCount: number
+}
+
+export interface ReferralRecord {
+  id: string
+  inviteeId?: string
+  type: 'user' | 'patient'
+  status: 'pending' | 'registered' | 'rewarded' | 'invalid'
+  registeredAt?: string
+  rewardedAt?: string
+  createdAt: string
+  invitee?: {
+    id: string
+    nickname: string
+    phone: string
+  }
+}
+
+export interface InviteLink {
+  inviteCode: string
+  inviteLink: string
+  qrCodeUrl: string
+}
+
+export interface InvitePoster {
+  inviteCode: string
+  inviteLink: string
+  qrCodeUrl: string
+  posterData: {
+    userName: string
+    userAvatar: string
+    inviteCode: string
+    inviteLink: string
+    qrCodeUrl: string
+    title: string
+    subtitle: string
+  }
+}
+
+export const referralApi = {
+  // 获取我的邀请码
+  getInviteCode: () => get<{ code: string }>('/referrals/invite-code'),
+
+  // 获取邀请统计
+  getStats: () => get<ReferralStats>('/referrals/stats'),
+
+  // 获取邀请记录列表
+  getRecords: (params?: { type?: string; status?: string; page?: number; pageSize?: number }) =>
+    get<{ data: ReferralRecord[]; total: number; page: number; pageSize: number }>('/referrals/records', params),
+
+  // 邀请就诊人
+  invitePatient: (data: { name: string; phone: string; gender?: string; birthday?: string }) =>
+    post('/referrals/invite-patient', data),
+
+  // 获取邀请链接
+  getInviteLink: () => get<InviteLink>('/referrals/link'),
+
+  // 生成邀请海报
+  getInvitePoster: () => get<InvitePoster>('/referrals/poster'),
+}
+
+// 活动系统
+export interface Campaign {
+  id: string
+  name: string
+  type: 'flash_sale' | 'seckill' | 'threshold' | 'newcomer'
+  startAt: string
+  endAt: string
+  discountType: 'amount' | 'percent'
+  discountValue: number
+  maxDiscount?: number
+  minAmount: number
+  description?: string
+  bannerUrl?: string
+  status: 'pending' | 'active' | 'ended' | 'cancelled'
+}
+
+export interface SeckillItem {
+  id: string
+  serviceId: string
+  seckillPrice: number
+  stockTotal: number
+  stockSold: number
+  stockRemaining: number
+  service: {
+    id: string
+    name: string
+    price: number
+    image?: string
+  }
+}
+
+export const campaignApi = {
+  // 获取进行中的活动列表
+  getActiveCampaigns: (params?: { type?: string; page?: number; pageSize?: number }) =>
+    get<{ data: Campaign[]; total: number; page: number; pageSize: number }>('/campaigns/active', params),
+
+  // 获取活动详情
+  getDetail: (id: string) => get<Campaign & { seckillItems?: SeckillItem[] }>(`/campaigns/${id}`),
+
+  // 获取服务适用的活动
+  getCampaignForService: (serviceId: string) => get<Campaign | null>(`/campaigns/service/${serviceId}`),
+
+  // 秒杀预占库存
+  reserveSeckillStock: (campaignId: string, serviceId: string) =>
+    post<{ success: boolean; stockRemaining: number }>(`/campaigns/seckill/${campaignId}/${serviceId}/reserve`),
+}
+
+// 价格引擎
+export interface PricingPreview {
+  originalPrice: number
+  campaignPrice?: number
+  memberPrice?: number
+  couponDiscount: number
+  pointsDiscount: number
+  finalPrice: number
+  totalSavings: number
+  breakdown: Array<{
+    type: 'original' | 'campaign' | 'member' | 'coupon' | 'points' | 'final'
+    label: string
+    amount: number
+    strikethrough?: boolean
+    details?: string
+  }>
+  memberLevelName?: string
+  couponName?: string
+  pointsUsed?: number
+}
+
+export const pricingApi = {
+  // 计算订单价格（包含活动、会员、优惠券、积分）
+  calculate: (data: {
+    serviceId: string
+    quantity?: number
+    couponId?: string
+    campaignId?: string
+    pointsToUse?: number
+  }) => post<PricingPreview>('/pricing/calculate', data),
 }
 
 // 导出 Token 管理和工具函数

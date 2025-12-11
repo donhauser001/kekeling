@@ -1,6 +1,6 @@
 import { DotsHorizontalIcon } from '@radix-ui/react-icons'
 import { type Row } from '@tanstack/react-table'
-import { Key, Trash2, UserPen } from 'lucide-react'
+import { Key, Trash2, UserPen, Link, Unlink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -15,10 +15,15 @@ import { useEscorts } from './escorts-provider'
 
 type DataTableRowActionsProps = {
   row: Row<Escort>
+  onBind?: (escort: Escort) => void
+  onUnbind?: (escort: Escort) => void
 }
 
-export function DataTableRowActions({ row }: DataTableRowActionsProps) {
+export function DataTableRowActions({ row, onBind, onUnbind }: DataTableRowActionsProps) {
   const { setOpen, setCurrentRow } = useEscorts()
+  const escort = row.original
+  const hasUserId = escort.userId !== null && escort.userId !== undefined
+
   return (
     <>
       <DropdownMenu modal={false}>
@@ -54,6 +59,30 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
               <Key size={16} />
             </DropdownMenuShortcut>
           </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          {hasUserId ? (
+            <DropdownMenuItem
+              onClick={() => {
+                onUnbind?.(escort)
+              }}
+            >
+              解除绑定
+              <DropdownMenuShortcut>
+                <Unlink size={16} />
+              </DropdownMenuShortcut>
+            </DropdownMenuItem>
+          ) : (
+            <DropdownMenuItem
+              onClick={() => {
+                onBind?.(escort)
+              }}
+            >
+              绑定用户
+              <DropdownMenuShortcut>
+                <Link size={16} />
+              </DropdownMenuShortcut>
+            </DropdownMenuItem>
+          )}
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={() => {

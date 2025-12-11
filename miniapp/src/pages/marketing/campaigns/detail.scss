@@ -1,0 +1,160 @@
+.campaign-detail-page {
+  min-height: 100vh;
+  background: #f5f5f5;
+
+  .banner {
+    width: 100%;
+    height: 400rpx;
+  }
+
+  .content {
+    padding: 30rpx;
+
+    .campaign-header {
+      background: #fff;
+      border-radius: 16rpx;
+      padding: 30rpx;
+      margin-bottom: 30rpx;
+
+      .campaign-name {
+        font-size: 36rpx;
+        font-weight: bold;
+        color: #333;
+        display: block;
+        margin-bottom: 16rpx;
+      }
+
+      .campaign-desc {
+        font-size: 28rpx;
+        color: #666;
+        line-height: 1.6;
+        display: block;
+      }
+    }
+
+    .seckill-section {
+      background: #fff;
+      border-radius: 16rpx;
+      padding: 30rpx;
+      margin-bottom: 30rpx;
+
+      .section-title {
+        font-size: 32rpx;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 30rpx;
+        display: block;
+      }
+
+      .seckill-item {
+        display: flex;
+        align-items: center;
+        padding: 20rpx;
+        background: #f5f5f5;
+        border-radius: 12rpx;
+        margin-bottom: 20rpx;
+
+        .item-image {
+          width: 120rpx;
+          height: 120rpx;
+          border-radius: 12rpx;
+          margin-right: 20rpx;
+        }
+
+        .item-info {
+          flex: 1;
+
+          .item-name {
+            font-size: 30rpx;
+            font-weight: bold;
+            color: #333;
+            display: block;
+            margin-bottom: 12rpx;
+          }
+
+          .item-price {
+            display: flex;
+            align-items: baseline;
+            gap: 12rpx;
+            margin-bottom: 12rpx;
+
+            .seckill-price {
+              font-size: 36rpx;
+              font-weight: bold;
+              color: #ff4d4f;
+            }
+
+            .original-price {
+              font-size: 24rpx;
+              color: #999;
+              text-decoration: line-through;
+            }
+          }
+
+          .item-stock {
+            font-size: 24rpx;
+            color: #ff4d4f;
+            display: block;
+          }
+        }
+
+        .seckill-btn {
+          padding: 16rpx 32rpx;
+          background: linear-gradient(135deg, #ff4d4f 0%, #ff7875 100%);
+          color: #fff;
+          border-radius: 40rpx;
+          font-size: 28rpx;
+          border: none;
+
+          &.disabled {
+            background: #f0f0f0;
+            color: #999;
+          }
+        }
+      }
+    }
+
+    .rules-section {
+      background: #fff;
+      border-radius: 16rpx;
+      padding: 30rpx;
+
+      .section-title {
+        font-size: 32rpx;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 20rpx;
+        display: block;
+      }
+
+      .rules-list {
+        .rule-item {
+          display: flex;
+          align-items: flex-start;
+          margin-bottom: 16rpx;
+
+          .rule-dot {
+            color: #667eea;
+            margin-right: 12rpx;
+            font-size: 24rpx;
+          }
+
+          .rule-text {
+            flex: 1;
+            font-size: 26rpx;
+            color: #666;
+            line-height: 1.6;
+          }
+        }
+      }
+    }
+
+    .loading,
+    .empty {
+      text-align: center;
+      padding: 100rpx 0;
+      color: #999;
+    }
+  }
+}
+

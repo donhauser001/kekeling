@@ -277,3 +277,135 @@
   border-radius: 44px;
   border: none;
 }
+
+// 工作状态
+.escort-avatar-large {
+  position: relative;
+}
+
+.work-status {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  font-size: 22px;
+  border-radius: 20px;
+  white-space: nowrap;
+
+  &.online {
+    background-color: #f6ffed;
+    color: #52c41a;
+    border: 1px solid #b7eb8f;
+  }
+
+  .status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #52c41a;
+  }
+}
+
+.primary-tag {
+  padding: 4px 12px;
+  font-size: 20px;
+  color: var(--primary-color);
+  background-color: var(--primary-color-light);
+  border-radius: 4px;
+}
+
+// 评价标签
+.review-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.review-tag {
+  padding: 4px 12px;
+  font-size: 22px;
+  color: var(--primary-color);
+  background-color: var(--primary-color-light);
+  border-radius: 4px;
+}
+
+// 空评价
+.empty-reviews {
+  padding: 40px;
+  text-align: center;
+  font-size: 28px;
+  color: var(--text-color-placeholder);
+}
+
+// 骨架屏
+.skeleton-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px 32px;
+  background: linear-gradient(135deg, #f6ffed 0%, #d9f7be 100%);
+}
+
+.skeleton-avatar-large {
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+  margin-bottom: 24px;
+}
+
+.skeleton-basic {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.skeleton-text {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+  border-radius: 8px;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+// 错误状态
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 100px 40px;
+  min-height: 60vh;
+
+  .error-text {
+    margin-top: 24px;
+    font-size: 32px;
+    color: var(--text-color);
+  }
+
+  .retry-btn {
+    margin-top: 32px;
+    padding: 16px 48px;
+    font-size: 28px;
+    color: #fff;
+    background-color: var(--primary-color);
+    border-radius: 44px;
+    border: none;
+  }
+}

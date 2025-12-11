@@ -3,6 +3,7 @@ import Taro, { useDidShow } from '@tarojs/taro'
 import { useState, useEffect } from 'react'
 import Icon from '@/components/Icon'
 import CustomTabBar from '@/components/CustomTabBar'
+import RecommendedEscorts from '@/components/RecommendedEscorts'
 import {
   servicesApi,
   homeApi,
@@ -571,6 +572,9 @@ export default function Index() {
           </View>
         </View>
       )}
+
+      {/* 推荐陪诊员 */}
+      <RecommendedEscorts primaryColor={themeSettings.primaryColor} limit={6} />
 
       {/* 内容区 - 渲染 HTML */}
       {pageSettings.content.enabled && pageSettings.content.code && (

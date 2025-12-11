@@ -11,7 +11,7 @@ import { ApiResponse } from '../../../common/response/api-response';
 @ApiTags('管理端-陪诊员')
 @Controller('admin/escorts')
 export class AdminEscortsController {
-  constructor(private readonly escortsService: AdminEscortsService) {}
+  constructor(private readonly escortsService: AdminEscortsService) { }
 
   // ============================================
   // 列表和详情
@@ -21,7 +21,7 @@ export class AdminEscortsController {
   @ApiOperation({ summary: '获取陪诊员列表' })
   @ApiQuery({ name: 'status', required: false, description: '账号状态' })
   @ApiQuery({ name: 'workStatus', required: false, description: '接单状态' })
-  @ApiQuery({ name: 'level', required: false, description: '等级' })
+  @ApiQuery({ name: 'levelCode', required: false, description: '等级代码' })
   @ApiQuery({ name: 'cityCode', required: false, description: '城市代码' })
   @ApiQuery({ name: 'keyword', required: false, description: '搜索关键词' })
   @ApiQuery({ name: 'page', required: false })
@@ -29,7 +29,7 @@ export class AdminEscortsController {
   async findAll(
     @Query('status') status?: string,
     @Query('workStatus') workStatus?: string,
-    @Query('level') level?: string,
+    @Query('levelCode') levelCode?: string,
     @Query('cityCode') cityCode?: string,
     @Query('keyword') keyword?: string,
     @Query('page') page?: number,
@@ -38,7 +38,7 @@ export class AdminEscortsController {
     const result = await this.escortsService.findAll({
       status,
       workStatus,
-      level,
+      levelCode,
       cityCode,
       keyword,
       page: page ? Number(page) : 1,
@@ -103,18 +103,39 @@ export class AdminEscortsController {
   }
 
   // ============================================
-  // 状态管理
+  // 状态管理与审核
   // ============================================
+
+  @Put(':id/review')
+  @ApiOperation({ summary: '审核陪诊员' })
+  @ApiParam({ name: 'id', description: '陪诊员ID' })
+  @ApiBody({
+    schema: {
+      properties: {
+        action: { type: 'string', enum: ['approve', 'reject'] },
+        note: { type: 'string' },
+      },
+    },
+  })
+  async review(
+    @Param('id') id: string,
+    @Body('action') action: 'approve' | 'reject',
+    @Body('note') note?: string,
+  ) {
+    const data = await this.escortsService.review(id, action, note, 'admin'); // TODO: 从 JWT 获取真实管理员ID
+    return ApiResponse.success(data, action === 'approve' ? '审核通过' : '审核拒绝');
+  }
 
   @Put(':id/status')
   @ApiOperation({ summary: '更新陪诊员状态' })
   @ApiParam({ name: 'id', description: '陪诊员ID' })
-  @ApiBody({ schema: { properties: { status: { type: 'string' } } } })
+  @ApiBody({ schema: { properties: { status: { type: 'string' }, reason: { type: 'string' } } } })
   async updateStatus(
     @Param('id') id: string,
     @Body('status') status: string,
+    @Body('reason') reason?: string,
   ) {
-    const data = await this.escortsService.updateStatus(id, status);
+    const data = await this.escortsService.updateStatus(id, status, reason);
     return ApiResponse.success(data, '状态已更新');
   }
 

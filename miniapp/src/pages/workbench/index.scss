@@ -25,7 +25,9 @@
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .loading-text {
@@ -98,10 +100,27 @@
   gap: 6px;
 }
 
+.user-name-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .user-name {
   font-size: 36px;
   font-weight: 600;
   color: #fff;
+}
+
+.rating-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  font-size: 22px;
+  color: #faad14;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 16px;
 }
 
 .user-level {
@@ -182,6 +201,7 @@
   padding: 24px;
   background: #fff;
   border-radius: 16px;
+  position: relative;
 }
 
 .action-icon {
@@ -200,6 +220,10 @@
   &.orders {
     background: linear-gradient(135deg, #e6f7ff 0%, #bae7ff 100%);
   }
+
+  &.earnings {
+    background: linear-gradient(135deg, #f6ffed 0%, #d9f7be 100%);
+  }
 }
 
 .action-title {
@@ -212,6 +236,23 @@
 .action-desc {
   font-size: 24px;
   color: var(--text-color-secondary);
+}
+
+.action-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  font-size: 22px;
+  font-weight: 600;
+  color: #fff;
+  background: #ff4d4f;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 // Section
@@ -319,4 +360,3 @@
   color: var(--text-color-placeholder);
   margin-top: 16px;
 }
-
