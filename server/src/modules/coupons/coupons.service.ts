@@ -4,6 +4,7 @@ import {
     BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { RedisService } from '../redis/redis.service';
 import { Prisma, Decimal } from '@prisma/client/runtime/library';
 import {
     CreateCouponTemplateDto,
@@ -14,7 +15,10 @@ import {
 
 @Injectable()
 export class CouponsService {
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        private redis: RedisService,
+    ) { }
 
     // ========== 用户端方法 ==========
 
@@ -104,15 +108,11 @@ export class CouponsService {
         }
 
         // 防刷：检查领取频率（每分钟最多3次）
-        const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
-        const recentClaims = await this.prisma.userCoupon.count({
-            where: {
-                userId,
-                createdAt: { gte: oneMinuteAgo },
-            },
-        });
+        // 使用 Redis 实现分布式限流
+        const rateLimitKey = `coupon:claim:rate_limit:${userId}`;
+        const allowed = await this.redis.checkRateLimit(rateLimitKey, 3, 60); // 每分钟3次
 
-        if (recentClaims >= 3) {
+        if (!allowed) {
             throw new BadRequestException('领取过于频繁，请稍后再试');
         }
 

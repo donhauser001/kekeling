@@ -31,6 +31,7 @@ import { PointsModule } from './modules/points/points.module';
 import { ReferralsModule } from './modules/referrals/referrals.module';
 import { CampaignsModule } from './modules/campaigns/campaigns.module';
 import { DistributionModule } from './modules/distribution/distribution.module';
+import { RedisModule } from './modules/redis/redis.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { DistributionModule } from './modules/distribution/distribution.module';
       isGlobal: true,
     }),
     PrismaModule,
+    RedisModule,
     AuthModule,
     UsersModule,
     ServiceCategoriesModule,

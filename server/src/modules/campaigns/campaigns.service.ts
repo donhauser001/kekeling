@@ -5,6 +5,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { RedisService } from '../redis/redis.service';
 import { Prisma } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 import {
@@ -19,7 +20,10 @@ import {
 export class CampaignsService {
   private readonly logger = new Logger(CampaignsService.name);
 
-  constructor(private prisma: PrismaService) { }
+  constructor(
+    private prisma: PrismaService,
+    private redis: RedisService,
+  ) { }
 
   // ========== 用户端方法 ==========
 
@@ -247,17 +251,11 @@ export class CampaignsService {
     }
 
     // 防刷：限流检查（每秒最多5个请求）
-    // 注意：这里使用简化方案，实际应该使用Redis
-    const oneSecondAgo = new Date(Date.now() - 1000);
-    const recentReserves = await this.prisma.campaignParticipation.count({
-      where: {
-        campaignId,
-        userId,
-        createdAt: { gte: oneSecondAgo },
-      },
-    });
+    // 使用 Redis 实现分布式限流
+    const rateLimitKey = `seckill:rate_limit:${campaignId}:${userId}`;
+    const allowed = await this.redis.checkRateLimit(rateLimitKey, 5, 1); // 每秒5次
 
-    if (recentReserves >= 5) {
+    if (!allowed) {
       await this.logSuspiciousActivity({
         type: 'seckill_rate_limit',
         userId,
@@ -271,27 +269,19 @@ export class CampaignsService {
 
     // 防刷：IP限制（同IP每小时最多参与3次）
     if (ip) {
-      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-      // 简化方案：检查最近1小时该活动的参与次数
-      // 实际应该记录IP，这里使用用户参与次数作为近似
-      const recentParticipations = await this.prisma.campaignParticipation.count({
-        where: {
-          campaignId,
-          createdAt: { gte: oneHourAgo },
-        },
-      });
+      const ipLimitKey = `seckill:ip_limit:${campaignId}:${ip}`;
+      const ipAllowed = await this.redis.checkRateLimit(ipLimitKey, 3, 3600); // 每小时3次
 
-      // 如果总参与次数异常高，可能是IP刷单
-      if (recentParticipations > 100) {
+      if (!ipAllowed) {
         await this.logSuspiciousActivity({
           type: 'seckill_ip_abuse',
           userId,
           campaignId,
           serviceId,
           ip,
-          reason: 'IP参与次数异常',
+          reason: 'IP参与次数超限',
         });
-        // 不直接拒绝，只记录日志
+        throw new BadRequestException('该IP参与次数已达上限');
       }
     }
 
