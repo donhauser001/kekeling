@@ -19,6 +19,10 @@ import { PaymentModule } from './modules/payment/payment.module';
 import { SystemConfigModule } from './modules/config/config.module';
 import { TestModule } from './modules/test/test.module'; // ⚠️ 仅开发环境，生产环境请注释
 import { EscortAppModule } from './modules/escort-app/escort-app.module';
+import { WorkflowsModule } from './modules/workflows/workflows.module';
+import { ServiceGuaranteesModule } from './modules/service-guarantees/service-guarantees.module';
+import { OperationGuideCategoriesModule } from './modules/operation-guide-categories/operation-guide-categories.module';
+import { OperationGuidesModule } from './modules/operation-guides/operation-guides.module';
 
 @Module({
   imports: [
@@ -30,6 +34,9 @@ import { EscortAppModule } from './modules/escort-app/escort-app.module';
     UsersModule,
     ServiceCategoriesModule,
     ServicesModule,
+    ServiceGuaranteesModule,        // 服务保障管理
+    OperationGuideCategoriesModule, // 操作规范分类管理
+    OperationGuidesModule,          // 操作规范管理
     HospitalsModule,
     DepartmentsModule,
     DepartmentTemplatesModule,
@@ -42,9 +49,10 @@ import { EscortAppModule } from './modules/escort-app/escort-app.module';
     HomeModule,
     PaymentModule,
     SystemConfigModule,
-    EscortAppModule, // 陪诊员端 API
+    WorkflowsModule,    // 流程管理
+    EscortAppModule,    // 陪诊员端 API
     TestModule, // ⚠️ 仅开发环境，生产环境请注释
   ],
 })
-export class AppModule {}
+export class AppModule { }
 

@@ -1015,11 +1015,62 @@ export interface ServiceNoteItem {
   content: string
 }
 
+// 自定义字段配置
+export interface CustomField {
+  id: string
+  type: 'text' | 'textarea' | 'select' | 'checkbox' | 'radio' | 'datetime'
+  label: string
+  placeholder?: string
+  required: boolean
+  options?: string[]
+}
+
+// 服务保障（独立模块）
+export interface ServiceGuarantee {
+  id: string
+  name: string
+  icon: string
+  description: string | null
+  sort: number
+  status: string
+  usageCount?: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateServiceGuaranteeData {
+  name: string
+  icon?: string
+  description?: string
+  sort?: number
+  status?: 'active' | 'inactive'
+}
+
+// 服务保障 API
+export const serviceGuaranteeApi = {
+  // 获取所有启用的保障（用于下拉选择）
+  getActive: () => request<ServiceGuarantee[]>('/service-guarantees/active'),
+  // 获取保障列表
+  getAll: (params?: { status?: string; keyword?: string }) =>
+    request<ServiceGuarantee[]>('/service-guarantees', { params }),
+  // 获取保障详情
+  getById: (id: string) => request<ServiceGuarantee>(`/service-guarantees/${id}`),
+  // 创建保障
+  create: (data: CreateServiceGuaranteeData) =>
+    request<ServiceGuarantee>('/service-guarantees', { method: 'POST', data }),
+  // 更新保障
+  update: (id: string, data: Partial<CreateServiceGuaranteeData>) =>
+    request<ServiceGuarantee>(`/service-guarantees/${id}`, { method: 'PUT', data }),
+  // 删除保障
+  delete: (id: string) => request(`/service-guarantees/${id}`, { method: 'DELETE' }),
+}
+
 export interface Service {
   id: string
   categoryId: string
   name: string
   description: string | null
+  content: string | null          // 富文本内容
   price: number
   originalPrice: number | null
   unit: string
@@ -1028,6 +1079,7 @@ export interface Service {
   detailImages: string[]
   serviceIncludes: ServiceIncludeItem[] | null
   serviceNotes: ServiceNoteItem[] | null
+  guarantees: ServiceGuarantee[]  // 关联的服务保障
   minQuantity: number
   maxQuantity: number
   needPatient: boolean
@@ -1035,14 +1087,26 @@ export interface Service {
   needDepartment: boolean
   needDoctor: boolean
   needAppointment: boolean
+  needIdCard: boolean           // 需要身份证
+  needGender: boolean           // 需要性别
+  needEmergencyContact: boolean // 需要紧急联系人
+  allowPostOrder: boolean       // 允许先下单后填写信息
+  customFields: CustomField[] | null  // 自定义字段配置
+  fieldOrder: string[] | null         // 字段排序
   orderCount: number
   rating: number
   tags: string[]
   sort: number
   status: string
+  workflowId: string | null        // 关联流程ID
+  // 陪诊员配置
+  commissionRate: number | null    // 分成比例（0-100）
+  commissionNote: string | null    // 分成说明
+  operationGuides: OperationGuide[] // 关联的操作规范
   createdAt: string
   updatedAt: string
   category?: ServiceCategory
+  workflow?: Workflow              // 关联流程
 }
 
 export interface ServiceQuery {
@@ -1057,6 +1121,7 @@ export interface CreateServiceData {
   name: string
   categoryId: string
   description?: string
+  content?: string                // 富文本内容
   price: number
   originalPrice?: number
   unit?: string
@@ -1065,6 +1130,7 @@ export interface CreateServiceData {
   detailImages?: string[]
   serviceIncludes?: ServiceIncludeItem[]
   serviceNotes?: ServiceNoteItem[]
+  guaranteeIds?: string[]  // 服务保障ID数组
   minQuantity?: number
   maxQuantity?: number
   needPatient?: boolean
@@ -1072,9 +1138,20 @@ export interface CreateServiceData {
   needDepartment?: boolean
   needDoctor?: boolean
   needAppointment?: boolean
+  needIdCard?: boolean           // 需要身份证
+  needGender?: boolean           // 需要性别
+  needEmergencyContact?: boolean // 需要紧急联系人
+  allowPostOrder?: boolean       // 允许先下单后填写信息
+  customFields?: CustomField[]   // 自定义字段配置
+  fieldOrder?: string[]          // 字段排序
   tags?: string[]
   sort?: number
   status?: string
+  workflowId?: string             // 关联流程ID
+  // 陪诊员配置
+  commissionRate?: number         // 分成比例（0-100）
+  commissionNote?: string         // 分成说明
+  operationGuideIds?: string[]    // 操作规范ID数组
 }
 
 export interface UpdateServiceData extends Partial<CreateServiceData> { }
@@ -1209,6 +1286,291 @@ export const configApi = {
     request<ThemeSettings>('/config/theme/settings', {
       method: 'PUT',
       body: JSON.stringify(data),
+    }),
+}
+
+// ============================================
+// 流程管理 API
+// ============================================
+
+export interface WorkflowStep {
+  id: string
+  workflowId: string
+  name: string
+  description: string | null
+  type: 'start' | 'action' | 'end'
+  sort: number
+  createdAt: string
+}
+
+export interface Workflow {
+  id: string
+  name: string
+  description: string | null
+  category: string
+  status: 'active' | 'inactive' | 'draft'
+  usageCount: number
+  // 时长配置
+  baseDuration: number           // 基础服务时长（分钟）
+  // 超时策略
+  overtimeEnabled: boolean       // 是否允许超时加时
+  overtimePrice: number | null   // 超时单价
+  overtimeUnit: string           // 超时计价单位
+  overtimeMax: number | null     // 最大加时时长（分钟）
+  overtimeGrace: number          // 宽限时间（分钟）
+  createdAt: string
+  updatedAt: string
+  steps: WorkflowStep[]
+  _count?: {
+    services: number
+  }
+}
+
+export interface WorkflowQuery {
+  category?: string
+  keyword?: string
+  status?: string
+  page?: number
+  pageSize?: number
+}
+
+export interface CreateWorkflowStepData {
+  id?: string
+  name: string
+  description?: string
+  type: 'start' | 'action' | 'end'
+  sort: number
+}
+
+export interface CreateWorkflowData {
+  name: string
+  description?: string
+  category: string
+  steps?: CreateWorkflowStepData[]
+  status?: 'active' | 'inactive' | 'draft'
+  // 时长配置
+  baseDuration?: number           // 基础服务时长（分钟）
+  // 超时策略
+  overtimeEnabled?: boolean       // 是否允许超时加时
+  overtimePrice?: number          // 超时单价
+  overtimeUnit?: string           // 超时计价单位
+  overtimeMax?: number            // 最大加时时长（分钟）
+  overtimeGrace?: number          // 宽限时间（分钟）
+}
+
+export interface UpdateWorkflowData extends Partial<CreateWorkflowData> { }
+
+export interface WorkflowCategory {
+  name: string
+  count: number
+}
+
+export const workflowApi = {
+  // 获取流程列表
+  getList: (query: WorkflowQuery = {}) =>
+    request<PaginatedData<Workflow>>('/workflows', {
+      params: query as Record<string, string | number | boolean | undefined>,
+    }),
+
+  // 获取流程详情
+  getById: (id: string) =>
+    request<Workflow>(`/workflows/${id}`),
+
+  // 获取启用的流程（用于下拉选择）
+  getActive: () =>
+    request<Workflow[]>('/workflows/active'),
+
+  // 获取分类列表
+  getCategories: () =>
+    request<WorkflowCategory[]>('/workflows/categories'),
+
+  // 创建流程
+  create: (data: CreateWorkflowData) =>
+    request<Workflow>('/workflows', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // 更新流程
+  update: (id: string, data: UpdateWorkflowData) =>
+    request<Workflow>(`/workflows/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // 更新状态
+  updateStatus: (id: string, status: 'active' | 'inactive' | 'draft') =>
+    request<Workflow>(`/workflows/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    }),
+
+  // 删除流程
+  delete: (id: string) =>
+    request<{ success: boolean }>(`/workflows/${id}`, {
+      method: 'DELETE',
+    }),
+}
+
+// ============================================
+// 操作规范分类 API
+// ============================================
+
+export interface OperationGuideCategory {
+  id: string
+  name: string
+  description: string | null
+  icon: string | null
+  sort: number
+  status: string
+  guideCount?: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface OperationGuideCategoryQuery {
+  status?: string
+  keyword?: string
+}
+
+export interface CreateOperationGuideCategoryData {
+  name: string
+  description?: string
+  icon?: string
+  sort?: number
+  status?: 'active' | 'inactive'
+}
+
+export interface UpdateOperationGuideCategoryData extends Partial<CreateOperationGuideCategoryData> { }
+
+export const operationGuideCategoryApi = {
+  // 获取所有启用的分类（下拉选择用）
+  getActive: () => request<OperationGuideCategory[]>('/operation-guide-categories/active'),
+
+  // 获取分类列表
+  getAll: (params?: OperationGuideCategoryQuery) =>
+    request<OperationGuideCategory[]>('/operation-guide-categories', { params }),
+
+  // 获取分类详情
+  getById: (id: string) => request<OperationGuideCategory>(`/operation-guide-categories/${id}`),
+
+  // 创建分类
+  create: (data: CreateOperationGuideCategoryData) =>
+    request<OperationGuideCategory>('/operation-guide-categories', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // 更新分类
+  update: (id: string, data: UpdateOperationGuideCategoryData) =>
+    request<OperationGuideCategory>(`/operation-guide-categories/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // 删除分类
+  delete: (id: string) =>
+    request<void>(`/operation-guide-categories/${id}`, {
+      method: 'DELETE',
+    }),
+
+  // 批量更新排序
+  updateSort: (items: { id: string; sort: number }[]) =>
+    request<{ success: boolean }>('/operation-guide-categories/sort', {
+      method: 'PUT',
+      body: JSON.stringify(items),
+    }),
+}
+
+// ============================================
+// 操作规范 API
+// ============================================
+
+export interface OperationGuide {
+  id: string
+  categoryId: string
+  title: string
+  summary: string | null
+  content: string
+  coverImage: string | null
+  tags: string[]
+  sort: number
+  status: string
+  serviceCount?: number
+  createdAt: string
+  updatedAt: string
+  category?: {
+    id: string
+    name: string
+    icon: string | null
+  }
+}
+
+export interface OperationGuideQuery {
+  categoryId?: string
+  status?: string
+  keyword?: string
+  page?: number
+  pageSize?: number
+}
+
+export interface CreateOperationGuideData {
+  categoryId: string
+  title: string
+  summary?: string
+  content: string
+  coverImage?: string
+  tags?: string[]
+  sort?: number
+  status?: 'active' | 'inactive' | 'draft'
+}
+
+export interface UpdateOperationGuideData extends Partial<CreateOperationGuideData> { }
+
+export const operationGuideApi = {
+  // 获取所有启用的规范（下拉选择用）
+  getActive: () => request<OperationGuide[]>('/operation-guides/active'),
+
+  // 获取规范列表（分页）
+  getList: (query: OperationGuideQuery = {}) =>
+    request<{
+      list: OperationGuide[]
+      total: number
+      page: number
+      pageSize: number
+      totalPages: number
+    }>('/operation-guides', {
+      params: query as Record<string, string | number | boolean | undefined>,
+    }),
+
+  // 获取规范详情
+  getById: (id: string) => request<OperationGuide>(`/operation-guides/${id}`),
+
+  // 创建规范
+  create: (data: CreateOperationGuideData) =>
+    request<OperationGuide>('/operation-guides', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // 更新规范
+  update: (id: string, data: UpdateOperationGuideData) =>
+    request<OperationGuide>(`/operation-guides/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // 删除规范
+  delete: (id: string) =>
+    request<void>(`/operation-guides/${id}`, {
+      method: 'DELETE',
+    }),
+
+  // 批量更新状态
+  batchUpdateStatus: (ids: string[], status: 'active' | 'inactive' | 'draft') =>
+    request<{ success: boolean; count: number }>('/operation-guides/batch-status', {
+      method: 'PUT',
+      body: JSON.stringify({ ids, status }),
     }),
 }
 

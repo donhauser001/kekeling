@@ -63,6 +63,12 @@ export class ServicesService {
               icon: true,
             },
           },
+          guarantees: {
+            include: {
+              guarantee: true,
+            },
+            orderBy: { sort: 'asc' },
+          },
         },
         orderBy: [{ sort: 'asc' }, { orderCount: 'desc' }],
         skip: (page - 1) * pageSize,
@@ -71,12 +77,14 @@ export class ServicesService {
       this.prisma.service.count({ where }),
     ]);
 
-    // 转换 Decimal 为 number
+    // 转换数据格式
     const formattedData = data.map((item) => ({
       ...item,
       price: Number(item.price),
       originalPrice: item.originalPrice ? Number(item.originalPrice) : null,
       rating: Number(item.rating),
+      // 展开保障数据
+      guarantees: item.guarantees.map((g) => g.guarantee),
     }));
 
     return { data: formattedData, total, page, pageSize };
@@ -96,6 +104,35 @@ export class ServicesService {
             icon: true,
           },
         },
+        workflow: {
+          include: {
+            steps: {
+              orderBy: { sort: 'asc' },
+            },
+          },
+        },
+        guarantees: {
+          include: {
+            guarantee: true,
+          },
+          orderBy: { sort: 'asc' },
+        },
+        operationGuides: {
+          include: {
+            guide: {
+              include: {
+                category: {
+                  select: {
+                    id: true,
+                    name: true,
+                    icon: true,
+                  },
+                },
+              },
+            },
+          },
+          orderBy: { sort: 'asc' },
+        },
       },
     });
 
@@ -108,6 +145,10 @@ export class ServicesService {
       price: Number(service.price),
       originalPrice: service.originalPrice ? Number(service.originalPrice) : null,
       rating: Number(service.rating),
+      // 展开保障数据
+      guarantees: service.guarantees.map((g) => g.guarantee),
+      // 展开操作规范数据
+      operationGuides: service.operationGuides.map((og) => og.guide),
     };
   }
 
@@ -119,6 +160,14 @@ export class ServicesService {
       where: { status: 'active' },
       orderBy: { orderCount: 'desc' },
       take: limit,
+      include: {
+        guarantees: {
+          include: {
+            guarantee: true,
+          },
+          orderBy: { sort: 'asc' },
+        },
+      },
     });
 
     return services.map((item) => ({
@@ -126,6 +175,7 @@ export class ServicesService {
       price: Number(item.price),
       originalPrice: item.originalPrice ? Number(item.originalPrice) : null,
       rating: Number(item.rating),
+      guarantees: item.guarantees.map((g) => g.guarantee),
     }));
   }
 
@@ -142,47 +192,67 @@ export class ServicesService {
       throw new BadRequestException('服务分类不存在');
     }
 
-    const service = await this.prisma.service.create({
-      data: {
-        name: dto.name,
-        categoryId: dto.categoryId,
-        description: dto.description,
-        price: dto.price,
-        originalPrice: dto.originalPrice,
-        unit: dto.unit ?? '次',
-        duration: dto.duration,
-        coverImage: dto.coverImage,
-        detailImages: dto.detailImages ?? [],
-        serviceIncludes: dto.serviceIncludes ? JSON.parse(JSON.stringify(dto.serviceIncludes)) : [],
-        serviceNotes: dto.serviceNotes ? JSON.parse(JSON.stringify(dto.serviceNotes)) : [],
-        minQuantity: dto.minQuantity ?? 1,
-        maxQuantity: dto.maxQuantity ?? 99,
-        needPatient: dto.needPatient ?? true,
-        needHospital: dto.needHospital ?? true,
-        needDepartment: dto.needDepartment ?? false,
-        needDoctor: dto.needDoctor ?? false,
-        needAppointment: dto.needAppointment ?? true,
-        tags: dto.tags ?? [],
-        sort: dto.sort ?? 0,
-        status: dto.status ?? 'draft',
-      },
-      include: {
-        category: {
-          select: {
-            id: true,
-            name: true,
-            icon: true,
-          },
+    // 使用事务创建服务和关联
+    const service = await this.prisma.$transaction(async (tx) => {
+      // 创建服务
+      const newService = await tx.service.create({
+        data: {
+          name: dto.name,
+          categoryId: dto.categoryId,
+          description: dto.description,
+          content: dto.content,
+          price: dto.price,
+          originalPrice: dto.originalPrice,
+          unit: dto.unit ?? '次',
+          duration: dto.duration,
+          coverImage: dto.coverImage,
+          detailImages: dto.detailImages ?? [],
+          serviceIncludes: dto.serviceIncludes ? JSON.parse(JSON.stringify(dto.serviceIncludes)) : [],
+          serviceNotes: dto.serviceNotes ? JSON.parse(JSON.stringify(dto.serviceNotes)) : [],
+          minQuantity: dto.minQuantity ?? 1,
+          maxQuantity: dto.maxQuantity ?? 99,
+          needPatient: dto.needPatient ?? true,
+          needHospital: dto.needHospital ?? true,
+          needDepartment: dto.needDepartment ?? false,
+          needDoctor: dto.needDoctor ?? false,
+          needAppointment: dto.needAppointment ?? true,
+          tags: dto.tags ?? [],
+          sort: dto.sort ?? 0,
+          status: dto.status ?? 'draft',
+          workflowId: dto.workflowId,
+          // 陪诊员配置
+          commissionRate: dto.commissionRate ?? 70,
+          commissionNote: dto.commissionNote,
         },
-      },
+      });
+
+      // 创建保障关联
+      if (dto.guaranteeIds?.length) {
+        await tx.serviceGuaranteeOnService.createMany({
+          data: dto.guaranteeIds.map((guaranteeId, index) => ({
+            serviceId: newService.id,
+            guaranteeId,
+            sort: index,
+          })),
+        });
+      }
+
+      // 创建操作规范关联
+      if (dto.operationGuideIds?.length) {
+        await tx.operationGuideOnService.createMany({
+          data: dto.operationGuideIds.map((guideId, index) => ({
+            serviceId: newService.id,
+            guideId,
+            sort: index,
+          })),
+        });
+      }
+
+      return newService;
     });
 
-    return {
-      ...service,
-      price: Number(service.price),
-      originalPrice: service.originalPrice ? Number(service.originalPrice) : null,
-      rating: Number(service.rating),
-    };
+    // 返回完整数据
+    return this.findById(service.id);
   }
 
   /**
@@ -209,9 +279,11 @@ export class ServicesService {
       }
     }
 
-    const updateData: any = { ...dto };
+    // 准备更新数据（排除关联 ID 数组）
+    const { guaranteeIds, operationGuideIds, ...updateFields } = dto;
+    const updateData: any = { ...updateFields };
 
-    // 处理 JSON 字段，确保正确存储
+    // 处理 JSON 字段
     if (dto.serviceIncludes !== undefined) {
       updateData.serviceIncludes = dto.serviceIncludes;
     }
@@ -219,26 +291,55 @@ export class ServicesService {
       updateData.serviceNotes = dto.serviceNotes;
     }
 
-    const service = await this.prisma.service.update({
-      where: { id },
-      data: updateData,
-      include: {
-        category: {
-          select: {
-            id: true,
-            name: true,
-            icon: true,
-          },
-        },
-      },
+    // 使用事务更新
+    await this.prisma.$transaction(async (tx) => {
+      // 更新服务基本信息
+      await tx.service.update({
+        where: { id },
+        data: updateData,
+      });
+
+      // 如果传入了 guaranteeIds，更新保障关联
+      if (guaranteeIds !== undefined) {
+        // 删除旧关联
+        await tx.serviceGuaranteeOnService.deleteMany({
+          where: { serviceId: id },
+        });
+
+        // 创建新关联
+        if (guaranteeIds.length > 0) {
+          await tx.serviceGuaranteeOnService.createMany({
+            data: guaranteeIds.map((guaranteeId, index) => ({
+              serviceId: id,
+              guaranteeId,
+              sort: index,
+            })),
+          });
+        }
+      }
+
+      // 如果传入了 operationGuideIds，更新操作规范关联
+      if (operationGuideIds !== undefined) {
+        // 删除旧关联
+        await tx.operationGuideOnService.deleteMany({
+          where: { serviceId: id },
+        });
+
+        // 创建新关联
+        if (operationGuideIds.length > 0) {
+          await tx.operationGuideOnService.createMany({
+            data: operationGuideIds.map((guideId, index) => ({
+              serviceId: id,
+              guideId,
+              sort: index,
+            })),
+          });
+        }
+      }
     });
 
-    return {
-      ...service,
-      price: Number(service.price),
-      originalPrice: service.originalPrice ? Number(service.originalPrice) : null,
-      rating: Number(service.rating),
-    };
+    // 返回完整数据
+    return this.findById(id);
   }
 
   /**

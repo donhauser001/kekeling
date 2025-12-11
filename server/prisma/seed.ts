@@ -178,6 +178,56 @@ async function createDepartmentTemplates() {
   return createdTemplates;
 }
 
+// 操作规范分类数据
+async function createOperationGuideCategories() {
+  const categories = [
+    {
+      name: '服务礼仪',
+      description: '陪诊服务中的礼仪规范和沟通技巧',
+      icon: 'heart-handshake',
+      sort: 1,
+    },
+    {
+      name: '医院流程',
+      description: '各类医院就诊流程的标准操作指南',
+      icon: 'building-2',
+      sort: 2,
+    },
+    {
+      name: '检查陪同',
+      description: '各类医学检查的陪同操作规范',
+      icon: 'stethoscope',
+      sort: 3,
+    },
+    {
+      name: '患者护理',
+      description: '患者日常护理和照顾的操作规范',
+      icon: 'heart-pulse',
+      sort: 4,
+    },
+    {
+      name: '应急处理',
+      description: '突发情况和紧急状况的处理流程',
+      icon: 'alert-triangle',
+      sort: 5,
+    },
+    {
+      name: '售后服务',
+      description: '服务结束后的跟进和反馈规范',
+      icon: 'headphones',
+      sort: 6,
+    },
+  ];
+
+  for (const category of categories) {
+    await prisma.operationGuideCategory.create({
+      data: category,
+    });
+  }
+
+  console.log(`   操作规范分类: ${categories.length} 个`);
+}
+
 async function main() {
   console.log('🌱 开始添加真实数据...');
 
@@ -188,6 +238,10 @@ async function main() {
   await prisma.department.deleteMany();
   await prisma.escort.deleteMany();
   await prisma.hospital.deleteMany();
+  await prisma.operationGuideOnService.deleteMany();
+  await prisma.operationGuide.deleteMany();
+  await prisma.operationGuideCategory.deleteMany();
+  await prisma.serviceGuaranteeOnService.deleteMany();
   await prisma.service.deleteMany();
   await prisma.serviceCategory.deleteMany();
   await prisma.banner.deleteMany();
@@ -197,6 +251,10 @@ async function main() {
   // 0. 创建科室库 (科室类目字典)
   const deptTemplates = await createDepartmentTemplates();
   console.log('✅ 科室库创建完成');
+
+  // 0.1 创建操作规范分类
+  await createOperationGuideCategories();
+  console.log('✅ 操作规范分类创建完成');
 
   // 1. 创建服务分类 (在后面统一创建，这里跳过)
   // 服务分类和服务在医院数据后创建

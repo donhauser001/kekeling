@@ -74,6 +74,7 @@ model Service {
   categoryId       String    @map("category_id")
   name             String
   description      String?   @db.Text          // 支持长文本
+  content          String?   @db.Text          // 富文本内容（HTML）
   
   // ✅ 修正：使用 Decimal 处理金额，避免浮点精度问题
   price            Decimal   @db.Decimal(10, 2)
@@ -85,8 +86,8 @@ model Service {
   detailImages     String[]  @default([])      // ✅ 修正：使用 Postgres 数组存多图URL
   
   // ✅ 修正：使用 Json 类型，支持深层查询
-  serviceIncludes  Json?     @map("service_includes")  // [{ text, icon }]
-  serviceNotes     Json?     @map("service_notes")     // [{ title, content }]
+  serviceIncludes    Json?     @map("service_includes")    // [{ text, icon }]
+  serviceNotes       Json?     @map("service_notes")       // [{ title, content }]
   
   // 业务配置
   minQuantity      Int       @default(1) @map("min_quantity")
@@ -96,6 +97,12 @@ model Service {
   needDepartment   Boolean   @default(false) @map("need_department")
   needDoctor       Boolean   @default(false) @map("need_doctor")
   needAppointment  Boolean   @default(true) @map("need_appointment")
+  needIdCard       Boolean   @default(false) @map("need_id_card")       // 需要身份证
+  needGender       Boolean   @default(false) @map("need_gender")        // 需要性别
+  needEmergencyContact Boolean @default(false) @map("need_emergency_contact") // 需要紧急联系人
+  allowPostOrder   Boolean   @default(false) @map("allow_post_order")  // 允许先下单后填写信息
+  customFields     Json?     @map("custom_fields")   // 自定义字段配置 [{ id, type, label, placeholder, required, options }]
+  fieldOrder       Json?     @map("field_order")     // 字段排序 ['needPatient', 'custom_xxx', ...]
   
   orderCount       Int       @default(0) @map("order_count")
   rating           Float     @default(5.0)    // ✅ 修正：统一5分制评分
@@ -105,10 +112,148 @@ model Service {
   createdAt        DateTime  @default(now()) @map("created_at")
   updatedAt        DateTime  @updatedAt @map("updated_at")
 
+  // 陪诊员配置
+  commissionRate   Int?      @default(70) @map("commission_rate")   // 分成比例 0-100，默认70%
+  commissionNote   String?   @map("commission_note")                // 分成说明
+
+  // 关联
   category         ServiceCategory @relation(fields: [categoryId], references: [id])
+  workflowId       String?   @map("workflow_id")
+  workflow         Workflow? @relation(fields: [workflowId], references: [id])
   orders           Order[]
+  guarantees       ServiceGuaranteeOnService[]  // 服务保障关联
+  operationGuides  OperationGuideOnService[]    // 操作规范关联
 
   @@map("services")
+}
+
+// ========== 服务保障模块 ==========
+
+// 服务保障条目
+model ServiceGuarantee {
+  id          String    @id @default(uuid())
+  name        String                          // 保障名称，如"平台担保"
+  icon        String    @default("shield")    // 图标名称
+  description String?   @db.Text              // 详细说明（支持长文本）
+  sort        Int       @default(0)           // 排序
+  status      String    @default("active")    // active, inactive
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  services    ServiceGuaranteeOnService[]
+
+  @@map("service_guarantees")
+}
+
+// 服务与保障的多对多关联表
+model ServiceGuaranteeOnService {
+  serviceId     String   @map("service_id")
+  guaranteeId   String   @map("guarantee_id")
+  sort          Int      @default(0)  // 在该服务中的排序
+
+  service       Service          @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  guarantee     ServiceGuarantee @relation(fields: [guaranteeId], references: [id], onDelete: Cascade)
+
+  @@id([serviceId, guaranteeId])
+  @@map("service_guarantee_relations")
+}
+
+// ========== 操作规范模块 ==========
+
+// 操作规范分类
+model OperationGuideCategory {
+  id          String           @id @default(uuid())
+  name        String
+  description String?
+  icon        String?                            // lucide 图标名
+  sort        Int              @default(0)
+  status      String           @default("active")  // active, inactive
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  guides      OperationGuide[]
+
+  @@map("operation_guide_categories")
+}
+
+// 操作规范
+model OperationGuide {
+  id          String                    @id @default(uuid())
+  categoryId  String                    @map("category_id")
+  title       String
+  summary     String?                              // 摘要
+  content     String                    @db.Text   // 富文本内容
+  coverImage  String?                   @map("cover_image")
+  tags        String[]
+  sort        Int                       @default(0)
+  status      String                    @default("draft")  // active, inactive, draft
+  createdAt   DateTime                  @default(now()) @map("created_at")
+  updatedAt   DateTime                  @updatedAt @map("updated_at")
+
+  category    OperationGuideCategory    @relation(fields: [categoryId], references: [id])
+  services    OperationGuideOnService[]
+
+  @@map("operation_guides")
+}
+
+// 操作规范-服务关联表
+model OperationGuideOnService {
+  id        String         @id @default(uuid())
+  guideId   String         @map("guide_id")
+  serviceId String         @map("service_id")
+  sort      Int            @default(0)  // 在该服务中的排序
+  createdAt DateTime       @default(now()) @map("created_at")
+
+  guide     OperationGuide @relation(fields: [guideId], references: [id], onDelete: Cascade)
+  service   Service        @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@unique([guideId, serviceId])
+  @@map("operation_guide_on_service")
+}
+
+// ========== 流程模块 ==========
+
+// 流程模板
+model Workflow {
+  id          String         @id @default(uuid())
+  name        String
+  description String?
+  category    String         // 流程分类：陪诊流程、诊断流程、跑腿流程、售后流程
+  status      String         @default("active")  // active, inactive, draft
+  usageCount  Int            @default(0) @map("usage_count")
+  
+  // 时长配置
+  baseDuration      Int       @default(240) @map("base_duration")       // 基础服务时长（分钟），默认4小时
+  
+  // 超时策略
+  overtimeEnabled   Boolean   @default(true) @map("overtime_enabled")   // 是否允许超时加时
+  overtimePrice     Decimal?  @map("overtime_price") @db.Decimal(10, 2) // 超时单价
+  overtimeUnit      String    @default("小时") @map("overtime_unit")    // 超时计价单位
+  overtimeMax       Int?      @map("overtime_max")                      // 最大加时时长（分钟）
+  overtimeGrace     Int       @default(15) @map("overtime_grace")       // 宽限时间（分钟）
+  
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+
+  steps       WorkflowStep[]
+  services    Service[]
+
+  @@map("workflows")
+}
+
+// 流程步骤
+model WorkflowStep {
+  id          String   @id @default(uuid())
+  workflowId  String   @map("workflow_id")
+  name        String
+  description String?
+  type        String   // start, action, end
+  sort        Int      @default(0)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  workflow    Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  @@map("workflow_steps")
 }
 
 // ========== 医院模块 ==========

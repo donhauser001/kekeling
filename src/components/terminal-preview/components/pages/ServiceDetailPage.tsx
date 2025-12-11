@@ -49,6 +49,8 @@ export function ServiceDetailPage({
   const [isFavorite, setIsFavorite] = useState(false)
   const [activeImageIndex, setActiveImageIndex] = useState(0)
   const [activeInfoTab, setActiveInfoTab] = useState<InfoTabType>('highlights')
+  const [showGuaranteeDetail, setShowGuaranteeDetail] = useState(false)
+  const [selectedGuarantee, setSelectedGuarantee] = useState<{ name: string; description: string | null; icon: string } | null>(null)
 
   // 流程横向拖动
   const workflowRef = useRef<HTMLDivElement>(null)
@@ -164,38 +166,47 @@ export function ServiceDetailPage({
   const textSecondary = isDarkMode ? '#9ca3af' : '#6b7280'
   const textMuted = isDarkMode ? '#6b7280' : '#9ca3af'
 
-  // 服务亮点（示例数据）
-  const highlights = service?.features || [
+  // 服务亮点（从 serviceIncludes 获取，或使用默认数据）
+  const highlights = service?.serviceIncludes?.map(item => item.text) || [
     '专业陪诊团队',
     '全程一对一服务',
     '熟悉医院流程',
     '贴心关怀照顾',
   ]
 
-  // 服务流程（示例数据，后续可从流程管理获取）
-  const workflowSteps = [
+  // 服务流程（优先使用关联的流程，否则使用默认数据）
+  const defaultWorkflowSteps = [
     { id: '1', name: '下单预约', type: 'start' as const },
     { id: '2', name: '陪诊员接单', type: 'action' as const },
     { id: '3', name: '到达医院', type: 'action' as const },
     { id: '4', name: '全程陪诊', type: 'action' as const },
     { id: '5', name: '服务完成', type: 'end' as const },
   ]
+  const workflowSteps = service?.workflow?.steps?.length
+    ? service.workflow.steps.map(step => ({
+      id: step.id,
+      name: step.name,
+      type: step.type as 'start' | 'action' | 'end',
+    }))
+    : defaultWorkflowSteps
 
   // 流程步骤类型颜色
   const stepTypeColors = {
     start: { bg: isDarkMode ? '#166534' : '#dcfce7', text: isDarkMode ? '#86efac' : '#166534' },
     action: { bg: isDarkMode ? '#1e40af' : '#dbeafe', text: isDarkMode ? '#93c5fd' : '#1e40af' },
-    condition: { bg: isDarkMode ? '#92400e' : '#fef3c7', text: isDarkMode ? '#fcd34d' : '#92400e' },
     end: { bg: isDarkMode ? '#6b21a8' : '#f3e8ff', text: isDarkMode ? '#d8b4fe' : '#6b21a8' },
   }
 
-  // 服务须知（示例数据）
-  const notices = [
+  // 服务须知（从 serviceNotes 获取，或使用默认数据）
+  const defaultNotices = [
     '请提前一天预约服务',
     '服务当天请携带有效身份证件',
     '如需取消请提前4小时通知',
     '服务时间以实际就诊时长为准',
   ]
+  const notices = service?.serviceNotes?.length
+    ? service.serviceNotes.map(item => `${item.title}：${item.content}`)
+    : defaultNotices
 
   // 信息选项卡配置
   const infoTabs: { key: InfoTabType; label: string; icon: React.ReactNode }[] = [
@@ -236,8 +247,56 @@ export function ServiceDetailPage({
     )
   }
 
-  // 图片列表
-  const images = service.images?.length ? service.images : (service.coverImage ? [service.coverImage] : [])
+  // 图片列表（从 detailImages 获取，否则使用封面图）
+  const images = service.detailImages?.length ? service.detailImages : (service.coverImage ? [service.coverImage] : [])
+
+  // 图片轮播滑动
+  const imageSliderRef = useRef<HTMLDivElement>(null)
+  const [imageStartX, setImageStartX] = useState(0)
+  const [imageSwiping, setImageSwiping] = useState(false)
+
+  const handleImageTouchStart = (e: React.TouchEvent) => {
+    if (images.length <= 1) return
+    setImageStartX(e.touches[0].clientX)
+    setImageSwiping(true)
+  }
+
+  const handleImageTouchEnd = (e: React.TouchEvent) => {
+    if (!imageSwiping || images.length <= 1) return
+    const endX = e.changedTouches[0].clientX
+    const diff = imageStartX - endX
+
+    if (Math.abs(diff) > 50) {
+      if (diff > 0 && activeImageIndex < images.length - 1) {
+        // 向左滑，下一张
+        setActiveImageIndex(prev => prev + 1)
+      } else if (diff < 0 && activeImageIndex > 0) {
+        // 向右滑，上一张
+        setActiveImageIndex(prev => prev - 1)
+      }
+    }
+    setImageSwiping(false)
+  }
+
+  const handleImageMouseDown = (e: React.MouseEvent) => {
+    if (images.length <= 1) return
+    setImageStartX(e.clientX)
+    setImageSwiping(true)
+  }
+
+  const handleImageMouseUp = (e: React.MouseEvent) => {
+    if (!imageSwiping || images.length <= 1) return
+    const diff = imageStartX - e.clientX
+
+    if (Math.abs(diff) > 50) {
+      if (diff > 0 && activeImageIndex < images.length - 1) {
+        setActiveImageIndex(prev => prev + 1)
+      } else if (diff < 0 && activeImageIndex > 0) {
+        setActiveImageIndex(prev => prev - 1)
+      }
+    }
+    setImageSwiping(false)
+  }
 
   return (
     <div style={{ backgroundColor: bgColor }} className='min-h-full'>
@@ -270,18 +329,25 @@ export function ServiceDetailPage({
 
       {/* 服务图片/轮播 */}
       {images.length > 0 ? (
-        <div className='relative'>
+        <div className='relative overflow-hidden'>
           <div
-            className='h-56 flex items-center justify-center'
+            ref={imageSliderRef}
+            className='h-56 flex items-center justify-center select-none'
             style={{ backgroundColor: isDarkMode ? '#3a3a3a' : '#f3f4f6' }}
+            onTouchStart={handleImageTouchStart}
+            onTouchEnd={handleImageTouchEnd}
+            onMouseDown={handleImageMouseDown}
+            onMouseUp={handleImageMouseUp}
+            onMouseLeave={() => setImageSwiping(false)}
           >
             <img
               src={getResourceUrl(images[activeImageIndex])}
               alt={service.name}
-              className='h-full w-full object-cover'
+              className='h-full w-full object-cover pointer-events-none'
+              draggable={false}
             />
           </div>
-          {/* 图片指示器 */}
+          {/* 图片指示器 - 只有多张图片时显示 */}
           {images.length > 1 && (
             <div className='absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5'>
               {images.map((_, index) => (
@@ -299,6 +365,15 @@ export function ServiceDetailPage({
                   onClick={() => setActiveImageIndex(index)}
                 />
               ))}
+            </div>
+          )}
+          {/* 图片计数器 - 只有多张图片时显示 */}
+          {images.length > 1 && (
+            <div
+              className='absolute bottom-3 right-3 px-2 py-0.5 rounded-full text-xs'
+              style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)', color: '#fff' }}
+            >
+              {activeImageIndex + 1}/{images.length}
             </div>
           )}
         </div>
@@ -377,8 +452,69 @@ export function ServiceDetailPage({
           </div>
         </div>
 
-        {/* 服务时长 */}
-        {service.duration && (
+        {/* 费用说明 */}
+        {service.workflow && (
+          <div
+            className='mt-4 rounded-lg p-3'
+            style={{ backgroundColor: isDarkMode ? '#3a3a3a' : '#f0fdf4' }}
+          >
+            <div className='flex items-center gap-2 mb-2'>
+              <Clock className='h-4 w-4' style={{ color: '#10b981' }} />
+              <span className='text-sm font-medium' style={{ color: '#10b981' }}>费用说明</span>
+            </div>
+            {(() => {
+              const baseDuration = service.workflow!.baseDuration
+              const graceMinutes = service.workflow!.overtimeGrace
+              const totalFreeMinutes = baseDuration + graceMinutes
+              const baseHours = Math.floor(baseDuration / 60)
+              const baseMinutesRemainder = baseDuration % 60
+              const freeHours = Math.floor(totalFreeMinutes / 60)
+              const freeMinutesRemainder = totalFreeMinutes % 60
+              const baseDurationText = `${baseHours > 0 ? `${baseHours}小时` : ''}${baseMinutesRemainder > 0 ? `${baseMinutesRemainder}分钟` : ''}`
+              const freeDurationText = `${freeHours > 0 ? `${freeHours}小时` : ''}${freeMinutesRemainder > 0 ? `${freeMinutesRemainder}分钟` : ''}`
+
+              return (
+                <div className='space-y-1.5 text-xs' style={{ color: textSecondary }}>
+                  <div className='flex items-start gap-2'>
+                    <span>•</span>
+                    <span>
+                      包含
+                      <span className='font-medium' style={{ color: textPrimary }}> {baseDurationText} </span>
+                      基础服务时长
+                    </span>
+                  </div>
+                  {service.workflow!.overtimeEnabled && service.workflow!.overtimePrice && (
+                    <>
+                      {graceMinutes > 0 && (
+                        <div className='flex items-start gap-2'>
+                          <span>•</span>
+                          <span>
+                            服务
+                            <span className='font-medium' style={{ color: textPrimary }}> {freeDurationText} </span>
+                            内不额外收费
+                          </span>
+                        </div>
+                      )}
+                      <div className='flex items-start gap-2'>
+                        <span>•</span>
+                        <span>
+                          超过
+                          <span className='font-medium' style={{ color: textPrimary }}> {freeDurationText} </span>
+                          后按
+                          <span className='font-medium' style={{ color: themeSettings.primaryColor }}> ¥{Number(service.workflow!.overtimePrice)}/{service.workflow!.overtimeUnit} </span>
+                          加收
+                        </span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )
+            })()}
+          </div>
+        )}
+
+        {/* 旧版服务时长（兼容无流程的服务） */}
+        {!service.workflow && service.duration && (
           <div
             className='mt-4 flex items-center gap-2 px-3 py-2 rounded-lg'
             style={{ backgroundColor: isDarkMode ? '#3a3a3a' : '#f9fafb' }}
@@ -484,7 +620,7 @@ export function ServiceDetailPage({
           {/* 服务须知 */}
           {activeInfoTab === 'notice' && (
             <div className='space-y-2'>
-              {(service.notes ? service.notes.split('\n') : notices).map((item, index) => (
+              {notices.map((item, index) => (
                 <div key={index} className='flex items-start gap-2'>
                   <div
                     className='mt-1.5 h-1.5 w-1.5 rounded-full flex-shrink-0'
@@ -549,25 +685,108 @@ export function ServiceDetailPage({
       </div>
 
       {/* 服务保障 */}
-      <div className='mx-3 mt-3 rounded-xl p-4' style={{ backgroundColor: cardBg }}>
-        <h3 className='text-sm font-semibold mb-3' style={{ color: textPrimary }}>
-          服务保障
-        </h3>
-        <div className='flex items-center gap-4'>
-          <div className='flex items-center gap-1.5'>
-            <Shield className='h-4 w-4' style={{ color: '#10b981' }} />
-            <span className='text-xs' style={{ color: textSecondary }}>平台担保</span>
+      {(() => {
+        // 获取保障项（优先使用关联的，否则使用默认）
+        const guarantees = service?.guarantees?.length
+          ? service.guarantees
+          : [
+            { id: '1', name: '平台担保', icon: 'shield', description: '平台提供资金担保，确保服务交易安全可靠。' },
+            { id: '2', name: '先服务后付款', icon: 'check', description: '服务完成后再确认付款，保障您的消费权益。' },
+            { id: '3', name: '好评返现', icon: 'star', description: '服务完成后给予好评，可获得现金返还。' },
+          ]
+
+        // 图标映射
+        const getIcon = (iconName?: string) => {
+          switch (iconName) {
+            case 'shield':
+              return <Shield className='h-4 w-4' style={{ color: '#10b981' }} />
+            case 'star':
+              return <Star className='h-4 w-4' style={{ color: '#10b981' }} />
+            case 'heart':
+              return <Heart className='h-4 w-4' style={{ color: '#10b981' }} />
+            case 'check':
+            default:
+              return <CheckCircle className='h-4 w-4' style={{ color: '#10b981' }} />
+          }
+        }
+
+        // 点击保障项
+        const handleGuaranteeClick = (item: typeof guarantees[0]) => {
+          setSelectedGuarantee(item)
+          setShowGuaranteeDetail(true)
+        }
+
+        return (
+          <div className='mx-3 mt-3 rounded-xl p-4' style={{ backgroundColor: cardBg }}>
+            <h3 className='text-sm font-semibold mb-3' style={{ color: textPrimary }}>
+              服务保障
+            </h3>
+            <div className='flex flex-wrap items-center gap-3'>
+              {guarantees.map((item) => (
+                <button
+                  key={item.id}
+                  className='flex items-center gap-1.5 px-2 py-1 rounded-full transition-colors hover:bg-emerald-50 active:scale-95'
+                  style={{ backgroundColor: isDarkMode ? '#1a3a2a' : '#ecfdf5' }}
+                  onClick={() => handleGuaranteeClick(item)}
+                >
+                  {getIcon(item.icon)}
+                  <span className='text-xs' style={{ color: '#10b981' }}>{item.name}</span>
+                  <ChevronRight className='h-3 w-3' style={{ color: '#10b981' }} />
+                </button>
+              ))}
+            </div>
           </div>
-          <div className='flex items-center gap-1.5'>
-            <CheckCircle className='h-4 w-4' style={{ color: '#10b981' }} />
-            <span className='text-xs' style={{ color: textSecondary }}>先服务后付款</span>
-          </div>
-          <div className='flex items-center gap-1.5'>
-            <Star className='h-4 w-4' style={{ color: '#10b981' }} />
-            <span className='text-xs' style={{ color: textSecondary }}>好评返现</span>
+        )
+      })()}
+
+      {/* 保障详情弹窗 */}
+      {showGuaranteeDetail && selectedGuarantee && (
+        <div
+          className='fixed inset-0 z-50 flex items-end justify-center'
+          onClick={() => setShowGuaranteeDetail(false)}
+        >
+          {/* 遮罩 */}
+          <div className='absolute inset-0 bg-black/50' />
+          {/* 弹窗内容 */}
+          <div
+            className='relative w-full max-w-md rounded-t-2xl p-4 pb-8 animate-in slide-in-from-bottom duration-300'
+            style={{ backgroundColor: cardBg }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* 顶部把手 */}
+            <div className='flex justify-center mb-3'>
+              <div className='w-10 h-1 rounded-full bg-gray-300' />
+            </div>
+            {/* 标题 */}
+            <div className='flex items-center gap-3 mb-4'>
+              <div
+                className='w-10 h-10 rounded-full flex items-center justify-center'
+                style={{ backgroundColor: '#ecfdf5' }}
+              >
+                {selectedGuarantee.icon === 'shield' && <Shield className='h-5 w-5' style={{ color: '#10b981' }} />}
+                {selectedGuarantee.icon === 'star' && <Star className='h-5 w-5' style={{ color: '#10b981' }} />}
+                {selectedGuarantee.icon === 'heart' && <Heart className='h-5 w-5' style={{ color: '#10b981' }} />}
+                {(!selectedGuarantee.icon || selectedGuarantee.icon === 'check') && <CheckCircle className='h-5 w-5' style={{ color: '#10b981' }} />}
+              </div>
+              <h3 className='text-base font-semibold' style={{ color: textPrimary }}>
+                {selectedGuarantee.name}
+              </h3>
+            </div>
+            {/* 内容 */}
+            <p className='text-sm leading-relaxed' style={{ color: textSecondary }}>
+              {selectedGuarantee.description || '暂无详细说明'}
+            </p>
+            {/* 关闭按钮 */}
+            <button
+              className='mt-6 w-full py-2.5 rounded-full text-sm font-medium'
+              style={{ backgroundColor: themeSettings.primaryColor, color: '#fff' }}
+              onClick={() => setShowGuaranteeDetail(false)}
+            >
+              我知道了
+            </button>
           </div>
         </div>
-      </div>
+      )}
 
       {/* 推荐服务 */}
       {recommendedServices.length > 0 && (

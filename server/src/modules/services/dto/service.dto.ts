@@ -40,6 +40,7 @@ export class ServiceNoteItem {
   content: string;
 }
 
+
 // 创建服务 DTO
 export class CreateServiceDto {
   @ApiProperty({ description: '服务名称' })
@@ -57,6 +58,11 @@ export class CreateServiceDto {
   @IsString()
   @MaxLength(500)
   description?: string;
+
+  @ApiPropertyOptional({ description: '富文本内容（HTML）' })
+  @IsOptional()
+  @IsString()
+  content?: string;
 
   @ApiProperty({ description: '销售价格' })
   @IsNumber({}, { message: '价格必须是数字' })
@@ -106,6 +112,12 @@ export class CreateServiceDto {
   @Type(() => ServiceNoteItem)
   serviceNotes?: ServiceNoteItem[];
 
+  @ApiPropertyOptional({ description: '服务保障ID数组' })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  guaranteeIds?: string[];
+
   @ApiPropertyOptional({ description: '最小购买数量', default: 1 })
   @IsOptional()
   @IsInt()
@@ -145,6 +157,44 @@ export class CreateServiceDto {
   @IsBoolean()
   needAppointment?: boolean;
 
+  @ApiPropertyOptional({ description: '是否需要身份证', default: false })
+  @IsOptional()
+  @IsBoolean()
+  needIdCard?: boolean;
+
+  @ApiPropertyOptional({ description: '是否需要性别', default: false })
+  @IsOptional()
+  @IsBoolean()
+  needGender?: boolean;
+
+  @ApiPropertyOptional({ description: '是否需要紧急联系人', default: false })
+  @IsOptional()
+  @IsBoolean()
+  needEmergencyContact?: boolean;
+
+  @ApiPropertyOptional({ description: '是否允许先下单后填写信息', default: false })
+  @IsOptional()
+  @IsBoolean()
+  allowPostOrder?: boolean;
+
+  @ApiPropertyOptional({ description: '自定义字段配置' })
+  @IsOptional()
+  @IsArray()
+  customFields?: {
+    id: string;
+    type: 'text' | 'textarea' | 'select' | 'checkbox' | 'radio' | 'datetime';
+    label: string;
+    placeholder?: string;
+    required: boolean;
+    options?: string[];
+  }[];
+
+  @ApiPropertyOptional({ description: '字段排序' })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  fieldOrder?: string[];
+
   @ApiPropertyOptional({ description: '标签数组' })
   @IsOptional()
   @IsArray()
@@ -161,6 +211,31 @@ export class CreateServiceDto {
   @IsOptional()
   @IsEnum(['active', 'inactive', 'draft'])
   status?: 'active' | 'inactive' | 'draft';
+
+  @ApiPropertyOptional({ description: '关联流程ID' })
+  @IsOptional()
+  @IsString()
+  workflowId?: string;
+
+  // 陪诊员配置
+  @ApiPropertyOptional({ description: '分成比例（0-100）', default: 70 })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Type(() => Number)
+  commissionRate?: number;
+
+  @ApiPropertyOptional({ description: '分成说明' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  commissionNote?: string;
+
+  @ApiPropertyOptional({ description: '操作规范ID数组' })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  operationGuideIds?: string[];
 }
 
 // 更新服务 DTO
@@ -182,6 +257,11 @@ export class UpdateServiceDto {
   @IsString()
   @MaxLength(500)
   description?: string;
+
+  @ApiPropertyOptional({ description: '富文本内容（HTML）' })
+  @IsOptional()
+  @IsString()
+  content?: string;
 
   @ApiPropertyOptional({ description: '销售价格' })
   @IsOptional()
@@ -232,6 +312,12 @@ export class UpdateServiceDto {
   @Type(() => ServiceNoteItem)
   serviceNotes?: ServiceNoteItem[];
 
+  @ApiPropertyOptional({ description: '服务保障ID数组' })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  guaranteeIds?: string[];
+
   @ApiPropertyOptional({ description: '最小购买数量' })
   @IsOptional()
   @IsInt()
@@ -271,6 +357,44 @@ export class UpdateServiceDto {
   @IsBoolean()
   needAppointment?: boolean;
 
+  @ApiPropertyOptional({ description: '是否需要身份证' })
+  @IsOptional()
+  @IsBoolean()
+  needIdCard?: boolean;
+
+  @ApiPropertyOptional({ description: '是否需要性别' })
+  @IsOptional()
+  @IsBoolean()
+  needGender?: boolean;
+
+  @ApiPropertyOptional({ description: '是否需要紧急联系人' })
+  @IsOptional()
+  @IsBoolean()
+  needEmergencyContact?: boolean;
+
+  @ApiPropertyOptional({ description: '是否允许先下单后填写信息' })
+  @IsOptional()
+  @IsBoolean()
+  allowPostOrder?: boolean;
+
+  @ApiPropertyOptional({ description: '自定义字段配置' })
+  @IsOptional()
+  @IsArray()
+  customFields?: {
+    id: string;
+    type: 'text' | 'textarea' | 'select' | 'checkbox' | 'radio' | 'datetime';
+    label: string;
+    placeholder?: string;
+    required: boolean;
+    options?: string[];
+  }[];
+
+  @ApiPropertyOptional({ description: '字段排序' })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  fieldOrder?: string[];
+
   @ApiPropertyOptional({ description: '标签数组' })
   @IsOptional()
   @IsArray()
@@ -287,6 +411,31 @@ export class UpdateServiceDto {
   @IsOptional()
   @IsEnum(['active', 'inactive', 'draft'])
   status?: 'active' | 'inactive' | 'draft';
+
+  @ApiPropertyOptional({ description: '关联流程ID' })
+  @IsOptional()
+  @IsString()
+  workflowId?: string;
+
+  // 陪诊员配置
+  @ApiPropertyOptional({ description: '分成比例（0-100）' })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Type(() => Number)
+  commissionRate?: number;
+
+  @ApiPropertyOptional({ description: '分成说明' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  commissionNote?: string;
+
+  @ApiPropertyOptional({ description: '操作规范ID数组' })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  operationGuideIds?: string[];
 }
 
 // 查询服务 DTO

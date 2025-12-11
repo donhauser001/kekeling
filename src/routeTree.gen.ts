@@ -30,12 +30,14 @@ import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authentic
 import { Route as AuthenticatedTagsIndexRouteImport } from './routes/_authenticated/tags/index'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
 import { Route as AuthenticatedServicesIndexRouteImport } from './routes/_authenticated/services/index'
+import { Route as AuthenticatedServiceGuaranteesIndexRouteImport } from './routes/_authenticated/service-guarantees/index'
 import { Route as AuthenticatedServiceCategoriesIndexRouteImport } from './routes/_authenticated/service-categories/index'
 import { Route as AuthenticatedRolesIndexRouteImport } from './routes/_authenticated/roles/index'
 import { Route as AuthenticatedPricingPoliciesIndexRouteImport } from './routes/_authenticated/pricing-policies/index'
 import { Route as AuthenticatedPositionsIndexRouteImport } from './routes/_authenticated/positions/index'
 import { Route as AuthenticatedOrdersIndexRouteImport } from './routes/_authenticated/orders/index'
 import { Route as AuthenticatedOrderSettingsIndexRouteImport } from './routes/_authenticated/order-settings/index'
+import { Route as AuthenticatedOperationGuidesIndexRouteImport } from './routes/_authenticated/operation-guides/index'
 import { Route as AuthenticatedMedicalTagsIndexRouteImport } from './routes/_authenticated/medical-tags/index'
 import { Route as AuthenticatedMedicalLevelsIndexRouteImport } from './routes/_authenticated/medical-levels/index'
 import { Route as AuthenticatedHospitalsIndexRouteImport } from './routes/_authenticated/hospitals/index'
@@ -56,6 +58,7 @@ import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes
 import { Route as AuthenticatedSettingsDisplayRouteImport } from './routes/_authenticated/settings/display'
 import { Route as AuthenticatedSettingsAppearanceRouteImport } from './routes/_authenticated/settings/appearance'
 import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated/settings/account'
+import { Route as AuthenticatedServicesIdRouteImport } from './routes/_authenticated/services/$id'
 import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
 import { Route as AuthenticatedAppBannersRouteImport } from './routes/_authenticated/app/banners'
 import { Route as AuthenticatedAppSettingsHomepageRouteImport } from './routes/_authenticated/app/settings/homepage'
@@ -167,6 +170,12 @@ const AuthenticatedServicesIndexRoute =
     path: '/services/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedServiceGuaranteesIndexRoute =
+  AuthenticatedServiceGuaranteesIndexRouteImport.update({
+    id: '/service-guarantees/',
+    path: '/service-guarantees/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedServiceCategoriesIndexRoute =
   AuthenticatedServiceCategoriesIndexRouteImport.update({
     id: '/service-categories/',
@@ -200,6 +209,12 @@ const AuthenticatedOrderSettingsIndexRoute =
   AuthenticatedOrderSettingsIndexRouteImport.update({
     id: '/order-settings/',
     path: '/order-settings/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOperationGuidesIndexRoute =
+  AuthenticatedOperationGuidesIndexRouteImport.update({
+    id: '/operation-guides/',
+    path: '/operation-guides/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedMedicalTagsIndexRoute =
@@ -318,6 +333,11 @@ const AuthenticatedSettingsAccountRoute =
     path: '/account',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any)
+const AuthenticatedServicesIdRoute = AuthenticatedServicesIdRouteImport.update({
+  id: '/services/$id',
+  path: '/services/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedErrorsErrorRoute =
   AuthenticatedErrorsErrorRouteImport.update({
     id: '/errors/$error',
@@ -358,6 +378,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/app/banners': typeof AuthenticatedAppBannersRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
+  '/services/$id': typeof AuthenticatedServicesIdRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
@@ -378,12 +399,14 @@ export interface FileRoutesByFullPath {
   '/hospitals': typeof AuthenticatedHospitalsIndexRoute
   '/medical-levels': typeof AuthenticatedMedicalLevelsIndexRoute
   '/medical-tags': typeof AuthenticatedMedicalTagsIndexRoute
+  '/operation-guides': typeof AuthenticatedOperationGuidesIndexRoute
   '/order-settings': typeof AuthenticatedOrderSettingsIndexRoute
   '/orders': typeof AuthenticatedOrdersIndexRoute
   '/positions': typeof AuthenticatedPositionsIndexRoute
   '/pricing-policies': typeof AuthenticatedPricingPoliciesIndexRoute
   '/roles': typeof AuthenticatedRolesIndexRoute
   '/service-categories': typeof AuthenticatedServiceCategoriesIndexRoute
+  '/service-guarantees': typeof AuthenticatedServiceGuaranteesIndexRoute
   '/services': typeof AuthenticatedServicesIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/tags': typeof AuthenticatedTagsIndexRoute
@@ -407,6 +430,7 @@ export interface FileRoutesByTo {
   '/': typeof AuthenticatedIndexRoute
   '/app/banners': typeof AuthenticatedAppBannersRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
+  '/services/$id': typeof AuthenticatedServicesIdRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
@@ -427,12 +451,14 @@ export interface FileRoutesByTo {
   '/hospitals': typeof AuthenticatedHospitalsIndexRoute
   '/medical-levels': typeof AuthenticatedMedicalLevelsIndexRoute
   '/medical-tags': typeof AuthenticatedMedicalTagsIndexRoute
+  '/operation-guides': typeof AuthenticatedOperationGuidesIndexRoute
   '/order-settings': typeof AuthenticatedOrderSettingsIndexRoute
   '/orders': typeof AuthenticatedOrdersIndexRoute
   '/positions': typeof AuthenticatedPositionsIndexRoute
   '/pricing-policies': typeof AuthenticatedPricingPoliciesIndexRoute
   '/roles': typeof AuthenticatedRolesIndexRoute
   '/service-categories': typeof AuthenticatedServiceCategoriesIndexRoute
+  '/service-guarantees': typeof AuthenticatedServiceGuaranteesIndexRoute
   '/services': typeof AuthenticatedServicesIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/tags': typeof AuthenticatedTagsIndexRoute
@@ -461,6 +487,7 @@ export interface FileRoutesById {
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/app/banners': typeof AuthenticatedAppBannersRoute
   '/_authenticated/errors/$error': typeof AuthenticatedErrorsErrorRoute
+  '/_authenticated/services/$id': typeof AuthenticatedServicesIdRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/_authenticated/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/_authenticated/settings/display': typeof AuthenticatedSettingsDisplayRoute
@@ -481,12 +508,14 @@ export interface FileRoutesById {
   '/_authenticated/hospitals/': typeof AuthenticatedHospitalsIndexRoute
   '/_authenticated/medical-levels/': typeof AuthenticatedMedicalLevelsIndexRoute
   '/_authenticated/medical-tags/': typeof AuthenticatedMedicalTagsIndexRoute
+  '/_authenticated/operation-guides/': typeof AuthenticatedOperationGuidesIndexRoute
   '/_authenticated/order-settings/': typeof AuthenticatedOrderSettingsIndexRoute
   '/_authenticated/orders/': typeof AuthenticatedOrdersIndexRoute
   '/_authenticated/positions/': typeof AuthenticatedPositionsIndexRoute
   '/_authenticated/pricing-policies/': typeof AuthenticatedPricingPoliciesIndexRoute
   '/_authenticated/roles/': typeof AuthenticatedRolesIndexRoute
   '/_authenticated/service-categories/': typeof AuthenticatedServiceCategoriesIndexRoute
+  '/_authenticated/service-guarantees/': typeof AuthenticatedServiceGuaranteesIndexRoute
   '/_authenticated/services/': typeof AuthenticatedServicesIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/tags/': typeof AuthenticatedTagsIndexRoute
@@ -513,6 +542,7 @@ export interface FileRouteTypes {
     | '/'
     | '/app/banners'
     | '/errors/$error'
+    | '/services/$id'
     | '/settings/account'
     | '/settings/appearance'
     | '/settings/display'
@@ -533,12 +563,14 @@ export interface FileRouteTypes {
     | '/hospitals'
     | '/medical-levels'
     | '/medical-tags'
+    | '/operation-guides'
     | '/order-settings'
     | '/orders'
     | '/positions'
     | '/pricing-policies'
     | '/roles'
     | '/service-categories'
+    | '/service-guarantees'
     | '/services'
     | '/settings/'
     | '/tags'
@@ -562,6 +594,7 @@ export interface FileRouteTypes {
     | '/'
     | '/app/banners'
     | '/errors/$error'
+    | '/services/$id'
     | '/settings/account'
     | '/settings/appearance'
     | '/settings/display'
@@ -582,12 +615,14 @@ export interface FileRouteTypes {
     | '/hospitals'
     | '/medical-levels'
     | '/medical-tags'
+    | '/operation-guides'
     | '/order-settings'
     | '/orders'
     | '/positions'
     | '/pricing-policies'
     | '/roles'
     | '/service-categories'
+    | '/service-guarantees'
     | '/services'
     | '/settings'
     | '/tags'
@@ -615,6 +650,7 @@ export interface FileRouteTypes {
     | '/_authenticated/'
     | '/_authenticated/app/banners'
     | '/_authenticated/errors/$error'
+    | '/_authenticated/services/$id'
     | '/_authenticated/settings/account'
     | '/_authenticated/settings/appearance'
     | '/_authenticated/settings/display'
@@ -635,12 +671,14 @@ export interface FileRouteTypes {
     | '/_authenticated/hospitals/'
     | '/_authenticated/medical-levels/'
     | '/_authenticated/medical-tags/'
+    | '/_authenticated/operation-guides/'
     | '/_authenticated/order-settings/'
     | '/_authenticated/orders/'
     | '/_authenticated/positions/'
     | '/_authenticated/pricing-policies/'
     | '/_authenticated/roles/'
     | '/_authenticated/service-categories/'
+    | '/_authenticated/service-guarantees/'
     | '/_authenticated/services/'
     | '/_authenticated/settings/'
     | '/_authenticated/tags/'
@@ -814,6 +852,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedServicesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/service-guarantees/': {
+      id: '/_authenticated/service-guarantees/'
+      path: '/service-guarantees'
+      fullPath: '/service-guarantees'
+      preLoaderRoute: typeof AuthenticatedServiceGuaranteesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/service-categories/': {
       id: '/_authenticated/service-categories/'
       path: '/service-categories'
@@ -854,6 +899,13 @@ declare module '@tanstack/react-router' {
       path: '/order-settings'
       fullPath: '/order-settings'
       preLoaderRoute: typeof AuthenticatedOrderSettingsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/operation-guides/': {
+      id: '/_authenticated/operation-guides/'
+      path: '/operation-guides'
+      fullPath: '/operation-guides'
+      preLoaderRoute: typeof AuthenticatedOperationGuidesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/medical-tags/': {
@@ -996,6 +1048,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsAccountRouteImport
       parentRoute: typeof AuthenticatedSettingsRouteRoute
     }
+    '/_authenticated/services/$id': {
+      id: '/_authenticated/services/$id'
+      path: '/services/$id'
+      fullPath: '/services/$id'
+      preLoaderRoute: typeof AuthenticatedServicesIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/errors/$error': {
       id: '/_authenticated/errors/$error'
       path: '/errors/$error'
@@ -1057,6 +1116,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedAppBannersRoute: typeof AuthenticatedAppBannersRoute
   AuthenticatedErrorsErrorRoute: typeof AuthenticatedErrorsErrorRoute
+  AuthenticatedServicesIdRoute: typeof AuthenticatedServicesIdRoute
   AuthenticatedChatsIndexRoute: typeof AuthenticatedChatsIndexRoute
   AuthenticatedDepartmentsIndexRoute: typeof AuthenticatedDepartmentsIndexRoute
   AuthenticatedDoctorsIndexRoute: typeof AuthenticatedDoctorsIndexRoute
@@ -1069,12 +1129,14 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedHospitalsIndexRoute: typeof AuthenticatedHospitalsIndexRoute
   AuthenticatedMedicalLevelsIndexRoute: typeof AuthenticatedMedicalLevelsIndexRoute
   AuthenticatedMedicalTagsIndexRoute: typeof AuthenticatedMedicalTagsIndexRoute
+  AuthenticatedOperationGuidesIndexRoute: typeof AuthenticatedOperationGuidesIndexRoute
   AuthenticatedOrderSettingsIndexRoute: typeof AuthenticatedOrderSettingsIndexRoute
   AuthenticatedOrdersIndexRoute: typeof AuthenticatedOrdersIndexRoute
   AuthenticatedPositionsIndexRoute: typeof AuthenticatedPositionsIndexRoute
   AuthenticatedPricingPoliciesIndexRoute: typeof AuthenticatedPricingPoliciesIndexRoute
   AuthenticatedRolesIndexRoute: typeof AuthenticatedRolesIndexRoute
   AuthenticatedServiceCategoriesIndexRoute: typeof AuthenticatedServiceCategoriesIndexRoute
+  AuthenticatedServiceGuaranteesIndexRoute: typeof AuthenticatedServiceGuaranteesIndexRoute
   AuthenticatedServicesIndexRoute: typeof AuthenticatedServicesIndexRoute
   AuthenticatedTagsIndexRoute: typeof AuthenticatedTagsIndexRoute
   AuthenticatedUsersIndexRoute: typeof AuthenticatedUsersIndexRoute
@@ -1088,6 +1150,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedAppBannersRoute: AuthenticatedAppBannersRoute,
   AuthenticatedErrorsErrorRoute: AuthenticatedErrorsErrorRoute,
+  AuthenticatedServicesIdRoute: AuthenticatedServicesIdRoute,
   AuthenticatedChatsIndexRoute: AuthenticatedChatsIndexRoute,
   AuthenticatedDepartmentsIndexRoute: AuthenticatedDepartmentsIndexRoute,
   AuthenticatedDoctorsIndexRoute: AuthenticatedDoctorsIndexRoute,
@@ -1101,6 +1164,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHospitalsIndexRoute: AuthenticatedHospitalsIndexRoute,
   AuthenticatedMedicalLevelsIndexRoute: AuthenticatedMedicalLevelsIndexRoute,
   AuthenticatedMedicalTagsIndexRoute: AuthenticatedMedicalTagsIndexRoute,
+  AuthenticatedOperationGuidesIndexRoute:
+    AuthenticatedOperationGuidesIndexRoute,
   AuthenticatedOrderSettingsIndexRoute: AuthenticatedOrderSettingsIndexRoute,
   AuthenticatedOrdersIndexRoute: AuthenticatedOrdersIndexRoute,
   AuthenticatedPositionsIndexRoute: AuthenticatedPositionsIndexRoute,
@@ -1109,6 +1174,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedRolesIndexRoute: AuthenticatedRolesIndexRoute,
   AuthenticatedServiceCategoriesIndexRoute:
     AuthenticatedServiceCategoriesIndexRoute,
+  AuthenticatedServiceGuaranteesIndexRoute:
+    AuthenticatedServiceGuaranteesIndexRoute,
   AuthenticatedServicesIndexRoute: AuthenticatedServicesIndexRoute,
   AuthenticatedTagsIndexRoute: AuthenticatedTagsIndexRoute,
   AuthenticatedUsersIndexRoute: AuthenticatedUsersIndexRoute,

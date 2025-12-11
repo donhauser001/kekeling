@@ -155,6 +155,16 @@ export const sidebarData: SidebarData = {
               icon: GitBranch,
             },
             {
+              title: '服务保障',
+              url: '/service-guarantees',
+              icon: Shield,
+            },
+            {
+              title: '操作规范',
+              url: '/operation-guides',
+              icon: BookOpen,
+            },
+            {
               title: '价格政策',
               url: '/pricing-policies',
               icon: BadgePercent,

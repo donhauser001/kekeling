@@ -1,44 +1,15 @@
 import { useState } from 'react'
 import {
-    GitBranch,
     Plus,
-    MoreHorizontal,
-    Pencil,
-    Trash2,
     Search as SearchIcon,
     X,
-    Play,
-    Pause,
-    Copy,
-    Eye,
-    ArrowRight,
+    Loader2,
+    AlertTriangle,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card'
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
@@ -47,166 +18,167 @@ import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { cn } from '@/lib/utils'
-
-interface WorkflowStep {
-    id: string
-    name: string
-    type: 'start' | 'action' | 'condition' | 'end'
-}
-
-interface Workflow {
-    id: string
-    name: string
-    description: string
-    category: string
-    steps: WorkflowStep[]
-    status: 'active' | 'inactive' | 'draft'
-    usageCount: number
-    createdAt: string
-    updatedAt: string
-}
-
-const categoryColors: Record<string, string> = {
-    '陪诊流程': 'bg-blue-500',
-    '诊断流程': 'bg-green-500',
-    '跑腿流程': 'bg-orange-500',
-    '售后流程': 'bg-purple-500',
-    '其他流程': 'bg-gray-500',
-}
-
-const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' }> = {
-    active: { label: '已启用', variant: 'default' },
-    inactive: { label: '已停用', variant: 'secondary' },
-    draft: { label: '草稿', variant: 'outline' },
-}
-
-const initialWorkflows: Workflow[] = [
-    {
-        id: '1',
-        name: '标准陪诊流程',
-        description: '门诊陪诊标准服务流程，包含接单、服务、结算等环节',
-        category: '陪诊流程',
-        steps: [
-            { id: 's1', name: '用户下单', type: 'start' },
-            { id: 's2', name: '陪诊员接单', type: 'action' },
-            { id: 's3', name: '到达医院', type: 'action' },
-            { id: 's4', name: '陪诊服务', type: 'action' },
-            { id: 's5', name: '服务完成', type: 'end' },
-        ],
-        status: 'active',
-        usageCount: 12580,
-        createdAt: '2024-01-15',
-        updatedAt: '2024-03-20',
-    },
-    {
-        id: '2',
-        name: 'VIP陪诊流程',
-        description: '高端定制陪诊流程，提供专属管家服务',
-        category: '陪诊流程',
-        steps: [
-            { id: 's1', name: '需求确认', type: 'start' },
-            { id: 's2', name: '管家分配', type: 'action' },
-            { id: 's3', name: '行程规划', type: 'action' },
-            { id: 's4', name: '全程服务', type: 'action' },
-            { id: 's5', name: '服务回访', type: 'end' },
-        ],
-        status: 'active',
-        usageCount: 890,
-        createdAt: '2024-02-01',
-        updatedAt: '2024-03-18',
-    },
-    {
-        id: '3',
-        name: '在线问诊流程',
-        description: '线上视频/图文问诊服务流程',
-        category: '诊断流程',
-        steps: [
-            { id: 's1', name: '选择医生', type: 'start' },
-            { id: 's2', name: '支付费用', type: 'action' },
-            { id: 's3', name: '等待接诊', type: 'condition' },
-            { id: 's4', name: '在线问诊', type: 'action' },
-            { id: 's5', name: '生成处方', type: 'end' },
-        ],
-        status: 'active',
-        usageCount: 25680,
-        createdAt: '2024-01-20',
-        updatedAt: '2024-03-15',
-    },
-    {
-        id: '4',
-        name: '药品代购流程',
-        description: '处方药代购配送服务流程',
-        category: '跑腿流程',
-        steps: [
-            { id: 's1', name: '提交处方', type: 'start' },
-            { id: 's2', name: '处方审核', type: 'condition' },
-            { id: 's3', name: '药品采购', type: 'action' },
-            { id: 's4', name: '配送发货', type: 'action' },
-            { id: 's5', name: '签收确认', type: 'end' },
-        ],
-        status: 'active',
-        usageCount: 32560,
-        createdAt: '2024-01-10',
-        updatedAt: '2024-03-22',
-    },
-    {
-        id: '5',
-        name: '退款流程',
-        description: '订单退款处理流程',
-        category: '售后流程',
-        steps: [
-            { id: 's1', name: '申请退款', type: 'start' },
-            { id: 's2', name: '审核申请', type: 'condition' },
-            { id: 's3', name: '退款处理', type: 'action' },
-            { id: 's4', name: '退款完成', type: 'end' },
-        ],
-        status: 'active',
-        usageCount: 1560,
-        createdAt: '2024-02-15',
-        updatedAt: '2024-03-10',
-    },
-    {
-        id: '6',
-        name: '投诉处理流程',
-        description: '用户投诉处理标准流程',
-        category: '售后流程',
-        steps: [
-            { id: 's1', name: '提交投诉', type: 'start' },
-            { id: 's2', name: '分配客服', type: 'action' },
-            { id: 's3', name: '调查处理', type: 'action' },
-            { id: 's4', name: '反馈结果', type: 'end' },
-        ],
-        status: 'draft',
-        usageCount: 0,
-        createdAt: '2024-03-20',
-        updatedAt: '2024-03-20',
-    },
-]
-
-const categoryOptions = ['陪诊流程', '诊断流程', '跑腿流程', '售后流程', '其他流程']
+import {
+    useWorkflows,
+    useCreateWorkflow,
+    useUpdateWorkflow,
+    useUpdateWorkflowStatus,
+    useDeleteWorkflow,
+} from '@/hooks/use-api'
+import type { Workflow } from '@/lib/api'
+import type { WorkflowFormData } from './types'
+import { categoryColors, categoryOptions, defaultFormData } from './constants'
+import {
+    WorkflowCard,
+    WorkflowFormDialog,
+    WorkflowDetailDialog,
+    DeleteDialog,
+} from './components'
 
 export function Workflows() {
-    const [workflows, setWorkflows] = useState<Workflow[]>(initialWorkflows)
+    // 筛选状态
     const [searchQuery, setSearchQuery] = useState('')
-    const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+    const [selectedCategory, setSelectedCategory] = useState<string>('')
+    const [page] = useState(1)
 
+    // 对话框状态
     const [dialogOpen, setDialogOpen] = useState(false)
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+    const [detailDialogOpen, setDetailDialogOpen] = useState(false)
+    const [editingWorkflow, setEditingWorkflow] = useState<Workflow | null>(null)
+    const [deletingWorkflow, setDeletingWorkflow] = useState<Workflow | null>(null)
+    const [viewingWorkflow, setViewingWorkflow] = useState<Workflow | null>(null)
+    const [formData, setFormData] = useState<WorkflowFormData>(defaultFormData)
 
-    const categories = [...new Set(workflows.map(w => w.category))]
-
-    const filteredWorkflows = workflows.filter(workflow => {
-        const matchesSearch = workflow.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            workflow.description.toLowerCase().includes(searchQuery.toLowerCase())
-        const matchesCategory = !selectedCategory || workflow.category === selectedCategory
-        return matchesSearch && matchesCategory
+    // API hooks
+    const { data, isLoading, error } = useWorkflows({
+        category: selectedCategory || undefined,
+        keyword: searchQuery || undefined,
+        page,
+        pageSize: 12,
     })
+    const createMutation = useCreateWorkflow()
+    const updateMutation = useUpdateWorkflow()
+    const updateStatusMutation = useUpdateWorkflowStatus()
+    const deleteMutation = useDeleteWorkflow()
 
-    const handleToggleStatus = (workflowId: string) => {
-        setWorkflows(workflows.map(w =>
-            w.id === workflowId
-                ? { ...w, status: w.status === 'active' ? 'inactive' : 'active' }
-                : w
-        ))
+    const workflows = data?.data || []
+
+    // 打开创建对话框
+    const openCreateDialog = () => {
+        setEditingWorkflow(null)
+        setFormData(defaultFormData)
+        setDialogOpen(true)
+    }
+
+    // 打开编辑对话框
+    const openEditDialog = (workflow: Workflow) => {
+        setEditingWorkflow(workflow)
+        setFormData({
+            name: workflow.name,
+            description: workflow.description || '',
+            category: workflow.category,
+            status: workflow.status,
+            steps: workflow.steps.map(s => ({
+                id: s.id,
+                name: s.name,
+                description: s.description || '',
+                type: s.type,
+                sort: s.sort,
+            })),
+            baseDuration: workflow.baseDuration,
+            overtimeEnabled: workflow.overtimeEnabled,
+            overtimePrice: workflow.overtimePrice?.toString() || '50',
+            overtimeUnit: workflow.overtimeUnit,
+            overtimeMax: workflow.overtimeMax?.toString() || '',
+            overtimeGrace: workflow.overtimeGrace,
+        })
+        setDialogOpen(true)
+    }
+
+    // 打开详情对话框
+    const openDetailDialog = (workflow: Workflow) => {
+        setViewingWorkflow(workflow)
+        setDetailDialogOpen(true)
+    }
+
+    // 打开删除确认
+    const openDeleteDialog = (workflow: Workflow) => {
+        setDeletingWorkflow(workflow)
+        setDeleteDialogOpen(true)
+    }
+
+    // 保存流程
+    const handleSave = async () => {
+        if (!formData.name.trim()) {
+            toast.error('请输入流程名称')
+            return
+        }
+        if (formData.steps.length < 2) {
+            toast.error('流程至少需要2个步骤')
+            return
+        }
+
+        const submitData = {
+            name: formData.name.trim(),
+            description: formData.description.trim() || undefined,
+            category: formData.category,
+            status: formData.status,
+            steps: formData.steps.map((s, i) => ({
+                ...s,
+                sort: i,
+            })),
+            baseDuration: formData.baseDuration,
+            overtimeEnabled: formData.overtimeEnabled,
+            overtimePrice: formData.overtimePrice ? parseFloat(formData.overtimePrice) : undefined,
+            overtimeUnit: formData.overtimeUnit,
+            overtimeMax: formData.overtimeMax ? parseInt(formData.overtimeMax) : undefined,
+            overtimeGrace: formData.overtimeGrace,
+        }
+
+        try {
+            if (editingWorkflow) {
+                await updateMutation.mutateAsync({
+                    id: editingWorkflow.id,
+                    data: submitData,
+                })
+                toast.success('更新成功')
+            } else {
+                await createMutation.mutateAsync(submitData)
+                toast.success('创建成功')
+            }
+            setDialogOpen(false)
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : '操作失败'
+            toast.error(message)
+        }
+    }
+
+    // 删除流程
+    const handleDelete = async () => {
+        if (!deletingWorkflow) return
+
+        try {
+            await deleteMutation.mutateAsync(deletingWorkflow.id)
+            toast.success('删除成功')
+            setDeleteDialogOpen(false)
+            setDeletingWorkflow(null)
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : '删除失败'
+            toast.error(message)
+        }
+    }
+
+    // 切换状态
+    const handleToggleStatus = async (workflow: Workflow) => {
+        const newStatus = workflow.status === 'active' ? 'inactive' : 'active'
+        try {
+            await updateStatusMutation.mutateAsync({ id: workflow.id, status: newStatus })
+            toast.success(newStatus === 'active' ? '已启用' : '已停用')
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : '操作失败'
+            toast.error(message)
+        }
     }
 
     return (
@@ -227,12 +199,13 @@ export function Workflows() {
                         <h1 className='text-2xl font-bold tracking-tight'>流程管理</h1>
                         <p className='text-muted-foreground'>创建和管理各种业务流程</p>
                     </div>
-                    <Button onClick={() => setDialogOpen(true)}>
+                    <Button onClick={openCreateDialog}>
                         <Plus className='mr-2 h-4 w-4' />
                         新建流程
                     </Button>
                 </div>
 
+                {/* 筛选栏 */}
                 <div className='mb-6 flex flex-wrap items-center gap-4'>
                     <div className='relative flex-1 min-w-[200px] max-w-md'>
                         <SearchIcon className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
@@ -254,13 +227,13 @@ export function Workflows() {
 
                     <div className='flex flex-wrap gap-2'>
                         <Badge
-                            variant={selectedCategory === null ? 'default' : 'outline'}
+                            variant={selectedCategory === '' ? 'default' : 'outline'}
                             className='cursor-pointer'
-                            onClick={() => setSelectedCategory(null)}
+                            onClick={() => setSelectedCategory('')}
                         >
                             全部
                         </Badge>
-                        {categories.map(cat => (
+                        {categoryOptions.map(cat => (
                             <Badge
                                 key={cat}
                                 variant={selectedCategory === cat ? 'default' : 'outline'}
@@ -274,156 +247,70 @@ export function Workflows() {
                     </div>
                 </div>
 
-                <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
-                    {filteredWorkflows.map(workflow => (
-                        <Card key={workflow.id} className={cn('group', workflow.status === 'inactive' && 'opacity-60')}>
-                            <CardHeader className='pb-3'>
-                                <div className='flex items-start justify-between'>
-                                    <div className='flex items-center gap-3'>
-                                        <div className={cn('flex h-10 w-10 items-center justify-center rounded-lg', categoryColors[workflow.category] || 'bg-gray-500')}>
-                                            <GitBranch className='h-5 w-5 text-white' />
-                                        </div>
-                                        <div>
-                                            <CardTitle className='text-sm font-medium'>{workflow.name}</CardTitle>
-                                            <div className='flex items-center gap-2 mt-1'>
-                                                <Badge variant='outline' className='text-xs'>{workflow.category}</Badge>
-                                                <Badge variant={statusConfig[workflow.status].variant} className='text-xs'>
-                                                    {statusConfig[workflow.status].label}
-                                                </Badge>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant='ghost' size='icon' className='h-8 w-8 opacity-0 group-hover:opacity-100'>
-                                                <MoreHorizontal className='h-4 w-4' />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align='end'>
-                                            <DropdownMenuItem>
-                                                <Eye className='mr-2 h-4 w-4' />
-                                                查看
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem>
-                                                <Pencil className='mr-2 h-4 w-4' />
-                                                编辑
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem>
-                                                <Copy className='mr-2 h-4 w-4' />
-                                                复制
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => handleToggleStatus(workflow.id)}>
-                                                {workflow.status === 'active' ? (
-                                                    <>
-                                                        <Pause className='mr-2 h-4 w-4' />
-                                                        停用
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <Play className='mr-2 h-4 w-4' />
-                                                        启用
-                                                    </>
-                                                )}
-                                            </DropdownMenuItem>
-                                            <DropdownMenuSeparator />
-                                            <DropdownMenuItem className='text-destructive'>
-                                                <Trash2 className='mr-2 h-4 w-4' />
-                                                删除
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </div>
-                            </CardHeader>
-                            <CardContent className='space-y-3'>
-                                <CardDescription className='line-clamp-2 text-xs'>
-                                    {workflow.description}
-                                </CardDescription>
+                {/* 加载状态 */}
+                {isLoading && (
+                    <div className='flex items-center justify-center py-12'>
+                        <Loader2 className='h-8 w-8 animate-spin text-muted-foreground' />
+                    </div>
+                )}
 
-                                <div className='flex items-center gap-1 overflow-x-auto pb-1'>
-                                    {workflow.steps.map((step, index) => (
-                                        <div key={step.id} className='flex items-center'>
-                                            <div className={cn(
-                                                'rounded px-2 py-0.5 text-xs whitespace-nowrap',
-                                                step.type === 'start' && 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
-                                                step.type === 'action' && 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
-                                                step.type === 'condition' && 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300',
-                                                step.type === 'end' && 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
-                                            )}>
-                                                {step.name}
-                                            </div>
-                                            {index < workflow.steps.length - 1 && (
-                                                <ArrowRight className='text-muted-foreground mx-1 h-3 w-3 shrink-0' />
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
+                {/* 错误状态 */}
+                {error && (
+                    <div className='flex flex-col items-center justify-center py-12'>
+                        <AlertTriangle className='h-12 w-12 text-destructive mb-4' />
+                        <p className='text-muted-foreground'>加载失败，请稍后重试</p>
+                    </div>
+                )}
 
-                                <div className='border-t pt-2'>
-                                    <div className='text-muted-foreground flex items-center justify-between text-xs'>
-                                        <span>使用次数: {workflow.usageCount.toLocaleString()}</span>
-                                        <span>更新: {workflow.updatedAt}</span>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
+                {/* 流程列表 */}
+                {!isLoading && !error && (
+                    <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
+                        {workflows.map(workflow => (
+                            <WorkflowCard
+                                key={workflow.id}
+                                workflow={workflow}
+                                onView={openDetailDialog}
+                                onEdit={openEditDialog}
+                                onToggleStatus={handleToggleStatus}
+                                onDelete={openDeleteDialog}
+                            />
+                        ))}
+                    </div>
+                )}
 
-                {filteredWorkflows.length === 0 && (
+                {!isLoading && !error && workflows.length === 0 && (
                     <div className='text-muted-foreground py-12 text-center'>
                         暂无匹配的流程
                     </div>
                 )}
             </Main>
 
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogContent className='sm:max-w-md'>
-                    <DialogHeader>
-                        <DialogTitle className='flex items-center gap-2'>
-                            <GitBranch className='h-5 w-5' />
-                            新建流程
-                        </DialogTitle>
-                        <DialogDescription>
-                            创建新的业务流程，可在编辑器中设计流程节点
-                        </DialogDescription>
-                    </DialogHeader>
+            {/* 创建/编辑对话框 */}
+            <WorkflowFormDialog
+                open={dialogOpen}
+                onOpenChange={setDialogOpen}
+                editingWorkflow={editingWorkflow}
+                formData={formData}
+                onFormChange={setFormData}
+                onSave={handleSave}
+                isPending={createMutation.isPending || updateMutation.isPending}
+            />
 
-                    <div className='space-y-4'>
-                        <div className='space-y-2'>
-                            <Label>流程名称 <span className='text-destructive'>*</span></Label>
-                            <Input placeholder='请输入流程名称' />
-                        </div>
+            {/* 详情对话框 */}
+            <WorkflowDetailDialog
+                open={detailDialogOpen}
+                onOpenChange={setDetailDialogOpen}
+                workflow={viewingWorkflow}
+            />
 
-                        <div className='space-y-2'>
-                            <Label>流程分类</Label>
-                            <select className='border-input bg-background w-full rounded-md border px-3 py-2 text-sm'>
-                                {categoryOptions.map(c => (
-                                    <option key={c} value={c}>{c}</option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div className='space-y-2'>
-                            <Label>流程描述</Label>
-                            <Textarea
-                                placeholder='请输入流程描述'
-                                className='resize-none'
-                                rows={3}
-                            />
-                        </div>
-                    </div>
-
-                    <div className='flex justify-end gap-2 pt-4'>
-                        <Button variant='outline' onClick={() => setDialogOpen(false)}>
-                            取消
-                        </Button>
-                        <Button onClick={() => setDialogOpen(false)}>
-                            创建并编辑
-                        </Button>
-                    </div>
-                </DialogContent>
-            </Dialog>
+            {/* 删除确认对话框 */}
+            <DeleteDialog
+                open={deleteDialogOpen}
+                onOpenChange={setDeleteDialogOpen}
+                workflow={deletingWorkflow}
+                onConfirm={handleDelete}
+                isPending={deleteMutation.isPending}
+            />
         </>
     )
 }
-

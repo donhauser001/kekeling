@@ -16,11 +16,13 @@ import {
   departmentTemplateApi,
   doctorApi,
   configApi,
+  workflowApi,
   type OrderQuery,
   type EscortQuery,
   type DoctorQuery,
   type ServiceCategoryQuery,
   type ServiceQuery,
+  type WorkflowQuery,
 } from '@/lib/api'
 
 // ============================================
@@ -358,10 +360,10 @@ export function useServices(query: ServiceQuery = {}) {
   })
 }
 
-export function useService(id: string) {
+export function useService(id: string | undefined) {
   return useQuery({
     queryKey: ['services', id],
-    queryFn: () => serviceApi.getById(id),
+    queryFn: () => serviceApi.getById(id!),
     enabled: !!id,
   })
 }
@@ -398,6 +400,70 @@ export function useDeleteService() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['services'] })
       queryClient.invalidateQueries({ queryKey: ['serviceCategories'] })
+    },
+  })
+}
+
+// ============================================
+// 服务保障
+// ============================================
+
+import { serviceGuaranteeApi } from '@/lib/api'
+
+export function useServiceGuarantees(query?: { status?: string; keyword?: string }) {
+  return useQuery({
+    queryKey: ['serviceGuarantees', query],
+    queryFn: () => serviceGuaranteeApi.getAll(query),
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useActiveServiceGuarantees() {
+  return useQuery({
+    queryKey: ['serviceGuarantees', 'active'],
+    queryFn: () => serviceGuaranteeApi.getActive(),
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useServiceGuarantee(id: string | undefined) {
+  return useQuery({
+    queryKey: ['serviceGuarantees', id],
+    queryFn: () => serviceGuaranteeApi.getById(id!),
+    enabled: !!id,
+  })
+}
+
+export function useCreateServiceGuarantee() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: serviceGuaranteeApi.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['serviceGuarantees'] })
+    },
+  })
+}
+
+export function useUpdateServiceGuarantee() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Parameters<typeof serviceGuaranteeApi.update>[1] }) =>
+      serviceGuaranteeApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['serviceGuarantees'] })
+    },
+  })
+}
+
+export function useDeleteServiceGuarantee() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: serviceGuaranteeApi.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['serviceGuarantees'] })
     },
   })
 }
@@ -694,6 +760,213 @@ export function useUpdateThemeSettings() {
     mutationFn: configApi.updateThemeSettings,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['config', 'themeSettings'] })
+    },
+  })
+}
+
+// ============================================
+// 流程管理
+// ============================================
+
+export function useWorkflows(query: WorkflowQuery = {}) {
+  return useQuery({
+    queryKey: ['workflows', query],
+    queryFn: () => workflowApi.getList(query),
+    staleTime: 60 * 1000,
+  })
+}
+
+export function useWorkflow(id: string) {
+  return useQuery({
+    queryKey: ['workflows', id],
+    queryFn: () => workflowApi.getById(id),
+    enabled: !!id,
+  })
+}
+
+export function useActiveWorkflows() {
+  return useQuery({
+    queryKey: ['workflows', 'active'],
+    queryFn: () => workflowApi.getActive(),
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useWorkflowCategories() {
+  return useQuery({
+    queryKey: ['workflows', 'categories'],
+    queryFn: () => workflowApi.getCategories(),
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useCreateWorkflow() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: workflowApi.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workflows'] })
+    },
+  })
+}
+
+export function useUpdateWorkflow() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Parameters<typeof workflowApi.update>[1] }) =>
+      workflowApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workflows'] })
+    },
+  })
+}
+
+export function useUpdateWorkflowStatus() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, status }: { id: string; status: 'active' | 'inactive' | 'draft' }) =>
+      workflowApi.updateStatus(id, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workflows'] })
+    },
+  })
+}
+
+export function useDeleteWorkflow() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: workflowApi.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workflows'] })
+    },
+  })
+}
+
+// ============================================
+// 操作规范分类
+// ============================================
+
+import {
+  operationGuideCategoryApi,
+  operationGuideApi,
+  type OperationGuideCategoryQuery,
+  type OperationGuideQuery,
+} from '@/lib/api'
+
+export function useOperationGuideCategories(query?: OperationGuideCategoryQuery) {
+  return useQuery({
+    queryKey: ['operationGuideCategories', query],
+    queryFn: () => operationGuideCategoryApi.getAll(query),
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useActiveOperationGuideCategories() {
+  return useQuery({
+    queryKey: ['operationGuideCategories', 'active'],
+    queryFn: () => operationGuideCategoryApi.getActive(),
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useCreateOperationGuideCategory() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: operationGuideCategoryApi.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['operationGuideCategories'] })
+    },
+  })
+}
+
+export function useUpdateOperationGuideCategory() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Parameters<typeof operationGuideCategoryApi.update>[1] }) =>
+      operationGuideCategoryApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['operationGuideCategories'] })
+    },
+  })
+}
+
+export function useDeleteOperationGuideCategory() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: operationGuideCategoryApi.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['operationGuideCategories'] })
+    },
+  })
+}
+
+// ============================================
+// 操作规范
+// ============================================
+
+export function useOperationGuides(query: OperationGuideQuery = {}) {
+  return useQuery({
+    queryKey: ['operationGuides', query],
+    queryFn: () => operationGuideApi.getList(query),
+    staleTime: 60 * 1000,
+  })
+}
+
+export function useActiveOperationGuides() {
+  return useQuery({
+    queryKey: ['operationGuides', 'active'],
+    queryFn: () => operationGuideApi.getActive(),
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useOperationGuide(id: string | undefined) {
+  return useQuery({
+    queryKey: ['operationGuides', id],
+    queryFn: () => operationGuideApi.getById(id!),
+    enabled: !!id,
+  })
+}
+
+export function useCreateOperationGuide() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: operationGuideApi.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['operationGuides'] })
+      queryClient.invalidateQueries({ queryKey: ['operationGuideCategories'] })
+    },
+  })
+}
+
+export function useUpdateOperationGuide() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Parameters<typeof operationGuideApi.update>[1] }) =>
+      operationGuideApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['operationGuides'] })
+    },
+  })
+}
+
+export function useDeleteOperationGuide() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: operationGuideApi.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['operationGuides'] })
+      queryClient.invalidateQueries({ queryKey: ['operationGuideCategories'] })
     },
   })
 }

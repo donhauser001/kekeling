@@ -10,7 +10,6 @@ import type {
   StatsData,
   ServiceCategory,
   RecommendedServicesData,
-  ServiceListItem,
   ServiceListResponse,
 } from './types'
 
@@ -57,24 +56,62 @@ export interface ServiceQueryParams {
   sortBy?: 'default' | 'sales' | 'rating' | 'price-asc' | 'price-desc'
 }
 
-// 服务详情类型
+// 服务亮点项
+export interface ServiceIncludeItem {
+  text: string
+  icon?: string
+}
+
+// 服务须知项
+export interface ServiceNoteItem {
+  title: string
+  content: string
+}
+
+// 服务保障（关联模型）
+export interface ServiceGuarantee {
+  id: string
+  name: string
+  icon: string
+  description: string | null
+}
+
+// 服务详情类型（与后端一致）
 export interface ServiceDetail {
   id: string
   name: string
   description?: string
-  content?: string
+  content?: string  // 富文本内容
   price: number
   originalPrice?: number | null
   unit?: string
   duration?: string | null
   coverImage?: string | null
-  images?: string[]
+  detailImages?: string[]  // 详情图片数组
   orderCount: number
   rating: number
   tags?: string[]
   status: string
-  features?: string[]
-  notes?: string
+  serviceIncludes?: ServiceIncludeItem[]  // 服务亮点
+  serviceNotes?: ServiceNoteItem[]  // 服务须知
+  guarantees?: ServiceGuarantee[]  // 服务保障（关联）
+  workflowId?: string  // 关联流程ID
+  workflow?: {  // 关联流程
+    id: string
+    name: string
+    baseDuration: number           // 基础服务时长（分钟）
+    overtimeEnabled: boolean       // 是否允许超时加时
+    overtimePrice: number | null   // 超时单价
+    overtimeUnit: string           // 超时计价单位
+    overtimeMax: number | null     // 最大加时时长（分钟）
+    overtimeGrace: number          // 宽限时间（分钟）
+    steps: Array<{
+      id: string
+      name: string
+      type: string
+      sort: number
+    }>
+  }
   category?: {
     id: string
     name: string
