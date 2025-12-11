@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit, OnModuleDestroy, Logger, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
 import { DispatchService } from '../escort-app/dispatch.service';
@@ -17,6 +17,7 @@ export class TasksService implements OnModuleInit, OnModuleDestroy {
   private promotionCheckTimer: NodeJS.Timeout | null = null;
   private distributionSettlementTimer: NodeJS.Timeout | null = null;
   private orderReminderTimer: NodeJS.Timeout | null = null;
+  private membershipService: any;
 
   constructor(
     private prisma: PrismaService,
@@ -24,8 +25,6 @@ export class TasksService implements OnModuleInit, OnModuleDestroy {
     private dispatchService: DispatchService,
     private notificationService: NotificationService,
     private distributionService: DistributionService,
-    @Inject(forwardRef(() => import('../membership/membership.service').then(m => m.MembershipService)))
-    private membershipService?: any,
   ) { }
 
   onModuleInit() {
@@ -1129,7 +1128,7 @@ export class TasksService implements OnModuleInit, OnModuleDestroy {
 
     try {
       const { CouponsService } = await import('../coupons/coupons.service');
-      const couponsService = new CouponsService(this.prisma);
+      const couponsService = new CouponsService(this.prisma, this.redis);
       const result = await couponsService.grantBirthdayCoupons();
 
       const duration = Date.now() - startTime;

@@ -1,4 +1,4 @@
-import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Decimal } from '@prisma/client/runtime/library';
 
@@ -21,13 +21,7 @@ export class CommissionService {
   private readonly logger = new Logger(CommissionService.name);
   private distributionService: any;
 
-  constructor(
-    private prisma: PrismaService,
-    @Inject(forwardRef(() => import('../distribution/distribution.service').then(m => m.DistributionService)))
-    distributionService?: any,
-  ) {
-    this.distributionService = distributionService;
-  }
+  constructor(private prisma: PrismaService) { }
 
   /**
    * 设置分销服务（避免循环依赖）

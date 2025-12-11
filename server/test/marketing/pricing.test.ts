@@ -72,7 +72,6 @@ describe('PricingService', () => {
       const result = await service.calculate({
         userId: '1',
         serviceId: '1',
-        service: mockService as any,
       })
 
       expect(result.finalPrice).toBe(100)
@@ -81,11 +80,6 @@ describe('PricingService', () => {
     })
 
     it('should calculate price with member discount', async () => {
-      const mockService = {
-        id: '1',
-        price: 100,
-      }
-
       const mockPricingConfig = {
         discountStackMode: 'sequential',
         couponStackWithMember: true,
@@ -112,7 +106,6 @@ describe('PricingService', () => {
       const result = await service.calculate({
         userId: '1',
         serviceId: '1',
-        service: mockService as any,
       })
 
       // 100 * (1 - 0.1) = 90
@@ -122,11 +115,6 @@ describe('PricingService', () => {
     })
 
     it('should calculate price with coupon discount', async () => {
-      const mockService = {
-        id: '1',
-        price: 100,
-      }
-
       const mockPricingConfig = {
         discountStackMode: 'sequential',
         couponStackWithMember: true,
@@ -152,7 +140,6 @@ describe('PricingService', () => {
       const result = await service.calculate({
         userId: '1',
         serviceId: '1',
-        service: mockService as any,
         couponId: '1',
       })
 
@@ -190,7 +177,6 @@ describe('PricingService', () => {
       const result = await service.calculate({
         userId: '1',
         serviceId: '1',
-        service: mockService as any,
         pointsToUse: 5000,
       })
 
@@ -231,7 +217,6 @@ describe('PricingService', () => {
       const result = await service.calculate({
         userId: '1',
         serviceId: '1',
-        service: mockService as any,
         couponId: '1',
       })
 

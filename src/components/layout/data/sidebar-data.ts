@@ -230,6 +230,27 @@ export const sidebarData: SidebarData = {
           ],
         },
         {
+          title: '分销中心',
+          icon: TrendingUp,
+          items: [
+            {
+              title: '分润记录',
+              url: '/distribution/records',
+              icon: Receipt,
+            },
+            {
+              title: '晋升审核',
+              url: '/distribution/applications',
+              icon: Crown,
+            },
+            {
+              title: '分销设置',
+              url: '/distribution/settings',
+              icon: Settings,
+            },
+          ],
+        },
+        {
           title: '用户中心',
           icon: CircleUser,
           items: [

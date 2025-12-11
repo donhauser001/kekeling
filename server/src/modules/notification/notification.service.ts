@@ -297,7 +297,7 @@ export class NotificationService {
 
     if (dbTemplate) {
       return {
-        title: dbTemplate.title,
+        title: dbTemplate.title || '',
         content: dbTemplate.content,
         category: dbTemplate.category,
         channels: dbTemplate.channels,
@@ -585,15 +585,22 @@ export class NotificationService {
     if (recipientType === 'user') {
       const user = await this.prisma.user.findUnique({
         where: { id: recipientId },
-        select: { openId: true },
+        select: { openid: true },
       });
-      openid = user?.openId || null;
+      openid = user?.openid || null;
     } else if (recipientType === 'escort') {
+      // 通过 escort 的 userId 找到关联的用户
       const escort = await this.prisma.escort.findUnique({
         where: { id: recipientId },
-        include: { user: { select: { openId: true } } },
+        select: { userId: true },
       });
-      openid = escort?.user?.openId || null;
+      if (escort?.userId) {
+        const user = await this.prisma.user.findUnique({
+          where: { id: escort.userId },
+          select: { openid: true },
+        });
+        openid = user?.openid || null;
+      }
     }
 
     if (!openid) {

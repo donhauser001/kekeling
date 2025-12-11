@@ -94,7 +94,7 @@ export class OrdersController {
     @Param('id') id: string,
     @Body() body: {
       type: string;
-      description: string;
+      content: string;
       evidence?: string[];
     },
   ) {

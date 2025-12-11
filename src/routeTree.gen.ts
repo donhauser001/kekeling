@@ -61,7 +61,11 @@ import { Route as AuthenticatedSettingsDisplayRouteImport } from './routes/_auth
 import { Route as AuthenticatedSettingsAppearanceRouteImport } from './routes/_authenticated/settings/appearance'
 import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated/settings/account'
 import { Route as AuthenticatedServicesIdRouteImport } from './routes/_authenticated/services/$id'
+import { Route as AuthenticatedEscortsEscortIdRouteImport } from './routes/_authenticated/escorts/$escortId'
 import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
+import { Route as AuthenticatedDistributionSettingsRouteImport } from './routes/_authenticated/distribution/settings'
+import { Route as AuthenticatedDistributionRecordsRouteImport } from './routes/_authenticated/distribution/records'
+import { Route as AuthenticatedDistributionApplicationsRouteImport } from './routes/_authenticated/distribution/applications'
 import { Route as AuthenticatedAppBannersRouteImport } from './routes/_authenticated/app/banners'
 import { Route as AuthenticatedMarketingReferralsIndexRouteImport } from './routes/_authenticated/marketing/referrals/index'
 import { Route as AuthenticatedMarketingPricingIndexRouteImport } from './routes/_authenticated/marketing/pricing/index'
@@ -358,10 +362,34 @@ const AuthenticatedServicesIdRoute = AuthenticatedServicesIdRouteImport.update({
   path: '/services/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedEscortsEscortIdRoute =
+  AuthenticatedEscortsEscortIdRouteImport.update({
+    id: '/escorts/$escortId',
+    path: '/escorts/$escortId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedErrorsErrorRoute =
   AuthenticatedErrorsErrorRouteImport.update({
     id: '/errors/$error',
     path: '/errors/$error',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDistributionSettingsRoute =
+  AuthenticatedDistributionSettingsRouteImport.update({
+    id: '/distribution/settings',
+    path: '/distribution/settings',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDistributionRecordsRoute =
+  AuthenticatedDistributionRecordsRouteImport.update({
+    id: '/distribution/records',
+    path: '/distribution/records',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDistributionApplicationsRoute =
+  AuthenticatedDistributionApplicationsRouteImport.update({
+    id: '/distribution/applications',
+    path: '/distribution/applications',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAppBannersRoute = AuthenticatedAppBannersRouteImport.update({
@@ -433,7 +461,11 @@ export interface FileRoutesByFullPath {
   '/503': typeof errors503Route
   '/': typeof AuthenticatedIndexRoute
   '/app/banners': typeof AuthenticatedAppBannersRoute
+  '/distribution/applications': typeof AuthenticatedDistributionApplicationsRoute
+  '/distribution/records': typeof AuthenticatedDistributionRecordsRoute
+  '/distribution/settings': typeof AuthenticatedDistributionSettingsRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
+  '/escorts/$escortId': typeof AuthenticatedEscortsEscortIdRoute
   '/services/$id': typeof AuthenticatedServicesIdRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
@@ -493,7 +525,11 @@ export interface FileRoutesByTo {
   '/503': typeof errors503Route
   '/': typeof AuthenticatedIndexRoute
   '/app/banners': typeof AuthenticatedAppBannersRoute
+  '/distribution/applications': typeof AuthenticatedDistributionApplicationsRoute
+  '/distribution/records': typeof AuthenticatedDistributionRecordsRoute
+  '/distribution/settings': typeof AuthenticatedDistributionSettingsRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
+  '/escorts/$escortId': typeof AuthenticatedEscortsEscortIdRoute
   '/services/$id': typeof AuthenticatedServicesIdRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
@@ -558,7 +594,11 @@ export interface FileRoutesById {
   '/(errors)/503': typeof errors503Route
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/app/banners': typeof AuthenticatedAppBannersRoute
+  '/_authenticated/distribution/applications': typeof AuthenticatedDistributionApplicationsRoute
+  '/_authenticated/distribution/records': typeof AuthenticatedDistributionRecordsRoute
+  '/_authenticated/distribution/settings': typeof AuthenticatedDistributionSettingsRoute
   '/_authenticated/errors/$error': typeof AuthenticatedErrorsErrorRoute
+  '/_authenticated/escorts/$escortId': typeof AuthenticatedEscortsEscortIdRoute
   '/_authenticated/services/$id': typeof AuthenticatedServicesIdRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/_authenticated/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
@@ -621,7 +661,11 @@ export interface FileRouteTypes {
     | '/503'
     | '/'
     | '/app/banners'
+    | '/distribution/applications'
+    | '/distribution/records'
+    | '/distribution/settings'
     | '/errors/$error'
+    | '/escorts/$escortId'
     | '/services/$id'
     | '/settings/account'
     | '/settings/appearance'
@@ -681,7 +725,11 @@ export interface FileRouteTypes {
     | '/503'
     | '/'
     | '/app/banners'
+    | '/distribution/applications'
+    | '/distribution/records'
+    | '/distribution/settings'
     | '/errors/$error'
+    | '/escorts/$escortId'
     | '/services/$id'
     | '/settings/account'
     | '/settings/appearance'
@@ -745,7 +793,11 @@ export interface FileRouteTypes {
     | '/(errors)/503'
     | '/_authenticated/'
     | '/_authenticated/app/banners'
+    | '/_authenticated/distribution/applications'
+    | '/_authenticated/distribution/records'
+    | '/_authenticated/distribution/settings'
     | '/_authenticated/errors/$error'
+    | '/_authenticated/escorts/$escortId'
     | '/_authenticated/services/$id'
     | '/_authenticated/settings/account'
     | '/_authenticated/settings/appearance'
@@ -1173,11 +1225,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedServicesIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/escorts/$escortId': {
+      id: '/_authenticated/escorts/$escortId'
+      path: '/escorts/$escortId'
+      fullPath: '/escorts/$escortId'
+      preLoaderRoute: typeof AuthenticatedEscortsEscortIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/errors/$error': {
       id: '/_authenticated/errors/$error'
       path: '/errors/$error'
       fullPath: '/errors/$error'
       preLoaderRoute: typeof AuthenticatedErrorsErrorRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/distribution/settings': {
+      id: '/_authenticated/distribution/settings'
+      path: '/distribution/settings'
+      fullPath: '/distribution/settings'
+      preLoaderRoute: typeof AuthenticatedDistributionSettingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/distribution/records': {
+      id: '/_authenticated/distribution/records'
+      path: '/distribution/records'
+      fullPath: '/distribution/records'
+      preLoaderRoute: typeof AuthenticatedDistributionRecordsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/distribution/applications': {
+      id: '/_authenticated/distribution/applications'
+      path: '/distribution/applications'
+      fullPath: '/distribution/applications'
+      preLoaderRoute: typeof AuthenticatedDistributionApplicationsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/app/banners': {
@@ -1275,7 +1355,11 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedAppBannersRoute: typeof AuthenticatedAppBannersRoute
+  AuthenticatedDistributionApplicationsRoute: typeof AuthenticatedDistributionApplicationsRoute
+  AuthenticatedDistributionRecordsRoute: typeof AuthenticatedDistributionRecordsRoute
+  AuthenticatedDistributionSettingsRoute: typeof AuthenticatedDistributionSettingsRoute
   AuthenticatedErrorsErrorRoute: typeof AuthenticatedErrorsErrorRoute
+  AuthenticatedEscortsEscortIdRoute: typeof AuthenticatedEscortsEscortIdRoute
   AuthenticatedServicesIdRoute: typeof AuthenticatedServicesIdRoute
   AuthenticatedChatsIndexRoute: typeof AuthenticatedChatsIndexRoute
   AuthenticatedDepartmentsIndexRoute: typeof AuthenticatedDepartmentsIndexRoute
@@ -1317,7 +1401,13 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRouteRoute: AuthenticatedSettingsRouteRouteWithChildren,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedAppBannersRoute: AuthenticatedAppBannersRoute,
+  AuthenticatedDistributionApplicationsRoute:
+    AuthenticatedDistributionApplicationsRoute,
+  AuthenticatedDistributionRecordsRoute: AuthenticatedDistributionRecordsRoute,
+  AuthenticatedDistributionSettingsRoute:
+    AuthenticatedDistributionSettingsRoute,
   AuthenticatedErrorsErrorRoute: AuthenticatedErrorsErrorRoute,
+  AuthenticatedEscortsEscortIdRoute: AuthenticatedEscortsEscortIdRoute,
   AuthenticatedServicesIdRoute: AuthenticatedServicesIdRoute,
   AuthenticatedChatsIndexRoute: AuthenticatedChatsIndexRoute,
   AuthenticatedDepartmentsIndexRoute: AuthenticatedDepartmentsIndexRoute,

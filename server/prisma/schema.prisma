@@ -36,6 +36,8 @@ model User {
   inviterRecords ReferralRecord[] @relation("Inviter")
   inviteeRecords ReferralRecord[] @relation("Invitee")
   campaignParticipations CampaignParticipation[]
+  complaints     Complaint[]
+  messages       Message[]
 
   @@map("users")
 }
@@ -560,6 +562,7 @@ model Escort {
   parentChangeLogs     ParentChangeLog[]
   promotionApplications PromotionApplication[]
   identityAuditLogs    IdentityAuditLog[]
+  complaints           Complaint[]
 
   @@index([parentId])
   @@index([inviteCode])
@@ -633,11 +636,54 @@ model EscortInvitation {
   @@map("escort_invitations")
 }
 
+// 分销等级（可自定义）
+model DistributionLevel {
+  id                String   @id @default(uuid())
+  
+  level             Int      @unique                      // 等级数值（1最高，数字越大等级越低）
+  name              String                                // 等级名称（如：城市合伙人、团队长）
+  code              String   @unique                      // 等级代码（如：partner, leader, member）
+  
+  // 显示配置
+  icon              String?                               // 图标名称（Lucide 图标）
+  color             String   @default("#6b7280")          // 颜色（十六进制）
+  bgColor           String?  @map("bg_color")             // 背景色
+  description       String?                               // 等级描述
+  
+  // 分润配置
+  commissionRate    Int      @default(0) @map("commission_rate")  // 分润比例（百分比）
+  
+  // 晋升条件配置（JSON）
+  promotionConfig   Json?    @map("promotion_config")
+  // {
+  //   minOrders: 50,              // 最低完成订单
+  //   minRating: 4.5,             // 最低评分
+  //   minDirectInvites: 3,        // 最低直推人数（仅注册即可）
+  //   minValidDirectInvites: 2,   // 最低有效直推人数（需完成订单）
+  //   directInviteMinOrders: 1,   // 有效直推的最低订单数（默认1单）
+  //   minActiveMonths: 3,         // 最低在线月数
+  //   minTeamSize: 10,            // 最低团队人数
+  //   minTeamMonthlyOrders: 100,  // 团队月订单
+  //   requireReview: false,       // 需要平台审核
+  // }
+  
+  // 是否为初始等级（新成员默认等级）
+  isDefault         Boolean  @default(false) @map("is_default")
+  
+  sort              Int      @default(0)                  // 排序
+  status            String   @default("active")          // active/inactive
+  
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  
+  @@map("distribution_levels")
+}
+
 // 分润配置
 model DistributionConfig {
   id                    String   @id @default(uuid())
   
-  // 各层级分润比例（基于订单实付金额）
+  // 各层级分润比例（基于订单实付金额）- 保留兼容旧数据
   l1CommissionRate      Int      @default(2) @map("l1_commission_rate")   // 城市合伙人 2%
   l2CommissionRate      Int      @default(3) @map("l2_commission_rate")   // 团队长 3%
   l3CommissionRate      Int      @default(1) @map("l3_commission_rate")   // 陪诊员推荐奖励 1%
@@ -645,23 +691,9 @@ model DistributionConfig {
   // 直推奖励（新陪诊员首单）
   directInviteBonus     Decimal  @default(50) @db.Decimal(10, 2) @map("direct_invite_bonus")
   
-  // 晋升条件配置
-  l2PromotionConfig     Json     @map("l2_promotion_config")
-  // {
-  //   minOrders: 50,           // 最低完成订单
-  //   minRating: 4.5,          // 最低评分
-  //   minDirectInvites: 3,     // 最低直推人数
-  //   minActiveMonths: 3,      // 最低在线月数
-  // }
-  
-  l1PromotionConfig     Json     @map("l1_promotion_config")
-  // {
-  //   minTeamSize: 10,         // 最低团队人数
-  //   minTeamMonthlyOrders: 100, // 团队月订单
-  //   minPersonalMonthlyOrders: 30, // 个人月订单
-  //   requireTraining: true,    // 需要培训考核
-  //   byInvitation: true,       // 平台邀请制
-  // }
+  // 晋升条件配置 - 保留兼容旧数据
+  l2PromotionConfig     Json?    @map("l2_promotion_config")
+  l1PromotionConfig     Json?    @map("l1_promotion_config")
   
   // 分润上限
   maxMonthlyDistribution Decimal? @db.Decimal(10, 2) @map("max_monthly_distribution")
@@ -967,10 +999,11 @@ model Order {
   status           String    @default("pending") // pending, paid, confirmed, assigned, arrived, in_progress, completed, cancelled, refunded
   
   // 派单信息 (Phase1 新增)
-  assignMethod     String?   @map("assign_method")       // grab(抢单), manual(手动派单), auto(智能派单)
+  assignMethod     String?   @map("assign_method")       // grab(抢单), manual(手动派单), auto(智能派单), user_select(用户选择)
   assignDeadline   DateTime? @map("assign_deadline")     // 派单截止时间
   serviceDeadline  DateTime? @map("service_deadline")    // 服务截止时间
   preAssignWorkStatus String? @map("pre_assign_work_status") // 抢单前陪诊员工作状态(用于恢复)
+  preAssignedEscortId String? @map("pre_assigned_escort_id") // 用户预选陪诊员ID（用户选择模式）
   
   // 服务证据 (Phase1 新增)
   arrivePhotos     String[]  @default([]) @map("arrive_photos")   // 到达打卡照片
@@ -1011,6 +1044,7 @@ model Order {
   logs             OrderLog[]
   priceSnapshot    OrderPriceSnapshot?
   distributionRecords DistributionRecord[]
+  complaints       Complaint[]
 
   // 营销相关
   couponId         String?   @unique @map("coupon_id")
@@ -1656,4 +1690,135 @@ model Admin {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("admins")
+}
+
+// ========== 投诉模块 ==========
+
+model Complaint {
+  id           String    @id @default(uuid())
+  orderId      String    @map("order_id")
+  userId       String    @map("user_id")
+  escortId     String?   @map("escort_id")
+
+  type         String    // service(服务问题), escort(陪诊员问题), payment(支付问题), other(其他)
+  content      String    // 投诉内容
+  images       String[]  @default([])  // 投诉图片
+
+  status       String    @default("pending") // pending(待处理), investigating(调查中), resolved(已解决), rejected(已驳回)
+
+  // 处理信息
+  handlerId    String?   @map("handler_id")     // 处理人ID（旧字段，兼容）
+  handlerName  String?   @map("handler_name")   // 处理人姓名
+  handleNote   String?   @map("handle_note")    // 处理备注
+  handleResult String?   @map("handle_result")  // 处理结果
+
+  // 处理结果详情
+  handledBy    String?   @map("handled_by")     // 处理管理员ID
+  handledAt    DateTime? @map("handled_at")     // 处理时间
+  resolution   String?                          // 处理决议
+  userRefund   Decimal?  @db.Decimal(10, 2) @map("user_refund")    // 用户退款金额
+  userCoupon   Decimal?  @db.Decimal(10, 2) @map("user_coupon")    // 用户补偿优惠券金额
+  escortPenalty String?  @map("escort_penalty") // 陪诊员处罚：none, warning, deduct_points, downgrade, suspend
+
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  resolvedAt   DateTime? @map("resolved_at")    // 解决时间
+
+  order        Order     @relation(fields: [orderId], references: [id])
+  user         User      @relation(fields: [userId], references: [id])
+  escort       Escort?   @relation(fields: [escortId], references: [id])
+
+  @@index([orderId])
+  @@index([userId])
+  @@index([escortId])
+  @@index([status])
+  @@map("complaints")
+}
+
+// ========== 消息通知模块 ==========
+
+// 消息模板
+model MessageTemplate {
+  id           String    @id @default(uuid())
+  code         String    @unique               // 模板代码：order_paid, order_assigned 等
+  name         String                          // 模板名称
+  type         String    @default("system")    // system(系统消息), sms(短信), wechat(微信订阅消息)
+  category     String    @default("system")    // system(系统), order(订单), marketing(营销)
+  title        String?                         // 消息标题
+  content      String                          // 消息内容（支持变量：{orderNo}, {escortName} 等）
+  channels     String[]  @default(["in_app"])  // 发送渠道: in_app, wechat, sms, push
+
+  // 微信订阅消息配置
+  wechatTemplateId String? @map("wechat_template_id")  // 微信模板ID
+
+  // 限流配置
+  rateLimit    Int?      @map("rate_limit")    // 每用户每小时最大发送次数
+  cooldown     Int?                            // 同一用户发送间隔（秒）
+
+  status       String    @default("active")    // active, inactive
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  @@map("message_templates")
+}
+
+// 站内消息
+model Message {
+  id           String    @id @default(uuid())
+  userId       String    @map("user_id")
+  type         String    @default("system")    // system(系统通知), order(订单消息), promotion(营销消息)
+  category     String    @default("system")    // system, order, marketing
+  templateCode String?   @map("template_code") // 模板代码
+
+  title        String                          // 消息标题
+  content      String                          // 消息内容
+  link         String?                         // 跳转链接
+  extra        String?                         // 额外数据（JSON 字符串）
+
+  // 关联信息
+  relatedType  String?   @map("related_type")  // order, escort, etc.
+  relatedId    String?   @map("related_id")    // 关联ID
+
+  isRead       Boolean   @default(false) @map("is_read")
+  readAt       DateTime? @map("read_at")
+
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  user         User      @relation(fields: [userId], references: [id])
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
+  @@index([category])
+  @@map("messages")
+}
+
+// 通知发送日志
+model NotificationLog {
+  id           String    @id @default(uuid())
+  userId       String?   @map("user_id")
+  recipientId  String    @map("recipient_id")   // 接收者ID（可以是用户或陪诊员）
+  recipientType String   @default("user") @map("recipient_type") // user, escort
+  templateCode String    @map("template_code") // 模板代码
+  channel      String                          // wechat, sms, push, message
+
+  // 发送内容
+  title        String?
+  content      String
+  variables    Json?                           // 模板变量
+
+  // 关联信息
+  relatedType  String?   @map("related_type")  // order, escort, etc.
+  relatedId    String?   @map("related_id")    // 关联ID
+
+  // 发送结果
+  status       String    @default("pending")   // pending, sent, failed
+  errorMessage String?   @map("error_message")
+  sentAt       DateTime? @map("sent_at")
+
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@index([recipientId, createdAt])
+  @@index([templateCode, createdAt])
+  @@map("notification_logs")
 }

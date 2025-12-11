@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { getRouteApi } from '@tanstack/react-router'
+import { getRouteApi, useNavigate } from '@tanstack/react-router'
 import {
+  Eye,
   Plus,
   Search as SearchIcon,
   Users,
@@ -68,11 +69,20 @@ import { BindEscortDialog } from './components/bind-escort-dialog'
 const route = getRouteApi('/_authenticated/escorts/')
 
 // 等级配置
-const levelConfig = {
+const levelConfig: Record<string, { label: string; color: string }> = {
   senior: { label: '资深', color: 'bg-purple-500' },
   intermediate: { label: '中级', color: 'bg-blue-500' },
   junior: { label: '初级', color: 'bg-green-500' },
   trainee: { label: '实习', color: 'bg-gray-500' },
+}
+
+// 安全获取等级配置
+const getLevelConfig = (escort: Escort) => {
+  // level 可能是对象 { code, name } 或 null
+  const levelCode = typeof escort.level === 'object' && escort.level !== null
+    ? (escort.level as { code?: string })?.code
+    : escort.level
+  return levelConfig[levelCode as string] || { label: '未知', color: 'bg-gray-400' }
 }
 
 // 城市代码映射
@@ -101,6 +111,7 @@ const workStatusConfig = {
 
 export function Escorts() {
   const search = route.useSearch()
+  const navigate = useNavigate()
 
   // 筛选状态
   const [keyword, setKeyword] = useState('')
@@ -370,13 +381,17 @@ export function Escorts() {
           <>
             <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
               {escorts.map(escort => (
-                <Card key={escort.id} className='overflow-hidden'>
+                <Card
+                  key={escort.id}
+                  className='overflow-hidden cursor-pointer hover:shadow-md transition-shadow'
+                  onClick={() => navigate({ to: '/escorts/$escortId', params: { escortId: escort.id } })}
+                >
                   <CardContent className='p-4'>
                     <div className='flex items-start justify-between'>
                       <div className='flex items-center gap-3'>
                         <Avatar className='h-12 w-12'>
                           <AvatarImage src={escort.avatar || undefined} />
-                          <AvatarFallback className={levelConfig[escort.level].color + ' text-white'}>
+                          <AvatarFallback className={getLevelConfig(escort).color + ' text-white'}>
                             {escort.name.slice(0, 1)}
                           </AvatarFallback>
                         </Avatar>
@@ -384,7 +399,7 @@ export function Escorts() {
                           <div className='flex items-center gap-2'>
                             <span className='font-semibold'>{escort.name}</span>
                             <Badge variant='secondary' className='text-xs'>
-                              {levelConfig[escort.level].label}
+                              {getLevelConfig(escort).label}
                             </Badge>
                           </div>
                           <div className='text-muted-foreground flex items-center gap-1 text-sm'>
@@ -395,11 +410,20 @@ export function Escorts() {
                       </div>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant='ghost' size='icon' className='h-8 w-8'>
+                          <Button
+                            variant='ghost'
+                            size='icon'
+                            className='h-8 w-8'
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <MoreHorizontal className='h-4 w-4' />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align='end'>
+                          <DropdownMenuItem onClick={() => navigate({ to: '/escorts/$escortId', params: { escortId: escort.id } })}>
+                            <Eye className='mr-2 h-4 w-4' />
+                            查看详情
+                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => openEditDialog(escort)}>
                             <Pencil className='mr-2 h-4 w-4' />
                             编辑

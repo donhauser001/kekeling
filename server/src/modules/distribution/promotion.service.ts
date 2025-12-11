@@ -45,7 +45,7 @@ export class PromotionService {
 
     // 晋升到团队长 (L3 -> L2)
     if (escort.distributionLevel === 3) {
-      const l2Config = config.l2PromotionConfig as L2PromotionConfig;
+      const l2Config = config.l2PromotionConfig as unknown as L2PromotionConfig;
 
       const meetsOrders = escort.orderCount >= l2Config.minOrders;
       const meetsRating = escort.rating >= l2Config.minRating;
@@ -61,7 +61,7 @@ export class PromotionService {
 
     // 晋升到城市合伙人 (L2 -> L1) - 需要平台审核
     if (escort.distributionLevel === 2) {
-      const l1Config = config.l1PromotionConfig as L1PromotionConfig;
+      const l1Config = config.l1PromotionConfig as unknown as L1PromotionConfig;
 
       const meetsTeamSize = escort.teamSize >= l1Config.minTeamSize;
       const teamMonthlyOrders = await this.getTeamMonthlyOrders(escortId);
@@ -100,19 +100,21 @@ export class PromotionService {
           where: { id: escortId },
         });
 
-        const levelNames = { 1: '城市合伙人', 2: '团队长', 3: '普通陪诊员' };
-        await this.notificationService.send({
-          event: 'escort_level_upgraded',
-          recipientId: escortId,
-          recipientType: 'escort',
-          data: {
-            escortName: escort.name,
-            levelName: levelNames[newLevel] || `L${newLevel}`,
-            levelCode: newLevel,
-          },
-          relatedType: 'escort',
-          relatedId: escortId,
-        });
+        const levelNames: Record<number, string> = { 1: '城市合伙人', 2: '团队长', 3: '普通陪诊员' };
+        if (escort) {
+          await this.notificationService.send({
+            event: 'escort_level_upgraded',
+            recipientId: escortId,
+            recipientType: 'escort',
+            data: {
+              escortName: escort.name,
+              levelName: levelNames[newLevel] || `L${newLevel}`,
+              levelCode: newLevel,
+            },
+            relatedType: 'escort',
+            relatedId: escortId,
+          });
+        }
       } catch (error) {
         this.logger.error(`发送晋升通知失败: ${error.message}`);
       }

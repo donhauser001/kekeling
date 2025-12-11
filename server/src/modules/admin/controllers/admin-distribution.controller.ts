@@ -1,7 +1,6 @@
-import { Controller, Get, Post, Put, Body, Param, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, Param, UseGuards, Query, NotFoundException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
-import { AdminEscortsService } from '../services/admin-escorts.service';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { PromotionService } from '../../distribution/promotion.service';
 import { DistributionService } from '../../distribution/distribution.service';
@@ -16,6 +15,332 @@ export class AdminDistributionController {
     private promotionService: PromotionService,
     private distributionService: DistributionService,
   ) { }
+
+  @Get('stats')
+  @ApiOperation({ summary: '获取分销统计' })
+  async getStats() {
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const [
+      totalMembers,
+      l1Count,
+      l2Count,
+      l3Count,
+      activeMembers,
+      pendingApplications,
+      monthlyDistribution,
+      totalDistribution,
+      pendingSettlement,
+    ] = await Promise.all([
+      // 总分销成员数
+      this.prisma.escort.count({
+        where: { distributionActive: true, deletedAt: null },
+      }),
+      // 城市合伙人数量
+      this.prisma.escort.count({
+        where: { distributionLevel: 1, status: 'active', deletedAt: null },
+      }),
+      // 团队长数量
+      this.prisma.escort.count({
+        where: { distributionLevel: 2, status: 'active', deletedAt: null },
+      }),
+      // 普通成员数量
+      this.prisma.escort.count({
+        where: { distributionLevel: 3, status: 'active', deletedAt: null },
+      }),
+      // 活跃分销成员（有下级的）
+      this.prisma.escort.count({
+        where: { teamSize: { gt: 0 }, deletedAt: null },
+      }),
+      // 待审核晋升申请
+      this.prisma.promotionApplication.count({
+        where: { status: 'pending' },
+      }),
+      // 本月分润总额
+      this.prisma.distributionRecord.aggregate({
+        where: {
+          status: 'settled',
+          settledAt: { gte: startOfMonth },
+        },
+        _sum: { amount: true },
+      }),
+      // 累计分润总额
+      this.prisma.distributionRecord.aggregate({
+        where: { status: 'settled' },
+        _sum: { amount: true },
+      }),
+      // 待结算金额
+      this.prisma.distributionRecord.aggregate({
+        where: { status: 'pending' },
+        _sum: { amount: true },
+      }),
+    ]);
+
+    return {
+      totalMembers,
+      l1Count,
+      l2Count,
+      l3Count,
+      activeMembers,
+      pendingApplications,
+      monthlyDistribution: Number(monthlyDistribution._sum.amount || 0),
+      totalDistribution: Number(totalDistribution._sum.amount || 0),
+      pendingSettlement: Number(pendingSettlement._sum.amount || 0),
+    };
+  }
+
+  @Get('members')
+  @ApiOperation({ summary: '获取分销成员列表' })
+  async getMembers(@Query() query: {
+    keyword?: string;
+    distributionLevel?: number;
+    distributionActive?: string;
+    page?: number;
+    pageSize?: number;
+  }) {
+    const { keyword, distributionLevel, distributionActive, page = 1, pageSize = 10 } = query;
+
+    const where: any = {
+      deletedAt: null,
+    };
+
+    if (keyword) {
+      where.OR = [
+        { name: { contains: keyword } },
+        { phone: { contains: keyword } },
+      ];
+    }
+
+    if (distributionLevel) {
+      where.distributionLevel = Number(distributionLevel);
+    }
+
+    if (distributionActive !== undefined && distributionActive !== '') {
+      where.distributionActive = distributionActive === 'true';
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.escort.findMany({
+        where,
+        include: {
+          parent: {
+            select: {
+              id: true,
+              name: true,
+              phone: true,
+            },
+          },
+          wallet: {
+            select: {
+              balance: true,
+              totalEarned: true,
+            },
+          },
+        },
+        orderBy: [
+          { distributionLevel: 'asc' },
+          { createdAt: 'desc' },
+        ],
+        skip: (Number(page) - 1) * Number(pageSize),
+        take: Number(pageSize),
+      }),
+      this.prisma.escort.count({ where }),
+    ]);
+
+    return {
+      data: data.map((member) => ({
+        ...member,
+        wallet: member.wallet ? {
+          balance: Number(member.wallet.balance),
+          totalEarned: Number(member.wallet.totalEarned),
+        } : null,
+      })),
+      total,
+      page: Number(page),
+      pageSize: Number(pageSize),
+    };
+  }
+
+  @Get('members/:id')
+  @ApiOperation({ summary: '获取成员详情' })
+  async getMemberById(@Param('id') id: string) {
+    const member = await this.prisma.escort.findUnique({
+      where: { id },
+      include: {
+        parent: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+          },
+        },
+        wallet: {
+          select: {
+            balance: true,
+            totalEarned: true,
+          },
+        },
+      },
+    });
+
+    if (!member) {
+      throw new NotFoundException('成员不存在');
+    }
+
+    return {
+      ...member,
+      wallet: member.wallet ? {
+        balance: Number(member.wallet.balance),
+        totalEarned: Number(member.wallet.totalEarned),
+      } : null,
+    };
+  }
+
+  @Put('members/:id/level')
+  @ApiOperation({ summary: '调整成员分销等级' })
+  async updateMemberLevel(@Param('id') id: string, @Body() body: { level: number }) {
+    const member = await this.prisma.escort.findUnique({ where: { id } });
+    if (!member) {
+      throw new NotFoundException('成员不存在');
+    }
+
+    return this.prisma.escort.update({
+      where: { id },
+      data: {
+        distributionLevel: body.level,
+        promotedAt: body.level < member.distributionLevel ? new Date() : member.promotedAt,
+      },
+    });
+  }
+
+  @Put('members/:id/active')
+  @ApiOperation({ summary: '切换成员分销状态' })
+  async toggleMemberActive(@Param('id') id: string, @Body() body: { active: boolean }) {
+    const member = await this.prisma.escort.findUnique({ where: { id } });
+    if (!member) {
+      throw new NotFoundException('成员不存在');
+    }
+
+    return this.prisma.escort.update({
+      where: { id },
+      data: { distributionActive: body.active },
+    });
+  }
+
+  @Post('members/:id/invite-code')
+  @ApiOperation({ summary: '生成邀请码' })
+  async generateInviteCode(@Param('id') id: string) {
+    const inviteCode = await this.distributionService.generateInviteCode(id);
+    return { inviteCode };
+  }
+
+  @Get('members/:id/team')
+  @ApiOperation({ summary: '获取成员团队' })
+  async getMemberTeam(
+    @Param('id') id: string,
+    @Query() query: { page?: number; pageSize?: number },
+  ) {
+    const { page = 1, pageSize = 10 } = query;
+
+    const where = {
+      parentId: id,
+      deletedAt: null,
+    };
+
+    const [data, total] = await Promise.all([
+      this.prisma.escort.findMany({
+        where,
+        include: {
+          wallet: {
+            select: {
+              balance: true,
+              totalEarned: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (Number(page) - 1) * Number(pageSize),
+        take: Number(pageSize),
+      }),
+      this.prisma.escort.count({ where }),
+    ]);
+
+    return {
+      data: data.map((member) => ({
+        ...member,
+        wallet: member.wallet ? {
+          balance: Number(member.wallet.balance),
+          totalEarned: Number(member.wallet.totalEarned),
+        } : null,
+      })),
+      total,
+      page: Number(page),
+      pageSize: Number(pageSize),
+    };
+  }
+
+  @Get('applications')
+  @ApiOperation({ summary: '获取晋升申请列表' })
+  async getApplications(@Query() query: {
+    status?: string;
+    page?: number;
+    pageSize?: number;
+  }) {
+    const { status, page = 1, pageSize = 20 } = query;
+
+    const where: any = {};
+    if (status) {
+      where.status = status;
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.promotionApplication.findMany({
+        where,
+        include: {
+          escort: {
+            select: {
+              id: true,
+              name: true,
+              phone: true,
+              avatar: true,
+              distributionLevel: true,
+              orderCount: true,
+              rating: true,
+              teamSize: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (Number(page) - 1) * Number(pageSize),
+        take: Number(pageSize),
+      }),
+      this.prisma.promotionApplication.count({ where }),
+    ]);
+
+    return {
+      data,
+      total,
+      page: Number(page),
+      pageSize: Number(pageSize),
+    };
+  }
+
+  @Put('applications/:id/review')
+  @ApiOperation({ summary: '审核晋升申请' })
+  async reviewApplication(
+    @Param('id') id: string,
+    @Body() body: { action: 'approve' | 'reject'; note?: string },
+  ) {
+    await this.promotionService.reviewPromotionApplication(
+      id,
+      body.action,
+      body.note,
+      'admin', // TODO: 从请求中获取管理员ID
+    );
+    return { success: true };
+  }
 
   @Get('config')
   @ApiOperation({ summary: '获取分润配置' })
@@ -108,135 +433,23 @@ export class AdminDistributionController {
     }
   }
 
-  @Get('promotion/applications')
-  @ApiOperation({ summary: '获取晋升申请列表' })
-  async getPromotionApplications(@Query('status') status?: string) {
-    const where: any = {};
-    if (status) {
-      where.status = status;
-    }
-
-    return this.prisma.promotionApplication.findMany({
-      where,
-      include: {
-        escort: {
-          select: {
-            id: true,
-            name: true,
-            phone: true,
-            distributionLevel: true,
-            orderCount: true,
-            rating: true,
-            teamSize: true,
-          },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-  }
-
-  @Put('promotion/applications/:id')
-  @ApiOperation({ summary: '审核晋升申请' })
-  async reviewPromotionApplication(
-    @Param('id') id: string,
-    @Body() body: { action: 'approve' | 'reject'; reviewNote?: string },
-  ) {
-    await this.promotionService.reviewPromotionApplication(
-      id,
-      body.action,
-      body.reviewNote,
-      'admin', // TODO: 从请求中获取管理员ID
-    );
-    return { success: true };
-  }
-
-  @Get('partners')
-  @ApiOperation({ summary: '获取城市合伙人列表' })
-  async getPartners(@Query() query: { page?: number; pageSize?: number }) {
-    const { page = 1, pageSize = 20 } = query;
-
-    const where = {
-      distributionLevel: 1,
-      status: 'active',
-      deletedAt: null,
-    };
-
-    const [data, total] = await Promise.all([
-      this.prisma.escort.findMany({
-        where,
-        include: {
-          wallet: {
-            select: {
-              balance: true,
-              totalEarned: true,
-            },
-          },
-        },
-        orderBy: { createdAt: 'desc' },
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-      }),
-      this.prisma.escort.count({ where }),
-    ]);
-
-    return {
-      data,
-      total,
-      page,
-      pageSize,
-    };
-  }
-
-  @Get('team-leaders')
-  @ApiOperation({ summary: '获取团队长列表' })
-  async getTeamLeaders(@Query() query: { page?: number; pageSize?: number }) {
-    const { page = 1, pageSize = 20 } = query;
-
-    const where = {
-      distributionLevel: 2,
-      status: 'active',
-      deletedAt: null,
-    };
-
-    const [data, total] = await Promise.all([
-      this.prisma.escort.findMany({
-        where,
-        include: {
-          wallet: {
-            select: {
-              balance: true,
-              totalEarned: true,
-            },
-          },
-        },
-        orderBy: { createdAt: 'desc' },
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-      }),
-      this.prisma.escort.count({ where }),
-    ]);
-
-    return {
-      data,
-      total,
-      page,
-      pageSize,
-    };
-  }
-
   @Get('records')
   @ApiOperation({ summary: '获取所有分润记录' })
   async getDistributionRecords(@Query() query: {
     page?: number;
     pageSize?: number;
     status?: string;
+    type?: string;
     beneficiaryId?: string;
   }) {
-    const { page = 1, pageSize = 20, status, beneficiaryId } = query;
+    const { page = 1, pageSize = 20, status, type, beneficiaryId } = query;
 
     const where: any = {};
     if (status) {
       where.status = status;
+    }
+    if (type) {
+      where.type = type;
     }
     if (beneficiaryId) {
       where.beneficiaryId = beneficiaryId;
@@ -264,13 +477,13 @@ export class AdminDistributionController {
             select: {
               id: true,
               orderNo: true,
-              paidAmount: true,
+              status: true,
             },
           },
         },
         orderBy: { createdAt: 'desc' },
-        skip: (page - 1) * pageSize,
-        take: pageSize,
+        skip: (Number(page) - 1) * Number(pageSize),
+        take: Number(pageSize),
       }),
       this.prisma.distributionRecord.count({ where }),
     ]);
@@ -282,8 +495,8 @@ export class AdminDistributionController {
         orderAmount: Number(record.orderAmount),
       })),
       total,
-      page,
-      pageSize,
+      page: Number(page),
+      pageSize: Number(pageSize),
     };
   }
 }

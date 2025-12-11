@@ -10,7 +10,7 @@ import { ApiResponse } from '../../common/response/api-response';
 @ApiTags('认证')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService) { }
 
   @Post('weixin')
   @ApiOperation({ summary: '微信登录' })
@@ -28,6 +28,38 @@ export class AuthController {
     @Body() dto: BindPhoneDto,
   ) {
     const result = await this.authService.bindPhone(userId, dto.code);
+    return ApiResponse.success(result);
+  }
+
+  // ========== 管理员认证 ==========
+
+  @Post('admin/login')
+  @ApiOperation({ summary: '管理员登录' })
+  async adminLogin(@Body() body: { username: string; password: string }) {
+    const result = await this.authService.adminLogin(body.username, body.password);
+    return ApiResponse.success(result);
+  }
+
+  @Post('admin/create')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '创建管理员账号（需要超级管理员权限）' })
+  async createAdmin(
+    @CurrentUser() currentUser: any,
+    @Body() body: {
+      username: string;
+      password: string;
+      name: string;
+      email?: string;
+      phone?: string;
+      role?: string;
+    },
+  ) {
+    // 检查当前用户是否是超级管理员
+    if (currentUser.type !== 'admin' || currentUser.role !== 'superadmin') {
+      throw new Error('没有权限创建管理员');
+    }
+    const result = await this.authService.createAdmin(body);
     return ApiResponse.success(result);
   }
 }

@@ -7,7 +7,8 @@ import { Loader2, LogIn } from 'lucide-react'
 import { toast } from 'sonner'
 import { IconFacebook, IconGithub } from '@/assets/brand-icons'
 import { useAuthStore } from '@/stores/auth-store'
-import { sleep, cn } from '@/lib/utils'
+import { cn } from '@/lib/utils'
+import { authApi } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -21,13 +22,10 @@ import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/password-input'
 
 const formSchema = z.object({
-  email: z.email({
-    error: (iss) => (iss.input === '' ? '请输入邮箱地址' : undefined),
-  }),
+  username: z.string().min(1, '请输入用户名'),
   password: z
     .string()
-    .min(1, '请输入密码')
-    .min(7, '密码至少需要7个字符'),
+    .min(1, '请输入密码'),
 })
 
 interface UserAuthFormProps extends React.HTMLAttributes<HTMLFormElement> {
@@ -46,39 +44,39 @@ export function UserAuthForm({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: '',
+      username: '',
       password: '',
     },
   })
 
-  function onSubmit(data: z.infer<typeof formSchema>) {
+  async function onSubmit(data: z.infer<typeof formSchema>) {
     setIsLoading(true)
 
-    toast.promise(sleep(2000), {
-      loading: '正在登录...',
-      success: () => {
-        setIsLoading(false)
+    try {
+      const result = await authApi.adminLogin(data.username, data.password)
 
-        // Mock successful authentication with expiry computed at success time
-        const mockUser = {
-          accountNo: 'ACC001',
-          email: data.email,
-          role: ['user'],
-          exp: Date.now() + 24 * 60 * 60 * 1000, // 24 hours from now
-        }
+      // 设置用户信息和 token
+      const adminUser = {
+        accountNo: result.admin.id,
+        email: result.admin.email || result.admin.username,
+        name: result.admin.name,
+        role: [result.admin.role],
+        exp: Date.now() + 24 * 60 * 60 * 1000, // 24 hours from now
+      }
 
-        // Set user and access token
-        auth.setUser(mockUser)
-        auth.setAccessToken('mock-access-token')
+      auth.setUser(adminUser)
+      auth.setAccessToken(result.token)
 
-        // Redirect to the stored location or default to dashboard
-        const targetPath = redirectTo || '/'
-        navigate({ to: targetPath, replace: true })
+      toast.success(`欢迎回来，${result.admin.name}！`)
 
-        return `欢迎回来，${data.email}！`
-      },
-      error: '登录失败',
-    })
+      // Redirect to the stored location or default to dashboard
+      const targetPath = redirectTo || '/'
+      navigate({ to: targetPath, replace: true })
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : '登录失败')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -90,12 +88,12 @@ export function UserAuthForm({
       >
         <FormField
           control={form.control}
-          name='email'
+          name='username'
           render={({ field }) => (
             <FormItem>
-              <FormLabel>邮箱</FormLabel>
+              <FormLabel>用户名</FormLabel>
               <FormControl>
-                <Input placeholder='请输入邮箱地址' {...field} />
+                <Input placeholder='请输入用户名' {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

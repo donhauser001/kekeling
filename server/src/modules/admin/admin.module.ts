@@ -13,6 +13,7 @@ import { AdminMembershipController } from './controllers/admin-membership.contro
 import { AdminCouponsController } from './controllers/admin-coupons.controller';
 import { AdminPointsController } from './controllers/admin-points.controller';
 import { AdminDistributionController } from './controllers/admin-distribution.controller';
+import { AdminDistributionSettingsController } from './controllers/admin-distribution-settings.controller';
 import { AdminEscortIdentityController } from './controllers/admin-escort-identity.controller';
 import { AdminOrdersService } from './services/admin-orders.service';
 import { AdminEscortsService } from './services/admin-escorts.service';
@@ -55,6 +56,7 @@ import { DistributionModule } from '../distribution/distribution.module';
     AdminCouponsController,
     AdminPointsController,
     AdminDistributionController,
+    AdminDistributionSettingsController,
     AdminEscortIdentityController,
   ],
   providers: [

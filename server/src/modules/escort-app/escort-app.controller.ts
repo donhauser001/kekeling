@@ -175,7 +175,13 @@ export class EscortAppController {
       maxDailyOrders?: number;
     },
   ) {
-    return this.escortAppService.updateServiceSettings(req.user.userId, body);
+    // 将 serviceHours 对象转换为 JSON 字符串
+    const settings = {
+      serviceRadius: body.serviceRadius,
+      serviceHours: body.serviceHours ? JSON.stringify(body.serviceHours) : undefined,
+      maxDailyOrders: body.maxDailyOrders,
+    };
+    return this.escortAppService.updateServiceSettings(req.user.userId, settings);
   }
 }
 

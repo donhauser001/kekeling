@@ -342,8 +342,12 @@ export class PointsService {
 
         return this.prisma.pointRule.create({
             data: {
-                ...dto,
+                name: dto.name,
+                code: dto.code,
+                points: dto.points ?? 0,
                 pointsRate: dto.pointsRate ? new Prisma.Decimal(dto.pointsRate) : null,
+                dailyLimit: dto.dailyLimit,
+                totalLimit: dto.totalLimit,
                 conditions: dto.conditions || {},
                 status: dto.status || 'active',
             },

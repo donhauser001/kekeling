@@ -76,7 +76,7 @@ describe('Service Settings API', () => {
       }
 
       await service.updateServiceSettings('user-1', {
-        serviceHours,
+        serviceHours: JSON.stringify(serviceHours),
       })
 
       expect(prisma.escort.update).toHaveBeenCalledWith({
@@ -93,7 +93,7 @@ describe('Service Settings API', () => {
       }
 
       await service.updateServiceSettings('user-1', {
-        serviceHours,
+        serviceHours: JSON.stringify(serviceHours),
         serviceRadius: 25,
         maxDailyOrders: 8,
       })

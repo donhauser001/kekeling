@@ -260,7 +260,6 @@ export function EscortFormDialog({
                     value={formData.phone}
                     onChange={e => updateField('phone', e.target.value)}
                     placeholder='请输入手机号'
-                    disabled={isEditing} // 编辑时不允许修改手机号
                   />
                 </div>
                 <div className='space-y-2'>

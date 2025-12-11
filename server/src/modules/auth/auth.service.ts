@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
+import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
 import { WechatLoginDto } from './dto/wechat-login.dto';
@@ -245,6 +246,113 @@ export class AuthService {
     } catch (error) {
       this.logger.error(`优惠券自动发放失败 (${trigger}):`, error);
     }
+  }
+
+  // ========== 管理员认证 ==========
+
+  /**
+   * 管理员登录
+   */
+  async adminLogin(username: string, password: string) {
+    // 查找管理员
+    const admin = await this.prisma.admin.findUnique({
+      where: { username },
+    });
+
+    if (!admin) {
+      throw new UnauthorizedException('用户名或密码错误');
+    }
+
+    // 检查状态
+    if (admin.status !== 'active') {
+      throw new UnauthorizedException('账号已被禁用');
+    }
+
+    // 验证密码
+    const isPasswordValid = await bcrypt.compare(password, admin.password);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('用户名或密码错误');
+    }
+
+    // 生成 JWT Token
+    const token = this.jwtService.sign({
+      sub: admin.id,
+      username: admin.username,
+      role: admin.role,
+      type: 'admin', // 标识这是管理员 token
+    });
+
+    return {
+      token,
+      admin: {
+        id: admin.id,
+        username: admin.username,
+        name: admin.name,
+        email: admin.email,
+        role: admin.role,
+      },
+    };
+  }
+
+  /**
+   * 创建管理员账号（仅超级管理员可用）
+   */
+  async createAdmin(data: {
+    username: string;
+    password: string;
+    name: string;
+    email?: string;
+    phone?: string;
+    role?: string;
+  }) {
+    // 检查用户名是否已存在
+    const existing = await this.prisma.admin.findUnique({
+      where: { username: data.username },
+    });
+
+    if (existing) {
+      throw new UnauthorizedException('用户名已存在');
+    }
+
+    // 加密密码
+    const hashedPassword = await bcrypt.hash(data.password, 10);
+
+    // 创建管理员
+    const admin = await this.prisma.admin.create({
+      data: {
+        username: data.username,
+        password: hashedPassword,
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        role: data.role || 'admin',
+      },
+    });
+
+    return {
+      id: admin.id,
+      username: admin.username,
+      name: admin.name,
+      email: admin.email,
+      role: admin.role,
+    };
+  }
+
+  /**
+   * 验证管理员
+   */
+  async validateAdmin(adminId: string) {
+    return this.prisma.admin.findUnique({
+      where: { id: adminId },
+      select: {
+        id: true,
+        username: true,
+        name: true,
+        email: true,
+        role: true,
+        status: true,
+      },
+    });
   }
 }
 

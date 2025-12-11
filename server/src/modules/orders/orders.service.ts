@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
@@ -11,8 +11,6 @@ export class OrdersService {
     private prisma: PrismaService,
     private readonly pricingService: PricingService,
     private redis: RedisService,
-    @Inject(forwardRef(() => import('../membership/membership.service').then(m => m.MembershipService)))
-    private membershipService?: any,
   ) { }
 
   // 生成订单号
@@ -51,7 +49,6 @@ export class OrdersService {
       if (dto.escortId) {
         const escort = await tx.escort.findUnique({
           where: { id: dto.escortId },
-          include: { service: true },
         });
 
         if (!escort) {
@@ -458,6 +455,8 @@ export class OrdersService {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
       select: {
+        id: true,
+        orderNo: true,
         userId: true,
         paidAmount: true,
       },
@@ -467,16 +466,16 @@ export class OrdersService {
       return;
     }
 
-    // 检查消费升级
-    if (this.membershipService) {
-      try {
-        await this.membershipService.checkConsumeUpgrade(
-          order.userId,
-          Number(order.paidAmount),
-        );
-      } catch (error) {
-        console.error('[Order] 消费升级检查失败:', error);
-      }
+    // 检查消费升级 - 使用动态 import 避免循环依赖
+    try {
+      const { MembershipService } = await import('../membership/membership.service');
+      const membershipService = new MembershipService(this.prisma);
+      await membershipService.checkConsumeUpgrade(
+        order.userId,
+        Number(order.paidAmount),
+      );
+    } catch (error) {
+      console.error('[Order] 消费升级检查失败:', error);
     }
 
     // 触发订单完成自动发放优惠券
@@ -540,6 +539,49 @@ export class OrdersService {
     } catch (error) {
       console.error('[Order] 订单完成积分发放失败:', error);
     }
+  }
+
+  // 提交投诉
+  async submitComplaint(
+    userId: string,
+    orderId: string,
+    data: {
+      type: string;
+      content: string;
+      evidence?: string[];
+    },
+  ) {
+    // 验证订单存在且属于该用户
+    const order = await this.prisma.order.findFirst({
+      where: {
+        id: orderId,
+        userId,
+      },
+      select: {
+        id: true,
+        escortId: true,
+        status: true,
+      },
+    });
+
+    if (!order) {
+      throw new BadRequestException('订单不存在');
+    }
+
+    // 创建投诉记录
+    const complaint = await this.prisma.complaint.create({
+      data: {
+        orderId,
+        userId,
+        escortId: order.escortId,
+        type: data.type,
+        content: data.content,
+        images: data.evidence || [],
+        status: 'pending',
+      },
+    });
+
+    return complaint;
   }
 }
 

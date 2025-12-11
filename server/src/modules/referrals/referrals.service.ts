@@ -403,10 +403,10 @@ export class ReferralsService {
                         userPoint = await tx.userPoint.create({
                             data: {
                                 userId: record.inviterId,
-                                totalPoints: new Prisma.Decimal(0),
-                                usedPoints: new Prisma.Decimal(0),
-                                expiredPoints: new Prisma.Decimal(0),
-                                currentPoints: new Prisma.Decimal(0),
+                                totalPoints: 0,
+                                usedPoints: 0,
+                                expiredPoints: 0,
+                                currentPoints: 0,
                             },
                         });
                     }
@@ -414,8 +414,8 @@ export class ReferralsService {
                     const expireAt = new Date();
                     expireAt.setFullYear(expireAt.getFullYear() + 1);
 
-                    const pointsToAdd = new Prisma.Decimal(rule.inviterPoints);
-                    const newBalance = new Prisma.Decimal(userPoint.currentPoints).plus(pointsToAdd);
+                    const pointsToAdd = rule.inviterPoints;
+                    const newBalance = userPoint.currentPoints + pointsToAdd;
 
                     await tx.userPoint.update({
                         where: { userId: record.inviterId },
@@ -495,10 +495,10 @@ export class ReferralsService {
                         userPoint = await tx.userPoint.create({
                             data: {
                                 userId: record.inviteeId,
-                                totalPoints: new Prisma.Decimal(0),
-                                usedPoints: new Prisma.Decimal(0),
-                                expiredPoints: new Prisma.Decimal(0),
-                                currentPoints: new Prisma.Decimal(0),
+                                totalPoints: 0,
+                                usedPoints: 0,
+                                expiredPoints: 0,
+                                currentPoints: 0,
                             },
                         });
                     }
@@ -506,8 +506,8 @@ export class ReferralsService {
                     const expireAt = new Date();
                     expireAt.setFullYear(expireAt.getFullYear() + 1);
 
-                    const pointsToAdd = new Prisma.Decimal(rule.inviteePoints);
-                    const newBalance = new Prisma.Decimal(userPoint.currentPoints).plus(pointsToAdd);
+                    const pointsToAdd = rule.inviteePoints;
+                    const newBalance = userPoint.currentPoints + pointsToAdd;
 
                     await tx.userPoint.update({
                         where: { userId: record.inviteeId },
@@ -547,7 +547,7 @@ export class ReferralsService {
                             couponId: rule.inviteeCouponId || null,
                             points: rule.inviteePoints || 0,
                         }
-                        : null,
+                        : Prisma.JsonNull,
                 },
             });
 
@@ -747,7 +747,8 @@ export class ReferralsService {
 
         try {
             // 尝试使用 qrcode 库生成二维码
-            const qrcode = await import('qrcode');
+            // @ts-ignore - qrcode 类型声明可能未安装
+            const qrcode: any = await import('qrcode');
             const qrCodeDataUrl = await qrcode.toDataURL(inviteLink, {
                 width: 200,
                 margin: 1,
@@ -756,7 +757,8 @@ export class ReferralsService {
 
             // 尝试使用 sharp 生成海报图片
             try {
-                const sharp = await import('sharp');
+                // @ts-ignore - sharp 类型声明可能未安装
+                const sharp: any = await import('sharp');
                 const { writeFileSync, existsSync, mkdirSync } = await import('fs');
                 const { join } = await import('path');
 
@@ -877,7 +879,7 @@ export class ReferralsService {
                 // 注意：需要安装 @alicloud/sms-sdk
                 // npm install @alicloud/sms-sdk
                 try {
-                    const SMSClient = (await import('@alicloud/sms-sdk')).default;
+                    const SMSClient: any = (await import('@alicloud/sms-sdk' as any)).default;
                     const smsClient = new SMSClient({
                         accessKeyId,
                         secretAccessKey: accessKeySecret,
@@ -916,7 +918,7 @@ export class ReferralsService {
                 // 注意：需要安装 tencentcloud-sdk-nodejs
                 // npm install tencentcloud-sdk-nodejs
                 try {
-                    const tencentcloud = await import('tencentcloud-sdk-nodejs');
+                    const tencentcloud: any = await import('tencentcloud-sdk-nodejs' as any);
                     const SmsClient = tencentcloud.sms.v20210111.Client;
                     const smsClient = new SmsClient({
                         credential: {

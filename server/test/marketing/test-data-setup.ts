@@ -7,6 +7,7 @@
  */
 
 import { PrismaClient } from '@prisma/client'
+import { Decimal } from '@prisma/client/runtime/library'
 
 const prisma = new PrismaClient()
 
@@ -14,8 +15,27 @@ async function setupTestData() {
   console.log('📦 开始准备测试数据...\n')
 
   try {
+    // 0. 创建或获取测试分类
+    console.log('0. 创建测试分类...')
+    let testCategory = await prisma.serviceCategory.findFirst({
+      where: { name: '测试分类' },
+    })
+
+    if (!testCategory) {
+      testCategory = await prisma.serviceCategory.create({
+        data: {
+          name: '测试分类',
+          description: '用于测试的分类',
+          status: 'active',
+        },
+      })
+      console.log(`   ✅ 创建分类: ${testCategory.id}`)
+    } else {
+      console.log(`   ℹ️  分类已存在: ${testCategory.id}`)
+    }
+
     // 1. 创建测试服务
-    console.log('1. 创建测试服务...')
+    console.log('\n1. 创建测试服务...')
     let testService = await prisma.service.findFirst({
       where: { name: '测试服务-营销中心' },
     })
@@ -23,13 +43,12 @@ async function setupTestData() {
     if (!testService) {
       testService = await prisma.service.create({
         data: {
+          categoryId: testCategory.id,
           name: '测试服务-营销中心',
           description: '用于营销中心测试的服务',
-          price: 100,
-          originalPrice: 100,
+          price: new Decimal(100),
+          originalPrice: new Decimal(100),
           duration: '2小时',
-          orderCount: 0,
-          rating: 0,
           status: 'active',
         },
       })
@@ -48,11 +67,10 @@ async function setupTestData() {
       testLevel = await prisma.membershipLevel.create({
         data: {
           name: '测试会员',
-          level: 1,
-          discount: 10, // 10% 折扣
-          price: 99,
-          duration: 30,
-          benefits: ['测试权益1', '测试权益2'],
+          code: 'test_member',
+          discount: 90, // 9折
+          overtimeFeeWaiver: 0,
+          benefits: { list: ['测试权益1', '测试权益2'] },
           status: 'active',
         },
       })
@@ -73,7 +91,7 @@ async function setupTestData() {
           levelId: testLevel.id,
           code: 'test_plan',
           name: '测试方案',
-          price: 99,
+          price: new Decimal(99),
           duration: 30,
           status: 'active',
         },
@@ -94,8 +112,8 @@ async function setupTestData() {
         data: {
           name: '测试优惠券',
           type: 'amount',
-          value: 20,
-          minAmount: 50,
+          value: new Decimal(20),
+          minAmount: new Decimal(50),
           applicableScope: 'all',
           perUserLimit: 2,
           totalQuantity: 100,
@@ -128,8 +146,8 @@ async function setupTestData() {
           startAt: tomorrow,
           endAt: nextWeek,
           discountType: 'percent',
-          discountValue: 10, // 10% 折扣
-          minAmount: 0,
+          discountValue: new Decimal(10), // 10% 折扣
+          minAmount: new Decimal(0),
           applicableScope: 'all',
           status: 'pending',
         },
@@ -150,8 +168,8 @@ async function setupTestData() {
           couponStackWithMember: true,
           pointsEnabled: true,
           pointsRate: 100, // 100积分 = 1元
-          pointsMaxRate: 0.5, // 最大抵扣50%
-          minPayAmount: 0,
+          pointsMaxRate: 50, // 最大抵扣50%
+          minPayAmount: new Decimal(0),
           showOriginalPrice: true,
           showMemberPrice: true,
           showSavings: true,
@@ -169,7 +187,7 @@ async function setupTestData() {
         name: '订单消费',
         code: 'order_consume',
         points: 0, // 固定积分值（使用 pointsRate 计算）
-        pointsRate: 1, // 1元 = 1积分
+        pointsRate: new Decimal(1), // 1元 = 1积分
         dailyLimit: null,
         totalLimit: null,
       },
@@ -227,6 +245,7 @@ async function setupTestData() {
 
     console.log('\n✅ 测试数据准备完成！')
     console.log('\n测试数据ID:')
+    console.log(`  分类ID: ${testCategory.id}`)
     console.log(`  服务ID: ${testService.id}`)
     console.log(`  会员等级ID: ${testLevel.id}`)
     console.log(`  会员方案ID: ${testPlan.id}`)
@@ -255,4 +274,3 @@ if (require.main === module) {
 }
 
 export { setupTestData }
-

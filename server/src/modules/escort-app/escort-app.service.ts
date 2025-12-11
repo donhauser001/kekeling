@@ -506,8 +506,8 @@ export class EscortAppService {
           recipientId: escortUser.user.id,
           recipientType: 'escort',
           data: {
-            orderNo: updatedOrder.orderNo,
-            appointmentTime: `${updatedOrder.appointmentDate} ${updatedOrder.appointmentTime}`,
+            orderNo: updatedOrder?.orderNo || '',
+            appointmentTime: `${updatedOrder?.appointmentDate || ''} ${updatedOrder?.appointmentTime || ''}`,
           },
           relatedType: 'order',
           relatedId: orderId,
@@ -1126,6 +1126,42 @@ export class EscortAppService {
     });
 
     return { success: true };
+  }
+
+  // 更新服务设置
+  async updateServiceSettings(
+    userId: string,
+    settings: {
+      serviceRadius?: number;
+      serviceHours?: string;
+      maxDailyOrders?: number;
+    },
+  ) {
+    const escortId = await this.getEscortId(userId);
+
+    const updateData: any = {};
+    if (settings.serviceRadius !== undefined) {
+      updateData.serviceRadius = settings.serviceRadius;
+    }
+    if (settings.serviceHours !== undefined) {
+      updateData.serviceHours = settings.serviceHours;
+    }
+    if (settings.maxDailyOrders !== undefined) {
+      updateData.maxDailyOrders = settings.maxDailyOrders;
+    }
+
+    const escort = await this.prisma.escort.update({
+      where: { id: escortId },
+      data: updateData,
+      select: {
+        id: true,
+        serviceRadius: true,
+        serviceHours: true,
+        maxDailyOrders: true,
+      },
+    });
+
+    return escort;
   }
 }
 

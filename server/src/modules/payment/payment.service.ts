@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationService } from '../notification/notification.service';
 import * as crypto from 'crypto';
@@ -30,8 +30,6 @@ export class PaymentService {
   constructor(
     private prisma: PrismaService,
     private notificationService: NotificationService,
-    @Inject(forwardRef(() => import('../membership/membership.service').then(m => m.MembershipService)))
-    private membershipService?: any,
   ) { }
 
   /**
@@ -270,9 +268,13 @@ export class PaymentService {
       });
 
       if (membershipOrder) {
-        // 会员订单支付回调
-        if (this.membershipService) {
-          await this.membershipService.paymentSuccess(orderNo, transactionId);
+        // 会员订单支付回调 - 使用动态 import 避免循环依赖
+        try {
+          const { MembershipService } = await import('../membership/membership.service');
+          const membershipService = new MembershipService(this.prisma);
+          await membershipService.paymentSuccess(orderNo, transactionId);
+        } catch (error) {
+          console.error('[Payment] 会员订单支付回调处理失败:', error);
         }
       } else if (order) {
         // 普通订单支付回调

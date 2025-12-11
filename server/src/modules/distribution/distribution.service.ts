@@ -383,7 +383,7 @@ export class DistributionService {
           orderId: firstOrderId,
           orderAmount: new Decimal(0),
           beneficiaryId: inviterId,
-          beneficiaryLevel: inviter.distributionLevel,
+          beneficiaryLevel: inviter?.distributionLevel ?? 3,
           sourceEscortId: inviteeId,
           relationLevel: 1,
           rate: 0,
