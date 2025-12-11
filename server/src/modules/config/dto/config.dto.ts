@@ -113,7 +113,7 @@ export type BrandLayout = 'logo-only' | 'logo-name' | 'logo-slogan' | 'logo-name
 export type ThemeMode = 'light' | 'dark' | 'system';
 
 // 页脚可见页面类型
-export type FooterVisiblePage = 'home' | 'services' | 'orders' | 'profile';
+export type FooterVisiblePage = 'home' | 'services' | 'cases' | 'profile';
 
 // 主题设置类型
 export interface ThemeSettings {

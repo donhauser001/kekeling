@@ -265,7 +265,7 @@ function LayoutSelector({
 const footerPageOptions: { value: FooterVisiblePage; label: string }[] = [
   { value: 'home', label: '首页' },
   { value: 'services', label: '服务页' },
-  { value: 'orders', label: '订单页' },
+  { value: 'cases', label: '病历页' },
   { value: 'profile', label: '个人中心' },
 ]
 

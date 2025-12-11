@@ -10,6 +10,8 @@ import type {
   StatsData,
   ServiceCategory,
   RecommendedServicesData,
+  ServiceListItem,
+  ServiceListResponse,
 } from './types'
 
 const API_BASE_URL = '/api'
@@ -46,6 +48,40 @@ async function request<T>(endpoint: string): Promise<T> {
   return result.data
 }
 
+// 服务列表查询参数
+export interface ServiceQueryParams {
+  categoryId?: string
+  keyword?: string
+  page?: number
+  pageSize?: number
+  sortBy?: 'default' | 'sales' | 'rating' | 'price-asc' | 'price-desc'
+}
+
+// 服务详情类型
+export interface ServiceDetail {
+  id: string
+  name: string
+  description?: string
+  content?: string
+  price: number
+  originalPrice?: number | null
+  unit?: string
+  duration?: string | null
+  coverImage?: string | null
+  images?: string[]
+  orderCount: number
+  rating: number
+  tags?: string[]
+  status: string
+  features?: string[]
+  notes?: string
+  category?: {
+    id: string
+    name: string
+    icon?: string
+  }
+}
+
 // 预览器 API
 export const previewApi = {
   // 获取主题设置
@@ -67,4 +103,18 @@ export const previewApi = {
   // 获取推荐服务
   getRecommendedServices: () =>
     request<RecommendedServicesData>('/home/recommended-services'),
+
+  // 获取服务列表
+  getServices: (params: ServiceQueryParams = {}) => {
+    const searchParams = new URLSearchParams()
+    if (params.categoryId) searchParams.set('categoryId', params.categoryId)
+    if (params.keyword) searchParams.set('keyword', params.keyword)
+    if (params.page) searchParams.set('page', params.page.toString())
+    if (params.pageSize) searchParams.set('pageSize', params.pageSize.toString())
+    const query = searchParams.toString()
+    return request<ServiceListResponse>(`/services${query ? `?${query}` : ''}`)
+  },
+
+  // 获取服务详情
+  getServiceDetail: (id: string) => request<ServiceDetail>(`/services/${id}`),
 }

@@ -3,5 +3,6 @@
  */
 
 export { ServicesPage } from './ServicesPage'
-export { OrdersPage } from './OrdersPage'
+export { ServiceDetailPage } from './ServiceDetailPage'
+export { CasesPage } from './CasesPage'
 export { ProfilePage } from './ProfilePage'

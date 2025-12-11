@@ -1145,7 +1145,7 @@ export type BrandLayout = 'logo-only' | 'logo-name' | 'logo-slogan' | 'logo-name
 export type ThemeMode = 'light' | 'dark' | 'system'
 
 // 页脚可见页面类型
-export type FooterVisiblePage = 'home' | 'services' | 'orders' | 'profile'
+export type FooterVisiblePage = 'home' | 'services' | 'cases' | 'profile'
 
 export interface ThemeSettings {
   primaryColor: string          // 主色调

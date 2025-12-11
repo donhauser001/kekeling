@@ -15,7 +15,7 @@ export type BrandLayout =
 export type ThemeMode = 'light' | 'dark' | 'system'
 
 // 页脚可见页面类型
-export type FooterVisiblePage = 'home' | 'services' | 'orders' | 'profile'
+export type FooterVisiblePage = 'home' | 'services' | 'cases' | 'profile'
 
 // 主题设置
 export interface ThemeSettings {
@@ -142,10 +142,39 @@ export interface ServiceCategory {
   serviceCount?: number
 }
 
+// 服务列表项
+export interface ServiceListItem {
+  id: string
+  name: string
+  description?: string
+  price: number
+  originalPrice?: number | null
+  unit?: string
+  duration?: string | null
+  coverImage?: string | null
+  orderCount: number
+  rating: number
+  tags?: string[]
+  status: string
+  category?: {
+    id: string
+    name: string
+    icon?: string
+  }
+}
+
+// 服务列表响应
+export interface ServiceListResponse {
+  data: ServiceListItem[]
+  total: number
+  page: number
+  pageSize: number
+}
+
 // 预览器 Props
 export interface TerminalPreviewProps {
   /** 预览的页面类型 */
-  page?: 'home' | 'services' | 'orders' | 'profile'
+  page?: 'home' | 'services' | 'cases' | 'profile'
   /** 主题设置覆盖 */
   themeSettings?: Partial<ThemeSettings>
   /** 首页设置覆盖 */

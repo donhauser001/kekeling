@@ -31,7 +31,7 @@ import {
   ScrollIndicator,
   PhoneFrame,
 } from './components'
-import { ServicesPage, OrdersPage, ProfilePage } from './components/pages'
+import { ServicesPage, ServiceDetailPage, CasesPage, ProfilePage } from './components/pages'
 
 export function TerminalPreview({
   page: initialPage = 'home',
@@ -50,6 +50,7 @@ export function TerminalPreview({
   const [activeTab, setActiveTab] = useState<ServiceTabType>('recommended')
   const [isDarkMode, setIsDarkMode] = useState(false)
   const [currentPage, setCurrentPage] = useState(initialPage)
+  const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null)
 
   // 切换深色/浅色模式
   const toggleDarkMode = () => setIsDarkMode(!isDarkMode)
@@ -59,6 +60,22 @@ export function TerminalPreview({
     queryClient.invalidateQueries({ queryKey: ['preview'] })
     queryClient.invalidateQueries({ queryKey: ['homepageSettings'] })
   }, [queryClient])
+
+  // 打开服务详情
+  const handleServiceClick = useCallback((serviceId: string) => {
+    setSelectedServiceId(serviceId)
+  }, [])
+
+  // 返回上一页（从服务详情页返回）
+  const handleBackFromDetail = useCallback(() => {
+    setSelectedServiceId(null)
+  }, [])
+
+  // 切换页面（同时清除服务详情页状态）
+  const handlePageChange = useCallback((page: typeof currentPage) => {
+    setSelectedServiceId(null)
+    setCurrentPage(page)
+  }, [])
 
   // 触控滚动相关
   const {
@@ -218,6 +235,7 @@ export function TerminalPreview({
         onTabChange={setActiveTab}
         themeSettings={themeSettings}
         isDarkMode={isDarkMode}
+        onServiceClick={handleServiceClick}
       />
 
       {/* 内容区 */}
@@ -237,11 +255,29 @@ export function TerminalPreview({
 
   // 根据页面类型渲染不同内容
   const renderPageContent = () => {
+    // 如果选中了服务，显示服务详情页
+    if (selectedServiceId) {
+      return (
+        <ServiceDetailPage
+          serviceId={selectedServiceId}
+          themeSettings={themeSettings}
+          isDarkMode={isDarkMode}
+          onBack={handleBackFromDetail}
+        />
+      )
+    }
+
     switch (currentPage) {
       case 'services':
-        return <ServicesPage themeSettings={themeSettings} isDarkMode={isDarkMode} />
-      case 'orders':
-        return <OrdersPage themeSettings={themeSettings} isDarkMode={isDarkMode} />
+        return (
+          <ServicesPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            onServiceClick={handleServiceClick}
+          />
+        )
+      case 'cases':
+        return <CasesPage themeSettings={themeSettings} isDarkMode={isDarkMode} />
       case 'profile':
         return <ProfilePage themeSettings={themeSettings} isDarkMode={isDarkMode} />
       case 'home':
@@ -284,7 +320,7 @@ export function TerminalPreview({
         activePage={currentPage}
         themeSettings={themeSettings}
         isDarkMode={isDarkMode}
-        onPageChange={setCurrentPage}
+        onPageChange={handlePageChange}
       />
 
       {/* 滚动指示器 */}
