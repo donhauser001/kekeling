@@ -1150,11 +1150,11 @@ export interface ThemeSettings {
   brandName: string             // 品牌名称
   brandSlogan: string           // 品牌标语
   // 顶部 Logo
-  headerLogo: string            // 顶部 Logo（亮色模式）
-  headerLogoDark: string        // 顶部 Logo（暗色模式）
+  headerLogo: string            // 顶部 Logo（浅色模式）
+  headerLogoDark: string        // 顶部 Logo（深色模式）
   // 页脚 Logo
-  footerLogo: string            // 页脚 Logo（亮色模式）
-  footerLogoDark: string        // 页脚 Logo（暗色模式）
+  footerLogo: string            // 页脚 Logo（浅色模式）
+  footerLogoDark: string        // 页脚 Logo（深色模式）
   // 显示开关
   headerShowName: boolean       // 顶部显示名称
   headerShowSlogan: boolean     // 顶部显示标语

@@ -450,8 +450,8 @@ export default function AppSettingsBrand() {
               <CardContent>
                 <div className='grid grid-cols-3 gap-2'>
                   {[
-                    { value: 'light' as ThemeMode, label: '亮色', icon: Sun, desc: '始终使用亮色主题' },
-                    { value: 'dark' as ThemeMode, label: '暗色', icon: Moon, desc: '始终使用暗色主题' },
+                    { value: 'light' as ThemeMode, label: '浅色', icon: Sun, desc: '始终使用浅色主题' },
+                    { value: 'dark' as ThemeMode, label: '深色', icon: Moon, desc: '始终使用深色主题' },
                     { value: 'system' as ThemeMode, label: '跟随系统', icon: Monitor, desc: '自动跟随系统设置' },
                   ].map((mode) => (
                     <button
@@ -472,8 +472,8 @@ export default function AppSettingsBrand() {
                   ))}
                 </div>
                 <p className='mt-3 text-xs text-muted-foreground'>
-                  {formData.defaultThemeMode === 'light' && '小程序将始终使用亮色主题显示'}
-                  {formData.defaultThemeMode === 'dark' && '小程序将始终使用暗色主题显示'}
+                  {formData.defaultThemeMode === 'light' && '小程序将始终使用浅色主题显示'}
+                  {formData.defaultThemeMode === 'dark' && '小程序将始终使用深色主题显示'}
                   {formData.defaultThemeMode === 'system' && '小程序将根据用户手机系统设置自动切换主题'}
                 </p>
               </CardContent>
@@ -493,9 +493,9 @@ export default function AppSettingsBrand() {
                   <Label className='text-xs text-muted-foreground flex items-center gap-1'>
                     <ArrowUp className='h-3 w-3' /> 顶部区域
                   </Label>
-                  {/* 亮色模式 */}
+                  {/* 浅色模式 */}
                   <div className='rounded-lg border bg-white p-3'>
-                    <p className='mb-2 text-[10px] text-gray-400'>亮色模式</p>
+                    <p className='mb-2 text-[10px] text-gray-400'>浅色模式</p>
                     <BrandPreview
                       layout={formData.headerLayout}
                       logo={formData.headerLogo}
@@ -504,9 +504,9 @@ export default function AppSettingsBrand() {
                       variant='light'
                     />
                   </div>
-                  {/* 暗色模式 */}
+                  {/* 深色模式 */}
                   <div className='rounded-lg border border-gray-700 bg-gray-900 p-3'>
-                    <p className='mb-2 text-[10px] text-gray-500'>暗色模式</p>
+                    <p className='mb-2 text-[10px] text-gray-500'>深色模式</p>
                     <BrandPreview
                       layout={formData.headerLayout}
                       logo={formData.headerLogoDark || formData.headerLogo}
@@ -524,9 +524,9 @@ export default function AppSettingsBrand() {
                   <Label className='text-xs text-muted-foreground flex items-center gap-1'>
                     <ArrowDown className='h-3 w-3' /> 页脚区域
                   </Label>
-                  {/* 亮色模式 */}
+                  {/* 浅色模式 */}
                   <div className='rounded-lg border bg-gray-50 p-3'>
-                    <p className='mb-2 text-[10px] text-gray-400'>亮色模式</p>
+                    <p className='mb-2 text-[10px] text-gray-400'>浅色模式</p>
                     <BrandPreview
                       layout={formData.footerLayout}
                       logo={formData.footerLogo || formData.headerLogo}
@@ -536,9 +536,9 @@ export default function AppSettingsBrand() {
                       centered
                     />
                   </div>
-                  {/* 暗色模式 */}
+                  {/* 深色模式 */}
                   <div className='rounded-lg border border-gray-700 bg-gray-800 p-3'>
-                    <p className='mb-2 text-[10px] text-gray-500'>暗色模式</p>
+                    <p className='mb-2 text-[10px] text-gray-500'>深色模式</p>
                     <BrandPreview
                       layout={formData.footerLayout}
                       logo={formData.footerLogoDark || formData.footerLogo || formData.headerLogoDark || formData.headerLogo}
@@ -580,13 +580,13 @@ export default function AppSettingsBrand() {
                       <LogoUploader
                         value={formData.headerLogo}
                         onChange={(url) => updateField('headerLogo', url)}
-                        label='亮色模式'
+                        label='浅色模式'
                         variant='light'
                       />
                       <LogoUploader
                         value={formData.headerLogoDark}
                         onChange={(url) => updateField('headerLogoDark', url)}
-                        label='暗色模式'
+                        label='深色模式'
                         variant='dark'
                       />
                     </div>
@@ -625,13 +625,13 @@ export default function AppSettingsBrand() {
                       <LogoUploader
                         value={formData.footerLogo}
                         onChange={(url) => updateField('footerLogo', url)}
-                        label='亮色模式'
+                        label='浅色模式'
                         variant='light'
                       />
                       <LogoUploader
                         value={formData.footerLogoDark}
                         onChange={(url) => updateField('footerLogoDark', url)}
-                        label='暗色模式'
+                        label='深色模式'
                         variant='dark'
                       />
                     </div>
@@ -680,7 +680,7 @@ export default function AppSettingsBrand() {
               </p>
               <p>
                 <strong>Logo 设置：</strong>
-                建议准备亮色和暗色两个版本，以适配不同主题。页脚 Logo 留空时将自动使用顶部 Logo。
+                建议准备浅色和深色两个版本，以适配不同主题。页脚 Logo 留空时将自动使用顶部 Logo。
               </p>
               <p>
                 <strong>布局方式：</strong>

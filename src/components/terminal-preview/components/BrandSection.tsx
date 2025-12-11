@@ -18,9 +18,9 @@ interface BrandSectionProps {
 // 根据当前主题获取对应的 Logo
 function getThemeLogo(lightLogo: string, darkLogo: string, isDarkMode: boolean): string {
   if (isDarkMode) {
-    return darkLogo || lightLogo // 暗色模式：优先用暗色 Logo，没有则用亮色
+    return darkLogo || lightLogo // 深色模式：优先用深色 Logo，没有则用浅色
   }
-  return lightLogo || darkLogo // 亮色模式：优先用亮色 Logo，没有则用暗色
+  return lightLogo || darkLogo // 浅色模式：优先用浅色 Logo，没有则用深色
 }
 
 export function BrandSection({
