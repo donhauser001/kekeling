@@ -13,7 +13,10 @@ interface FooterSectionProps {
 
 export function FooterSection({ themeSettings, isDarkMode }: FooterSectionProps) {
   return (
-    <div className='relative z-10 bg-gray-50 px-4 py-6 text-center'>
+    <div
+      className='relative z-10 px-4 py-6 text-center'
+      style={{ backgroundColor: isDarkMode ? '#1f1f1f' : '#f9fafb' }}
+    >
       <BrandSection
         layout={themeSettings.footerLayout}
         lightLogo={themeSettings.footerLogo || themeSettings.headerLogo}
@@ -22,7 +25,10 @@ export function FooterSection({ themeSettings, isDarkMode }: FooterSectionProps)
         isDarkMode={isDarkMode}
         isFooter
       />
-      <div className='mt-3 flex items-center justify-center gap-1.5 text-xs text-gray-400'>
+      <div
+        className='mt-3 flex items-center justify-center gap-1.5 text-xs'
+        style={{ color: isDarkMode ? '#6b7280' : '#9ca3af' }}
+      >
         <Phone className='h-3.5 w-3.5' />
         <span>客服热线：400-123-4567</span>
       </div>

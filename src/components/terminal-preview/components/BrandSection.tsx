@@ -34,8 +34,10 @@ export function BrandSection({
   const hasLogo = layout.includes('logo')
   const hasName = layout.includes('name') && layout !== 'logo-slogan'
   const hasSlogan = layout.includes('slogan')
-  // 根据暗色/亮色模式选择对应的 logo
-  const logoUrl = getResourceUrl(getThemeLogo(lightLogo, darkLogo, isDarkMode))
+  // 首页顶部（非 footer）始终使用深色 logo（适合浅色背景上的渐变顶部），底部根据深浅色模式切换
+  const logoUrl = getResourceUrl(
+    isFooter ? getThemeLogo(lightLogo, darkLogo, isDarkMode) : (darkLogo || lightLogo)
+  )
 
   if (isFooter) {
     return (

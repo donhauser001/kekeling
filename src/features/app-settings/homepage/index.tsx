@@ -85,12 +85,20 @@ interface HomePageSettings {
   serviceRecommend: ServiceRecommendSettings
 }
 
+// 服务分类
+interface ServiceCategory {
+  id: string
+  name: string
+  icon?: string
+}
+
 // 服务项（用于选择器）
 interface ServiceItem {
   id: string
   name: string
   price: number
   coverImage?: string
+  category?: ServiceCategory
 }
 
 // 默认内容区 HTML 代码
@@ -146,7 +154,7 @@ const getServices = async (): Promise<ServiceItem[]> => {
   try {
     const response = await fetch('/api/services?pageSize=100')
     const result = await response.json()
-    return result.data?.items || []
+    return result.data?.data || []
   } catch {
     return []
   }
@@ -291,6 +299,27 @@ export default function HomepageManagement() {
   // 过滤服务列表
   const filteredServices = services.filter(
     (s) => s.name.toLowerCase().includes(serviceSearch.toLowerCase())
+  )
+
+  // 按分类分组服务
+  const groupedServices = filteredServices.reduce((groups, service) => {
+    const categoryName = service.category?.name || '未分类'
+    const categoryId = service.category?.id || 'uncategorized'
+    if (!groups[categoryId]) {
+      groups[categoryId] = {
+        id: categoryId,
+        name: categoryName,
+        icon: service.category?.icon,
+        services: []
+      }
+    }
+    groups[categoryId].services.push(service)
+    return groups
+  }, {} as Record<string, { id: string; name: string; icon?: string; services: ServiceItem[] }>)
+
+  // 转换为数组并排序
+  const categorizedServices = Object.values(groupedServices).sort((a, b) =>
+    a.name.localeCompare(b.name, 'zh-CN')
   )
 
   if (isLoading) {
@@ -641,7 +670,7 @@ export default function HomepageManagement() {
 
       {/* 服务选择对话框 */}
       <AlertDialog open={serviceSearchOpen} onOpenChange={setServiceSearchOpen}>
-        <AlertDialogContent className='max-w-lg'>
+        <AlertDialogContent className='max-w-2xl'>
           <AlertDialogHeader>
             <AlertDialogTitle>选择服务</AlertDialogTitle>
             <AlertDialogDescription>
@@ -658,47 +687,57 @@ export default function HomepageManagement() {
                 onChange={(e) => setServiceSearch(e.target.value)}
               />
             </div>
-            <div className='max-h-[300px] space-y-2 overflow-y-auto'>
-              {filteredServices.length > 0 ? (
-                filteredServices.map((service) => {
-                  const isSelected = selectedTabIndex !== null &&
-                    formData?.serviceRecommend.tabs[selectedTabIndex]?.serviceIds?.includes(service.id)
-                  return (
-                    <div
-                      key={service.id}
-                      className={cn(
-                        'flex cursor-pointer items-center justify-between rounded-md border p-3 transition-colors hover:bg-muted',
-                        isSelected && 'border-primary bg-primary/5'
-                      )}
-                      onClick={() => {
-                        if (selectedTabIndex !== null) {
-                          if (isSelected) {
-                            removeServiceFromTab(selectedTabIndex, service.id)
-                          } else {
-                            addServiceToTab(selectedTabIndex, service.id)
-                          }
-                        }
-                      }}
-                    >
-                      <div className='flex items-center gap-3'>
-                        {service.coverImage && (
-                          <img
-                            src={service.coverImage}
-                            alt={service.name}
-                            className='h-10 w-10 rounded object-cover'
-                          />
-                        )}
-                        <div>
-                          <p className='text-sm font-medium'>{service.name}</p>
-                          <p className='text-xs text-muted-foreground'>¥{service.price}</p>
-                        </div>
-                      </div>
-                      {isSelected && (
-                        <Badge variant='default' className='text-xs'>已选</Badge>
-                      )}
+            <div className='max-h-[400px] space-y-4 overflow-y-auto pr-2'>
+              {categorizedServices.length > 0 ? (
+                categorizedServices.map((category) => (
+                  <div key={category.id} className='space-y-2'>
+                    <div className='sticky top-0 z-10 flex items-center gap-2 bg-background py-1'>
+                      <span className='text-sm font-medium text-foreground'>{category.name}</span>
+                      <span className='text-xs text-muted-foreground'>({category.services.length})</span>
                     </div>
-                  )
-                })
+                    <div className='grid grid-cols-2 gap-2'>
+                      {category.services.map((service) => {
+                        const isSelected = selectedTabIndex !== null &&
+                          formData?.serviceRecommend.tabs[selectedTabIndex]?.serviceIds?.includes(service.id)
+                        return (
+                          <div
+                            key={service.id}
+                            className={cn(
+                              'flex cursor-pointer items-center justify-between rounded-md border p-2.5 transition-colors hover:bg-muted',
+                              isSelected && 'border-primary bg-primary/5'
+                            )}
+                            onClick={() => {
+                              if (selectedTabIndex !== null) {
+                                if (isSelected) {
+                                  removeServiceFromTab(selectedTabIndex, service.id)
+                                } else {
+                                  addServiceToTab(selectedTabIndex, service.id)
+                                }
+                              }
+                            }}
+                          >
+                            <div className='flex min-w-0 flex-1 items-center gap-2'>
+                              {service.coverImage && (
+                                <img
+                                  src={service.coverImage}
+                                  alt={service.name}
+                                  className='h-8 w-8 flex-shrink-0 rounded object-cover'
+                                />
+                              )}
+                              <div className='min-w-0 flex-1'>
+                                <p className='truncate text-sm font-medium'>{service.name}</p>
+                                <p className='text-xs text-muted-foreground'>¥{service.price}</p>
+                              </div>
+                            </div>
+                            {isSelected && (
+                              <Badge variant='default' className='ml-2 flex-shrink-0 text-xs'>已选</Badge>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ))
               ) : (
                 <div className='py-8 text-center text-sm text-muted-foreground'>
                   {serviceSearch ? '未找到匹配的服务' : '暂无可用服务'}
