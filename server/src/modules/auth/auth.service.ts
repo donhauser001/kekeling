@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import { PrismaService } from '../../prisma/prisma.service';
+import { RedisService } from '../redis/redis.service';
 import { WechatLoginDto } from './dto/wechat-login.dto';
 
 interface EscortBindResult {
@@ -20,6 +21,7 @@ export class AuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
     private configService: ConfigService,
+    private redis: RedisService,
   ) { }
 
   // 微信登录
@@ -238,7 +240,7 @@ export class AuthService {
   private async triggerCouponGrant(trigger: string, userId: string, config?: any) {
     try {
       const { CouponsService } = await import('../coupons/coupons.service');
-      const couponsService = new CouponsService(this.prisma);
+      const couponsService = new CouponsService(this.prisma, this.redis);
       await couponsService.triggerAutoGrant(trigger, userId, config);
     } catch (error) {
       this.logger.error(`优惠券自动发放失败 (${trigger}):`, error);

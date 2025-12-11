@@ -1,5 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { RedisService } from '../../redis/redis.service';
 
 // 订单状态常量
 export const ORDER_STATUS = {
@@ -16,7 +17,10 @@ export const ORDER_STATUS = {
 
 @Injectable()
 export class AdminOrdersService {
-  constructor(private prisma: PrismaService) { }
+  constructor(
+    private prisma: PrismaService,
+    private redis: RedisService,
+  ) { }
 
   // ============================================
   // 查询方法
@@ -572,7 +576,7 @@ export class AdminOrdersService {
     if (order.couponId) {
       try {
         const { CouponsService } = await import('../../coupons/coupons.service');
-        const couponsService = new CouponsService(this.prisma);
+        const couponsService = new CouponsService(this.prisma, this.redis);
         await couponsService.returnCoupon(orderId);
       } catch (error) {
         console.error(`订单 ${orderId} 优惠券退回失败:`, error);
@@ -594,7 +598,7 @@ export class AdminOrdersService {
     if (order.campaignId && order.serviceId) {
       try {
         const { CampaignsService } = await import('../../campaigns/campaigns.service');
-        const campaignsService = new CampaignsService(this.prisma);
+        const campaignsService = new CampaignsService(this.prisma, this.redis);
         await campaignsService.releaseSeckillStock(order.campaignId, order.serviceId);
       } catch (error) {
         console.error(`订单 ${orderId} 秒杀库存释放失败:`, error);

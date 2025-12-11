@@ -48,8 +48,7 @@ export class CouponsController {
     @Request() req: any,
   ) {
     const ip = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-    const deviceId = req.headers['x-device-id'] || req.headers['device-id'];
-    const data = await this.couponsService.claimCoupon(userId, dto.templateId, ip, deviceId);
+    const data = await this.couponsService.claimCoupon(userId, dto.templateId, ip);
     return ApiResponse.success(data, '领取成功');
   }
 

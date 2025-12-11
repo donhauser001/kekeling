@@ -5,7 +5,8 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
-import { Prisma, Decimal } from '@prisma/client/runtime/library';
+import { Prisma } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/library';
 import {
     CreateCouponTemplateDto,
     UpdateCouponTemplateDto,
@@ -751,16 +752,22 @@ export class CouponsService {
 
                 // 生日检查
                 if (trigger === 'birthday') {
-                    const user = await this.prisma.user.findUnique({
-                        where: { id: userId },
+                    // 注意：User 模型中没有 birthday 字段，生日信息在 Patient 模型中
+                    // 这里需要查询用户的默认就诊人（本人）的生日
+                    const patient = await this.prisma.patient.findFirst({
+                        where: {
+                            userId,
+                            relation: '本人',
+                            isDefault: true,
+                        },
                         select: { birthday: true },
                     });
-                    if (!user || !user.birthday) {
+                    if (!patient || !patient.birthday) {
                         continue; // 用户没有设置生日
                     }
                     // 检查是否为今天生日
                     const today = new Date();
-                    const birthday = new Date(user.birthday);
+                    const birthday = new Date(patient.birthday);
                     if (birthday.getMonth() !== today.getMonth() || birthday.getDate() !== today.getDate()) {
                         continue; // 不是今天生日
                     }
@@ -772,7 +779,7 @@ export class CouponsService {
                     const existing = await this.prisma.userCoupon.findFirst({
                         where: {
                             userId,
-                            templateId: template.id,
+                            templateId: rule.templateId,
                             source: 'auto_grant',
                             sourceId: rule.id,
                             createdAt: {
@@ -878,25 +885,29 @@ export class CouponsService {
         const month = today.getMonth();
         const date = today.getDate();
 
-        // 查询今天生日的用户
-        const users = await this.prisma.user.findMany({
+        // 查询今天生日的就诊人（本人）
+        const patients = await this.prisma.patient.findMany({
             where: {
+                relation: '本人',
+                isDefault: true,
                 birthday: {
                     not: null,
                 },
             },
             select: {
-                id: true,
+                userId: true,
                 birthday: true,
             },
         });
 
         // 过滤出今天生日的用户
-        const birthdayUsers = users.filter((user) => {
-            if (!user.birthday) return false;
-            const birthday = new Date(user.birthday);
-            return birthday.getMonth() === month && birthday.getDate() === date;
-        });
+        const birthdayUsers = patients
+            .filter((patient) => {
+                if (!patient.birthday) return false;
+                const birthday = new Date(patient.birthday);
+                return birthday.getMonth() === month && birthday.getDate() === date;
+            })
+            .map((patient) => ({ id: patient.userId }));
 
         let grantedCount = 0;
 
