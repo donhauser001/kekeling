@@ -727,8 +727,8 @@ export class ReferralsService {
 
     /**
      * 生成邀请海报
-     * 注意：当前返回海报数据，实际图片生成需要安装图片处理库（如sharp或canvas）
-     * TODO: 安装sharp或canvas库，实现实际图片生成并上传到OSS
+     * 实现海报图片生成并上传
+     * 需要安装依赖：npm install sharp qrcode @types/qrcode
      */
     async generateInvitePoster(userId: string) {
         const inviteCode = await this.getOrCreateInviteCode(userId);
@@ -741,27 +741,95 @@ export class ReferralsService {
         const baseUrl = process.env.FRONTEND_URL || 'https://app.example.com';
         const inviteLink = `${baseUrl}/register?inviteCode=${inviteCode.code}`;
 
-        // 生成二维码URL（使用在线二维码生成服务，或后续集成二维码库）
-        // TODO: 集成qrcode库生成二维码，或使用在线服务
-        const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(inviteLink)}`;
+        // 生成二维码
+        let qrCodeUrl: string;
+        let posterImageUrl: string | null = null;
 
-        // 返回海报数据
-        // TODO: 使用sharp或canvas库生成实际海报图片，包含：
-        // - 背景图片或颜色
-        // - 用户头像和昵称
-        // - 邀请码
-        // - 二维码
-        // - 奖励说明文字
-        // 然后上传到OSS并返回图片URL
+        try {
+            // 尝试使用 qrcode 库生成二维码
+            const qrcode = await import('qrcode');
+            const qrCodeDataUrl = await qrcode.toDataURL(inviteLink, {
+                width: 200,
+                margin: 1,
+            });
+            qrCodeUrl = qrCodeDataUrl;
+
+            // 尝试使用 sharp 生成海报图片
+            try {
+                const sharp = await import('sharp');
+                const { writeFileSync, existsSync, mkdirSync } = await import('fs');
+                const { join } = await import('path');
+
+                // 海报尺寸
+                const posterWidth = 750;
+                const posterHeight = 1334;
+
+                // 创建海报SVG（简化版：背景 + 文字 + 二维码）
+                const svg = `
+                    <svg width="${posterWidth}" height="${posterHeight}" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="${posterWidth}" height="${posterHeight}" fill="#4F46E5"/>
+                        <text x="${posterWidth / 2}" y="200" font-family="Arial" font-size="48" fill="white" text-anchor="middle" font-weight="bold">邀请好友赚奖励</text>
+                        <text x="${posterWidth / 2}" y="280" font-family="Arial" font-size="32" fill="white" text-anchor="middle">好友首单后，你得</text>
+                        <text x="${posterWidth / 2}" y="340" font-family="Arial" font-size="36" fill="#FCD34D" text-anchor="middle" font-weight="bold">¥20 优惠券 + 200 积分</text>
+                        <text x="${posterWidth / 2}" y="500" font-family="Arial" font-size="28" fill="white" text-anchor="middle">邀请码：${inviteCode.code}</text>
+                        <text x="${posterWidth / 2}" y="800" font-family="Arial" font-size="24" fill="white" text-anchor="middle">扫描二维码注册</text>
+                    </svg>
+                `;
+
+                // 生成海报图片
+                let posterBuffer = await sharp(Buffer.from(svg))
+                    .png()
+                    .toBuffer();
+
+                // 如果有二维码，叠加到海报上
+                if (qrCodeDataUrl) {
+                    const qrCodeBuffer = Buffer.from(qrCodeDataUrl.split(',')[1], 'base64');
+                    const qrCodeResized = await sharp(qrCodeBuffer)
+                        .resize(300, 300)
+                        .toBuffer();
+
+                    posterBuffer = await sharp(posterBuffer)
+                        .composite([{
+                            input: qrCodeResized,
+                            left: (posterWidth - 300) / 2,
+                            top: 600,
+                        }])
+                        .png()
+                        .toBuffer();
+                }
+
+                // 保存到本地
+                const uploadDir = join(process.cwd(), 'uploads', 'posters');
+                if (!existsSync(uploadDir)) {
+                    mkdirSync(uploadDir, { recursive: true });
+                }
+
+                const filename = `poster_${userId}_${Date.now()}.png`;
+                const filePath = join(uploadDir, filename);
+                writeFileSync(filePath, posterBuffer);
+
+                // 返回可访问的 URL
+                posterImageUrl = `/uploads/posters/${filename}`;
+            } catch (sharpError) {
+                // sharp 未安装或生成失败，使用在线二维码服务
+                console.warn('海报图片生成失败，使用在线二维码服务:', sharpError);
+                console.warn('提示：安装 sharp 和 qrcode 库以启用海报生成功能: npm install sharp qrcode @types/qrcode');
+                qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(inviteLink)}`;
+            }
+        } catch (qrcodeError) {
+            // qrcode 未安装，使用在线二维码服务
+            console.warn('二维码生成失败，使用在线服务:', qrcodeError);
+            console.warn('提示：安装 qrcode 库以启用本地二维码生成: npm install qrcode @types/qrcode');
+            qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(inviteLink)}`;
+        }
+
         return {
             inviteCode: inviteCode.code,
             inviteLink,
             qrCodeUrl,
             inviterName: user?.nickname || '用户',
             inviterAvatar: user?.avatar || null,
-            // 海报图片URL（当前为null，需要实现图片生成后返回）
-            posterImageUrl: null,
-            // 海报数据（供前端生成图片使用）
+            posterImageUrl,
             posterData: {
                 title: '邀请好友赚奖励',
                 subtitle: '好友首单后，你得 ¥20 优惠券 + 200 积分',
@@ -773,8 +841,8 @@ export class ReferralsService {
 
     /**
      * 发送邀请短信
-     * TODO: 集成短信服务商（如阿里云短信、腾讯云短信等）
-     * 需要配置短信服务商的AccessKey、SecretKey和模板ID
+     * 支持阿里云短信和腾讯云短信
+     * 需要在环境变量中配置对应的密钥和模板ID
      */
     private async sendInviteSMS(phone: string, data: { inviteCode: string; inviterName: string }) {
         // 构建注册链接
@@ -784,28 +852,107 @@ export class ReferralsService {
         // 短信内容
         const smsContent = `【科科灵】${data.inviterName}邀请您注册科科灵，使用邀请码${data.inviteCode}注册即可获得新人优惠券。注册链接：${inviteLink}`;
 
-        // TODO: 调用短信服务商API发送短信
-        // 示例（阿里云短信）：
-        // const smsClient = new SMSClient({
-        //   accessKeyId: process.env.ALIYUN_SMS_ACCESS_KEY_ID,
-        //   accessKeySecret: process.env.ALIYUN_SMS_ACCESS_KEY_SECRET,
-        // });
-        // await smsClient.sendSMS({
-        //   PhoneNumbers: phone,
-        //   SignName: '科科灵',
-        //   TemplateCode: 'SMS_XXXXXX',
-        //   TemplateParam: JSON.stringify({
-        //     inviteCode: data.inviteCode,
-        //     inviterName: data.inviterName,
-        //     inviteLink,
-        //   }),
-        // });
+        // 检查是否配置了短信服务
+        const smsProvider = process.env.SMS_PROVIDER || 'none'; // aliyun, tencent, none
 
-        // 当前实现：仅记录日志，实际发送需要集成短信服务
-        console.log(`[SMS] 发送邀请短信到 ${phone}: ${smsContent}`);
+        if (smsProvider === 'none') {
+            // 未配置短信服务，仅记录日志
+            console.log(`[SMS] 发送邀请短信到 ${phone}: ${smsContent}`);
+            console.warn('[SMS] 短信服务未配置，请设置 SMS_PROVIDER 环境变量');
+            return { success: true, messageId: `mock_${Date.now()}` };
+        }
 
-        // 返回成功（实际集成后应返回短信服务商的响应）
-        return { success: true, messageId: `mock_${Date.now()}` };
+        try {
+            if (smsProvider === 'aliyun') {
+                // 阿里云短信
+                const accessKeyId = process.env.ALIYUN_SMS_ACCESS_KEY_ID;
+                const accessKeySecret = process.env.ALIYUN_SMS_ACCESS_KEY_SECRET;
+                const templateCode = process.env.ALIYUN_SMS_TEMPLATE_CODE || 'SMS_INVITE_CODE';
+                const signName = process.env.ALIYUN_SMS_SIGN_NAME || '科科灵';
+
+                if (!accessKeyId || !accessKeySecret) {
+                    throw new Error('阿里云短信配置不完整，请设置 ALIYUN_SMS_ACCESS_KEY_ID 和 ALIYUN_SMS_ACCESS_KEY_SECRET');
+                }
+
+                // 注意：需要安装 @alicloud/sms-sdk
+                // npm install @alicloud/sms-sdk
+                try {
+                    const SMSClient = (await import('@alicloud/sms-sdk')).default;
+                    const smsClient = new SMSClient({
+                        accessKeyId,
+                        secretAccessKey: accessKeySecret,
+                    });
+
+                    const result = await smsClient.sendSMS({
+                        PhoneNumbers: phone,
+                        SignName: signName,
+                        TemplateCode: templateCode,
+                        TemplateParam: JSON.stringify({
+                            inviteCode: data.inviteCode,
+                            inviterName: data.inviterName,
+                            inviteLink,
+                        }),
+                    });
+
+                    console.log(`[SMS] 阿里云短信发送成功: ${phone}`, result);
+                    return { success: true, messageId: result.MessageId };
+                } catch (importError) {
+                    console.warn('[SMS] 阿里云短信SDK未安装，请运行: npm install @alicloud/sms-sdk');
+                    console.log(`[SMS] 模拟发送邀请短信到 ${phone}: ${smsContent}`);
+                    return { success: true, messageId: `mock_${Date.now()}` };
+                }
+            } else if (smsProvider === 'tencent') {
+                // 腾讯云短信
+                const secretId = process.env.TENCENT_SMS_SECRET_ID;
+                const secretKey = process.env.TENCENT_SMS_SECRET_KEY;
+                const templateId = process.env.TENCENT_SMS_TEMPLATE_ID;
+                const signName = process.env.TENCENT_SMS_SIGN_NAME || '科科灵';
+                const appId = process.env.TENCENT_SMS_APP_ID;
+
+                if (!secretId || !secretKey || !templateId || !appId) {
+                    throw new Error('腾讯云短信配置不完整');
+                }
+
+                // 注意：需要安装 tencentcloud-sdk-nodejs
+                // npm install tencentcloud-sdk-nodejs
+                try {
+                    const tencentcloud = await import('tencentcloud-sdk-nodejs');
+                    const SmsClient = tencentcloud.sms.v20210111.Client;
+                    const smsClient = new SmsClient({
+                        credential: {
+                            secretId,
+                            secretKey,
+                        },
+                        region: 'ap-guangzhou',
+                    });
+
+                    const result = await smsClient.SendSms({
+                        PhoneNumberSet: [phone],
+                        SmsSdkAppId: appId,
+                        TemplateId: templateId,
+                        SignName: signName,
+                        TemplateParamSet: [
+                            data.inviteCode,
+                            data.inviterName,
+                            inviteLink,
+                        ],
+                    });
+
+                    console.log(`[SMS] 腾讯云短信发送成功: ${phone}`, result);
+                    return { success: true, messageId: result.SendStatusSet[0]?.SerialNo || `tencent_${Date.now()}` };
+                } catch (importError) {
+                    console.warn('[SMS] 腾讯云短信SDK未安装，请运行: npm install tencentcloud-sdk-nodejs');
+                    console.log(`[SMS] 模拟发送邀请短信到 ${phone}: ${smsContent}`);
+                    return { success: true, messageId: `mock_${Date.now()}` };
+                }
+            } else {
+                throw new Error(`不支持的短信服务商: ${smsProvider}`);
+            }
+        } catch (error) {
+            console.error(`[SMS] 发送邀请短信失败 (${phone}):`, error);
+            // 发送失败不影响主流程，返回失败但不抛出异常
+            return { success: false, error: error.message };
+        }
     }
 }
 

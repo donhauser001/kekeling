@@ -6,7 +6,7 @@ import { renameSync, existsSync, mkdirSync } from 'fs';
 import { ApiResponse } from '../../common/response/api-response';
 
 // 允许的子目录白名单
-const ALLOWED_FOLDERS = ['brand', 'banner', 'avatar', 'service', 'hospital', 'doctor', 'escort', 'common'];
+const ALLOWED_FOLDERS = ['brand', 'banner', 'avatar', 'service', 'hospital', 'doctor', 'escort', 'common', 'posters'];
 
 @ApiTags('上传')
 @Controller('upload')

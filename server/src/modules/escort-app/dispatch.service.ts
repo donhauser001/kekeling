@@ -263,7 +263,8 @@ export class DispatchService {
 
   /**
    * 获取会员优先级加成
-   * 如果用户是会员且权益包含优先接单，则返回+10，否则返回0
+   * 如果用户是有效会员，则返回+10，否则返回0
+   * 根据文档要求，所有会员都应该享有优先接单权益
    */
   private async getMembershipPriority(userId: string): Promise<number> {
     try {
@@ -273,19 +274,10 @@ export class DispatchService {
           status: 'active',
           expireAt: { gt: new Date() },
         },
-        include: {
-          level: true,
-        },
       });
 
-      if (!membership || !membership.level) {
-        return 0;
-      }
-
-      // 检查权益JSON中是否包含priorityBooking
-      const benefits = membership.level.benefits as any;
-      if (benefits && benefits.priorityBooking === true) {
-        this.logger.debug(`用户 ${userId} 拥有会员优先接单权益，优先级+10`);
+      if (membership) {
+        this.logger.debug(`用户 ${userId} 是会员，享有优先接单权益，优先级+10`);
         return 10;
       }
 
