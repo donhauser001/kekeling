@@ -15,6 +15,7 @@ import {
     Loader2,
     AlertTriangle,
     Eye,
+    Percent,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -314,6 +315,10 @@ export function Services() {
                                     <Star className='h-3 w-3 fill-current' />
                                     <span className='font-medium'>{service.rating}%</span>
                                 </div>
+                                <div className='flex items-center gap-1 text-emerald-600'>
+                                    <Percent className='h-3 w-3' />
+                                    <span className='font-medium'>{service.commissionRate ?? 70}</span>
+                                </div>
                                 <div className='ml-auto'>{getStatusBadge(service.status)}</div>
                             </div>
                         </div>
@@ -332,7 +337,7 @@ export function Services() {
                         <TableHead>服务</TableHead>
                         <TableHead>分类</TableHead>
                         <TableHead>价格</TableHead>
-                        <TableHead>时长</TableHead>
+                        <TableHead>分成</TableHead>
                         <TableHead>订单数</TableHead>
                         <TableHead>评分</TableHead>
                         <TableHead>状态</TableHead>
@@ -373,8 +378,11 @@ export function Services() {
                                 <span className='font-medium text-primary'>¥{service.price}</span>
                                 <span className='text-muted-foreground text-xs'>/{service.unit}</span>
                             </TableCell>
-                            <TableCell className='text-muted-foreground text-sm'>
-                                {service.duration || '-'}
+                            <TableCell>
+                                <div className='flex items-center gap-1 text-emerald-600'>
+                                    <Percent className='h-3.5 w-3.5' />
+                                    <span className='font-medium'>{service.commissionRate ?? 70}</span>
+                                </div>
                             </TableCell>
                             <TableCell>{service.orderCount.toLocaleString()}</TableCell>
                             <TableCell>
@@ -640,7 +648,7 @@ export function Services() {
                                 )}
 
                             {/* 统计信息 */}
-                            <div className='flex items-center gap-6 border-t pt-4 text-sm'>
+                            <div className='flex flex-wrap items-center gap-x-6 gap-y-2 border-t pt-4 text-sm'>
                                 <div>
                                     <span className='text-muted-foreground'>订单数：</span>
                                     <span className='font-medium'>
@@ -651,6 +659,12 @@ export function Services() {
                                     <span className='text-muted-foreground'>评分：</span>
                                     <Star className='h-4 w-4 fill-amber-500 text-amber-500' />
                                     <span className='font-medium'>{viewingService.rating}%</span>
+                                </div>
+                                <div className='flex items-center gap-1'>
+                                    <span className='text-muted-foreground'>分成：</span>
+                                    <span className='font-medium text-emerald-600'>
+                                        {viewingService.commissionRate ?? 70}%
+                                    </span>
                                 </div>
                                 <div>{getStatusBadge(viewingService.status)}</div>
                             </div>

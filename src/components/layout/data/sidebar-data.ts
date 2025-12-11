@@ -101,7 +101,7 @@ export const sidebarData: SidebarData = {
   },
   teams: [
     {
-      name: '企业管理系统',
+      name: '科科灵中控系统',
       logo: Command,
       plan: 'Vite + ShadcnUI',
     },
