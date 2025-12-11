@@ -1,5 +1,6 @@
 import { Injectable, OnModuleInit, OnModuleDestroy, Logger, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { RedisService } from '../redis/redis.service';
 import { DispatchService } from '../escort-app/dispatch.service';
 import { NotificationService } from '../notification/notification.service';
 import { DistributionService } from '../distribution/distribution.service';
@@ -19,6 +20,7 @@ export class TasksService implements OnModuleInit, OnModuleDestroy {
 
   constructor(
     private prisma: PrismaService,
+    private redis: RedisService,
     private dispatchService: DispatchService,
     private notificationService: NotificationService,
     private distributionService: DistributionService,
@@ -472,7 +474,7 @@ export class TasksService implements OnModuleInit, OnModuleDestroy {
   async updateCampaignStatus() {
     try {
       const { CampaignsService } = await import('../campaigns/campaigns.service');
-      const campaignsService = new CampaignsService(this.prisma);
+      const campaignsService = new CampaignsService(this.prisma, this.redis);
       const result = await campaignsService.updateCampaignStatus();
       if (result.started > 0 || result.ended > 0) {
         this.logger.log(`活动状态更新: ${result.started} 个活动已开始, ${result.ended} 个活动已结束`);
@@ -1039,7 +1041,7 @@ export class TasksService implements OnModuleInit, OnModuleDestroy {
 
     try {
       const { CouponsService } = await import('../coupons/coupons.service');
-      const couponsService = new CouponsService(this.prisma);
+      const couponsService = new CouponsService(this.prisma, this.redis);
       const result = await couponsService.markExpiredCoupons();
 
       const duration = Date.now() - startTime;

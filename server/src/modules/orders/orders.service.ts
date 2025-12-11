@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException, Inject, forwardRef } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { RedisService } from '../redis/redis.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { PricingService } from '../pricing/pricing.service';
 
@@ -9,6 +10,7 @@ export class OrdersService {
   constructor(
     private prisma: PrismaService,
     private readonly pricingService: PricingService,
+    private redis: RedisService,
     @Inject(forwardRef(() => import('../membership/membership.service').then(m => m.MembershipService)))
     private membershipService?: any,
   ) { }
@@ -297,7 +299,7 @@ export class OrdersService {
     if (order.campaignId && order.serviceId) {
       try {
         const { CampaignsService } = await import('../campaigns/campaigns.service');
-        const campaignsService = new CampaignsService(this.prisma);
+        const campaignsService = new CampaignsService(this.prisma, this.redis);
         await campaignsService.releaseSeckillStock(order.campaignId, order.serviceId);
       } catch (error) {
         console.error('[Order] 秒杀库存释放失败:', error);
@@ -480,7 +482,7 @@ export class OrdersService {
     // 触发订单完成自动发放优惠券
     try {
       const { CouponsService } = await import('../coupons/coupons.service');
-      const couponsService = new CouponsService(this.prisma);
+      const couponsService = new CouponsService(this.prisma, this.redis);
       await couponsService.triggerAutoGrant('order_complete', order.userId, {
         orderAmount: Number(order.paidAmount),
       });
