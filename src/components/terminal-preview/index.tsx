@@ -227,6 +227,7 @@ export function TerminalPreview({
       <FooterSection
         themeSettings={themeSettings}
         isDarkMode={isDarkMode}
+        currentPage='home'
       />
 
       {/* 底部留白，避免内容被 TabBar 遮挡 */}

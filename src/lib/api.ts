@@ -1144,6 +1144,9 @@ export type BrandLayout = 'logo-only' | 'logo-name' | 'logo-slogan' | 'logo-name
 // 主题模式
 export type ThemeMode = 'light' | 'dark' | 'system'
 
+// 页脚可见页面类型
+export type FooterVisiblePage = 'home' | 'services' | 'orders' | 'profile'
+
 export interface ThemeSettings {
   primaryColor: string          // 主色调
   defaultThemeMode: ThemeMode   // 默认主题模式
@@ -1163,6 +1166,11 @@ export interface ThemeSettings {
   // 组合模式
   headerLayout: BrandLayout     // 顶部布局模式
   footerLayout: BrandLayout     // 页脚布局模式
+  // 页脚组件设置
+  footerEnabled: boolean        // 页脚组件开关
+  footerVisiblePages: FooterVisiblePage[]  // 页脚显示页面
+  servicePhone: string          // 客服电话
+  servicePhoneEnabled: boolean  // 客服电话开关
 }
 
 export const configApi = {

@@ -14,6 +14,9 @@ export type BrandLayout =
 // 主题模式
 export type ThemeMode = 'light' | 'dark' | 'system'
 
+// 页脚可见页面类型
+export type FooterVisiblePage = 'home' | 'services' | 'orders' | 'profile'
+
 // 主题设置
 export interface ThemeSettings {
   primaryColor: string
@@ -30,6 +33,11 @@ export interface ThemeSettings {
   footerShowSlogan: boolean
   headerLayout: BrandLayout
   footerLayout: BrandLayout
+  // 页脚组件设置
+  footerEnabled?: boolean
+  footerVisiblePages?: FooterVisiblePage[]
+  servicePhone?: string
+  servicePhoneEnabled?: boolean
 }
 
 // 轮播图项
@@ -176,6 +184,11 @@ export const defaultThemeSettings: ThemeSettings = {
   footerShowSlogan: true,
   headerLayout: 'logo-name',
   footerLayout: 'logo-name-slogan',
+  // 页脚组件设置
+  footerEnabled: true,
+  footerVisiblePages: ['home'],
+  servicePhone: '400-888-8888',
+  servicePhoneEnabled: true,
 }
 
 // 默认首页设置

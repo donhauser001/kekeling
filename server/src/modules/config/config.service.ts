@@ -281,6 +281,19 @@ export class ConfigService {
       footerLayout:
         configs[THEME_CONFIG_KEYS.FOOTER_LAYOUT] ??
         THEME_CONFIG_DEFAULTS[THEME_CONFIG_KEYS.FOOTER_LAYOUT],
+      // 页脚组件设置
+      footerEnabled:
+        configs[THEME_CONFIG_KEYS.FOOTER_ENABLED] ??
+        THEME_CONFIG_DEFAULTS[THEME_CONFIG_KEYS.FOOTER_ENABLED],
+      footerVisiblePages:
+        configs[THEME_CONFIG_KEYS.FOOTER_VISIBLE_PAGES] ??
+        THEME_CONFIG_DEFAULTS[THEME_CONFIG_KEYS.FOOTER_VISIBLE_PAGES],
+      servicePhone:
+        configs[THEME_CONFIG_KEYS.SERVICE_PHONE] ??
+        THEME_CONFIG_DEFAULTS[THEME_CONFIG_KEYS.SERVICE_PHONE],
+      servicePhoneEnabled:
+        configs[THEME_CONFIG_KEYS.SERVICE_PHONE_ENABLED] ??
+        THEME_CONFIG_DEFAULTS[THEME_CONFIG_KEYS.SERVICE_PHONE_ENABLED],
     };
   }
 
@@ -303,6 +316,11 @@ export class ConfigService {
       footerShowSlogan: THEME_CONFIG_KEYS.FOOTER_SHOW_SLOGAN,
       headerLayout: THEME_CONFIG_KEYS.HEADER_LAYOUT,
       footerLayout: THEME_CONFIG_KEYS.FOOTER_LAYOUT,
+      // 页脚组件设置
+      footerEnabled: THEME_CONFIG_KEYS.FOOTER_ENABLED,
+      footerVisiblePages: THEME_CONFIG_KEYS.FOOTER_VISIBLE_PAGES,
+      servicePhone: THEME_CONFIG_KEYS.SERVICE_PHONE,
+      servicePhoneEnabled: THEME_CONFIG_KEYS.SERVICE_PHONE_ENABLED,
     };
 
     const configs: { key: string; value: any }[] = [];

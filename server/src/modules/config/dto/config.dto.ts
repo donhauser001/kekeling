@@ -76,6 +76,11 @@ export const THEME_CONFIG_KEYS = {
   // 组合模式
   HEADER_LAYOUT: 'theme.header_layout',
   FOOTER_LAYOUT: 'theme.footer_layout',
+  // 页脚组件设置
+  FOOTER_ENABLED: 'theme.footer_enabled',
+  FOOTER_VISIBLE_PAGES: 'theme.footer_visible_pages',
+  SERVICE_PHONE: 'theme.service_phone',
+  SERVICE_PHONE_ENABLED: 'theme.service_phone_enabled',
 } as const;
 
 // 主题设置默认值
@@ -94,6 +99,11 @@ export const THEME_CONFIG_DEFAULTS: Record<string, any> = {
   [THEME_CONFIG_KEYS.FOOTER_SHOW_SLOGAN]: true,
   [THEME_CONFIG_KEYS.HEADER_LAYOUT]: 'logo-name', // logo-only, logo-name, logo-name-slogan, name-only
   [THEME_CONFIG_KEYS.FOOTER_LAYOUT]: 'logo-name-slogan',
+  // 页脚组件设置
+  [THEME_CONFIG_KEYS.FOOTER_ENABLED]: true,
+  [THEME_CONFIG_KEYS.FOOTER_VISIBLE_PAGES]: ['home'], // 默认只在首页显示
+  [THEME_CONFIG_KEYS.SERVICE_PHONE]: '400-888-8888',
+  [THEME_CONFIG_KEYS.SERVICE_PHONE_ENABLED]: true,
 };
 
 // 品牌布局模式
@@ -101,6 +111,9 @@ export type BrandLayout = 'logo-only' | 'logo-name' | 'logo-slogan' | 'logo-name
 
 // 主题模式
 export type ThemeMode = 'light' | 'dark' | 'system';
+
+// 页脚可见页面类型
+export type FooterVisiblePage = 'home' | 'services' | 'orders' | 'profile';
 
 // 主题设置类型
 export interface ThemeSettings {
@@ -118,6 +131,11 @@ export interface ThemeSettings {
   footerShowSlogan: boolean;
   headerLayout: BrandLayout;
   footerLayout: BrandLayout;
+  // 页脚组件设置
+  footerEnabled: boolean;
+  footerVisiblePages: FooterVisiblePage[];
+  servicePhone: string;
+  servicePhoneEnabled: boolean;
 }
 
 // ============================================

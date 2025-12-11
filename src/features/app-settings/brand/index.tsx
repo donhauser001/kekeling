@@ -8,13 +8,14 @@ import {
   Type,
   Image as ImageIcon,
   X,
-  Eye,
   ArrowUp,
   ArrowDown,
   Check,
   Sun,
   Moon,
   Monitor,
+  Phone,
+  LayoutGrid,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -27,9 +28,8 @@ import {
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
-import { Separator } from '@/components/ui/separator'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
@@ -38,9 +38,10 @@ import { MessageButton } from '@/components/message-button'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
+import { TerminalPreview } from '@/components/terminal-preview'
 import { useThemeSettings, useUpdateThemeSettings } from '@/hooks/use-api'
 import { cn } from '@/lib/utils'
-import type { ThemeSettings, BrandLayout, ThemeMode } from '@/lib/api'
+import type { ThemeSettings, BrandLayout, ThemeMode, FooterVisiblePage } from '@/lib/api'
 
 // Logo 上传组件
 function LogoUploader({
@@ -260,6 +261,14 @@ function LayoutSelector({
   )
 }
 
+// 页脚可见页面选项
+const footerPageOptions: { value: FooterVisiblePage; label: string }[] = [
+  { value: 'home', label: '首页' },
+  { value: 'services', label: '服务页' },
+  { value: 'orders', label: '订单页' },
+  { value: 'profile', label: '个人中心' },
+]
+
 // 默认值
 const defaultSettings: ThemeSettings = {
   primaryColor: '#f97316',
@@ -276,6 +285,11 @@ const defaultSettings: ThemeSettings = {
   footerShowSlogan: true,
   headerLayout: 'logo-name',
   footerLayout: 'logo-name-slogan',
+  // 页脚组件设置
+  footerEnabled: true,
+  footerVisiblePages: ['home'],
+  servicePhone: '400-888-8888',
+  servicePhoneEnabled: true,
 }
 
 export default function AppSettingsBrand() {
@@ -400,10 +414,10 @@ export default function AppSettingsBrand() {
           </div>
         </div>
 
-        <div className='grid gap-6 lg:grid-cols-3'>
-          {/* 左侧：基础信息 */}
-          <div className='space-y-6'>
-            {/* 品牌信息 */}
+        <div className='flex gap-6'>
+          {/* 左侧：设置表单区域 */}
+          <div className='min-w-0 flex-1 space-y-6'>
+            {/* 品牌基础信息 */}
             <Card>
               <CardHeader>
                 <CardTitle className='flex items-center gap-2 text-lg'>
@@ -413,148 +427,60 @@ export default function AppSettingsBrand() {
                 <CardDescription>设置品牌的基础信息</CardDescription>
               </CardHeader>
               <CardContent className='space-y-4'>
-                <div className='space-y-2'>
-                  <Label htmlFor='brandName'>品牌名称</Label>
-                  <Input
-                    id='brandName'
-                    placeholder='请输入品牌名称'
-                    value={formData.brandName}
-                    onChange={(e) => updateField('brandName', e.target.value)}
-                    maxLength={20}
-                  />
-                </div>
-
-                <div className='space-y-2'>
-                  <Label htmlFor='brandSlogan'>品牌标语</Label>
-                  <Textarea
-                    id='brandSlogan'
-                    placeholder='请输入品牌标语'
-                    value={formData.brandSlogan}
-                    onChange={(e) => updateField('brandSlogan', e.target.value)}
-                    maxLength={50}
-                    rows={2}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* 主题模式 */}
-            <Card>
-              <CardHeader>
-                <CardTitle className='flex items-center gap-2 text-lg'>
-                  <Sun className='h-5 w-5' />
-                  默认主题
-                </CardTitle>
-                <CardDescription>设置小程序的默认主题模式</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className='grid grid-cols-3 gap-2'>
-                  {[
-                    { value: 'light' as ThemeMode, label: '浅色', icon: Sun, desc: '始终使用浅色主题' },
-                    { value: 'dark' as ThemeMode, label: '深色', icon: Moon, desc: '始终使用深色主题' },
-                    { value: 'system' as ThemeMode, label: '跟随系统', icon: Monitor, desc: '自动跟随系统设置' },
-                  ].map((mode) => (
-                    <button
-                      key={mode.value}
-                      type='button'
-                      onClick={() => updateField('defaultThemeMode', mode.value)}
-                      className={cn(
-                        'flex flex-col items-center gap-2 rounded-lg border p-3 transition-all hover:bg-accent',
-                        formData.defaultThemeMode === mode.value && 'border-primary bg-primary/5'
-                      )}
-                    >
-                      <mode.icon className={cn(
-                        'h-6 w-6',
-                        formData.defaultThemeMode === mode.value ? 'text-primary' : 'text-muted-foreground'
-                      )} />
-                      <span className='text-sm font-medium'>{mode.label}</span>
-                    </button>
-                  ))}
-                </div>
-                <p className='mt-3 text-xs text-muted-foreground'>
-                  {formData.defaultThemeMode === 'light' && '小程序将始终使用浅色主题显示'}
-                  {formData.defaultThemeMode === 'dark' && '小程序将始终使用深色主题显示'}
-                  {formData.defaultThemeMode === 'system' && '小程序将根据用户手机系统设置自动切换主题'}
-                </p>
-              </CardContent>
-            </Card>
-
-            {/* 预览 */}
-            <Card>
-              <CardHeader>
-                <CardTitle className='flex items-center gap-2 text-lg'>
-                  <Eye className='h-5 w-5' />
-                  效果预览
-                </CardTitle>
-              </CardHeader>
-              <CardContent className='space-y-3'>
-                {/* 顶部预览 */}
-                <div className='space-y-2'>
-                  <Label className='text-xs text-muted-foreground flex items-center gap-1'>
-                    <ArrowUp className='h-3 w-3' /> 顶部区域
-                  </Label>
-                  {/* 浅色模式 */}
-                  <div className='rounded-lg border bg-white p-3'>
-                    <p className='mb-2 text-[10px] text-gray-400'>浅色模式</p>
-                    <BrandPreview
-                      layout={formData.headerLayout}
-                      logo={formData.headerLogo}
-                      name={formData.brandName}
-                      slogan={formData.brandSlogan}
-                      variant='light'
+                <div className='grid gap-4 sm:grid-cols-2'>
+                  <div className='space-y-2'>
+                    <Label htmlFor='brandName'>品牌名称</Label>
+                    <Input
+                      id='brandName'
+                      placeholder='请输入品牌名称'
+                      value={formData.brandName}
+                      onChange={(e) => updateField('brandName', e.target.value)}
+                      maxLength={20}
                     />
                   </div>
-                  {/* 深色模式 */}
-                  <div className='rounded-lg border border-gray-700 bg-gray-900 p-3'>
-                    <p className='mb-2 text-[10px] text-gray-500'>深色模式</p>
-                    <BrandPreview
-                      layout={formData.headerLayout}
-                      logo={formData.headerLogoDark || formData.headerLogo}
-                      name={formData.brandName}
-                      slogan={formData.brandSlogan}
-                      variant='dark'
+                  <div className='space-y-2'>
+                    <Label htmlFor='brandSlogan'>品牌标语</Label>
+                    <Input
+                      id='brandSlogan'
+                      placeholder='请输入品牌标语'
+                      value={formData.brandSlogan}
+                      onChange={(e) => updateField('brandSlogan', e.target.value)}
+                      maxLength={50}
                     />
                   </div>
                 </div>
 
-                <Separator />
-
-                {/* 页脚预览 */}
+                {/* 主题模式 */}
                 <div className='space-y-2'>
-                  <Label className='text-xs text-muted-foreground flex items-center gap-1'>
-                    <ArrowDown className='h-3 w-3' /> 页脚区域
-                  </Label>
-                  {/* 浅色模式 */}
-                  <div className='rounded-lg border bg-gray-50 p-3'>
-                    <p className='mb-2 text-[10px] text-gray-400'>浅色模式</p>
-                    <BrandPreview
-                      layout={formData.footerLayout}
-                      logo={formData.footerLogo || formData.headerLogo}
-                      name={formData.brandName}
-                      slogan={formData.brandSlogan}
-                      variant='light'
-                      centered
-                    />
-                  </div>
-                  {/* 深色模式 */}
-                  <div className='rounded-lg border border-gray-700 bg-gray-800 p-3'>
-                    <p className='mb-2 text-[10px] text-gray-500'>深色模式</p>
-                    <BrandPreview
-                      layout={formData.footerLayout}
-                      logo={formData.footerLogoDark || formData.footerLogo || formData.headerLogoDark || formData.headerLogo}
-                      name={formData.brandName}
-                      slogan={formData.brandSlogan}
-                      variant='dark'
-                      centered
-                    />
+                  <Label>默认主题</Label>
+                  <div className='grid grid-cols-3 gap-2'>
+                    {[
+                      { value: 'light' as ThemeMode, label: '浅色', icon: Sun },
+                      { value: 'dark' as ThemeMode, label: '深色', icon: Moon },
+                      { value: 'system' as ThemeMode, label: '跟随系统', icon: Monitor },
+                    ].map((mode) => (
+                      <button
+                        key={mode.value}
+                        type='button'
+                        onClick={() => updateField('defaultThemeMode', mode.value)}
+                        className={cn(
+                          'flex items-center justify-center gap-2 rounded-lg border p-2.5 transition-all hover:bg-accent',
+                          formData.defaultThemeMode === mode.value && 'border-primary bg-primary/5'
+                        )}
+                      >
+                        <mode.icon className={cn(
+                          'h-4 w-4',
+                          formData.defaultThemeMode === mode.value ? 'text-primary' : 'text-muted-foreground'
+                        )} />
+                        <span className='text-sm'>{mode.label}</span>
+                      </button>
+                    ))}
                   </div>
                 </div>
               </CardContent>
             </Card>
-          </div>
 
-          {/* 中间和右侧：顶部和页脚设置 */}
-          <div className='lg:col-span-2'>
+            {/* 顶部/页脚设置 Tabs */}
             <Tabs defaultValue='header' className='w-full'>
               <TabsList className='grid w-full grid-cols-2'>
                 <TabsTrigger value='header' className='gap-2'>
@@ -569,10 +495,10 @@ export default function AppSettingsBrand() {
 
               <TabsContent value='header' className='mt-4 space-y-4'>
                 <Card>
-                  <CardHeader>
+                  <CardHeader className='pb-3'>
                     <CardTitle className='text-base'>顶部 Logo</CardTitle>
                     <CardDescription>
-                      显示在小程序顶部导航栏，建议尺寸 200x60 像素
+                      显示在小程序顶部，建议尺寸 200x60 像素
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -594,8 +520,8 @@ export default function AppSettingsBrand() {
                 </Card>
 
                 <Card>
-                  <CardHeader>
-                    <CardTitle className='text-base'>顶部布局方式</CardTitle>
+                  <CardHeader className='pb-3'>
+                    <CardTitle className='text-base'>顶部布局</CardTitle>
                     <CardDescription>
                       选择顶部品牌信息的展示组合
                     </CardDescription>
@@ -613,11 +539,98 @@ export default function AppSettingsBrand() {
               </TabsContent>
 
               <TabsContent value='footer' className='mt-4 space-y-4'>
+                {/* 页脚组件开关 */}
                 <Card>
-                  <CardHeader>
+                  <CardHeader className='pb-3'>
+                    <div className='flex items-center justify-between'>
+                      <div>
+                        <CardTitle className='flex items-center gap-2 text-base'>
+                          <LayoutGrid className='h-4 w-4' />
+                          页脚组件
+                        </CardTitle>
+                        <CardDescription>
+                          控制页脚区域的显示
+                        </CardDescription>
+                      </div>
+                      <Switch
+                        checked={formData.footerEnabled}
+                        onCheckedChange={(checked) => updateField('footerEnabled', checked)}
+                      />
+                    </div>
+                  </CardHeader>
+                  {formData.footerEnabled && (
+                    <CardContent className='space-y-4'>
+                      {/* 显示页面 */}
+                      <div className='space-y-2'>
+                        <Label>显示页面</Label>
+                        <div className='grid grid-cols-2 gap-2'>
+                          {footerPageOptions.map((page) => (
+                            <div
+                              key={page.value}
+                              className='flex items-center space-x-2'
+                            >
+                              <Checkbox
+                                id={`footer-page-${page.value}`}
+                                checked={formData.footerVisiblePages?.includes(page.value)}
+                                onCheckedChange={(checked) => {
+                                  const pages = formData.footerVisiblePages || []
+                                  if (checked) {
+                                    updateField('footerVisiblePages', [...pages, page.value])
+                                  } else {
+                                    updateField('footerVisiblePages', pages.filter(p => p !== page.value))
+                                  }
+                                }}
+                              />
+                              <Label
+                                htmlFor={`footer-page-${page.value}`}
+                                className='text-sm font-normal cursor-pointer'
+                              >
+                                {page.label}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </CardContent>
+                  )}
+                </Card>
+
+                {/* 客服电话设置 */}
+                <Card>
+                  <CardHeader className='pb-3'>
+                    <div className='flex items-center justify-between'>
+                      <div>
+                        <CardTitle className='flex items-center gap-2 text-base'>
+                          <Phone className='h-4 w-4' />
+                          客服电话
+                        </CardTitle>
+                        <CardDescription>
+                          显示在页脚区域的联系电话
+                        </CardDescription>
+                      </div>
+                      <Switch
+                        checked={formData.servicePhoneEnabled}
+                        onCheckedChange={(checked) => updateField('servicePhoneEnabled', checked)}
+                      />
+                    </div>
+                  </CardHeader>
+                  {formData.servicePhoneEnabled && (
+                    <CardContent>
+                      <Input
+                        placeholder='请输入客服电话'
+                        value={formData.servicePhone}
+                        onChange={(e) => updateField('servicePhone', e.target.value)}
+                      />
+                    </CardContent>
+                  )}
+                </Card>
+
+                {/* 页脚 Logo */}
+                <Card>
+                  <CardHeader className='pb-3'>
                     <CardTitle className='text-base'>页脚 Logo</CardTitle>
                     <CardDescription>
-                      显示在小程序底部页脚区域，留空则使用顶部 Logo
+                      留空则自动使用顶部 Logo
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -638,9 +651,10 @@ export default function AppSettingsBrand() {
                   </CardContent>
                 </Card>
 
+                {/* 页脚布局 */}
                 <Card>
-                  <CardHeader>
-                    <CardTitle className='text-base'>页脚布局方式</CardTitle>
+                  <CardHeader className='pb-3'>
+                    <CardTitle className='text-base'>页脚布局</CardTitle>
                     <CardDescription>
                       选择页脚品牌信息的展示组合
                     </CardDescription>
@@ -657,100 +671,50 @@ export default function AppSettingsBrand() {
                 </Card>
               </TabsContent>
             </Tabs>
+
+            {/* 使用说明 */}
+            <Card>
+              <CardHeader className='pb-3'>
+                <CardTitle className='flex items-center gap-2 text-base'>
+                  <Sparkles className='h-4 w-4' />
+                  使用说明
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className='text-muted-foreground space-y-1.5 text-sm'>
+                  <p><strong>品牌名称：</strong>显示在小程序各页面，建议 2-6 个字。</p>
+                  <p><strong>Logo 设置：</strong>建议准备浅色和深色两个版本，以适配不同主题。</p>
+                  <p><strong>布局方式：</strong>可选择 Logo、名称、标语的不同组合方式。</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* 右侧：终端预览器 - 固定位置 */}
+          <div className='hidden w-[400px] flex-shrink-0 xl:block'>
+            <div className='sticky top-6'>
+              <TerminalPreview
+                themeSettings={{
+                  defaultThemeMode: formData.defaultThemeMode,
+                  brandName: formData.brandName,
+                  brandSlogan: formData.brandSlogan,
+                  headerLogo: formData.headerLogo,
+                  headerLogoDark: formData.headerLogoDark,
+                  footerLogo: formData.footerLogo,
+                  footerLogoDark: formData.footerLogoDark,
+                  headerLayout: formData.headerLayout,
+                  footerLayout: formData.footerLayout,
+                  footerEnabled: formData.footerEnabled,
+                  footerVisiblePages: formData.footerVisiblePages,
+                  servicePhone: formData.servicePhone,
+                  servicePhoneEnabled: formData.servicePhoneEnabled,
+                }}
+                height={680}
+              />
+            </div>
           </div>
         </div>
-
-        {/* 使用说明 */}
-        <Card className='mt-6'>
-          <CardHeader>
-            <CardTitle className='flex items-center gap-2 text-lg'>
-              <Sparkles className='h-5 w-5' />
-              使用说明
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className='text-muted-foreground space-y-2 text-sm'>
-              <p>
-                <strong>品牌名称：</strong>
-                显示在小程序各页面，建议 2-6 个字。
-              </p>
-              <p>
-                <strong>品牌标语：</strong>
-                简洁的品牌宣言，建议 6-20 个字。
-              </p>
-              <p>
-                <strong>Logo 设置：</strong>
-                建议准备浅色和深色两个版本，以适配不同主题。页脚 Logo 留空时将自动使用顶部 Logo。
-              </p>
-              <p>
-                <strong>布局方式：</strong>
-                可选择 Logo、名称、标语的不同组合方式。顶部通常简洁展示，页脚可展示更完整的品牌信息。
-              </p>
-            </div>
-          </CardContent>
-        </Card>
       </Main>
     </>
-  )
-}
-
-// 品牌预览组件
-function BrandPreview({
-  layout,
-  logo,
-  name,
-  slogan,
-  centered = false,
-  variant = 'light',
-}: {
-  layout: BrandLayout
-  logo: string
-  name: string
-  slogan: string
-  centered?: boolean
-  variant?: 'light' | 'dark'
-}) {
-  const hasLogo = layout.includes('logo')
-  // logo-slogan 不显示名称
-  const hasName = layout.includes('name') && layout !== 'logo-slogan'
-  const hasSlogan = layout.includes('slogan')
-
-  const isDark = variant === 'dark'
-
-  return (
-    <div className={cn('flex items-center gap-2', centered && 'justify-center')}>
-      {hasLogo && (
-        logo ? (
-          <img src={logo} alt='' className='h-8 w-auto object-contain' />
-        ) : (
-          <div className={cn(
-            'flex h-8 w-8 items-center justify-center rounded-lg',
-            isDark ? 'bg-primary/30' : 'bg-primary/20'
-          )}>
-            <Sparkles className='h-4 w-4 text-primary' />
-          </div>
-        )
-      )}
-      {(hasName || hasSlogan) && (
-        <div className='flex flex-col'>
-          {hasName && (
-            <span className={cn(
-              'text-sm font-bold leading-tight',
-              isDark ? 'text-white' : 'text-gray-900'
-            )}>
-              {name || '品牌名称'}
-            </span>
-          )}
-          {hasSlogan && (
-            <span className={cn(
-              'text-[10px] leading-tight',
-              isDark ? 'text-gray-400' : 'text-gray-500'
-            )}>
-              {slogan || '品牌标语'}
-            </span>
-          )}
-        </div>
-      )}
-    </div>
   )
 }
