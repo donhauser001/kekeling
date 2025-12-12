@@ -870,7 +870,41 @@ interface WithdrawInfo {
 
 ---
 
-#### 批次 B: withdraw 页面（待接入）
+### 工作台提现页面 ✅
+
+**页面**: `workbench-withdraw`
+**文件**: `components/pages/workbench/WithdrawPage.tsx`
+
+**验收点**:
+- [x] 仅 viewerRole=escort 时允许进入
+- [x] 非 escort 显示 🔒 提示，不发起 API 请求
+- [x] 调用 previewApi.getWorkbenchWithdrawInfo()
+- [x] loading / error / empty（无银行卡）/ mock 降级
+- [x] renderPageContent() 增加 case 'workbench-withdraw'
+- [x] TypeScript 编译通过
+
+**UI 结构**:
+| 区域 | 内容 |
+|------|------|
+| 标题栏 | ← 返回 + "提现" |
+| 可提现金额 | 大字显示 |
+| 金额输入 | ¥ + 输入框 + [全部提现] |
+| 提现规则 | 最低金额 / 手续费 / 预计到账时间 |
+| 银行卡选择 | 卡列表（可选中）/ 无卡时显示添加入口 |
+| 到账预览 | 实际到账金额 + 手续费 |
+| 提现按钮 | 满足条件时可用 |
+
+**银行卡数据**:
+| 字段 | 说明 |
+|------|------|
+| id | 银行卡ID |
+| bankName | 银行名称 |
+| cardNo | 卡号后4位 |
+| isDefault | 是否默认 |
+
+---
+
+#### 批次 B: 工作台页面接入完成 ✅
 
 ---
 

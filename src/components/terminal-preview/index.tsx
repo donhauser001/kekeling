@@ -69,6 +69,7 @@ import {
   WorkbenchPage,
   OrdersPoolPage,
   EarningsPage,
+  WithdrawPage,
 } from './components/pages'
 
 export function TerminalPreview({
@@ -555,6 +556,18 @@ export function TerminalPreview({
             isDarkMode={isDarkMode}
             effectiveViewerRole={effectiveViewerRole}
             onBack={() => setCurrentPage('workbench')}
+            onNavigate={(page, params) => navigateToPage(page, params)}
+          />
+        )
+
+      // 提现
+      case 'workbench-withdraw':
+        return (
+          <WithdrawPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            effectiveViewerRole={effectiveViewerRole}
+            onBack={() => setCurrentPage('workbench-earnings')}
             onNavigate={(page, params) => navigateToPage(page, params)}
           />
         )

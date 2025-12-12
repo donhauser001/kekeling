@@ -14,3 +14,7 @@ export type { OrdersPoolPageProps } from './OrdersPoolPage'
 export { EarningsPage } from './EarningsPage'
 export type { EarningsPageProps } from './EarningsPage'
 
+// 提现
+export { WithdrawPage } from './WithdrawPage'
+export type { WithdrawPageProps } from './WithdrawPage'
+
