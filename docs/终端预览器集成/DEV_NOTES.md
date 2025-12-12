@@ -2232,8 +2232,8 @@ Step 14 整体完成标准（17 个子任务）：
 | | A.4 分销中心 mock 迁移 | 6 个函数迁移 | ✅ |
 | | A.5 边界值变体函数 | 4+ 个变体函数 | ✅ |
 | | A.6 api.ts 清理 | 行数从 2462 降至 1680 | ✅ |
-| **14.1-B** | B.1 页面组件懒加载 | 27 个 lazy 导出 | ⏳ |
-| | B.2 Suspense + Loading | PageLoadingSkeleton 组件 | ⏳ |
+| **14.1-B** | B.1 页面组件懒加载 | 28 个 lazy 导出 | ✅ |
+| | B.2 Suspense + Loading | PageLoadingSkeleton 组件 | ✅ |
 | | B.3 React Query 缓存统一 | staleTime/gcTime 规范化 | ⏳ |
 | | B.4 queryKey 命名固化 | queryKeys.ts 文件 | ⏳ |
 | **14.1-C** | C.1 页面渲染测试 | 27 个 page key 全通过 | ⏳ |

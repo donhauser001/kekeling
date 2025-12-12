@@ -12,7 +12,7 @@
  * @see src/components/terminal-preview/DEV_NOTES.md
  */
 
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, Suspense } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { cn } from '@/lib/utils'
 import { previewApi } from './api'
@@ -50,7 +50,9 @@ import {
   setPreviewEscortToken,
   clearPreviewEscortToken,
 } from './session'
+import { PageLoadingSkeleton } from './components/PageLoadingSkeleton'
 import {
+  // 所有页面组件现在是 lazy 导入
   ServicesPage,
   ServiceDetailPage,
   CasesPage,
@@ -720,7 +722,9 @@ export function TerminalPreview({
           }
         `}</style>
 
-        {renderPageContent()}
+        <Suspense fallback={<PageLoadingSkeleton isDarkMode={isDarkMode} />}>
+          {renderPageContent()}
+        </Suspense>
       </div>
 
       {/* 底部 TabBar - 固定在底部 */}
