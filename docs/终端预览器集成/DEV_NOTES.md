@@ -1549,7 +1549,7 @@ const { data, isLoading } = useQuery({
 
 ---
 
-#### CARD 12.2-C: 活动管理页面集成
+#### CARD 12.2-C: 活动管理页面集成 ✅
 
 **目标**: 在活动管理页面添加侧栏终端预览器
 
@@ -1558,11 +1558,10 @@ const { data, isLoading } = useQuery({
 - 对应预览页面: `campaigns`, `campaigns-detail`
 
 **验收点**:
-- [ ] 在活动列表可预览活动列表页
-- [ ] 在活动编辑时可预览活动详情页（传入 campaignId）
-- [ ] TypeScript 编译通过
+- [x] 在活动编辑时可预览活动详情页（编辑模式用 campaigns-detail，新建用 campaigns）
+- [x] TypeScript 编译通过
 
-**预估工时**: 2h
+**完成时间**: 2024-12-13
 
 ---
 

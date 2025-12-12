@@ -30,6 +30,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { SelectDropdown } from '@/components/select-dropdown'
 import { campaignApi, type Campaign } from '@/lib/api'
+import { TerminalPreview } from '@/components/terminal-preview'
 
 const formSchema = z.object({
   name: z.string().min(1, '请输入活动名称'),
@@ -218,7 +219,7 @@ export function CampaignsActionDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChangeWrapper}>
-        <DialogContent className='sm:max-w-2xl'>
+        <DialogContent className='sm:max-w-[1100px]'>
           <DialogHeader className='text-start'>
             <DialogTitle>{isEdit ? '编辑活动' : '新建活动'}</DialogTitle>
             <DialogDescription>
@@ -226,331 +227,345 @@ export function CampaignsActionDialog({
             </DialogDescription>
           </DialogHeader>
 
-          <div className='max-h-[60vh] min-h-[300px] overflow-y-auto py-1 px-1'>
-            <Form {...form}>
-              <form id='campaign-form' onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>
-                {/* 基础信息 */}
-                <div className='grid grid-cols-2 items-start gap-4'>
-                  <FormField
-                    control={form.control}
-                    name='name'
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>活动名称 *</FormLabel>
-                        <FormControl>
-                          <Input placeholder='请输入活动名称' {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name='code'
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>活动编码</FormLabel>
-                        <FormControl>
-                          <Input placeholder='可选' {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+          <div className='flex gap-6'>
+            {/* 左侧：表单 */}
+            <div className='flex-1 max-h-[60vh] min-h-[300px] overflow-y-auto py-1 px-1'>
+              <Form {...form}>
+                <form id='campaign-form' onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>
+                  {/* 基础信息 */}
+                  <div className='grid grid-cols-2 items-start gap-4'>
+                    <FormField
+                      control={form.control}
+                      name='name'
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>活动名称 *</FormLabel>
+                          <FormControl>
+                            <Input placeholder='请输入活动名称' {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name='code'
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>活动编码</FormLabel>
+                          <FormControl>
+                            <Input placeholder='可选' {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
-                <div className='grid grid-cols-2 items-start gap-4'>
-                  <FormField
-                    control={form.control}
-                    name='type'
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>活动类型 *</FormLabel>
-                        <SelectDropdown
-                          defaultValue={field.value}
-                          onValueChange={field.onChange}
-                          placeholder='请选择类型'
-                          items={[
-                            { label: '限时特惠', value: 'flash_sale' },
-                            { label: '秒杀', value: 'seckill' },
-                            { label: '满减', value: 'threshold' },
-                            { label: '新人专享', value: 'newcomer' },
-                          ]}
-                        />
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name='status'
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>状态</FormLabel>
-                        <SelectDropdown
-                          defaultValue={field.value}
-                          onValueChange={field.onChange}
-                          placeholder='请选择状态'
-                          items={[
-                            { label: '未开始', value: 'pending' },
-                            { label: '进行中', value: 'active' },
-                            { label: '已结束', value: 'ended' },
-                            { label: '已取消', value: 'cancelled' },
-                          ]}
-                        />
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                {/* 时间设置 */}
-                <div className='grid grid-cols-2 items-start gap-4'>
-                  <FormField
-                    control={form.control}
-                    name='startAt'
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>开始时间 *</FormLabel>
-                        <FormControl>
-                          <Input type='datetime-local' {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name='endAt'
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>结束时间 *</FormLabel>
-                        <FormControl>
-                          <Input type='datetime-local' {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                {/* 优惠设置 */}
-                <div className='grid grid-cols-2 items-start gap-4'>
-                  <FormField
-                    control={form.control}
-                    name='discountType'
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>优惠类型 *</FormLabel>
-                        <SelectDropdown
-                          defaultValue={field.value}
-                          onValueChange={field.onChange}
-                          placeholder='请选择优惠类型'
-                          items={[
-                            { label: '减免金额', value: 'amount' },
-                            { label: '折扣比例', value: 'percent' },
-                          ]}
-                        />
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name='discountValue'
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>优惠值 *</FormLabel>
-                        <FormControl>
-                          <Input type='number' placeholder='金额或百分比' {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className='grid grid-cols-2 items-start gap-4'>
-                  <FormField
-                    control={form.control}
-                    name='minAmount'
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>门槛金额（元）</FormLabel>
-                        <FormControl>
-                          <Input type='number' placeholder='0 表示无门槛' {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name='maxDiscount'
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>最高优惠（元）</FormLabel>
-                        <FormControl>
-                          <Input
-                            type='number'
-                            placeholder='留空表示不限制'
-                            value={field.value ?? ''}
-                            onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                  <div className='grid grid-cols-2 items-start gap-4'>
+                    <FormField
+                      control={form.control}
+                      name='type'
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>活动类型 *</FormLabel>
+                          <SelectDropdown
+                            defaultValue={field.value}
+                            onValueChange={field.onChange}
+                            placeholder='请选择类型'
+                            items={[
+                              { label: '限时特惠', value: 'flash_sale' },
+                              { label: '秒杀', value: 'seckill' },
+                              { label: '满减', value: 'threshold' },
+                              { label: '新人专享', value: 'newcomer' },
+                            ]}
                           />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                {/* 适用范围 */}
-                <div className='grid grid-cols-2 items-start gap-4'>
-                  <FormField
-                    control={form.control}
-                    name='applicableScope'
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>适用范围</FormLabel>
-                        <SelectDropdown
-                          defaultValue={field.value}
-                          onValueChange={field.onChange}
-                          placeholder='请选择适用范围'
-                          items={[
-                            { label: '全场', value: 'all' },
-                            { label: '分类', value: 'category' },
-                            { label: '服务', value: 'service' },
-                          ]}
-                        />
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name='applicableIds'
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>适用ID（逗号分隔）</FormLabel>
-                        <FormControl>
-                          <Input placeholder='如：cat_1,cat_2' {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                {/* 限制设置 */}
-                <div className='grid grid-cols-3 items-start gap-4'>
-                  <FormField
-                    control={form.control}
-                    name='totalQuantity'
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>总库存</FormLabel>
-                        <FormControl>
-                          <Input
-                            type='number'
-                            placeholder='留空不限制'
-                            value={field.value ?? ''}
-                            onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name='status'
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>状态</FormLabel>
+                          <SelectDropdown
+                            defaultValue={field.value}
+                            onValueChange={field.onChange}
+                            placeholder='请选择状态'
+                            items={[
+                              { label: '未开始', value: 'pending' },
+                              { label: '进行中', value: 'active' },
+                              { label: '已结束', value: 'ended' },
+                              { label: '已取消', value: 'cancelled' },
+                            ]}
                           />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name='perUserLimit'
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>每人限购</FormLabel>
-                        <FormControl>
-                          <Input type='number' {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name='sort'
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>排序</FormLabel>
-                        <FormControl>
-                          <Input type='number' {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
-                {/* 开关设置 */}
-                <FormField
-                  control={form.control}
-                  name='stackWithMember'
-                  render={({ field }) => (
-                    <FormItem className='flex flex-row items-center justify-between rounded-lg border p-3'>
-                      <div className='space-y-0.5'>
-                        <FormLabel>允许与会员叠加</FormLabel>
-                      </div>
-                      <FormControl>
-                        <Switch checked={field.value} onCheckedChange={field.onChange} />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
+                  {/* 时间设置 */}
+                  <div className='grid grid-cols-2 items-start gap-4'>
+                    <FormField
+                      control={form.control}
+                      name='startAt'
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>开始时间 *</FormLabel>
+                          <FormControl>
+                            <Input type='datetime-local' {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name='endAt'
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>结束时间 *</FormLabel>
+                          <FormControl>
+                            <Input type='datetime-local' {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
-                {/* 图片链接 */}
-                <div className='grid grid-cols-2 items-start gap-4'>
+                  {/* 优惠设置 */}
+                  <div className='grid grid-cols-2 items-start gap-4'>
+                    <FormField
+                      control={form.control}
+                      name='discountType'
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>优惠类型 *</FormLabel>
+                          <SelectDropdown
+                            defaultValue={field.value}
+                            onValueChange={field.onChange}
+                            placeholder='请选择优惠类型'
+                            items={[
+                              { label: '减免金额', value: 'amount' },
+                              { label: '折扣比例', value: 'percent' },
+                            ]}
+                          />
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name='discountValue'
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>优惠值 *</FormLabel>
+                          <FormControl>
+                            <Input type='number' placeholder='金额或百分比' {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className='grid grid-cols-2 items-start gap-4'>
+                    <FormField
+                      control={form.control}
+                      name='minAmount'
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>门槛金额（元）</FormLabel>
+                          <FormControl>
+                            <Input type='number' placeholder='0 表示无门槛' {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name='maxDiscount'
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>最高优惠（元）</FormLabel>
+                          <FormControl>
+                            <Input
+                              type='number'
+                              placeholder='留空表示不限制'
+                              value={field.value ?? ''}
+                              onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* 适用范围 */}
+                  <div className='grid grid-cols-2 items-start gap-4'>
+                    <FormField
+                      control={form.control}
+                      name='applicableScope'
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>适用范围</FormLabel>
+                          <SelectDropdown
+                            defaultValue={field.value}
+                            onValueChange={field.onChange}
+                            placeholder='请选择适用范围'
+                            items={[
+                              { label: '全场', value: 'all' },
+                              { label: '分类', value: 'category' },
+                              { label: '服务', value: 'service' },
+                            ]}
+                          />
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name='applicableIds'
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>适用ID（逗号分隔）</FormLabel>
+                          <FormControl>
+                            <Input placeholder='如：cat_1,cat_2' {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* 限制设置 */}
+                  <div className='grid grid-cols-3 items-start gap-4'>
+                    <FormField
+                      control={form.control}
+                      name='totalQuantity'
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>总库存</FormLabel>
+                          <FormControl>
+                            <Input
+                              type='number'
+                              placeholder='留空不限制'
+                              value={field.value ?? ''}
+                              onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name='perUserLimit'
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>每人限购</FormLabel>
+                          <FormControl>
+                            <Input type='number' {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name='sort'
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>排序</FormLabel>
+                          <FormControl>
+                            <Input type='number' {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* 开关设置 */}
                   <FormField
                     control={form.control}
-                    name='bannerUrl'
+                    name='stackWithMember'
+                    render={({ field }) => (
+                      <FormItem className='flex flex-row items-center justify-between rounded-lg border p-3'>
+                        <div className='space-y-0.5'>
+                          <FormLabel>允许与会员叠加</FormLabel>
+                        </div>
+                        <FormControl>
+                          <Switch checked={field.value} onCheckedChange={field.onChange} />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* 图片链接 */}
+                  <div className='grid grid-cols-2 items-start gap-4'>
+                    <FormField
+                      control={form.control}
+                      name='bannerUrl'
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Banner URL</FormLabel>
+                          <FormControl>
+                            <Input placeholder='可选' {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name='detailUrl'
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>详情 URL</FormLabel>
+                          <FormControl>
+                            <Input placeholder='可选' {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* 描述 */}
+                  <FormField
+                    control={form.control}
+                    name='description'
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Banner URL</FormLabel>
+                        <FormLabel>活动说明</FormLabel>
                         <FormControl>
-                          <Input placeholder='可选' {...field} />
+                          <Textarea placeholder='可选' className='resize-none' {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  <FormField
-                    control={form.control}
-                    name='detailUrl'
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>详情 URL</FormLabel>
-                        <FormControl>
-                          <Input placeholder='可选' {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                </form>
+              </Form>
+            </div>
 
-                {/* 描述 */}
-                <FormField
-                  control={form.control}
-                  name='description'
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>活动说明</FormLabel>
-                      <FormControl>
-                        <Textarea placeholder='可选' className='resize-none' {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </form>
-            </Form>
+            {/* 右侧：预览器 */}
+            <div className='w-[375px] flex-shrink-0'>
+              <div className='text-sm text-muted-foreground mb-2'>终端预览</div>
+              <TerminalPreview
+                page={isEdit ? 'campaigns-detail' : 'campaigns'}
+                height={500}
+                showFrame={false}
+                autoLoad={false}
+              />
+            </div>
           </div>
 
           <DialogFooter>
