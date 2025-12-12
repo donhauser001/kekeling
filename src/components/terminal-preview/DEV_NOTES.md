@@ -18,7 +18,7 @@
 
 ## 分步改造策略
 
-### Step 1: 执行约束与护栏 ✅
+### Step 0: 执行约束与护栏 ✅
 
 **目标**: 建立规范边界，不改变现有功能
 
@@ -27,6 +27,32 @@
 - [x] 关键代码补充"仅用于预览模拟"注释
 - [x] TypeScript 编译通过
 - [x] 现有预览功能不受影响
+
+---
+
+### Step 1: 类型系统骨架 ✅
+
+**目标**: 建立统一类型系统，为后续路由扩展与双会话做准备
+
+**验收点**:
+- [x] 定义 `PreviewPage` 类型（补全营销中心 + 陪诊员 + 工作台 page keys）
+- [x] 定义 `PreviewViewerRole = 'user' | 'escort'`
+- [x] 定义 `UserSession` / `EscortSession` 接口
+- [x] 定义 `UserContext` / `EscortContext` 接口
+- [x] 更新 `TerminalPreviewProps`，新增 viewerRole / userSession / escortSession
+- [x] 保持向后兼容，现有调用方无需修改
+- [x] TypeScript 编译通过
+
+**新增类型清单**:
+```typescript
+// types.ts 新增
+PreviewPage          // 页面路由类型（25 种）
+PreviewViewerRole    // 'user' | 'escort'
+UserSession          // { token?, userId? }
+EscortSession        // { token?, escortId? }
+UserContext          // { membershipLevel?, points?, ... }
+EscortContext        // { id?, name?, level?, workStatus?, ... }
+```
 
 ---
 
