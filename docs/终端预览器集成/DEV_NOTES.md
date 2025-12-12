@@ -2234,8 +2234,8 @@ Step 14 整体完成标准（17 个子任务）：
 | | A.6 api.ts 清理 | 行数从 2462 降至 1680 | ✅ |
 | **14.1-B** | B.1 页面组件懒加载 | 28 个 lazy 导出 | ✅ |
 | | B.2 Suspense + Loading | PageLoadingSkeleton 组件 | ✅ |
-| | B.3 React Query 缓存统一 | staleTime/gcTime 规范化 | ⏳ |
-| | B.4 queryKey 命名固化 | queryKeys.ts 文件 | ⏳ |
+| | B.3 React Query 缓存统一 | staleTime/gcTime 规范化 | ✅ |
+| | B.4 queryKey 命名固化 | queryKeys.ts 文件 | ✅ |
 | **14.1-C** | C.1 页面渲染测试 | 27 个 page key 全通过 | ⏳ |
 | | C.2 视角切换测试 | 8 步流程全通过 | ⏳ |
 | | C.3 Token 矩阵测试 | 4 个场景全通过 | ⏳ |
