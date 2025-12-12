@@ -537,6 +537,57 @@ escortRequest<T>(endpoint, options?)
 
 ---
 
+### Step 3/7: escortToken 有效性判定接入 viewerRole ✅
+
+**目标**: viewerRole=escort 当且仅当 escortToken 存在且后端验证有效。
+
+**验收点**:
+- [x] TerminalPreview 打开时触发 `verifyEscortToken()` 验证
+- [x] escortToken 变更时触发验证
+- [x] 校验失败时清理 localStorage + state + 回落 user
+- [x] 校验过程中先显示 user，通过后切 escort（避免闪烁）
+- [x] 新增 `isCheckingEscortToken` 状态
+- [x] TypeScript 编译通过
+
+**viewerRole 推导规则（稳定版）**:
+```typescript
+// 1. 预览器模式 + 显式 viewerRole Props → 强制使用
+if (isPreviewMode && forcedViewerRole) return forcedViewerRole
+
+// 2. escortToken 验证有效 → escort
+// ⚠️ 关键：只有验证通过才切换
+if (isEscortTokenValid === true) return 'escort'
+
+// 3. 其他情况（验证中、无 token、验证失败）→ user
+return 'user'
+```
+
+**校验流程**:
+```
+1. TerminalPreview 打开 / escortToken 变更
+   ↓
+2. isCheckingEscortToken = true, effectiveViewerRole = 'user'
+   ↓
+3. 调用 previewApi.verifyEscortToken()
+   ↓
+4a. 验证成功 → isEscortTokenValid = true → effectiveViewerRole = 'escort'
+4b. 验证失败 → 清理 token → isEscortTokenValid = false → 保持 'user'
+```
+
+**useViewerRole 返回值**:
+```typescript
+{
+  effectiveViewerRole: 'user' | 'escort',
+  isEscort: boolean,
+  isUser: boolean,
+  isCheckingEscortToken: boolean, // 新增：验证中状态
+  isValidating: boolean,          // @deprecated 兼容旧 API
+  revalidate: () => Promise<void>,
+}
+```
+
+---
+
 #### 批次 G: order-pool + income（待接入，需 escortRequest）
 
 ---

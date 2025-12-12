@@ -7,16 +7,18 @@
  *
  * 预览器模式下允许通过 Props 强制模拟视角，仅用于后台调试。
  *
+ * Step 3/7 增强：
+ * - 使用 previewApi.verifyEscortToken() 进行后端验证
+ * - 校验失败时清理 localStorage + state
+ * - 校验过程中先显示 user，通过后切到 escort（避免闪烁）
+ *
  * @see docs/终端预览器集成/02-双身份会话与视角切换规格.md
  */
 
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import type { PreviewViewerRole, UserSession, EscortSession } from '../types'
-import { getEscortToken, clearEscortToken } from '../api'
-import {
-  validateEscortToken as validateEscortTokenSession,
-  type TokenValidationResult,
-} from '../session'
+import { previewApi, getEscortToken, clearEscortToken } from '../api'
+import { clearPreviewEscortToken } from '../session'
 
 // ============================================================================
 // 类型定义
@@ -45,6 +47,11 @@ export interface UseViewerRoleOptions {
    * @default true（当前组件仅用于预览器）
    */
   isPreviewMode?: boolean
+
+  /**
+   * escortToken 变更回调（用于同步外部状态）
+   */
+  onEscortTokenChange?: (token: string | null) => void
 }
 
 export interface UseViewerRoleResult {
@@ -66,7 +73,13 @@ export interface UseViewerRoleResult {
   isUser: boolean
 
   /**
-   * 是否正在验证会话
+   * 是否正在验证 escortToken
+   * 用于 UI 显示加载状态
+   */
+  isCheckingEscortToken: boolean
+
+  /**
+   * @deprecated 使用 isCheckingEscortToken
    */
   isValidating: boolean
 
@@ -74,24 +87,6 @@ export interface UseViewerRoleResult {
    * 手动触发会话验证
    */
   revalidate: () => Promise<void>
-}
-
-// ============================================================================
-// 会话验证函数
-// ============================================================================
-
-/**
- * 验证陪诊员会话是否有效
- *
- * 委托给 session.ts 的 validateEscortToken 实现
- * @see session.ts
- *
- * @param token 陪诊员 token
- * @returns 是否有效
- */
-export async function validateEscortSession(token: string | null): Promise<boolean> {
-  const result: TokenValidationResult = await validateEscortTokenSession(token)
-  return result.valid
 }
 
 // ============================================================================
@@ -103,59 +98,115 @@ export async function validateEscortSession(token: string | null): Promise<boole
  *
  * 推导规则（按优先级）：
  * 1. 预览器模式 + 显式 viewerRole → 使用 viewerRole（强制模拟）
- * 2. 预览器模式 + escortSession.token 存在 → escort
- * 3. 真实终端 + escortToken 存在且验证有效 → escort
- * 4. 其他情况 → user
+ * 2. escortToken 存在且验证有效 → escort
+ * 3. 其他情况（包括验证中）→ user
+ *
+ * ⚠️ 关键稳定点：
+ * - 校验过程中先显示 user，校验通过后切到 escort（避免闪烁）
+ * - 校验失败时自动清理 token 并保持 user
  *
  * @param options 配置选项
  * @returns 视角角色状态
  */
 export function useViewerRole(options: UseViewerRoleOptions = {}): UseViewerRoleResult {
   const {
-    userSession,
     escortSession,
     viewerRole: forcedViewerRole,
     isPreviewMode = true, // 当前组件仅用于预览器
+    onEscortTokenChange,
   } = options
 
-  const [isValidating, setIsValidating] = useState(false)
-  const [isEscortSessionValid, setIsEscortSessionValid] = useState<boolean | null>(null)
+  // 是否正在验证 escortToken
+  const [isCheckingEscortToken, setIsCheckingEscortToken] = useState(false)
 
-  // 获取 escortToken（优先使用 Props 注入，其次从存储读取）
-  const escortToken = useMemo(() => {
+  // escortToken 是否验证有效（null = 未验证，true = 有效，false = 无效）
+  const [isEscortTokenValid, setIsEscortTokenValid] = useState<boolean | null>(null)
+
+  // 用于跟踪上一次验证的 token，避免重复验证
+  const lastVerifiedTokenRef = useRef<string | null>(null)
+
+  // 获取当前 escortToken（优先使用 Props 注入，其次从存储读取）
+  const currentEscortToken = useMemo(() => {
     // 预览器模式：优先使用 Props 注入的 escortSession
     if (escortSession?.token) {
       return escortSession.token
     }
-    // 从存储读取（真实终端场景）
+    // 从存储读取
     return getEscortToken()
   }, [escortSession?.token])
 
-  // 验证 escortSession
-  const validateSession = useCallback(async () => {
-    if (!escortToken) {
-      setIsEscortSessionValid(false)
+  /**
+   * 验证 escortToken 有效性
+   * 使用 previewApi.verifyEscortToken() 进行后端验证
+   */
+  const verifyToken = useCallback(async () => {
+    const token = currentEscortToken
+
+    // 无 token，直接标记无效
+    if (!token) {
+      setIsEscortTokenValid(false)
+      lastVerifiedTokenRef.current = null
       return
     }
 
-    setIsValidating(true)
-    try {
-      const isValid = await validateEscortSession(escortToken)
-      setIsEscortSessionValid(isValid)
-
-      // 验证失败时清除 token
-      if (!isValid && !escortToken.startsWith('mock-')) {
-        clearEscortToken()
-      }
-    } finally {
-      setIsValidating(false)
+    // 如果是同一个 token 且已验证过，跳过
+    if (token === lastVerifiedTokenRef.current && isEscortTokenValid !== null) {
+      return
     }
-  }, [escortToken])
 
-  // 初始化时验证 escortSession
+    setIsCheckingEscortToken(true)
+
+    try {
+      // 调用 previewApi.verifyEscortToken() 进行验证
+      const isValid = await previewApi.verifyEscortToken()
+
+      if (isValid) {
+        // 验证成功
+        setIsEscortTokenValid(true)
+        lastVerifiedTokenRef.current = token
+        console.log('[useViewerRole] escortToken 验证成功，切换到 escort 视角')
+      } else {
+        // 验证失败
+        handleVerificationFailed(token)
+      }
+    } catch (error) {
+      // 验证出错也视为失败
+      console.error('[useViewerRole] escortToken 验证出错:', error)
+      handleVerificationFailed(token)
+    } finally {
+      setIsCheckingEscortToken(false)
+    }
+  }, [currentEscortToken, isEscortTokenValid])
+
+  /**
+   * 处理验证失败
+   */
+  const handleVerificationFailed = useCallback((token: string) => {
+    console.warn('[useViewerRole] escortToken 验证失败，清理 token 并回落到 user 视角')
+
+    // 清理 localStorage
+    clearPreviewEscortToken()
+
+    // 清理 api 层（如果有）
+    clearEscortToken()
+
+    // 标记无效
+    setIsEscortTokenValid(false)
+    lastVerifiedTokenRef.current = null
+
+    // 通知外部
+    onEscortTokenChange?.(null)
+  }, [onEscortTokenChange])
+
+  // TerminalPreview 打开时、escortToken 变更时触发验证
   useEffect(() => {
-    validateSession()
-  }, [validateSession])
+    // token 变化时重置验证状态
+    if (currentEscortToken !== lastVerifiedTokenRef.current) {
+      setIsEscortTokenValid(null) // 重置为未验证
+    }
+
+    verifyToken()
+  }, [currentEscortToken, verifyToken])
 
   // 推导 effectiveViewerRole
   const effectiveViewerRole: PreviewViewerRole = useMemo(() => {
@@ -164,27 +215,35 @@ export function useViewerRole(options: UseViewerRoleOptions = {}): UseViewerRole
       return forcedViewerRole
     }
 
-    // 规则 2：预览器模式 + escortSession.token 存在 → escort
-    // （此时 isEscortSessionValid 可能还没验证完，但预览器允许直接使用）
-    if (isPreviewMode && escortSession?.token) {
+    // 规则 2：escortToken 验证有效 → escort
+    // ⚠️ 关键：只有验证通过才切换，验证中保持 user
+    if (isEscortTokenValid === true) {
       return 'escort'
     }
 
-    // 规则 3：escortToken 验证有效 → escort
-    if (isEscortSessionValid === true) {
-      return 'escort'
-    }
-
-    // 规则 4：其他情况 → user
+    // 规则 3：其他情况（包括验证中、无 token、验证失败）→ user
     return 'user'
-  }, [isPreviewMode, forcedViewerRole, escortSession?.token, isEscortSessionValid])
+  }, [isPreviewMode, forcedViewerRole, isEscortTokenValid])
 
   return {
     effectiveViewerRole,
     isEscort: effectiveViewerRole === 'escort',
     isUser: effectiveViewerRole === 'user',
-    isValidating,
-    revalidate: validateSession,
+    isCheckingEscortToken,
+    isValidating: isCheckingEscortToken, // 兼容旧 API
+    revalidate: verifyToken,
   }
 }
 
+// ============================================================================
+// 导出辅助函数（兼容旧代码）
+// ============================================================================
+
+/**
+ * 验证陪诊员会话是否有效
+ * @deprecated 使用 previewApi.verifyEscortToken() 代替
+ */
+export async function validateEscortSession(token: string | null): Promise<boolean> {
+  if (!token) return false
+  return previewApi.verifyEscortToken()
+}

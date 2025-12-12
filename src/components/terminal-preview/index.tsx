@@ -118,9 +118,15 @@ export function TerminalPreview({
    * 3. 真实终端 + escortToken 存在且验证有效 → escort
    * 4. 其他情况 → user
    */
-  const { effectiveViewerRole, isValidating, revalidate } = useViewerRole({
+  const { effectiveViewerRole, isCheckingEscortToken, revalidate } = useViewerRole({
     userSession,
     escortSession: mergedEscortSession,
+    onEscortTokenChange: (token) => {
+      // 当 token 被清除时同步更新本地状态
+      if (token === null) {
+        setLocalEscortToken(null)
+      }
+    },
     viewerRole: viewerRoleProp,
     isPreviewMode: true, // 当前组件仅用于预览器
   })
@@ -501,7 +507,7 @@ export function TerminalPreview({
           effectiveViewerRole={effectiveViewerRole}
           userToken={currentUserToken}
           escortToken={currentEscortToken}
-          isValidating={isValidating}
+          isValidating={isCheckingEscortToken}
           onInjectEscortToken={handleInjectEscortToken}
           onClearEscortToken={handleClearEscortToken}
           onRevalidate={revalidate}
