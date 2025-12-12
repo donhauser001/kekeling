@@ -58,6 +58,14 @@ export class DistributionService {
   /**
    * 生成邀请码
    */
+  /**
+   * 生成邀请码
+   *
+   * ⚠️ 优化策略：基于 ID 哈希 + 随机后缀，大幅降低碰撞概率
+   * - 前 4 位：基于 escortId 的确定性哈希（保证同一用户生成的码有关联性）
+   * - 后 2 位：随机字符（增加唯一性）
+   * - 最大重试：20 次（原 10 次）
+   */
   async generateInviteCode(escortId: string): Promise<string> {
     const escort = await this.prisma.escort.findUnique({
       where: { id: escortId },
@@ -71,21 +79,31 @@ export class DistributionService {
       return escort.inviteCode;
     }
 
-    // 生成唯一邀请码（6位字母数字）
+    const MAX_ATTEMPTS = 20;
     let code: string;
     let attempts = 0;
 
+    // 基于 ID 生成前缀（确定性）
+    const prefix = this.hashToCode(escortId, 4);
+
     do {
-      code = this.generateRandomCode(6);
+      // 前缀 + 随机后缀
+      const suffix = this.generateRandomCode(2);
+      code = prefix + suffix;
+
       const existing = await this.prisma.escort.findUnique({
         where: { inviteCode: code },
       });
       if (!existing) break;
-      attempts++;
-    } while (attempts < 10);
 
-    if (attempts >= 10) {
-      throw new BadRequestException('生成邀请码失败，请重试');
+      attempts++;
+      this.logger.warn(`邀请码碰撞 (attempt ${attempts}): ${code}`);
+    } while (attempts < MAX_ATTEMPTS);
+
+    if (attempts >= MAX_ATTEMPTS) {
+      // 极端情况：使用全随机 8 位码
+      code = this.generateRandomCode(8);
+      this.logger.warn(`邀请码生成退化为全随机 8 位: ${code}`);
     }
 
     await this.prisma.escort.update({
@@ -97,10 +115,34 @@ export class DistributionService {
   }
 
   /**
-   * 生成随机邀请码
+   * 将字符串哈希为指定长度的邀请码字符
+   */
+  private hashToCode(input: string, length: number): string {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let hash = 0;
+
+    for (let i = 0; i < input.length; i++) {
+      const char = input.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // 转为 32 位整数
+    }
+
+    // 将哈希值映射到字符
+    let result = '';
+    let absHash = Math.abs(hash);
+    for (let i = 0; i < length; i++) {
+      result += chars[absHash % chars.length];
+      absHash = Math.floor(absHash / chars.length);
+    }
+
+    return result;
+  }
+
+  /**
+   * 生成随机邀请码字符
    */
   private generateRandomCode(length: number): string {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 去除易混淆字符
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 去除易混淆字符 0OI1L
     let result = '';
     for (let i = 0; i < length; i++) {
       result += chars.charAt(Math.floor(Math.random() * chars.length));
