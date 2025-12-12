@@ -1,4 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
+import { useNavigate, useSearch } from '@tanstack/react-router'
+import {
+    useReactTable,
+    getCoreRowModel,
+    getFilteredRowModel,
+    type ColumnFiltersState,
+} from '@tanstack/react-table'
 import {
     Layers,
     Plus,
@@ -22,6 +29,10 @@ import {
     Eye as EyeIcon,
     Bone,
     Brain,
+    LayoutGrid,
+    List,
+    ArrowUpCircle,
+    ArrowDownCircle,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -37,6 +48,7 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuSeparator,
+    DropdownMenuShortcut,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import {
@@ -52,6 +64,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
@@ -59,6 +72,7 @@ import { MessageButton } from '@/components/message-button'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
+import { DataTableToolbar, DataTablePagination, DataTableViewOptions } from '@/components/data-table'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { cn } from '@/lib/utils'
 import {
@@ -68,7 +82,11 @@ import {
     useDeleteServiceCategory,
 } from '@/hooks/use-api'
 import type { ServiceCategory } from '@/lib/api'
-import { ServiceCategoriesDetailSheet } from './components'
+import {
+    ServiceCategoriesDetailSheet,
+    getServiceCategoriesColumns,
+    ServiceCategoriesTable,
+} from './components'
 
 // 图标选项 - 与小程序 Icon 组件对应
 const iconOptions = [
@@ -82,7 +100,7 @@ const iconOptions = [
     { value: 'pill', label: '药品', icon: Pill },
     { value: 'syringe', label: '针管', icon: Syringe },
     { value: 'baby', label: '婴儿', icon: Baby },
-    { value: 'eye', label: '眼睛', icon: Eye },
+    { value: 'eye', label: '眼睛', icon: EyeIcon },
     { value: 'bone', label: '骨骼', icon: Bone },
     { value: 'brain', label: '大脑', icon: Brain },
     { value: 'file-text', label: '文件', icon: FileText },
@@ -110,6 +128,12 @@ const colorPresets = [
     { value: '#64748b', label: '灰色', preview: 'bg-[#64748b]' },
 ] as const
 
+// 状态选项
+const statusOptions = [
+    { value: 'active', label: '已启用' },
+    { value: 'inactive', label: '已停用' },
+]
+
 interface FormData {
     name: string
     icon: string
@@ -130,20 +154,59 @@ const defaultFormData: FormData = {
     isPinned: false,
 }
 
+type ViewMode = 'grid' | 'list'
+
 export function ServiceCategories() {
+    const navigate = useNavigate()
+    const searchParams = useSearch({ strict: false }) as { view?: string }
+
+    // 从 URL 获取初始视图模式
+    const initialViewMode = (searchParams.view === 'list' ? 'list' : 'grid') as ViewMode
+
+    // 状态
+    const [viewMode, setViewMode] = useState<ViewMode>(initialViewMode)
+    const [page, setPage] = useState(1)
+    const [pageSize, setPageSize] = useState(10)
+    const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+    const [globalFilter, setGlobalFilter] = useState('')
+
+    // 弹窗状态
     const [dialogOpen, setDialogOpen] = useState(false)
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
     const [detailSheetOpen, setDetailSheetOpen] = useState(false)
     const [currentRow, setCurrentRow] = useState<ServiceCategory | null>(null)
     const [formData, setFormData] = useState<FormData>(defaultFormData)
 
+    // 同步视图模式到 URL
+    useEffect(() => {
+        const currentView = searchParams.view
+        if (viewMode !== (currentView === 'list' ? 'list' : 'grid')) {
+            navigate({
+                search: (prev: Record<string, unknown>) => ({
+                    ...prev,
+                    view: viewMode === 'list' ? 'list' : undefined,
+                }),
+                replace: true,
+            })
+        }
+    }, [viewMode, navigate, searchParams.view])
+
+    // 从列筛选中提取 API 参数
+    const statusFilter = columnFilters.find(f => f.id === 'status')?.value as string[] | undefined
+
     // API hooks
-    const { data, isLoading, error } = useServiceCategories()
+    const { data, isLoading } = useServiceCategories({
+        keyword: globalFilter || undefined,
+        status: statusFilter?.length === 1 ? statusFilter[0] : undefined,
+        page,
+        pageSize,
+    })
     const createMutation = useCreateServiceCategory()
     const updateMutation = useUpdateServiceCategory()
     const deleteMutation = useDeleteServiceCategory()
 
     const categories = data?.data || []
+    const total = data?.total || 0
 
     // 获取当前已置顶的分类数量
     const pinnedCount = categories.filter(c => c.isPinned).length
@@ -259,6 +322,189 @@ export function ServiceCategories() {
         }
     }
 
+    // 列定义
+    const columns = useMemo(
+        () =>
+            getServiceCategoriesColumns({
+                onView: handleView,
+                onEdit: handleEdit,
+                onToggleStatus: handleToggleStatus,
+                onDelete: handleDelete,
+            }),
+        []
+    )
+
+    // 表格实例
+    const table = useReactTable({
+        data: categories,
+        columns,
+        state: {
+            columnFilters,
+            globalFilter,
+            pagination: { pageIndex: page - 1, pageSize },
+        },
+        pageCount: Math.ceil(total / pageSize),
+        rowCount: total,
+        onColumnFiltersChange: setColumnFilters,
+        onGlobalFilterChange: setGlobalFilter,
+        onPaginationChange: (updater) => {
+            const newState = typeof updater === 'function'
+                ? updater({ pageIndex: page - 1, pageSize })
+                : updater
+            setPage(newState.pageIndex + 1)
+            setPageSize(newState.pageSize)
+        },
+        getCoreRowModel: getCoreRowModel(),
+        getFilteredRowModel: getFilteredRowModel(),
+        manualPagination: true,
+        manualFiltering: true,
+    })
+
+    // 卡片视图
+    const renderGridView = () => (
+        <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'>
+            {categories.map((category) => {
+                const IconComponent = getIconComponent(category.icon)
+                const bgStyle = category.color
+                    ? { background: category.color }
+                    : { backgroundColor: '#6b7280' }
+
+                return (
+                    <Card
+                        key={category.id}
+                        className={cn(
+                            'group cursor-pointer transition-all hover:shadow-md',
+                            category.status === 'inactive' && 'opacity-60',
+                            category.isPinned && 'ring-2 ring-primary ring-offset-2'
+                        )}
+                        onClick={() => handleView(category)}
+                    >
+                        <CardHeader className='pb-3'>
+                            <div className='flex items-start justify-between'>
+                                <div className='flex items-center gap-3'>
+                                    <div
+                                        className='flex h-10 w-10 items-center justify-center rounded-lg'
+                                        style={bgStyle}
+                                    >
+                                        <IconComponent className='h-5 w-5 text-white' />
+                                    </div>
+                                    <div>
+                                        <CardTitle className='flex items-center gap-2 text-base'>
+                                            {category.name}
+                                            {category.isPinned && (
+                                                <Pin className='h-4 w-4 text-primary' />
+                                            )}
+                                        </CardTitle>
+                                        <div className='text-muted-foreground flex items-center gap-1 text-sm'>
+                                            <PackageSearch className='h-3.5 w-3.5' />
+                                            {category.serviceCount || 0} 个服务
+                                        </div>
+                                    </div>
+                                </div>
+                                <DropdownMenu modal={false}>
+                                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                        <Button
+                                            variant='ghost'
+                                            size='icon'
+                                            className='h-8 w-8 opacity-0 group-hover:opacity-100'
+                                        >
+                                            <MoreHorizontal className='h-4 w-4' />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align='end' className='w-[160px]'>
+                                        <DropdownMenuItem
+                                            onClick={(e) => { e.stopPropagation(); handleView(category) }}
+                                        >
+                                            查看详情
+                                            <DropdownMenuShortcut><EyeIcon className='h-4 w-4' /></DropdownMenuShortcut>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                            onClick={(e) => { e.stopPropagation(); handleEdit(category) }}
+                                        >
+                                            编辑
+                                            <DropdownMenuShortcut><Pencil className='h-4 w-4' /></DropdownMenuShortcut>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                            onClick={(e) => { e.stopPropagation(); handleToggleStatus(category) }}
+                                        >
+                                            {category.status === 'active' ? '停用' : '启用'}
+                                            <DropdownMenuShortcut>
+                                                {category.status === 'active' ? (
+                                                    <ArrowDownCircle className='h-4 w-4' />
+                                                ) : (
+                                                    <ArrowUpCircle className='h-4 w-4' />
+                                                )}
+                                            </DropdownMenuShortcut>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem
+                                            className='text-destructive focus:text-destructive focus:bg-destructive/10'
+                                            onClick={(e) => { e.stopPropagation(); handleDelete(category) }}
+                                        >
+                                            删除
+                                            <DropdownMenuShortcut><Trash2 className='h-4 w-4' /></DropdownMenuShortcut>
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            <CardDescription className='mb-3 line-clamp-2'>
+                                {category.description || '暂无描述'}
+                            </CardDescription>
+                            <div className='flex items-center justify-between'>
+                                <div className='flex items-center gap-2'>
+                                    <Badge
+                                        variant={category.status === 'active' ? 'default' : 'secondary'}
+                                    >
+                                        {category.status === 'active' ? '已启用' : '已停用'}
+                                    </Badge>
+                                    {category.isPinned && (
+                                        <Badge variant='outline' className='text-primary border-primary'>
+                                            置顶
+                                        </Badge>
+                                    )}
+                                </div>
+                                <span className='text-muted-foreground text-xs'>
+                                    排序: {category.sort}
+                                </span>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )
+            })}
+        </div>
+    )
+
+    // 卡片骨架屏
+    const renderGridSkeleton = () => (
+        <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'>
+            {Array.from({ length: 8 }).map((_, i) => (
+                <Card key={i}>
+                    <CardHeader className='pb-3'>
+                        <div className='flex items-start justify-between'>
+                            <div className='flex items-center gap-3'>
+                                <Skeleton className='h-10 w-10 rounded-lg' />
+                                <div className='space-y-2'>
+                                    <Skeleton className='h-4 w-24' />
+                                    <Skeleton className='h-3 w-16' />
+                                </div>
+                            </div>
+                            <Skeleton className='h-8 w-8 rounded' />
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <Skeleton className='mb-3 h-8 w-full' />
+                        <div className='flex items-center justify-between'>
+                            <Skeleton className='h-5 w-16' />
+                            <Skeleton className='h-4 w-12' />
+                        </div>
+                    </CardContent>
+                </Card>
+            ))}
+        </div>
+    )
+
     return (
         <>
             <Header>
@@ -271,8 +517,8 @@ export function ServiceCategories() {
                 </div>
             </Header>
 
-            <Main>
-                <div className='mb-6 flex items-center justify-between'>
+            <Main className='flex flex-1 flex-col gap-4 sm:gap-6'>
+                <div className='flex flex-wrap items-end justify-between gap-2'>
                     <div>
                         <h1 className='text-2xl font-bold tracking-tight'>服务分类</h1>
                         <p className='text-muted-foreground'>
@@ -285,37 +531,46 @@ export function ServiceCategories() {
                     </Button>
                 </div>
 
+                {/* 工具栏 */}
+                <div className='flex flex-wrap items-center gap-4'>
+                    <DataTableToolbar
+                        table={table}
+                        searchPlaceholder='搜索分类名称...'
+                        showViewOptions={false}
+                        filters={viewMode === 'list' ? [
+                            {
+                                columnId: 'status',
+                                title: '状态',
+                                options: statusOptions,
+                            },
+                        ] : []}
+                    />
+                    {viewMode === 'list' && <DataTableViewOptions table={table} />}
+                    <Tabs value={viewMode} onValueChange={v => setViewMode(v as ViewMode)} className={viewMode === 'grid' ? 'ml-auto' : ''}>
+                        <TabsList className='h-9'>
+                            <TabsTrigger value='grid' className='px-2.5' aria-label='网格视图'>
+                                <LayoutGrid className='h-4 w-4' />
+                            </TabsTrigger>
+                            <TabsTrigger value='list' className='px-2.5' aria-label='列表视图'>
+                                <List className='h-4 w-4' />
+                            </TabsTrigger>
+                        </TabsList>
+                    </Tabs>
+                </div>
+
                 {/* 加载状态 - 骨架屏 */}
-                {isLoading && (
-                    <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'>
-                        {Array.from({ length: 8 }).map((_, i) => (
-                            <Card key={i}>
-                                <CardHeader className='pb-3'>
-                                    <div className='flex items-start justify-between'>
-                                        <div className='flex items-center gap-3'>
-                                            <Skeleton className='h-10 w-10 rounded-lg' />
-                                            <div className='space-y-2'>
-                                                <Skeleton className='h-4 w-24' />
-                                                <Skeleton className='h-3 w-16' />
-                                            </div>
-                                        </div>
-                                        <Skeleton className='h-8 w-8 rounded' />
-                                    </div>
-                                </CardHeader>
-                                <CardContent>
-                                    <Skeleton className='mb-3 h-8 w-full' />
-                                    <div className='flex items-center justify-between'>
-                                        <Skeleton className='h-5 w-16' />
-                                        <Skeleton className='h-4 w-12' />
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </div>
+                {isLoading && viewMode === 'grid' && renderGridSkeleton()}
+
+                {isLoading && viewMode === 'list' && (
+                    <ServiceCategoriesTable
+                        table={table}
+                        isLoading={true}
+                        onRowClick={handleView}
+                    />
                 )}
 
                 {/* 空状态 */}
-                {!isLoading && !error && categories.length === 0 && (
+                {!isLoading && categories.length === 0 && (
                     <div className='flex h-64 flex-col items-center justify-center gap-4'>
                         <Layers className='h-12 w-12 text-muted-foreground' />
                         <p className='text-muted-foreground'>暂无服务分类</p>
@@ -326,115 +581,22 @@ export function ServiceCategories() {
                     </div>
                 )}
 
-                {/* 分类卡片列表 */}
-                {!isLoading && !error && categories.length > 0 && (
-                    <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'>
-                        {categories.map((category) => {
-                            const IconComponent = getIconComponent(category.icon)
-                            // 使用动态颜色
-                            const hasGradient = category.color?.includes('gradient')
-                            const bgStyle = category.color
-                                ? { background: category.color }
-                                : { backgroundColor: '#6b7280' }
+                {/* 内容区 */}
+                {!isLoading && categories.length > 0 && (
+                    <>
+                        {viewMode === 'grid' ? (
+                            renderGridView()
+                        ) : (
+                            <ServiceCategoriesTable
+                                table={table}
+                                isLoading={false}
+                                onRowClick={handleView}
+                            />
+                        )}
 
-                            return (
-                                <Card
-                                    key={category.id}
-                                    className={cn(
-                                        'cursor-pointer transition-all hover:shadow-md',
-                                        category.status === 'inactive' && 'opacity-60',
-                                        category.isPinned && 'ring-2 ring-primary ring-offset-2'
-                                    )}
-                                    onClick={() => handleView(category)}
-                                >
-                                    <CardHeader className='pb-3'>
-                                        <div className='flex items-start justify-between'>
-                                            <div className='flex items-center gap-3'>
-                                                <div
-                                                    className='flex h-10 w-10 items-center justify-center rounded-lg'
-                                                    style={bgStyle}
-                                                >
-                                                    <IconComponent className='h-5 w-5 text-white' />
-                                                </div>
-                                                <div>
-                                                    <CardTitle className='flex items-center gap-2 text-base'>
-                                                        {category.name}
-                                                        {category.isPinned && (
-                                                            <Pin className='h-4 w-4 text-primary' />
-                                                        )}
-                                                    </CardTitle>
-                                                    <div className='text-muted-foreground flex items-center gap-1 text-sm'>
-                                                        <PackageSearch className='h-3.5 w-3.5' />
-                                                        {category.serviceCount || 0} 个服务
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                                    <Button
-                                                        variant='ghost'
-                                                        size='icon'
-                                                        className='h-8 w-8'
-                                                    >
-                                                        <MoreHorizontal className='h-4 w-4' />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align='end'>
-                                                    <DropdownMenuItem
-                                                        onClick={(e) => { e.stopPropagation(); handleView(category) }}
-                                                    >
-                                                        <EyeIcon className='mr-2 h-4 w-4' />
-                                                        查看详情
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem
-                                                        onClick={(e) => { e.stopPropagation(); handleEdit(category) }}
-                                                    >
-                                                        <Pencil className='mr-2 h-4 w-4' />
-                                                        编辑
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem
-                                                        onClick={(e) => { e.stopPropagation(); handleToggleStatus(category) }}
-                                                    >
-                                                        {category.status === 'active' ? '停用' : '启用'}
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuSeparator />
-                                                    <DropdownMenuItem
-                                                        className='text-destructive focus:text-destructive focus:bg-destructive/10'
-                                                        onClick={(e) => { e.stopPropagation(); handleDelete(category) }}
-                                                    >
-                                                        <Trash2 className='mr-2 h-4 w-4' />
-                                                        删除
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </div>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <CardDescription className='mb-3 line-clamp-2'>
-                                            {category.description || '暂无描述'}
-                                        </CardDescription>
-                                        <div className='flex items-center justify-between'>
-                                            <div className='flex items-center gap-2'>
-                                                <Badge
-                                                    variant={category.status === 'active' ? 'default' : 'secondary'}
-                                                >
-                                                    {category.status === 'active' ? '已启用' : '已停用'}
-                                                </Badge>
-                                                {category.isPinned && (
-                                                    <Badge variant='outline' className='text-primary border-primary'>
-                                                        置顶
-                                                    </Badge>
-                                                )}
-                                            </div>
-                                            <span className='text-muted-foreground text-xs'>
-                                                排序: {category.sort}
-                                            </span>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            )
-                        })}
-                    </div>
+                        {/* 分页 */}
+                        <DataTablePagination table={table} className='mt-auto' />
+                    </>
                 )}
             </Main>
 

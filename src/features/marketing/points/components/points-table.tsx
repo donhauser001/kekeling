@@ -68,6 +68,7 @@ export function PointsTable({
     data,
     columns,
     pageCount: Math.ceil(total / pageSize),
+    rowCount: total,
     state: {
       sorting,
       pagination,

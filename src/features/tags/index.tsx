@@ -1,4 +1,13 @@
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
+import { useSearch, useNavigate } from '@tanstack/react-router'
+import {
+    useReactTable,
+    getCoreRowModel,
+    getFilteredRowModel,
+    getPaginationRowModel,
+    getSortedRowModel,
+    type ColumnFiltersState,
+} from '@tanstack/react-table'
 import {
     Tag,
     Plus,
@@ -6,10 +15,11 @@ import {
     Pencil,
     Trash2,
     Users,
-    Search as SearchIcon,
-    X,
     FolderPlus,
     Layers,
+    LayoutGrid,
+    List,
+    Eye,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -24,6 +34,7 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuSeparator,
+    DropdownMenuShortcut,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import {
@@ -37,6 +48,13 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { ConfirmDialog } from '@/components/confirm-dialog'
+import {
+    DataTablePagination,
+    DataTableToolbar,
+    DataTableViewOptions,
+} from '@/components/data-table'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
@@ -45,6 +63,11 @@ import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { cn } from '@/lib/utils'
+
+// 导入组件
+import { getUserTagsColumns } from './components/user-tags-columns'
+import { UserTagsTable } from './components/user-tags-table'
+import { UserTagsDetailSheet } from './components/user-tags-detail-sheet'
 
 interface UserTag {
     id: string
@@ -72,43 +95,38 @@ const initialTagCategories: TagCategory[] = [
 ]
 
 const colorOptions = [
-    { value: 'bg-red-500', label: '红色', textClass: 'text-red-500', borderClass: 'border-red-500' },
-    { value: 'bg-orange-500', label: '橙色', textClass: 'text-orange-500', borderClass: 'border-orange-500' },
-    { value: 'bg-amber-500', label: '琥珀', textClass: 'text-amber-500', borderClass: 'border-amber-500' },
-    { value: 'bg-yellow-500', label: '黄色', textClass: 'text-yellow-500', borderClass: 'border-yellow-500' },
-    { value: 'bg-lime-500', label: '青柠', textClass: 'text-lime-500', borderClass: 'border-lime-500' },
-    { value: 'bg-green-500', label: '绿色', textClass: 'text-green-500', borderClass: 'border-green-500' },
-    { value: 'bg-emerald-500', label: '翠绿', textClass: 'text-emerald-500', borderClass: 'border-emerald-500' },
-    { value: 'bg-teal-500', label: '青色', textClass: 'text-teal-500', borderClass: 'border-teal-500' },
-    { value: 'bg-cyan-500', label: '蓝绿', textClass: 'text-cyan-500', borderClass: 'border-cyan-500' },
-    { value: 'bg-sky-500', label: '天蓝', textClass: 'text-sky-500', borderClass: 'border-sky-500' },
-    { value: 'bg-blue-500', label: '蓝色', textClass: 'text-blue-500', borderClass: 'border-blue-500' },
-    { value: 'bg-indigo-500', label: '靛蓝', textClass: 'text-indigo-500', borderClass: 'border-indigo-500' },
-    { value: 'bg-violet-500', label: '紫罗兰', textClass: 'text-violet-500', borderClass: 'border-violet-500' },
-    { value: 'bg-purple-500', label: '紫色', textClass: 'text-purple-500', borderClass: 'border-purple-500' },
-    { value: 'bg-fuchsia-500', label: '洋红', textClass: 'text-fuchsia-500', borderClass: 'border-fuchsia-500' },
-    { value: 'bg-pink-500', label: '粉色', textClass: 'text-pink-500', borderClass: 'border-pink-500' },
-    { value: 'bg-rose-500', label: '玫红', textClass: 'text-rose-500', borderClass: 'border-rose-500' },
+    { value: 'bg-red-500', label: '红色' },
+    { value: 'bg-orange-500', label: '橙色' },
+    { value: 'bg-amber-500', label: '琥珀' },
+    { value: 'bg-yellow-500', label: '黄色' },
+    { value: 'bg-lime-500', label: '青柠' },
+    { value: 'bg-green-500', label: '绿色' },
+    { value: 'bg-emerald-500', label: '翠绿' },
+    { value: 'bg-teal-500', label: '青色' },
+    { value: 'bg-cyan-500', label: '蓝绿' },
+    { value: 'bg-sky-500', label: '天蓝' },
+    { value: 'bg-blue-500', label: '蓝色' },
+    { value: 'bg-indigo-500', label: '靛蓝' },
+    { value: 'bg-violet-500', label: '紫罗兰' },
+    { value: 'bg-purple-500', label: '紫色' },
+    { value: 'bg-fuchsia-500', label: '洋红' },
+    { value: 'bg-pink-500', label: '粉色' },
+    { value: 'bg-rose-500', label: '玫红' },
 ]
 
 const initialTags: UserTag[] = [
-    // 行为标签
     { id: '1', name: '活跃用户', description: '近7天内有登录行为的用户', userCount: 8520, color: 'bg-green-500', category: 'behavior', createdAt: '2024-01-15' },
     { id: '2', name: '沉默用户', description: '超过30天未登录的用户', userCount: 3240, color: 'bg-gray-500', category: 'behavior', createdAt: '2024-01-15' },
     { id: '3', name: '高频访问', description: '每周访问超过5次的用户', userCount: 2180, color: 'bg-blue-500', category: 'behavior', createdAt: '2024-02-01' },
-    // 价值标签
     { id: '4', name: '高价值用户', description: '累计消费超过10000元', userCount: 856, color: 'bg-amber-500', category: 'value', createdAt: '2024-01-20' },
     { id: '5', name: '潜力用户', description: '消费频次高但客单价较低', userCount: 1520, color: 'bg-cyan-500', category: 'value', createdAt: '2024-02-10' },
     { id: '6', name: '流失预警', description: '消费频次明显下降的用户', userCount: 680, color: 'bg-red-500', category: 'value', createdAt: '2024-03-01' },
-    // 偏好标签
     { id: '7', name: '数码爱好者', description: '偏好购买数码产品', userCount: 3420, color: 'bg-indigo-500', category: 'preference', createdAt: '2024-01-25' },
     { id: '8', name: '时尚达人', description: '偏好购买服装配饰', userCount: 4560, color: 'bg-pink-500', category: 'preference', createdAt: '2024-01-25' },
     { id: '9', name: '美食家', description: '偏好购买食品生鲜', userCount: 2890, color: 'bg-orange-500', category: 'preference', createdAt: '2024-02-15' },
-    // 生命周期
     { id: '10', name: '新注册', description: '注册不满7天的新用户', userCount: 1250, color: 'bg-lime-500', category: 'lifecycle', createdAt: '2024-01-01' },
     { id: '11', name: '首购用户', description: '完成首次购买的用户', userCount: 6780, color: 'bg-emerald-500', category: 'lifecycle', createdAt: '2024-01-01' },
     { id: '12', name: '复购用户', description: '有2次以上购买记录', userCount: 4520, color: 'bg-teal-500', category: 'lifecycle', createdAt: '2024-01-01' },
-    // 来源标签
     { id: '13', name: '邀请注册', description: '通过邀请链接注册的用户', userCount: 2340, color: 'bg-violet-500', category: 'source', createdAt: '2024-02-20' },
     { id: '14', name: '广告引流', description: '通过广告渠道来的用户', userCount: 5680, color: 'bg-fuchsia-500', category: 'source', createdAt: '2024-02-20' },
     { id: '15', name: '自然流量', description: '通过搜索自然访问的用户', userCount: 8920, color: 'bg-sky-500', category: 'source', createdAt: '2024-02-20' },
@@ -139,10 +157,43 @@ const defaultCategoryFormData: CategoryFormData = {
 }
 
 export function Tags() {
+    const navigate = useNavigate()
+    const search = useSearch({ strict: false }) as Record<string, unknown>
+
     const [tags, setTags] = useState<UserTag[]>(initialTags)
     const [tagCategories, setTagCategories] = useState<TagCategory[]>(initialTagCategories)
-    const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
-    const [searchTerm, setSearchTerm] = useState('')
+
+    // 视图模式
+    const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+
+    // 筛选状态
+    const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+    const [globalFilter, setGlobalFilter] = useState('')
+
+    // 从 URL 同步视图模式
+    useEffect(() => {
+        const view = search.view as string | undefined
+        if (view === 'list' || view === 'grid') {
+            setViewMode(view)
+        }
+    }, [search.view])
+
+    // 切换视图时更新 URL
+    const handleViewModeChange = (mode: string) => {
+        setViewMode(mode as 'grid' | 'list')
+        navigate({
+            search: (prev: Record<string, unknown>) => ({ ...prev, view: mode }),
+            replace: true,
+        })
+    }
+
+    // 详情抽屉状态
+    const [detailOpen, setDetailOpen] = useState(false)
+    const [selectedTag, setSelectedTag] = useState<UserTag | null>(null)
+
+    // 删除确认对话框
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+    const [deletingTag, setDeletingTag] = useState<UserTag | null>(null)
 
     // 标签表单对话框状态
     const [tagDialogOpen, setTagDialogOpen] = useState(false)
@@ -158,23 +209,22 @@ export function Tags() {
     const [categoryFormData, setCategoryFormData] = useState<CategoryFormData>(defaultCategoryFormData)
     const [categoryFormErrors, setCategoryFormErrors] = useState<Record<string, string>>({})
 
-    // 筛选后的标签
-    const filteredTags = tags.filter(tag => {
-        const matchCategory = !selectedCategory || tag.category === selectedCategory
-        const matchSearch = !searchTerm || 
-            tag.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            tag.description.toLowerCase().includes(searchTerm.toLowerCase())
-        return matchCategory && matchSearch
-    })
-
     // 按分类分组的标签
-    const groupedTags = tagCategories.map(category => ({
-        ...category,
-        tags: filteredTags.filter(tag => tag.category === category.value),
-        totalUsers: filteredTags
-            .filter(tag => tag.category === category.value)
-            .reduce((sum, tag) => sum + tag.userCount, 0),
-    }))
+    const groupedTags = useMemo(() => {
+        return tagCategories.map(category => ({
+            ...category,
+            tags: tags.filter(tag => tag.category === category.value),
+            totalUsers: tags
+                .filter(tag => tag.category === category.value)
+                .reduce((sum, tag) => sum + tag.userCount, 0),
+        }))
+    }, [tags, tagCategories])
+
+    // 查看详情
+    const handleView = (tag: UserTag) => {
+        setSelectedTag(tag)
+        setDetailOpen(true)
+    }
 
     // 打开新建标签对话框
     const openCreateDialog = () => {
@@ -196,6 +246,20 @@ export function Tags() {
         })
         setFormErrors({})
         setTagDialogOpen(true)
+    }
+
+    // 打开删除确认
+    const handleDeleteConfirm = (tag: UserTag) => {
+        setDeletingTag(tag)
+        setDeleteDialogOpen(true)
+    }
+
+    // 执行删除
+    const handleDeleteTag = () => {
+        if (!deletingTag) return
+        setTags(tags.filter(t => t.id !== deletingTag.id))
+        setDeleteDialogOpen(false)
+        setDeletingTag(null)
     }
 
     // 表单验证
@@ -247,15 +311,6 @@ export function Tags() {
 
         setTagDialogOpen(false)
     }
-
-    // 删除标签
-    const handleDeleteTag = (tagId: string) => {
-        setTags(tags.filter(t => t.id !== tagId))
-    }
-
-    // 获取分类标签 (保留用于未来扩展)
-    const _getCategoryLabel = (value: string) => tagCategories.find(c => c.value === value)?.label || value
-    void _getCategoryLabel
 
     // 打开新建分类对话框
     const openCreateCategoryDialog = () => {
@@ -319,7 +374,6 @@ export function Tags() {
 
     // 删除分类
     const handleDeleteCategory = (categoryValue: string) => {
-        // 检查是否有标签使用该分类
         const hasTagsInCategory = tags.some(t => t.category === categoryValue)
         if (hasTagsInCategory) {
             alert('该分类下还有标签，无法删除')
@@ -328,13 +382,143 @@ export function Tags() {
         setTagCategories(tagCategories.filter(c => c.value !== categoryValue))
     }
 
-    const getColorClasses = (bgColor: string) => {
-        const color = colorOptions.find(c => c.value === bgColor)
-        return {
-            text: color?.textClass || 'text-blue-500',
-            border: color?.borderClass || 'border-blue-500',
-        }
-    }
+    // 列定义
+    const columns = useMemo(
+        () => getUserTagsColumns({
+            categories: tagCategories,
+            onView: handleView,
+            onEdit: openEditDialog,
+            onDelete: handleDeleteConfirm,
+        }),
+        [tagCategories]
+    )
+
+    // useReactTable 配置（客户端分页）
+    const table = useReactTable({
+        data: tags,
+        columns,
+        state: {
+            columnFilters,
+            globalFilter,
+        },
+        onColumnFiltersChange: setColumnFilters,
+        onGlobalFilterChange: setGlobalFilter,
+        getCoreRowModel: getCoreRowModel(),
+        getFilteredRowModel: getFilteredRowModel(),
+        getSortedRowModel: getSortedRowModel(),
+        getPaginationRowModel: getPaginationRowModel(),
+    })
+
+    // 渲染卡片视图
+    const renderGridView = () => (
+        <>
+            {/* 统计卡片 */}
+            <div className='mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4'>
+                <Card>
+                    <CardHeader className='pb-2'>
+                        <CardDescription>标签总数</CardDescription>
+                        <CardTitle className='text-3xl'>{tags.length}</CardTitle>
+                    </CardHeader>
+                </Card>
+                <Card>
+                    <CardHeader className='pb-2'>
+                        <CardDescription>标签分类</CardDescription>
+                        <CardTitle className='text-3xl'>{tagCategories.length}</CardTitle>
+                    </CardHeader>
+                </Card>
+                <Card>
+                    <CardHeader className='pb-2'>
+                        <CardDescription>已打标用户</CardDescription>
+                        <CardTitle className='text-3xl'>{tags.reduce((sum, t) => sum + t.userCount, 0).toLocaleString()}</CardTitle>
+                    </CardHeader>
+                </Card>
+                <Card>
+                    <CardHeader className='pb-2'>
+                        <CardDescription>本月新增</CardDescription>
+                        <CardTitle className='text-3xl'>+{Math.floor(tags.length * 0.2)}</CardTitle>
+                    </CardHeader>
+                </Card>
+            </div>
+
+            {/* 分组视图 */}
+            <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
+                {groupedTags.map(group => (
+                    <Card key={group.value} className='group cursor-pointer' onClick={() => handleView(group.tags[0])}>
+                        <CardHeader className='pb-3'>
+                            <div className='flex items-start justify-between'>
+                                <div className='flex items-center gap-3'>
+                                    <div className={cn('flex h-10 w-10 items-center justify-center rounded-lg', group.color || 'bg-gray-500')}>
+                                        <Layers className='h-5 w-5 text-white' />
+                                    </div>
+                                    <div>
+                                        <CardTitle className='text-base'>{group.label}</CardTitle>
+                                        <div className='text-muted-foreground flex items-center gap-2 text-sm'>
+                                            <span>{group.tags.length} 个标签</span>
+                                            <span>·</span>
+                                            <span>{group.totalUsers.toLocaleString()} 人</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <DropdownMenu modal={false}>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button
+                                            variant='ghost'
+                                            size='icon'
+                                            className='h-8 w-8 opacity-0 group-hover:opacity-100'
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            <MoreHorizontal className='h-4 w-4' />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align='end' className='w-[160px]'>
+                                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openEditCategoryDialog(group) }}>
+                                            编辑分类
+                                            <DropdownMenuShortcut>
+                                                <Pencil className='h-4 w-4' />
+                                            </DropdownMenuShortcut>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem
+                                            className='text-destructive focus:text-destructive focus:bg-destructive/10'
+                                            onClick={(e) => { e.stopPropagation(); handleDeleteCategory(group.value) }}
+                                            disabled={group.tags.length > 0}
+                                        >
+                                            删除分类
+                                            <DropdownMenuShortcut>
+                                                <Trash2 className='h-4 w-4' />
+                                            </DropdownMenuShortcut>
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            {group.tags.length > 0 ? (
+                                <div className='flex flex-wrap gap-1.5'>
+                                    {group.tags.map(tag => (
+                                        <Badge
+                                            key={tag.id}
+                                            variant='outline'
+                                            className='group/tag cursor-pointer gap-1.5 py-1 transition-all hover:shadow-sm'
+                                            onClick={(e) => { e.stopPropagation(); handleView(tag) }}
+                                        >
+                                            <span className={cn('h-2 w-2 rounded-full', tag.color)} />
+                                            <span>{tag.name}</span>
+                                            <span className='text-muted-foreground'>
+                                                {tag.userCount.toLocaleString()}
+                                            </span>
+                                        </Badge>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className='text-muted-foreground text-sm'>暂无标签</p>
+                            )}
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
+        </>
+    )
 
     return (
         <>
@@ -348,8 +532,9 @@ export function Tags() {
                 </div>
             </Header>
 
-            <Main>
-                <div className='mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
+            <Main className='flex flex-1 flex-col gap-4 sm:gap-6'>
+                {/* 标题区域 */}
+                <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
                     <div>
                         <h1 className='text-2xl font-bold tracking-tight'>用户标签</h1>
                         <p className='text-muted-foreground'>管理用户标签，精细化用户运营</p>
@@ -366,217 +551,69 @@ export function Tags() {
                     </div>
                 </div>
 
-                {/* 统计卡片 */}
-                <div className='mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4'>
-                    <Card>
-                        <CardHeader className='pb-2'>
-                            <CardDescription>标签总数</CardDescription>
-                            <CardTitle className='text-3xl'>{tags.length}</CardTitle>
-                        </CardHeader>
-                    </Card>
-                    <Card>
-                        <CardHeader className='pb-2'>
-                            <CardDescription>标签分类</CardDescription>
-                            <CardTitle className='text-3xl'>{tagCategories.length}</CardTitle>
-                        </CardHeader>
-                    </Card>
-                    <Card>
-                        <CardHeader className='pb-2'>
-                            <CardDescription>已打标用户</CardDescription>
-                            <CardTitle className='text-3xl'>{tags.reduce((sum, t) => sum + t.userCount, 0).toLocaleString()}</CardTitle>
-                        </CardHeader>
-                    </Card>
-                    <Card>
-                        <CardHeader className='pb-2'>
-                            <CardDescription>本月新增</CardDescription>
-                            <CardTitle className='text-3xl'>+{Math.floor(tags.length * 0.2)}</CardTitle>
-                        </CardHeader>
-                    </Card>
+                {/* 工具栏区域 */}
+                <div className='flex flex-wrap items-center gap-4'>
+                    <DataTableToolbar
+                        table={table}
+                        searchPlaceholder='搜索标签...'
+                        searchKey='name'
+                        filters={viewMode === 'list' ? [
+                            {
+                                columnId: 'category',
+                                title: '分类',
+                                options: tagCategories.map((c) => ({ label: c.label, value: c.value })),
+                            },
+                        ] : []}
+                        showViewOptions={false}
+                    />
+
+                    {viewMode === 'list' && <DataTableViewOptions table={table} />}
+
+                    {/* 视图切换 */}
+                    <Tabs value={viewMode} onValueChange={handleViewModeChange} className={viewMode === 'grid' ? 'ml-auto' : ''}>
+                        <TabsList className='h-9'>
+                            <TabsTrigger value='grid' className='px-3'>
+                                <LayoutGrid className='h-4 w-4' />
+                            </TabsTrigger>
+                            <TabsTrigger value='list' className='px-3'>
+                                <List className='h-4 w-4' />
+                            </TabsTrigger>
+                        </TabsList>
+                    </Tabs>
                 </div>
 
-                {/* 筛选工具栏 */}
-                <div className='mb-4 flex flex-col gap-3 sm:flex-row sm:items-center'>
-                    <div className='relative flex-1 sm:max-w-xs'>
-                        <SearchIcon className='text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2' />
-                        <Input
-                            placeholder='搜索标签...'
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className='pl-9'
-                        />
-                        {searchTerm && (
-                            <button
-                                onClick={() => setSearchTerm('')}
-                                className='text-muted-foreground hover:text-foreground absolute right-3 top-1/2 -translate-y-1/2'
-                            >
-                                <X className='h-4 w-4' />
-                            </button>
-                        )}
-                    </div>
-                    <div className='flex flex-wrap gap-2'>
-                        <Button
-                            variant={selectedCategory === null ? 'secondary' : 'ghost'}
-                            size='sm'
-                            onClick={() => setSelectedCategory(null)}
-                        >
-                            全部
-                        </Button>
-                        {tagCategories.map(category => (
-                            <Button
-                                key={category.value}
-                                variant={selectedCategory === category.value ? 'secondary' : 'ghost'}
-                                size='sm'
-                                onClick={() => setSelectedCategory(category.value)}
-                            >
-                                {category.label}
-                                <Badge variant='outline' className='ml-1.5 text-xs'>
-                                    {tags.filter(t => t.category === category.value).length}
-                                </Badge>
-                            </Button>
-                        ))}
-                    </div>
-                </div>
-
-                {/* 标签列表 */}
-                {selectedCategory ? (
-                    // 单分类视图
-                    <div className='grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'>
-                        {filteredTags.map(tag => {
-                            // colorClasses 保留用于未来自定义样式扩展
-                            void getColorClasses(tag.color)
-                            return (
-                                <Card key={tag.id} className='group relative'>
-                                    <CardHeader className='pb-2'>
-                                        <div className='flex items-start justify-between'>
-                                            <div className='flex items-center gap-2'>
-                                                <div className={cn('flex h-8 w-8 items-center justify-center rounded-md', tag.color)}>
-                                                    <Tag className='h-4 w-4 text-white' />
-                                                </div>
-                                                <div>
-                                                    <CardTitle className='text-sm font-medium'>{tag.name}</CardTitle>
-                                                    <div className='text-muted-foreground flex items-center gap-1 text-xs'>
-                                                        <Users className='h-3 w-3' />
-                                                        {tag.userCount.toLocaleString()} 人
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant='ghost' size='icon' className='h-7 w-7 opacity-0 group-hover:opacity-100'>
-                                                        <MoreHorizontal className='h-4 w-4' />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align='end'>
-                                                    <DropdownMenuItem onClick={() => openEditDialog(tag)}>
-                                                        <Pencil className='mr-2 h-4 w-4' />
-                                                        编辑标签
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem>
-                                                        <Users className='mr-2 h-4 w-4' />
-                                                        查看用户
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuSeparator />
-                                                    <DropdownMenuItem
-                                                        className='text-destructive'
-                                                        onClick={() => handleDeleteTag(tag.id)}
-                                                    >
-                                                        <Trash2 className='mr-2 h-4 w-4' />
-                                                        删除标签
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </div>
-                                    </CardHeader>
-                                    <CardContent className='pt-0'>
-                                        <p className='text-muted-foreground line-clamp-2 text-xs'>{tag.description}</p>
-                                    </CardContent>
-                                </Card>
-                            )
-                        })}
-                    </div>
+                {/* 内容区域 */}
+                {viewMode === 'grid' ? (
+                    renderGridView()
                 ) : (
-                    // 分组视图 - 卡片形式
-                    <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
-                        {groupedTags.map(group => (
-                            <Card key={group.value} className='group'>
-                                <CardHeader className='pb-3'>
-                                    <div className='flex items-start justify-between'>
-                                        <div className='flex items-center gap-3'>
-                                            <div className={cn('flex h-10 w-10 items-center justify-center rounded-lg', group.color || 'bg-gray-500')}>
-                                                <Layers className='h-5 w-5 text-white' />
-                                            </div>
-                                            <div>
-                                                <CardTitle className='text-base'>{group.label}</CardTitle>
-                                                <div className='text-muted-foreground flex items-center gap-2 text-sm'>
-                                                    <span>{group.tags.length} 个标签</span>
-                                                    <span>·</span>
-                                                    <span>{group.totalUsers.toLocaleString()} 人</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant='ghost' size='icon' className='h-8 w-8 opacity-0 group-hover:opacity-100'>
-                                                    <MoreHorizontal className='h-4 w-4' />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align='end'>
-                                                <DropdownMenuItem onClick={() => openEditCategoryDialog(group)}>
-                                                    <Pencil className='mr-2 h-4 w-4' />
-                                                    编辑分类
-                                                </DropdownMenuItem>
-                                                <DropdownMenuSeparator />
-                                                <DropdownMenuItem
-                                                    className='text-destructive'
-                                                    onClick={() => handleDeleteCategory(group.value)}
-                                                    disabled={group.tags.length > 0}
-                                                >
-                                                    <Trash2 className='mr-2 h-4 w-4' />
-                                                    删除分类
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </div>
-                                </CardHeader>
-                                <CardContent>
-                                    {group.tags.length > 0 ? (
-                                        <div className='flex flex-wrap gap-1.5'>
-                                            {group.tags.map(tag => (
-                                                <Badge
-                                                    key={tag.id}
-                                                    variant='outline'
-                                                    className='group/tag cursor-pointer gap-1.5 py-1 transition-all hover:shadow-sm'
-                                                    onClick={() => openEditDialog(tag)}
-                                                >
-                                                    <span className={cn('h-2 w-2 rounded-full', tag.color)} />
-                                                    <span>{tag.name}</span>
-                                                    <span className='text-muted-foreground'>
-                                                        {tag.userCount.toLocaleString()}
-                                                    </span>
-                                                </Badge>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <p className='text-muted-foreground text-sm'>暂无标签</p>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </div>
+                    <UserTagsTable table={table} onRowClick={handleView} />
                 )}
 
-                {filteredTags.length === 0 && (
-                    <div className='flex flex-col items-center justify-center py-12'>
-                        <Tag className='text-muted-foreground h-12 w-12' />
-                        <h3 className='mt-4 font-semibold'>没有找到标签</h3>
-                        <p className='text-muted-foreground mt-1 text-sm'>尝试调整筛选条件或创建新标签</p>
-                        <Button className='mt-4' onClick={openCreateDialog}>
-                            <Plus className='mr-2 h-4 w-4' />
-                            新建标签
-                        </Button>
-                    </div>
+                {/* 分页（仅列表视图显示） */}
+                {viewMode === 'list' && (
+                    <DataTablePagination table={table} className='mt-auto' />
                 )}
             </Main>
+
+            {/* 详情抽屉 */}
+            <UserTagsDetailSheet
+                tag={selectedTag}
+                categories={tagCategories}
+                open={detailOpen}
+                onOpenChange={setDetailOpen}
+            />
+
+            {/* 删除确认对话框 */}
+            <ConfirmDialog
+                open={deleteDialogOpen}
+                onOpenChange={setDeleteDialogOpen}
+                title='确认删除'
+                description={`确定要删除标签「${deletingTag?.name}」吗？此操作不可撤销。`}
+                confirmText='删除'
+                cancelText='取消'
+                onConfirm={handleDeleteTag}
+                variant='destructive'
+            />
 
             {/* 新建/编辑标签对话框 */}
             <Dialog open={tagDialogOpen} onOpenChange={setTagDialogOpen}>
@@ -767,4 +804,3 @@ export function Tags() {
         </>
     )
 }
-

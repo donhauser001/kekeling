@@ -30,7 +30,6 @@ import {
   PackageSearch,
   FolderTree,
   GitBranch,
-  BadgePercent,
   ClipboardCheck,
   ClipboardList,
   Building,
@@ -164,11 +163,6 @@ export const sidebarData: SidebarData = {
               title: '操作规范',
               url: '/operation-guides',
               icon: BookOpen,
-            },
-            {
-              title: '价格政策',
-              url: '/pricing-policies',
-              icon: BadgePercent,
             },
             {
               title: '接单设置',

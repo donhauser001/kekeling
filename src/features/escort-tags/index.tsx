@@ -1,4 +1,13 @@
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
+import { useSearch, useNavigate } from '@tanstack/react-router'
+import {
+    useReactTable,
+    getCoreRowModel,
+    getFilteredRowModel,
+    getSortedRowModel,
+    getPaginationRowModel,
+    type ColumnFiltersState,
+} from '@tanstack/react-table'
 import {
     Tag,
     Plus,
@@ -6,16 +15,16 @@ import {
     Pencil,
     Trash2,
     Users,
-    Search as SearchIcon,
-    X,
     FolderPlus,
     Layers,
+    LayoutGrid,
+    List,
+    Eye,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
     Card,
     CardContent,
-    CardDescription,
     CardHeader,
     CardTitle,
 } from '@/components/ui/card'
@@ -24,6 +33,7 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuSeparator,
+    DropdownMenuShortcut,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import {
@@ -37,6 +47,7 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
@@ -44,7 +55,20 @@ import { MessageButton } from '@/components/message-button'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
+import { ConfirmDialog } from '@/components/confirm-dialog'
+import {
+    DataTablePagination,
+    DataTableToolbar,
+    DataTableViewOptions,
+} from '@/components/data-table'
 import { cn } from '@/lib/utils'
+
+// 导入新组件
+import {
+    getEscortTagsColumns,
+    EscortTagsTable,
+    EscortTagsDetailSheet,
+} from './components'
 
 interface EscortTag {
     id: string
@@ -72,23 +96,23 @@ const initialTagCategories: TagCategory[] = [
 ]
 
 const colorOptions = [
-    { value: 'bg-red-500', label: '红色', textClass: 'text-red-500', borderClass: 'border-red-500' },
-    { value: 'bg-orange-500', label: '橙色', textClass: 'text-orange-500', borderClass: 'border-orange-500' },
-    { value: 'bg-amber-500', label: '琥珀', textClass: 'text-amber-500', borderClass: 'border-amber-500' },
-    { value: 'bg-yellow-500', label: '黄色', textClass: 'text-yellow-500', borderClass: 'border-yellow-500' },
-    { value: 'bg-lime-500', label: '青柠', textClass: 'text-lime-500', borderClass: 'border-lime-500' },
-    { value: 'bg-green-500', label: '绿色', textClass: 'text-green-500', borderClass: 'border-green-500' },
-    { value: 'bg-emerald-500', label: '翠绿', textClass: 'text-emerald-500', borderClass: 'border-emerald-500' },
-    { value: 'bg-teal-500', label: '青色', textClass: 'text-teal-500', borderClass: 'border-teal-500' },
-    { value: 'bg-cyan-500', label: '蓝绿', textClass: 'text-cyan-500', borderClass: 'border-cyan-500' },
-    { value: 'bg-sky-500', label: '天蓝', textClass: 'text-sky-500', borderClass: 'border-sky-500' },
-    { value: 'bg-blue-500', label: '蓝色', textClass: 'text-blue-500', borderClass: 'border-blue-500' },
-    { value: 'bg-indigo-500', label: '靛蓝', textClass: 'text-indigo-500', borderClass: 'border-indigo-500' },
-    { value: 'bg-violet-500', label: '紫罗兰', textClass: 'text-violet-500', borderClass: 'border-violet-500' },
-    { value: 'bg-purple-500', label: '紫色', textClass: 'text-purple-500', borderClass: 'border-purple-500' },
-    { value: 'bg-fuchsia-500', label: '洋红', textClass: 'text-fuchsia-500', borderClass: 'border-fuchsia-500' },
-    { value: 'bg-pink-500', label: '粉色', textClass: 'text-pink-500', borderClass: 'border-pink-500' },
-    { value: 'bg-rose-500', label: '玫红', textClass: 'text-rose-500', borderClass: 'border-rose-500' },
+    { value: 'bg-red-500', label: '红色' },
+    { value: 'bg-orange-500', label: '橙色' },
+    { value: 'bg-amber-500', label: '琥珀' },
+    { value: 'bg-yellow-500', label: '黄色' },
+    { value: 'bg-lime-500', label: '青柠' },
+    { value: 'bg-green-500', label: '绿色' },
+    { value: 'bg-emerald-500', label: '翠绿' },
+    { value: 'bg-teal-500', label: '青色' },
+    { value: 'bg-cyan-500', label: '蓝绿' },
+    { value: 'bg-sky-500', label: '天蓝' },
+    { value: 'bg-blue-500', label: '蓝色' },
+    { value: 'bg-indigo-500', label: '靛蓝' },
+    { value: 'bg-violet-500', label: '紫罗兰' },
+    { value: 'bg-purple-500', label: '紫色' },
+    { value: 'bg-fuchsia-500', label: '洋红' },
+    { value: 'bg-pink-500', label: '粉色' },
+    { value: 'bg-rose-500', label: '玫红' },
 ]
 
 const initialTags: EscortTag[] = [
@@ -138,20 +162,27 @@ const defaultCategoryFormData: CategoryFormData = {
     color: 'bg-gray-500',
 }
 
-const getColorClasses = (bgColor: string) => {
-    const colorOption = colorOptions.find(c => c.value === bgColor)
-    return {
-        text: colorOption?.textClass || 'text-gray-500',
-        border: colorOption?.borderClass || 'border-gray-500',
-    }
-}
-
 export function EscortTags() {
+    const navigate = useNavigate()
+    const search = useSearch({ strict: false }) as Record<string, unknown>
+
     const [tags, setTags] = useState<EscortTag[]>(initialTags)
     const [tagCategories, setTagCategories] = useState<TagCategory[]>(initialTagCategories)
-    const [searchQuery, setSearchQuery] = useState('')
-    const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
-    const [viewMode, setViewMode] = useState<'grid' | 'grouped'>('grouped')
+
+    // 视图模式
+    const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+
+    // 表格状态
+    const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+    const [globalFilter, setGlobalFilter] = useState('')
+
+    // 详情抽屉状态
+    const [detailOpen, setDetailOpen] = useState(false)
+    const [selectedTag, setSelectedTag] = useState<EscortTag | null>(null)
+
+    // 删除确认状态
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+    const [deletingTag, setDeletingTag] = useState<EscortTag | null>(null)
 
     // 标签表单对话框状态
     const [tagDialogOpen, setTagDialogOpen] = useState(false)
@@ -167,22 +198,37 @@ export function EscortTags() {
     const [categoryFormData, setCategoryFormData] = useState<CategoryFormData>(defaultCategoryFormData)
     const [categoryFormErrors, setCategoryFormErrors] = useState<Record<string, string>>({})
 
-    // 过滤标签
-    const filteredTags = tags.filter(tag => {
-        const matchesSearch = tag.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            tag.description.toLowerCase().includes(searchQuery.toLowerCase())
-        const matchesCategory = !selectedCategory || tag.category === selectedCategory
-        return matchesSearch && matchesCategory
-    })
+    // 从 URL 同步视图模式
+    useEffect(() => {
+        const view = search.view as string | undefined
+        if (view === 'list' || view === 'grid') {
+            setViewMode(view)
+        }
+    }, [search.view])
+
+    // 切换视图时更新 URL
+    const handleViewModeChange = (mode: string) => {
+        setViewMode(mode as 'grid' | 'list')
+        navigate({
+            search: (prev: Record<string, unknown>) => ({ ...prev, view: mode }),
+            replace: true,
+        })
+    }
 
     // 按分类分组
     const groupedTags = tagCategories.map(category => ({
         ...category,
-        tags: filteredTags.filter(tag => tag.category === category.value),
-        totalUsers: filteredTags
+        tags: tags.filter(tag => tag.category === category.value),
+        totalUsers: tags
             .filter(tag => tag.category === category.value)
             .reduce((sum, tag) => sum + tag.escortCount, 0),
     }))
+
+    // 查看详情
+    const handleView = (tag: EscortTag) => {
+        setSelectedTag(tag)
+        setDetailOpen(true)
+    }
 
     // 打开新建标签对话框
     const openCreateDialog = () => {
@@ -215,7 +261,7 @@ export function EscortTags() {
     }
 
     // 打开编辑分类对话框
-    const openEditCategoryDialog = (category: { value: string; label: string; color?: string }) => {
+    const openEditCategoryDialog = (category: TagCategory) => {
         setCategoryDialogMode('edit')
         setEditingCategoryValue(category.value)
         setCategoryFormData({
@@ -224,6 +270,30 @@ export function EscortTags() {
         })
         setCategoryFormErrors({})
         setCategoryDialogOpen(true)
+    }
+
+    // 打开删除确认
+    const handleDeleteConfirm = (tag: EscortTag) => {
+        setDeletingTag(tag)
+        setDeleteDialogOpen(true)
+    }
+
+    // 删除标签
+    const handleDeleteTag = () => {
+        if (!deletingTag) return
+        setTags(tags.filter(t => t.id !== deletingTag.id))
+        setDeleteDialogOpen(false)
+        setDeletingTag(null)
+    }
+
+    // 删除分类
+    const handleDeleteCategory = (categoryValue: string) => {
+        const hasTagsInCategory = tags.some(t => t.category === categoryValue)
+        if (hasTagsInCategory) {
+            alert('该分类下还有标签，无法删除')
+            return
+        }
+        setTagCategories(tagCategories.filter(c => c.value !== categoryValue))
     }
 
     // 标签表单验证
@@ -303,19 +373,108 @@ export function EscortTags() {
         setCategoryDialogOpen(false)
     }
 
-    // 删除标签
-    const handleDeleteTag = (tagId: string) => {
-        setTags(tags.filter(t => t.id !== tagId))
-    }
+    // 列定义
+    const columns = useMemo(
+        () => getEscortTagsColumns({
+            onView: handleView,
+            onEdit: openEditDialog,
+            onDelete: handleDeleteConfirm,
+            categories: tagCategories,
+        }),
+        [tagCategories]
+    )
 
-    // 删除分类
-    const handleDeleteCategory = (categoryValue: string) => {
-        const hasTagsInCategory = tags.some(t => t.category === categoryValue)
-        if (hasTagsInCategory) {
-            alert('该分类下还有标签，无法删除')
-            return
-        }
-        setTagCategories(tagCategories.filter(c => c.value !== categoryValue))
+    // useReactTable 配置（客户端分页）
+    const table = useReactTable({
+        data: tags,
+        columns,
+        state: {
+            columnFilters,
+            globalFilter,
+        },
+        onColumnFiltersChange: setColumnFilters,
+        onGlobalFilterChange: setGlobalFilter,
+        getCoreRowModel: getCoreRowModel(),
+        getFilteredRowModel: getFilteredRowModel(),
+        getSortedRowModel: getSortedRowModel(),
+        getPaginationRowModel: getPaginationRowModel(),
+    })
+
+    // 渲染分组卡片视图
+    const renderGridView = () => {
+        return (
+            <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
+                {groupedTags.map(group => (
+                    <Card key={group.value} className='group'>
+                        <CardHeader className='pb-3'>
+                            <div className='flex items-start justify-between'>
+                                <div className='flex items-center gap-3'>
+                                    <div className={cn('flex h-10 w-10 items-center justify-center rounded-lg', group.color || 'bg-gray-500')}>
+                                        <Layers className='h-5 w-5 text-white' />
+                                    </div>
+                                    <div>
+                                        <CardTitle className='text-base'>{group.label}</CardTitle>
+                                        <div className='text-muted-foreground flex items-center gap-2 text-sm'>
+                                            <span>{group.tags.length} 个标签</span>
+                                            <span>·</span>
+                                            <span>{group.totalUsers.toLocaleString()} 人</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <DropdownMenu modal={false}>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant='ghost' size='icon' className='h-8 w-8 opacity-0 group-hover:opacity-100'>
+                                            <MoreHorizontal className='h-4 w-4' />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align='end' className='w-[160px]'>
+                                        <DropdownMenuItem onClick={() => openEditCategoryDialog(group)}>
+                                            编辑分类
+                                            <DropdownMenuShortcut>
+                                                <Pencil className='h-4 w-4' />
+                                            </DropdownMenuShortcut>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem
+                                            className='text-destructive focus:text-destructive focus:bg-destructive/10'
+                                            onClick={() => handleDeleteCategory(group.value)}
+                                            disabled={group.tags.length > 0}
+                                        >
+                                            删除分类
+                                            <DropdownMenuShortcut>
+                                                <Trash2 className='h-4 w-4' />
+                                            </DropdownMenuShortcut>
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            {group.tags.length > 0 ? (
+                                <div className='flex flex-wrap gap-1.5'>
+                                    {group.tags.map(tag => (
+                                        <Badge
+                                            key={tag.id}
+                                            variant='outline'
+                                            className='group/tag cursor-pointer gap-1.5 py-1 transition-all hover:shadow-sm'
+                                            onClick={() => handleView(tag)}
+                                        >
+                                            <span className={cn('h-2 w-2 rounded-full', tag.color)} />
+                                            <span>{tag.name}</span>
+                                            <span className='text-muted-foreground'>
+                                                {tag.escortCount.toLocaleString()}
+                                            </span>
+                                        </Badge>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className='text-muted-foreground text-sm'>暂无标签</p>
+                            )}
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
+        )
     }
 
     return (
@@ -330,8 +489,9 @@ export function EscortTags() {
                 </div>
             </Header>
 
-            <Main>
-                <div className='mb-6 flex items-center justify-between'>
+            <Main className='flex flex-1 flex-col gap-4 sm:gap-6'>
+                {/* 标题和操作 */}
+                <div className='flex items-center justify-between'>
                     <div>
                         <h1 className='text-2xl font-bold tracking-tight'>人员标签</h1>
                         <p className='text-muted-foreground'>管理陪诊员标签和分类</p>
@@ -348,193 +508,75 @@ export function EscortTags() {
                     </div>
                 </div>
 
-                {/* 搜索和筛选 */}
-                <div className='mb-6 flex flex-wrap items-center gap-4'>
-                    <div className='relative flex-1 min-w-[200px] max-w-md'>
-                        <SearchIcon className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
-                        <Input
-                            placeholder='搜索标签...'
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className='pl-9'
-                        />
-                        {searchQuery && (
-                            <button
-                                className='text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2'
-                                onClick={() => setSearchQuery('')}
-                            >
-                                <X className='h-4 w-4' />
-                            </button>
-                        )}
-                    </div>
+                {/* 工具栏 */}
+                <div className='flex flex-wrap items-center gap-4'>
+                    <DataTableToolbar
+                        table={table}
+                        searchPlaceholder='搜索标签...'
+                        searchKey='name'
+                        filters={viewMode === 'list' ? [
+                            {
+                                columnId: 'category',
+                                title: '分类',
+                                options: tagCategories.map(c => ({
+                                    label: c.label,
+                                    value: c.value,
+                                })),
+                            },
+                        ] : []}
+                        showViewOptions={false}
+                    />
 
-                    <div className='flex flex-wrap gap-2'>
-                        <Badge
-                            variant={selectedCategory === null ? 'default' : 'outline'}
-                            className='cursor-pointer'
-                            onClick={() => setSelectedCategory(null)}
-                        >
-                            全部 ({tags.length})
-                        </Badge>
-                        {tagCategories.map(category => (
-                            <Badge
-                                key={category.value}
-                                variant={selectedCategory === category.value ? 'default' : 'outline'}
-                                className='cursor-pointer gap-1.5'
-                                onClick={() => setSelectedCategory(category.value)}
-                            >
-                                {category.color && (
-                                    <span className={cn('h-2 w-2 rounded-full', category.color)} />
-                                )}
-                                {category.label} ({tags.filter(t => t.category === category.value).length})
-                            </Badge>
-                        ))}
-                    </div>
+                    {viewMode === 'list' && <DataTableViewOptions table={table} />}
 
-                    <div className='ml-auto flex gap-1'>
-                        <Button
-                            variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
-                            size='sm'
-                            onClick={() => setViewMode('grid')}
-                        >
-                            网格
-                        </Button>
-                        <Button
-                            variant={viewMode === 'grouped' ? 'secondary' : 'ghost'}
-                            size='sm'
-                            onClick={() => setViewMode('grouped')}
-                        >
-                            分组
-                        </Button>
-                    </div>
+                    {/* 视图切换 */}
+                    <Tabs value={viewMode} onValueChange={handleViewModeChange} className={viewMode === 'grid' ? 'ml-auto' : ''}>
+                        <TabsList className='h-9'>
+                            <TabsTrigger value='grid' className='px-3'>
+                                <LayoutGrid className='h-4 w-4' />
+                            </TabsTrigger>
+                            <TabsTrigger value='list' className='px-3'>
+                                <List className='h-4 w-4' />
+                            </TabsTrigger>
+                        </TabsList>
+                    </Tabs>
                 </div>
 
-                {/* 标签列表 */}
+                {/* 内容区域 */}
                 {viewMode === 'grid' ? (
-                    <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'>
-                        {filteredTags.map(tag => {
-                            const colorClasses = getColorClasses(tag.color)
-                            return (
-                                <Card key={tag.id} className='group relative'>
-                                    <CardHeader className='pb-2'>
-                                        <div className='flex items-start justify-between'>
-                                            <div className='flex items-center gap-2'>
-                                                <div className={cn('flex h-8 w-8 items-center justify-center rounded-md', tag.color)}>
-                                                    <Tag className='h-4 w-4 text-white' />
-                                                </div>
-                                                <div>
-                                                    <CardTitle className='text-sm font-medium'>{tag.name}</CardTitle>
-                                                    <div className='text-muted-foreground flex items-center gap-1 text-xs'>
-                                                        <Users className='h-3 w-3' />
-                                                        {tag.escortCount.toLocaleString()} 人
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant='ghost' size='icon' className='h-7 w-7 opacity-0 group-hover:opacity-100'>
-                                                        <MoreHorizontal className='h-4 w-4' />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align='end'>
-                                                    <DropdownMenuItem onClick={() => openEditDialog(tag)}>
-                                                        <Pencil className='mr-2 h-4 w-4' />
-                                                        编辑标签
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem>
-                                                        <Users className='mr-2 h-4 w-4' />
-                                                        查看人员
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuSeparator />
-                                                    <DropdownMenuItem
-                                                        className='text-destructive'
-                                                        onClick={() => handleDeleteTag(tag.id)}
-                                                    >
-                                                        <Trash2 className='mr-2 h-4 w-4' />
-                                                        删除标签
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </div>
-                                    </CardHeader>
-                                    <CardContent className='pt-0'>
-                                        <p className='text-muted-foreground line-clamp-2 text-xs'>{tag.description}</p>
-                                    </CardContent>
-                                </Card>
-                            )
-                        })}
-                    </div>
+                    renderGridView()
                 ) : (
-                    // 分组视图 - 卡片形式
-                    <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
-                        {groupedTags.map(group => (
-                            <Card key={group.value} className='group'>
-                                <CardHeader className='pb-3'>
-                                    <div className='flex items-start justify-between'>
-                                        <div className='flex items-center gap-3'>
-                                            <div className={cn('flex h-10 w-10 items-center justify-center rounded-lg', group.color || 'bg-gray-500')}>
-                                                <Layers className='h-5 w-5 text-white' />
-                                            </div>
-                                            <div>
-                                                <CardTitle className='text-base'>{group.label}</CardTitle>
-                                                <div className='text-muted-foreground flex items-center gap-2 text-sm'>
-                                                    <span>{group.tags.length} 个标签</span>
-                                                    <span>·</span>
-                                                    <span>{group.totalUsers.toLocaleString()} 人</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant='ghost' size='icon' className='h-8 w-8 opacity-0 group-hover:opacity-100'>
-                                                    <MoreHorizontal className='h-4 w-4' />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align='end'>
-                                                <DropdownMenuItem onClick={() => openEditCategoryDialog(group)}>
-                                                    <Pencil className='mr-2 h-4 w-4' />
-                                                    编辑分类
-                                                </DropdownMenuItem>
-                                                <DropdownMenuSeparator />
-                                                <DropdownMenuItem
-                                                    className='text-destructive'
-                                                    onClick={() => handleDeleteCategory(group.value)}
-                                                    disabled={group.tags.length > 0}
-                                                >
-                                                    <Trash2 className='mr-2 h-4 w-4' />
-                                                    删除分类
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </div>
-                                </CardHeader>
-                                <CardContent>
-                                    {group.tags.length > 0 ? (
-                                        <div className='flex flex-wrap gap-1.5'>
-                                            {group.tags.map(tag => (
-                                                <Badge
-                                                    key={tag.id}
-                                                    variant='outline'
-                                                    className='group/tag cursor-pointer gap-1.5 py-1 transition-all hover:shadow-sm'
-                                                    onClick={() => openEditDialog(tag)}
-                                                >
-                                                    <span className={cn('h-2 w-2 rounded-full', tag.color)} />
-                                                    <span>{tag.name}</span>
-                                                    <span className='text-muted-foreground'>
-                                                        {tag.escortCount.toLocaleString()}
-                                                    </span>
-                                                </Badge>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <p className='text-muted-foreground text-sm'>暂无标签</p>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </div>
+                    <EscortTagsTable
+                        table={table}
+                        onRowClick={handleView}
+                    />
+                )}
+
+                {/* 分页（列表视图） */}
+                {viewMode === 'list' && (
+                    <DataTablePagination table={table} className='mt-auto' />
                 )}
             </Main>
+
+            {/* 详情抽屉 */}
+            <EscortTagsDetailSheet
+                tag={selectedTag}
+                open={detailOpen}
+                onOpenChange={setDetailOpen}
+                categories={tagCategories}
+            />
+
+            {/* 删除确认对话框 */}
+            <ConfirmDialog
+                open={deleteDialogOpen}
+                onOpenChange={setDeleteDialogOpen}
+                title='确认删除'
+                description={`确定要删除标签「${deletingTag?.name}」吗？此操作不可撤销。`}
+                confirmText='删除'
+                cancelText='取消'
+                onConfirm={handleDeleteTag}
+                variant='destructive'
+            />
 
             {/* 新建/编辑标签对话框 */}
             <Dialog open={tagDialogOpen} onOpenChange={setTagDialogOpen}>
