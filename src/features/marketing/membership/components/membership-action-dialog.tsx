@@ -158,7 +158,7 @@ export function MembershipActionDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className='max-h-[60vh] overflow-y-auto py-1 pe-2'>
+        <div className='max-h-[60vh] overflow-y-auto py-1 px-1'>
           <Form {...form}>
             <form id='membership-form' onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>
               <div className='grid grid-cols-2 gap-4'>

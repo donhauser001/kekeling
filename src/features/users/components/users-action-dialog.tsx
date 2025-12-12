@@ -151,7 +151,7 @@ export function UsersActionDialog({
             完成后点击保存。
           </DialogDescription>
         </DialogHeader>
-        <div className='h-[26.25rem] w-[calc(100%+0.75rem)] overflow-y-auto py-1 pe-3'>
+        <div className='max-h-[60vh] min-h-[300px] overflow-y-auto py-1 px-1'>
           <Form {...form}>
             <form
               id='user-form'

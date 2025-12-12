@@ -228,7 +228,7 @@ export function CouponsActionDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className='max-h-[60vh] overflow-y-auto py-1 pe-2'>
+        <div className='max-h-[60vh] overflow-y-auto py-1 px-1'>
           <Form {...form}>
             <form id='coupon-form' onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>
               {/* 基础信息 */}

@@ -526,7 +526,7 @@ export function Doctors() {
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className='max-h-[60vh] space-y-4 overflow-y-auto py-1 pe-2'>
+                    <div className='max-h-[60vh] space-y-4 overflow-y-auto py-1 px-1'>
                         <div className='grid grid-cols-2 gap-4'>
                             <div className='space-y-2'>
                                 <Label>姓名 <span className='text-destructive'>*</span></Label>
