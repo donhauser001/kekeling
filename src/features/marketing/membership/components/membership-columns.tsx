@@ -23,7 +23,7 @@ const statusColors = new Map<string, string>([
 
 interface MembershipColumnsProps {
   onEdit: (level: MembershipLevel) => void
-  onDelete: (id: string) => void
+  onDelete: (level: MembershipLevel) => void
 }
 
 export function getMembershipColumns({ onEdit, onDelete }: MembershipColumnsProps): ColumnDef<MembershipLevel>[] {
@@ -112,7 +112,7 @@ export function getMembershipColumns({ onEdit, onDelete }: MembershipColumnsProp
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={() => onDelete(level.id)}
+                onClick={() => onDelete(level)}
                 className='text-red-500!'
               >
                 删除

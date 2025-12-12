@@ -23,7 +23,7 @@ const statusColors = new Map<string, string>([
 
 interface PointsColumnsProps {
   onEdit: (rule: PointRule) => void
-  onDelete: (id: string) => void
+  onDelete: (rule: PointRule) => void
 }
 
 export function getPointsColumns({ onEdit, onDelete }: PointsColumnsProps): ColumnDef<PointRule>[] {
@@ -112,7 +112,7 @@ export function getPointsColumns({ onEdit, onDelete }: PointsColumnsProps): Colu
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={() => onDelete(rule.id)}
+                onClick={() => onDelete(rule)}
                 className='text-red-500!'
               >
                 删除

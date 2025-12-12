@@ -34,7 +34,7 @@ interface CampaignsTableProps {
   onPageChange: (page: number) => void
   onPageSizeChange: (pageSize: number) => void
   onEdit: (campaign: Campaign) => void
-  onDelete: (id: string) => void
+  onDelete: (campaign: Campaign) => void
   isLoading?: boolean
 }
 

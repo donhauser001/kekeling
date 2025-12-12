@@ -34,7 +34,7 @@ interface MembershipTableProps {
   onPageChange: (page: number) => void
   onPageSizeChange: (pageSize: number) => void
   onEdit: (level: MembershipLevel) => void
-  onDelete: (id: string) => void
+  onDelete: (level: MembershipLevel) => void
   isLoading?: boolean
 }
 

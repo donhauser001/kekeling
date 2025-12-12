@@ -28,7 +28,7 @@ import { getReferralRulesColumns } from './referral-rules-columns'
 interface ReferralRulesTableProps {
   data: ReferralRule[]
   onEdit: (rule: ReferralRule) => void
-  onDelete: (id: string) => void
+  onDelete: (rule: ReferralRule) => void
   isLoading?: boolean
 }
 

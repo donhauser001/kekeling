@@ -34,7 +34,7 @@ interface CouponsTableProps {
   onPageChange: (page: number) => void
   onPageSizeChange: (pageSize: number) => void
   onEdit: (template: CouponTemplate) => void
-  onDelete: (id: string) => void
+  onDelete: (template: CouponTemplate) => void
   isLoading?: boolean
 }
 

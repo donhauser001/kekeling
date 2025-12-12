@@ -37,7 +37,7 @@ const statusColors = new Map<string, string>([
 
 interface CouponsColumnsProps {
   onEdit: (template: CouponTemplate) => void
-  onDelete: (id: string) => void
+  onDelete: (template: CouponTemplate) => void
 }
 
 export function getCouponsColumns({ onEdit, onDelete }: CouponsColumnsProps): ColumnDef<CouponTemplate>[] {
@@ -139,7 +139,7 @@ export function getCouponsColumns({ onEdit, onDelete }: CouponsColumnsProps): Co
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={() => onDelete(template.id)}
+                onClick={() => onDelete(template)}
                 className='text-red-500!'
               >
                 删除

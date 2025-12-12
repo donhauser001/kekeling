@@ -23,7 +23,7 @@ const statusColors = new Map<string, string>([
 
 interface ReferralRulesColumnsProps {
   onEdit: (rule: ReferralRule) => void
-  onDelete: (id: string) => void
+  onDelete: (rule: ReferralRule) => void
 }
 
 export function getReferralRulesColumns({ onEdit, onDelete }: ReferralRulesColumnsProps): ColumnDef<ReferralRule>[] {
@@ -132,7 +132,7 @@ export function getReferralRulesColumns({ onEdit, onDelete }: ReferralRulesColum
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={() => onDelete(rule.id)}
+                onClick={() => onDelete(rule)}
                 className='text-red-500!'
               >
                 删除

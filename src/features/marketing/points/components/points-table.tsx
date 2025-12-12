@@ -34,7 +34,7 @@ interface PointsTableProps {
   onPageChange: (page: number) => void
   onPageSizeChange: (pageSize: number) => void
   onEdit: (rule: PointRule) => void
-  onDelete: (id: string) => void
+  onDelete: (rule: PointRule) => void
   isLoading?: boolean
 }
 

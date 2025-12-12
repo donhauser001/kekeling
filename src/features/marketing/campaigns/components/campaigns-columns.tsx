@@ -40,7 +40,7 @@ const campaignStatusLabels: Record<string, string> = {
 
 interface CampaignsColumnsProps {
   onEdit: (campaign: Campaign) => void
-  onDelete: (id: string) => void
+  onDelete: (campaign: Campaign) => void
 }
 
 export function getCampaignsColumns({ onEdit, onDelete }: CampaignsColumnsProps): ColumnDef<Campaign>[] {
@@ -153,7 +153,7 @@ export function getCampaignsColumns({ onEdit, onDelete }: CampaignsColumnsProps)
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={() => onDelete(campaign.id)}
+                onClick={() => onDelete(campaign)}
                 className='text-red-500!'
               >
                 删除
