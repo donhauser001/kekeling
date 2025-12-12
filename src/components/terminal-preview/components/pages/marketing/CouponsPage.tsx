@@ -5,10 +5,15 @@
  * - page key: 'coupons'
  * - API: previewApi.getMyCoupons()
  * - 数据通道: userRequest
+ *
+ * 支持 marketingData.coupons 覆盖：
+ * - 优先使用覆盖数据（即时预览）
+ * - 覆盖数据不存在时，调用 previewApi
  */
 
+import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import type { ThemeSettings } from '../../../types'
+import type { ThemeSettings, CouponItemOverride } from '../../../types'
 import { previewApi } from '../../../api'
 
 // ============================================================================
@@ -18,25 +23,57 @@ import { previewApi } from '../../../api'
 export interface CouponsPageProps {
   themeSettings: ThemeSettings
   isDarkMode: boolean
+  /**
+   * 优惠券数据覆盖
+   * - undefined: 不覆盖，使用 API 数据
+   * - object: 覆盖数据（包含 items 和 total）
+   */
+  couponsOverride?: {
+    items?: CouponItemOverride[]
+    total?: number
+  }
 }
 
 // ============================================================================
 // 组件实现
 // ============================================================================
 
-export function CouponsPage({ themeSettings, isDarkMode }: CouponsPageProps) {
-  // 获取优惠券数据
+export function CouponsPage({ themeSettings, isDarkMode, couponsOverride }: CouponsPageProps) {
+  // 是否使用覆盖数据
+  const hasOverride = couponsOverride !== undefined
+
+  // 获取优惠券数据（仅在无覆盖时调用 API）
   const {
-    data: couponsData,
-    isLoading,
-    isError,
+    data: apiCouponsData,
+    isLoading: apiLoading,
+    isError: apiError,
   } = useQuery({
     queryKey: ['preview', 'coupons', 'my'],
     queryFn: previewApi.getMyCoupons,
     staleTime: 60 * 1000,
+    enabled: !hasOverride, // 有覆盖数据时不请求 API
   })
 
-  const coupons = couponsData?.items ?? []
+  // 合并数据：覆盖优先
+  const coupons = useMemo<CouponItem[]>(() => {
+    if (hasOverride && couponsOverride?.items) {
+      // 覆盖数据转换为完整类型（提供默认值）
+      return couponsOverride.items.map((coupon) => ({
+        id: coupon.id,
+        name: coupon.name ?? '优惠券',
+        description: coupon.description,
+        amount: coupon.amount ?? 0,
+        minAmount: coupon.minAmount ?? 0,
+        expireAt: coupon.expireAt ?? '2099-12-31',
+        status: coupon.status ?? 'available',
+      }))
+    }
+    return apiCouponsData?.items ?? []
+  }, [hasOverride, couponsOverride, apiCouponsData])
+
+  // 状态计算
+  const isLoading = !hasOverride && apiLoading
+  const isError = !hasOverride && apiError
   const isEmpty = !isLoading && coupons.length === 0
 
   return (
@@ -129,9 +166,8 @@ function CouponCard({ coupon, themeSettings, isDarkMode }: CouponCardProps) {
 
   return (
     <div
-      className={`relative rounded-lg overflow-hidden ${
-        isDisabled ? 'opacity-60' : ''
-      }`}
+      className={`relative rounded-lg overflow-hidden ${isDisabled ? 'opacity-60' : ''
+        }`}
       style={{
         backgroundColor: isDarkMode ? '#2a2a2a' : '#fff',
       }}

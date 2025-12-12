@@ -47,7 +47,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { escortApi, distributionApi, orderApi, type Order } from '@/lib/api'
+import { escortApi, distributionApi, orderApi, withdrawalApi, type Order, type DistributionRecord, type Withdrawal } from '@/lib/api'
+import { normalizeLevel } from '@/lib/utils'
 import {
   Table,
   TableBody,
@@ -140,6 +141,36 @@ export function EscortDetail() {
     enabled: !!escort,
   })
 
+  // 收入明细分页
+  const [incomePage, setIncomePage] = useState(1)
+  const incomePageSize = 10
+
+  // 获取分润记录（收入明细）
+  const { data: incomeData, isLoading: incomeLoading } = useQuery({
+    queryKey: ['escort-income', escortId, incomePage],
+    queryFn: () => distributionApi.getRecords({
+      beneficiaryId: escortId,
+      page: incomePage,
+      pageSize: incomePageSize,
+    }),
+    enabled: !!escort,
+  })
+
+  // 提现记录分页
+  const [withdrawalPage, setWithdrawalPage] = useState(1)
+  const withdrawalPageSize = 10
+
+  // 获取提现记录
+  const { data: withdrawalData, isLoading: withdrawalLoading } = useQuery({
+    queryKey: ['escort-withdrawals', escortId, withdrawalPage],
+    queryFn: () => withdrawalApi.getList({
+      keyword: escort?.phone, // 通过手机号搜索
+      page: withdrawalPage,
+      pageSize: withdrawalPageSize,
+    }),
+    enabled: !!escort,
+  })
+
   // 生成邀请码
   const generateCodeMutation = useMutation({
     mutationFn: () => distributionApi.generateInviteCode(escortId),
@@ -149,6 +180,18 @@ export function EscortDetail() {
     },
     onError: (err: Error) => {
       toast.error(err.message || '生成失败')
+    },
+  })
+
+  // 强制下线 - 非对称权限：管理员只能将陪诊员设置为休息中，不能强制上线
+  const forceOfflineMutation = useMutation({
+    mutationFn: () => escortApi.updateWorkStatus(escortId, 'resting'),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['escort', escortId] })
+      toast.success('已将陪诊员设置为休息状态')
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || '操作失败')
     },
   })
 
@@ -205,10 +248,9 @@ export function EscortDetail() {
     )
   }
 
-  const escortLevel = typeof escort.level === 'object' && escort.level !== null
-    ? (escort.level as { code?: string; name?: string })
-    : { code: escort.level, name: levelConfig[escort.level as string]?.label || '未知' }
-  const levelInfo = levelConfig[escortLevel.code as string] || { label: '未知', color: 'bg-gray-400' }
+  // 使用适配器统一处理 level 字段（兼容字符串和对象两种格式）
+  const escortLevel = normalizeLevel(escort.level)
+  const levelInfo = levelConfig[escortLevel.code] || { label: '未知', color: 'bg-gray-400' }
   const statusInfo = statusConfig[escort.status] || { label: '未知', color: '' }
   const workStatusInfo = workStatusConfig[escort.workStatus] || { label: '未知', color: '' }
 
@@ -254,7 +296,31 @@ export function EscortDetail() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem>更新状态</DropdownMenuItem>
+                {/* 工作状态操作 - 非对称权限设计 */}
+                {escort.workStatus === 'working' && escort.status === 'active' && (
+                  <DropdownMenuItem
+                    className="text-destructive"
+                    onClick={() => {
+                      if (confirm('确定要强制下线该陪诊员吗？\n\n这将影响正在进行的派单流程。')) {
+                        forceOfflineMutation.mutate()
+                      }
+                    }}
+                    disabled={forceOfflineMutation.isPending}
+                  >
+                    {forceOfflineMutation.isPending ? '处理中...' : '强制下线'}
+                  </DropdownMenuItem>
+                )}
+                {escort.workStatus === 'resting' && (
+                  <DropdownMenuItem disabled className="text-muted-foreground">
+                    上线（需陪诊员自行操作）
+                  </DropdownMenuItem>
+                )}
+                {escort.workStatus === 'busy' && (
+                  <DropdownMenuItem disabled className="text-muted-foreground">
+                    服务中（不可操作）
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
                 <DropdownMenuItem>调整等级</DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="text-destructive">删除陪诊员</DropdownMenuItem>
@@ -774,7 +840,12 @@ export function EscortDetail() {
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">待结算</p>
-                      <p className="font-semibold">¥0.00</p>
+                      <p className="font-semibold">
+                        ¥{incomeData?.data
+                          ?.filter((r: DistributionRecord) => r.status === 'pending')
+                          .reduce((sum: number, r: DistributionRecord) => sum + r.amount, 0)
+                          .toFixed(2) || '0.00'}
+                      </p>
                     </div>
                   </div>
                 </CardContent>
@@ -787,36 +858,228 @@ export function EscortDetail() {
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">已提现</p>
-                      <p className="font-semibold">¥0.00</p>
+                      <p className="font-semibold">
+                        ¥{withdrawalData?.data
+                          ?.filter((w: Withdrawal) => w.status === 'completed')
+                          .reduce((sum: number, w: Withdrawal) => sum + w.actualAmount, 0)
+                          .toFixed(2) || '0.00'}
+                      </p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* 收入明细 - 占位 */}
+            {/* 收入明细 */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">收入明细</CardTitle>
                 <CardDescription>查看服务收入和分润记录</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex h-32 items-center justify-center text-muted-foreground">
-                  <p>收入明细功能开发中...</p>
-                </div>
+                {incomeLoading ? (
+                  <div className="flex h-32 items-center justify-center">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : incomeData?.data && incomeData.data.length > 0 ? (
+                  <>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>时间</TableHead>
+                          <TableHead>类型</TableHead>
+                          <TableHead>来源</TableHead>
+                          <TableHead>订单金额</TableHead>
+                          <TableHead>分润比例</TableHead>
+                          <TableHead>分润金额</TableHead>
+                          <TableHead>状态</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {incomeData.data.map((record: DistributionRecord) => (
+                          <TableRow key={record.id}>
+                            <TableCell className="text-sm">
+                              {new Date(record.createdAt).toLocaleString()}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline">
+                                {record.type === 'order' ? '订单分润' : '直推奖励'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {record.sourceEscort?.name || '-'}
+                              {record.relationLevel > 1 && (
+                                <span className="text-xs text-muted-foreground ml-1">
+                                  ({record.relationLevel}级)
+                                </span>
+                              )}
+                            </TableCell>
+                            <TableCell>¥{record.orderAmount.toFixed(2)}</TableCell>
+                            <TableCell>{record.rate}%</TableCell>
+                            <TableCell className="font-medium text-green-600">
+                              +¥{record.amount.toFixed(2)}
+                            </TableCell>
+                            <TableCell>
+                              <Badge className={
+                                record.status === 'settled'
+                                  ? 'bg-green-50 text-green-600'
+                                  : record.status === 'pending'
+                                    ? 'bg-yellow-50 text-yellow-600'
+                                    : 'bg-gray-50 text-gray-600'
+                              }>
+                                {record.status === 'settled' ? '已结算' :
+                                  record.status === 'pending' ? '待结算' : '已取消'}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                    {/* 分页 */}
+                    {incomeData.total > incomePageSize && (
+                      <div className="mt-4 flex items-center justify-between">
+                        <p className="text-sm text-muted-foreground">
+                          共 {incomeData.total} 条记录
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={incomePage <= 1}
+                            onClick={() => setIncomePage(p => p - 1)}
+                          >
+                            <ChevronLeft className="h-4 w-4" />
+                            上一页
+                          </Button>
+                          <span className="text-sm text-muted-foreground">
+                            第 {incomePage} / {Math.ceil(incomeData.total / incomePageSize)} 页
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={incomePage >= Math.ceil(incomeData.total / incomePageSize)}
+                            onClick={() => setIncomePage(p => p + 1)}
+                          >
+                            下一页
+                            <ChevronRight className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="flex h-32 items-center justify-center text-muted-foreground">
+                    <p>暂无收入记录</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
-            {/* 提现记录 - 占位 */}
+            {/* 提现记录 */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">提现记录</CardTitle>
                 <CardDescription>查看历史提现申请</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex h-32 items-center justify-center text-muted-foreground">
-                  <p>提现记录功能开发中...</p>
-                </div>
+                {withdrawalLoading ? (
+                  <div className="flex h-32 items-center justify-center">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : withdrawalData?.data && withdrawalData.data.length > 0 ? (
+                  <>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>申请时间</TableHead>
+                          <TableHead>提现金额</TableHead>
+                          <TableHead>手续费</TableHead>
+                          <TableHead>实际到账</TableHead>
+                          <TableHead>提现方式</TableHead>
+                          <TableHead>状态</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {withdrawalData.data.map((withdrawal: Withdrawal) => (
+                          <TableRow key={withdrawal.id}>
+                            <TableCell className="text-sm">
+                              {new Date(withdrawal.createdAt).toLocaleString()}
+                            </TableCell>
+                            <TableCell>¥{withdrawal.amount.toFixed(2)}</TableCell>
+                            <TableCell className="text-muted-foreground">
+                              ¥{withdrawal.fee.toFixed(2)}
+                            </TableCell>
+                            <TableCell className="font-medium">
+                              ¥{withdrawal.actualAmount.toFixed(2)}
+                            </TableCell>
+                            <TableCell>
+                              {withdrawal.method === 'wechat' ? '微信' :
+                                withdrawal.method === 'alipay' ? '支付宝' :
+                                  withdrawal.method === 'bank' ? '银行卡' : withdrawal.method}
+                            </TableCell>
+                            <TableCell>
+                              <Badge className={
+                                withdrawal.status === 'completed'
+                                  ? 'bg-green-50 text-green-600'
+                                  : withdrawal.status === 'pending'
+                                    ? 'bg-yellow-50 text-yellow-600'
+                                    : withdrawal.status === 'approved'
+                                      ? 'bg-blue-50 text-blue-600'
+                                      : withdrawal.status === 'processing'
+                                        ? 'bg-purple-50 text-purple-600'
+                                        : withdrawal.status === 'failed'
+                                          ? 'bg-red-50 text-red-600'
+                                          : 'bg-gray-50 text-gray-600'
+                              }>
+                                {withdrawal.status === 'pending' ? '待审核' :
+                                  withdrawal.status === 'approved' ? '已通过' :
+                                    withdrawal.status === 'rejected' ? '已拒绝' :
+                                      withdrawal.status === 'processing' ? '处理中' :
+                                        withdrawal.status === 'completed' ? '已完成' :
+                                          withdrawal.status === 'failed' ? '失败' : withdrawal.status}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                    {/* 分页 */}
+                    {withdrawalData.total > withdrawalPageSize && (
+                      <div className="mt-4 flex items-center justify-between">
+                        <p className="text-sm text-muted-foreground">
+                          共 {withdrawalData.total} 条记录
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={withdrawalPage <= 1}
+                            onClick={() => setWithdrawalPage(p => p - 1)}
+                          >
+                            <ChevronLeft className="h-4 w-4" />
+                            上一页
+                          </Button>
+                          <span className="text-sm text-muted-foreground">
+                            第 {withdrawalPage} / {Math.ceil(withdrawalData.total / withdrawalPageSize)} 页
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={withdrawalPage >= Math.ceil(withdrawalData.total / withdrawalPageSize)}
+                            onClick={() => setWithdrawalPage(p => p + 1)}
+                          >
+                            下一页
+                            <ChevronRight className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="flex h-32 items-center justify-center text-muted-foreground">
+                    <p>暂无提现记录</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

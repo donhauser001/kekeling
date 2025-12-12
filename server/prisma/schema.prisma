@@ -546,6 +546,10 @@ model Escort {
   // 分润链路状态
   distributionActive  Boolean   @default(true) @map("distribution_active") // 分润是否激活
 
+  // 冗余统计字段
+  totalOrders              Int       @default(0) @map("total_orders")                // 累计团队/个人订单数 (冗余字段)
+  totalDistributionAmount  Decimal   @default(0) @db.Decimal(12, 2) @map("total_distribution_amount") // 累计获得分润总额 (冗余字段)
+
   // 关联
   user           User?        @relation(fields: [userId], references: [id])
   level          EscortLevel? @relation(fields: [levelCode], references: [code])
@@ -1022,7 +1026,10 @@ model Order {
   // 陪诊员反馈 (Phase1 新增 - 双向评价)
   escortRating     Int?      @map("escort_rating")       // 陪诊员对用户的评分
   escortRemark     String?   @map("escort_remark")       // 陪诊员备注
-  
+
+  // 陪诊员快照 (软删除支持) - 订单创建/派单时冗余存储陪诊员信息
+  escortSnapshot   Json?     @map("escort_snapshot")     // { name, phone, avatar, levelCode, levelName }
+
   // 时间节点
   createdAt        DateTime  @default(now()) @map("created_at")
   updatedAt        DateTime  @updatedAt @map("updated_at")

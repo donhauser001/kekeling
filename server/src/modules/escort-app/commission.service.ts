@@ -287,9 +287,11 @@ export class CommissionService {
         const { DistributionService } = await import('../distribution/distribution.service');
         const { DistributionStrategyFactory } = await import('../distribution/strategies');
         const { PrismaService } = await import('../../prisma/prisma.service');
+        const { EventEmitter2 } = await import('@nestjs/event-emitter');
         const prisma = new PrismaService();
+        const eventEmitter = new EventEmitter2();
         const strategyFactory = new DistributionStrategyFactory();
-        this.distributionService = new DistributionService(prisma, strategyFactory);
+        this.distributionService = new DistributionService(prisma, eventEmitter, strategyFactory);
       } catch (error) {
         this.logger.warn('无法加载分销服务，跳过分润计算');
         return;

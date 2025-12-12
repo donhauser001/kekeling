@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
@@ -19,6 +20,7 @@ import { PaymentModule } from './modules/payment/payment.module';
 import { SystemConfigModule } from './modules/config/config.module';
 import { TestModule } from './modules/test/test.module'; // ⚠️ 仅开发环境，生产环境请注释
 import { EscortAppModule } from './modules/escort-app/escort-app.module';
+import { EscortAuthModule } from './modules/escort-auth/escort-auth.module';
 import { WorkflowsModule } from './modules/workflows/workflows.module';
 import { ServiceGuaranteesModule } from './modules/service-guarantees/service-guarantees.module';
 import { OperationGuideCategoriesModule } from './modules/operation-guide-categories/operation-guide-categories.module';
@@ -37,6 +39,16 @@ import { RedisModule } from './modules/redis/redis.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+    }),
+    EventEmitterModule.forRoot({
+      // 全局事件发射器配置
+      wildcard: false,
+      delimiter: '.',
+      newListener: false,
+      removeListener: false,
+      maxListeners: 10,
+      verboseMemoryLeak: true,
+      ignoreErrors: false,
     }),
     PrismaModule,
     RedisModule,
@@ -61,6 +73,7 @@ import { RedisModule } from './modules/redis/redis.module';
     SystemConfigModule,
     WorkflowsModule,    // 流程管理
     EscortAppModule,    // 陪诊员端 API
+    EscortAuthModule,   // 陪诊员认证（短信登录）
     TasksModule,        // 定时任务
     PricingModule,      // 价格引擎
     MembershipModule,   // 会员系统

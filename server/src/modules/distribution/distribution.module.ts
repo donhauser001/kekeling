@@ -10,6 +10,7 @@ import { TeamController } from './team.controller';
 import { DistributionReconciliationTask } from './distribution-reconciliation.task';
 import { DistributionStrategyFactory } from './strategies';
 import { TreeQueryService } from './tree';
+import { DistributionListener } from './listeners/distribution.listener';
 
 @Module({
   imports: [PrismaModule, NotificationModule],
@@ -20,6 +21,7 @@ import { TreeQueryService } from './tree';
     PromotionService,
     TeamService,
     DistributionReconciliationTask,
+    DistributionListener, // 事件监听器
   ],
   controllers: [DistributionController, PromotionController, TeamController],
   exports: [

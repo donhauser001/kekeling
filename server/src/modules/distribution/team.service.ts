@@ -14,8 +14,10 @@ export class TeamService {
   /**
    * 获取团队成员列表
    *
-   * ⚠️ 性能优化：使用 groupBy 批量查询，避免 N+1 问题
-   * 查询次数：4 次（members + total + monthlyOrders聚合 + monthlyDistribution聚合）
+   * ⚠️ 性能优化：
+   * - 使用 Escort 表的冗余字段 totalOrders / totalDistributionAmount
+   * - 使用 groupBy 批量查询本月统计，避免 N+1 问题
+   * - 查询次数：4 次（members + total + monthlyOrders聚合 + monthlyDistribution聚合）
    */
   async getTeamMembers(escortId: string, params: { page?: number; pageSize?: number }) {
     const { page = 1, pageSize = 20 } = params;
@@ -29,31 +31,44 @@ export class TeamService {
     }
 
     // 只能查看直接下级
-    const where: any = { parentId: escortId };
+    const where = { parentId: escortId };
 
     // 计算本月起始时间
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
 
-    // ========================================================================
-    // 步骤 1: 查询成员列表和总数（2 次查询）
-    // ========================================================================
+    // 步骤 1: 查询成员列表和总数
     const [members, total] = await Promise.all([
       this.prisma.escort.findMany({
         where,
-        include: {
+        select: {
+          id: true,
+          name: true,
+          phone: true,
+          avatar: true,
+          gender: true,
+          status: true,
+          workStatus: true,
+          distributionLevel: true,
+          rating: true,
+          orderCount: true,
+          createdAt: true,
+          // 冗余统计字段（直接读取，无需循环查询）
+          totalOrders: true,
+          totalDistributionAmount: true,
+          // 钱包信息
           wallet: {
             select: {
               balance: true,
               totalEarned: true,
             },
           },
-          _count: {
+          // 等级信息
+          level: {
             select: {
-              orders: {
-                where: { status: 'completed' },
-              },
+              code: true,
+              name: true,
             },
           },
         },
@@ -78,9 +93,7 @@ export class TeamService {
     // 提取成员 ID 列表
     const memberIds = members.map((m) => m.id);
 
-    // ========================================================================
     // 步骤 2: 批量查询本月订单数（1 次 groupBy 查询）
-    // ========================================================================
     const monthlyOrdersGrouped = await this.prisma.order.groupBy({
       by: ['escortId'],
       where: {
@@ -99,9 +112,7 @@ export class TeamService {
       }
     }
 
-    // ========================================================================
     // 步骤 3: 批量查询本月分润贡献（1 次 groupBy 查询）
-    // ========================================================================
     const monthlyDistributionGrouped = await this.prisma.distributionRecord.groupBy({
       by: ['sourceEscortId'],
       where: {
@@ -124,11 +135,13 @@ export class TeamService {
       }
     }
 
-    // ========================================================================
     // 步骤 4: 在内存中合并结果
-    // ========================================================================
     const membersWithStats = members.map((member) => ({
       ...member,
+      // 累计统计（来自冗余字段）
+      totalOrders: member.totalOrders,
+      totalDistributionAmount: Number(member.totalDistributionAmount),
+      // 本月统计（来自 groupBy 查询）
       monthlyOrders: monthlyOrdersMap.get(member.id) || 0,
       monthlyDistribution: monthlyDistributionMap.get(member.id) || 0,
     }));

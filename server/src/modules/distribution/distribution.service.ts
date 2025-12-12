@@ -1,11 +1,20 @@
 import { Injectable, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../../prisma/prisma.service';
-import { Decimal } from '@prisma/client/runtime/library';
+import { Decimal as PrismaDecimal } from '@prisma/client/runtime/library';
+import Decimal from 'decimal.js';
 import {
   DistributionStrategyFactory,
   DistributionStrategyType,
   DistributionRateConfig,
 } from './strategies';
+import {
+  ESCORT_RELATION_EVENTS,
+  EscortRelationCreatedEvent,
+} from './events/escort-relation.events';
+
+// 配置 Decimal.js：使用四舍五入，保留 2 位小数
+Decimal.set({ precision: 20, rounding: Decimal.ROUND_HALF_UP });
 
 // 分润计算结果（金额单位：分）
 export interface DistributionResult {
@@ -59,13 +68,11 @@ export class DistributionService {
   private readonly logger = new Logger(DistributionService.name);
 
   constructor(
-    private prisma: PrismaService,
-    private strategyFactory: DistributionStrategyFactory,
+    private readonly prisma: PrismaService,
+    private readonly eventEmitter: EventEmitter2,
+    private readonly strategyFactory: DistributionStrategyFactory,
   ) { }
 
-  /**
-   * 生成邀请码
-   */
   /**
    * 生成邀请码
    *
@@ -160,6 +167,11 @@ export class DistributionService {
 
   /**
    * 处理邀请关系
+   *
+   * 流程说明：
+   * 1. 事务内完成核心关系建立（escort.parentId、ancestorPath、EscortInvitation）
+   * 2. 事务成功后触发 escort.relation.created 事件
+   * 3. 团队统计更新由 DistributionListener 异步处理，不阻塞主流程
    */
   async processInvitation(inviteeId: string, inviteCode: string): Promise<void> {
     // 1. 查找邀请人
@@ -197,7 +209,7 @@ export class DistributionService {
     // 只保留最近3层
     const trimmedPath = ancestorPath.slice(-3);
 
-    // 5. 建立关系（强一致性事务 - 仅包含核心绑定逻辑）
+    // 5. 建立关系（事务内）
     await this.prisma.$transaction(async (tx) => {
       // 更新被邀请人
       await tx.escort.update({
@@ -219,64 +231,24 @@ export class DistributionService {
           activatedAt: new Date(),
         },
       });
+
+      // 注意：不再同步调用 updateTeamStats
+      // 团队统计更新由事件监听器异步处理
     });
 
-    // 6. 异步更新团队统计（最终一致性，不阻塞主链路）
-    this.scheduleTeamStatsUpdate(inviter.id);
-  }
+    // 6. 事务成功后触发事件（异步更新团队统计）
+    this.eventEmitter.emit(
+      ESCORT_RELATION_EVENTS.CREATED,
+      new EscortRelationCreatedEvent({
+        inviterId: inviter.id,
+        inviteeId,
+        inviteCode,
+      }),
+    );
 
-  /**
-   * 异步调度团队统计更新（带重试）
-   * 不阻塞主流程，失败时自动重试
-   */
-  private scheduleTeamStatsUpdate(escortId: string): void {
-    setImmediate(() => {
-      this.updateTeamStatsWithRetry(escortId).catch((err) => {
-        this.logger.error(`团队统计更新最终失败: ${escortId}`, err.stack);
-      });
-    });
-  }
-
-  /**
-   * 带指数退避重试的团队统计更新
-   * @param maxRetries 最大重试次数（默认 3）
-   */
-  private async updateTeamStatsWithRetry(
-    escortId: string,
-    maxRetries = 3,
-  ): Promise<void> {
-    let lastError: Error | null = null;
-
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        await this.prisma.$transaction(async (tx) => {
-          await this.updateTeamStats(tx, escortId);
-        });
-        this.logger.log(`团队统计更新成功: ${escortId} (attempt ${attempt})`);
-        return;
-      } catch (error) {
-        lastError = error as Error;
-        this.logger.warn(
-          `团队统计更新失败 (attempt ${attempt}/${maxRetries}): ${escortId}`,
-          error.message,
-        );
-
-        if (attempt < maxRetries) {
-          // 指数退避：1s, 2s, 4s
-          const delayMs = Math.pow(2, attempt - 1) * 1000;
-          await this.delay(delayMs);
-        }
-      }
-    }
-
-    throw lastError;
-  }
-
-  /**
-   * 延迟工具函数
-   */
-  private delay(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+    this.logger.log(
+      `[Invitation] 邀请关系建立成功: inviter=${inviter.id}, invitee=${inviteeId}`,
+    );
   }
 
   /**
@@ -296,8 +268,15 @@ export class DistributionService {
 
   /**
    * 更新团队统计
+   *
+   * @deprecated 此方法已迁移到 DistributionListener，通过事件机制异步执行
+   * 保留此方法仅用于向后兼容或手动触发场景
    */
   async updateTeamStats(tx: any, escortId: string): Promise<void> {
+    this.logger.warn(
+      '[Deprecated] updateTeamStats 已迁移到 DistributionListener，建议使用事件机制',
+    );
+
     // 更新直属团队数
     const directCount = await tx.escort.count({
       where: { parentId: escortId },
@@ -313,26 +292,32 @@ export class DistributionService {
       where: { id: escortId },
     });
 
-    if (escort.parentId) {
-      await this.updateTotalTeamSize(tx, escort.parentId);
+    if (escort?.parentId) {
+      await this.updateTotalTeamSize(tx, escort.parentId, 1);
     }
   }
 
   // 递归保护常量
-  private static readonly MAX_DEPTH = 3;
+  private static readonly MAX_DEPTH = 30;
 
   /**
-   * 更新总团队数（带深度限制的递归向上更新）
-   * @param depth 当前深度（从 1 开始，向上递归）
+   * 更新总团队数（递归，带深度保护）
+   *
+   * @deprecated 此方法已迁移到 DistributionListener，通过事件机制异步执行
+   * @param tx Prisma 事务客户端
+   * @param escortId 陪诊员 ID
+   * @param depth 当前递归深度（用于防止无限递归）
    */
   private async updateTotalTeamSize(
     tx: any,
     escortId: string,
-    depth = 1,
+    depth: number = 1,
   ): Promise<void> {
-    // 深度保护：超过 3 层停止向上更新
+    // 递归深度保护
     if (depth > DistributionService.MAX_DEPTH) {
-      this.logger.warn(`updateTotalTeamSize 达到最大深度 ${DistributionService.MAX_DEPTH}，停止`);
+      this.logger.warn(
+        `[Recursion] 递归深度超过限制 (${DistributionService.MAX_DEPTH}): escort=${escortId}, depth=${depth}`,
+      );
       return;
     }
 
@@ -359,9 +344,10 @@ export class DistributionService {
     // 继续向上更新
     const escort = await tx.escort.findUnique({
       where: { id: escortId },
+      select: { parentId: true },
     });
 
-    if (escort.parentId) {
+    if (escort?.parentId) {
       await this.updateTotalTeamSize(tx, escort.parentId, depth + 1);
     }
   }
@@ -370,6 +356,7 @@ export class DistributionService {
    * 计算订单分润
    *
    * ⚠️ 重要：所有金额计算使用整数（分）进行，避免浮点精度问题
+   * 使用 decimal.js 进行精确计算
    *
    * @param orderId 订单ID
    * @param escortId 陪诊员ID
@@ -441,10 +428,14 @@ export class DistributionService {
 
       if (rateResult.shouldDistribute && rateResult.rate > 0) {
         const rate = rateResult.rate;
-        // ⚠️ 核心计算：使用整数分计算，避免浮点精度问题
+        // ⚠️ 核心计算：使用 Decimal.js 精确计算
         // amountCents = orderAmountCents * rate / 100
-        // 先乘后除，使用 Math.round 四舍五入到分
-        const amountCents = Math.round(orderAmountCents * rate / 100);
+        const amountCents = new Decimal(orderAmountCents)
+          .times(rate)
+          .dividedBy(100)
+          .toDecimalPlaces(0, Decimal.ROUND_HALF_UP)
+          .toNumber();
+
         records.push({
           beneficiaryId: ancestorId,
           beneficiaryLevel: ancestor.distributionLevel,
@@ -482,14 +473,14 @@ export class DistributionService {
           data: {
             orderId,
             // 分 -> 元（Decimal 字符串）
-            orderAmount: new Decimal(centsToDecimalString(orderAmountCents)),
+            orderAmount: new PrismaDecimal(centsToDecimalString(orderAmountCents)),
             beneficiaryId: record.beneficiaryId,
             beneficiaryLevel: record.beneficiaryLevel,
             sourceEscortId,
             relationLevel: record.relationLevel,
             rate: record.rate,
             // 分 -> 元（Decimal 字符串）
-            amount: new Decimal(centsToDecimalString(record.amountCents)),
+            amount: new PrismaDecimal(centsToDecimalString(record.amountCents)),
             type: record.type,
             status: 'pending', // 待结算（订单完成后7天）
           },
@@ -538,7 +529,7 @@ export class DistributionService {
       await tx.distributionRecord.create({
         data: {
           orderId: firstOrderId,
-          orderAmount: new Decimal(0),
+          orderAmount: new PrismaDecimal(0),
           beneficiaryId: inviterId,
           beneficiaryLevel: inviter?.distributionLevel ?? 3,
           sourceEscortId: inviteeId,
@@ -565,12 +556,17 @@ export class DistributionService {
           },
         });
 
+        // 使用 Decimal.js 计算余额
+        const newBalance = new Decimal(wallet.balance.toString())
+          .plus(config.directInviteBonus.toString())
+          .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
+
         await tx.walletTransaction.create({
           data: {
             walletId: wallet.id,
             type: 'distribution',
             amount: config.directInviteBonus,
-            balanceAfter: new Decimal(Number(wallet.balance) + Number(config.directInviteBonus)),
+            balanceAfter: new PrismaDecimal(newBalance.toString()),
             orderId: firstOrderId,
             title: '直推奖励',
             remark: '邀请新陪诊员首单奖励',
@@ -610,12 +606,17 @@ export class DistributionService {
             },
           });
 
+          // 使用 Decimal.js 计算余额
+          const newBalance = new Decimal(wallet.balance.toString())
+            .plus(record.amount.toString())
+            .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
+
           await tx.walletTransaction.create({
             data: {
               walletId: wallet.id,
               type: 'distribution',
               amount: record.amount,
-              balanceAfter: new Decimal(Number(wallet.balance) + Number(record.amount)),
+              balanceAfter: new PrismaDecimal(newBalance.toString()),
               orderId: record.orderId,
               title: '分润收入',
               remark: `来自订单 ${record.orderId} 的分润`,
@@ -665,12 +666,18 @@ export class DistributionService {
               },
             });
 
+            // 使用 Decimal.js 计算余额和负数金额
+            const refundAmount = new Decimal(record.amount.toString()).negated();
+            const newBalance = new Decimal(wallet.balance.toString())
+              .minus(record.amount.toString())
+              .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
+
             await tx.walletTransaction.create({
               data: {
                 walletId: wallet.id,
                 type: 'refund',
-                amount: new Decimal(-Number(record.amount)),
-                balanceAfter: new Decimal(Number(wallet.balance) - Number(record.amount)),
+                amount: new PrismaDecimal(refundAmount.toString()),
+                balanceAfter: new PrismaDecimal(newBalance.toString()),
                 orderId: record.orderId,
                 title: '分润扣回',
                 remark: `订单退款，分润已扣回`,

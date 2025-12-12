@@ -212,9 +212,9 @@ export const sidebarData: SidebarData = {
               icon: UserCheck,
             },
             {
-              title: '人员分类',
-              url: '/escort-categories',
-              icon: Layers,
+              title: '等级管理',
+              url: '/escort-levels',
+              icon: Award,
             },
             {
               title: '人员标签',

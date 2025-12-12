@@ -5,11 +5,15 @@
  * - page key: 'membership-plans'
  * - API: previewApi.getMembershipPlans()
  * - 数据通道: userRequest
+ *
+ * 支持 marketingData.membershipPlans 覆盖：
+ * - 优先使用覆盖数据（即时预览）
+ * - 覆盖数据不存在时，调用 previewApi
  */
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import type { ThemeSettings } from '../../../types'
+import type { ThemeSettings, MembershipPlanOverride } from '../../../types'
 import { previewApi, type MembershipPlan } from '../../../api'
 
 // ============================================================================
@@ -20,27 +24,57 @@ export interface MembershipPlansPageProps {
   themeSettings: ThemeSettings
   isDarkMode: boolean
   onBack?: () => void
+  /**
+   * 会员套餐列表覆盖
+   * - undefined: 不覆盖，使用 API 数据
+   * - array: 覆盖数据
+   */
+  plansOverride?: MembershipPlanOverride[]
 }
 
 // ============================================================================
 // 组件实现
 // ============================================================================
 
-export function MembershipPlansPage({ themeSettings, isDarkMode, onBack }: MembershipPlansPageProps) {
+export function MembershipPlansPage({ themeSettings, isDarkMode, onBack, plansOverride }: MembershipPlansPageProps) {
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null)
 
-  // 获取会员套餐列表
+  // 是否使用覆盖数据
+  const hasOverride = plansOverride !== undefined
+
+  // 获取会员套餐列表（仅在无覆盖时调用 API）
   const {
-    data: plans,
-    isLoading,
-    isError,
+    data: apiPlans,
+    isLoading: apiLoading,
+    isError: apiError,
   } = useQuery({
     queryKey: ['preview', 'membership', 'plans'],
     queryFn: previewApi.getMembershipPlans,
     staleTime: 60 * 1000,
+    enabled: !hasOverride, // 有覆盖数据时不请求 API
   })
 
-  const isEmpty = !isLoading && (!plans || plans.length === 0)
+  // 合并数据：覆盖优先
+  const plans = useMemo<MembershipPlan[]>(() => {
+    if (hasOverride && plansOverride) {
+      // 覆盖数据转换为完整类型（提供默认值）
+      return plansOverride.map((plan) => ({
+        id: plan.id,
+        name: plan.name ?? '套餐',
+        description: plan.description ?? '',
+        price: plan.price ?? 0,
+        originalPrice: plan.originalPrice,
+        durationDays: plan.durationDays ?? 30,
+        isRecommended: plan.isRecommended,
+      }))
+    }
+    return apiPlans ?? []
+  }, [hasOverride, plansOverride, apiPlans])
+
+  // 状态计算
+  const isLoading = !hasOverride && apiLoading
+  const isError = !hasOverride && apiError
+  const isEmpty = !isLoading && plans.length === 0
 
   return (
     <div
@@ -153,9 +187,8 @@ function PlanCard({ plan, isSelected, onSelect, themeSettings, isDarkMode }: Pla
   return (
     <div
       onClick={onSelect}
-      className={`relative rounded-xl p-4 cursor-pointer transition-all ${
-        isSelected ? 'ring-2' : ''
-      }`}
+      className={`relative rounded-xl p-4 cursor-pointer transition-all ${isSelected ? 'ring-2' : ''
+        }`}
       style={{
         backgroundColor: isDarkMode ? '#2a2a2a' : '#fff',
         ringColor: themeSettings.primaryColor,
@@ -199,9 +232,8 @@ function PlanCard({ plan, isSelected, onSelect, themeSettings, isDarkMode }: Pla
 
       {/* 选中指示器 */}
       <div
-        className={`absolute top-1/2 -translate-y-1/2 left-4 w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-          isSelected ? '' : 'border-gray-300'
-        }`}
+        className={`absolute top-1/2 -translate-y-1/2 left-4 w-5 h-5 rounded-full border-2 flex items-center justify-center ${isSelected ? '' : 'border-gray-300'
+          }`}
         style={{
           borderColor: isSelected ? themeSettings.primaryColor : undefined,
           backgroundColor: isSelected ? themeSettings.primaryColor : 'transparent',
