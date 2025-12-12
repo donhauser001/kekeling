@@ -124,16 +124,38 @@ export type { UseViewerRoleOptions, UseViewerRoleResult } from './hooks/useViewe
 
 ---
 
-### Step 4: 调试面板实现
+### Step 4: 预览器 DebugPanel ✅
 
-**目标**: 在 PhoneFrame 中实现必选调试面板
+**目标**: 提供开发态的"视角切换器"和"会话模拟开关"
 
 **验收点**:
-- [ ] 新增 `DebugPanel.tsx` 组件
-- [ ] 展示三项信息：viewerRole / Token 状态 / 请求通道
-- [ ] 支持 viewerRole 切换（仅预览模拟用）
-- [ ] 支持 EscortSession 模拟
-- [ ] 集成到 `PhoneFrame.tsx`
+- [x] 新增 `components/DebugPanel.tsx` 组件
+- [x] 显示 effectiveViewerRole（当前视角）
+- [x] 显示 userToken / escortToken 状态（打码：前6位...后4位）
+- [x] 按钮：注入 mock escortToken
+- [x] 按钮：清除 escortToken
+- [x] 按钮：刷新会话校验
+- [x] 仅开发环境显示（`shouldShowDebugPanel()`）
+- [x] 集成到 `TerminalPreview` renderContent 顶部
+- [x] 注入/清除 escortToken 能立刻切换 effectiveViewerRole
+- [x] TypeScript 编译通过
+
+**组件位置**: `src/components/terminal-preview/components/DebugPanel.tsx`
+
+**开启条件**: `process.env.NODE_ENV === 'development'`
+
+**DebugPanel 功能**:
+| 显示项 | 说明 |
+|--------|------|
+| effectiveViewerRole | 👤 用户 / 🔐 陪诊员 |
+| userToken 状态 | ✅/❌ + 打码显示 |
+| escortToken 状态 | ✅/❌ + 打码显示 |
+
+| 按钮 | 功能 |
+|------|------|
+| 注入 mock escortToken | 生成 `mock-escort-xxx` token |
+| 清除 escortToken | 退出陪诊员视角 |
+| 刷新校验 | 触发 validateEscortSession |
 
 ---
 

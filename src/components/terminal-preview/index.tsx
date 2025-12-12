@@ -40,7 +40,10 @@ import {
   TabBarNav,
   ScrollIndicator,
   PhoneFrame,
+  DebugPanel,
+  shouldShowDebugPanel,
 } from './components'
+import { getUserToken } from './api'
 import { ServicesPage, ServiceDetailPage, CasesPage, ProfilePage } from './components/pages'
 
 export function TerminalPreview({
@@ -68,8 +71,18 @@ export function TerminalPreview({
   const [isDarkMode, setIsDarkMode] = useState(false)
 
   // ============================================================================
-  // Step 3: 视角角色推导
+  // Step 3 & 4: 视角角色推导 + DebugPanel 状态
   // ============================================================================
+
+  // 本地 escortToken 状态（用于 DebugPanel 注入/清除模拟）
+  const [localEscortToken, setLocalEscortToken] = useState<string | null>(null)
+
+  // 合并 escortSession：Props 优先，其次本地状态
+  const mergedEscortSession = useMemo(() => {
+    if (escortSession?.token) return escortSession
+    if (localEscortToken) return { token: localEscortToken }
+    return undefined
+  }, [escortSession, localEscortToken])
 
   /**
    * 视角角色推导
@@ -79,25 +92,34 @@ export function TerminalPreview({
    * 2. 预览器模式 + escortSession.token 存在 → escort
    * 3. 真实终端 + escortToken 存在且验证有效 → escort
    * 4. 其他情况 → user
-   *
-   * ⚠️ 当前仅产出 effectiveViewerRole，后续 Step 4 用于 DebugPanel
    */
-  const { effectiveViewerRole, isEscort, isUser, isValidating } = useViewerRole({
+  const { effectiveViewerRole, isValidating, revalidate } = useViewerRole({
     userSession,
-    escortSession,
+    escortSession: mergedEscortSession,
     viewerRole: viewerRoleProp,
     isPreviewMode: true, // 当前组件仅用于预览器
   })
 
-  // TODO: Step 4 将在 DebugPanel 中使用 effectiveViewerRole
-  // TODO: Step 5 将根据 effectiveViewerRole 控制路由和权限
-  // 当前仅保留在内部，不影响现有渲染逻辑
-  void effectiveViewerRole
-  void isEscort
-  void isUser
-  void isValidating
+  // DebugPanel 回调
+  const handleInjectEscortToken = useCallback((token: string) => {
+    setLocalEscortToken(token)
+  }, [])
+
+  const handleClearEscortToken = useCallback(() => {
+    setLocalEscortToken(null)
+  }, [])
+
+  // 获取 token 用于 DebugPanel 显示
+  const currentUserToken = getUserToken()
+  const currentEscortToken = mergedEscortSession?.token ?? null
+
+  // 是否显示 DebugPanel
+  const showDebugPanel = shouldShowDebugPanel()
+
+  // 预留 userContext/escortContext 供后续使用
   void userContext
   void escortContext
+
   const [currentPage, setCurrentPage] = useState(initialPage)
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null)
 
@@ -338,6 +360,19 @@ export function TerminalPreview({
   // 渲染内容
   const renderContent = () => (
     <div className='relative flex flex-col' style={{ height: `${height}px` }}>
+      {/* Step 4: DebugPanel - 仅开发环境显示 */}
+      {showDebugPanel && (
+        <DebugPanel
+          effectiveViewerRole={effectiveViewerRole}
+          userToken={currentUserToken}
+          escortToken={currentEscortToken}
+          isValidating={isValidating}
+          onInjectEscortToken={handleInjectEscortToken}
+          onClearEscortToken={handleClearEscortToken}
+          onRevalidate={revalidate}
+        />
+      )}
+
       {/* 可滚动内容区 */}
       <div
         ref={scrollContainerRef}
