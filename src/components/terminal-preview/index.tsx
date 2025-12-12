@@ -44,7 +44,15 @@ import {
   shouldShowDebugPanel,
 } from './components'
 import { getUserToken } from './api'
-import { ServicesPage, ServiceDetailPage, CasesPage, ProfilePage, CouponsPage } from './components/pages'
+import {
+  ServicesPage,
+  ServiceDetailPage,
+  CasesPage,
+  ProfilePage,
+  CouponsPage,
+  MembershipPage,
+  MembershipPlansPage,
+} from './components/pages'
 
 export function TerminalPreview({
   page: initialPage = 'home',
@@ -352,9 +360,25 @@ export function TerminalPreview({
       case 'profile':
         return <ProfilePage themeSettings={themeSettings} isDarkMode={isDarkMode} />
 
-      // Step 5: 营销中心页面
+      // Step 5-6: 营销中心页面
       case 'coupons':
         return <CouponsPage themeSettings={themeSettings} isDarkMode={isDarkMode} />
+      case 'membership':
+        return (
+          <MembershipPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            onNavigate={(page) => setCurrentPage(page as typeof currentPage)}
+          />
+        )
+      case 'membership-plans':
+        return (
+          <MembershipPlansPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            onBack={() => setCurrentPage('membership')}
+          />
+        )
 
       case 'home':
       default:

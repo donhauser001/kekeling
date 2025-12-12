@@ -367,6 +367,90 @@ export interface CouponsResponse {
 }
 
 /**
+ * 会员信息
+ * 对应接口: GET /marketing/membership/my
+ */
+export interface MembershipInfo {
+  id: string
+  /** 会员等级 */
+  level: string
+  /** 等级名称 */
+  levelName: string
+  /** 过期时间 (YYYY-MM-DD) */
+  expireAt: string
+  /** 积分余额 */
+  points: number
+}
+
+/**
+ * 会员套餐
+ * 对应接口: GET /marketing/membership/plans
+ */
+export interface MembershipPlan {
+  id: string
+  name: string
+  description: string
+  /** 价格 */
+  price: number
+  /** 原价 */
+  originalPrice?: number
+  /** 有效天数 */
+  durationDays: number
+  /** 是否推荐 */
+  isRecommended?: boolean
+}
+
+/**
+ * Mock 会员信息
+ */
+function getMockMembershipData(): MembershipInfo | null {
+  // 模拟 50% 概率已开通会员
+  if (Math.random() > 0.5) {
+    return {
+      id: 'mock-membership-1',
+      level: 'gold',
+      levelName: '黄金会员',
+      expireAt: '2025-06-30',
+      points: 1280,
+    }
+  }
+  return null
+}
+
+/**
+ * Mock 会员套餐列表
+ */
+function getMockMembershipPlans(): MembershipPlan[] {
+  return [
+    {
+      id: 'plan-1',
+      name: '月度会员',
+      description: '适合短期体验',
+      price: 29,
+      originalPrice: 39,
+      durationDays: 30,
+    },
+    {
+      id: 'plan-2',
+      name: '季度会员',
+      description: '超值推荐',
+      price: 79,
+      originalPrice: 117,
+      durationDays: 90,
+      isRecommended: true,
+    },
+    {
+      id: 'plan-3',
+      name: '年度会员',
+      description: '最划算的选择',
+      price: 268,
+      originalPrice: 468,
+      durationDays: 365,
+    },
+  ]
+}
+
+/**
  * Mock 优惠券数据
  * 用于接口不存在时的降级显示
  */
@@ -469,9 +553,41 @@ export const previewApi = {
     }
   },
 
+  /**
+   * 获取我的会员信息
+   * 接口: GET /marketing/membership/my
+   * 通道: userRequest
+   */
+  getMyMembership: async (): Promise<MembershipInfo | null> => {
+    try {
+      return await userRequest<MembershipInfo | null>('/marketing/membership/my')
+    } catch (error) {
+      if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
+        console.warn('[previewApi.getMyMembership] 使用 mock 数据')
+        return getMockMembershipData()
+      }
+      throw error
+    }
+  },
+
+  /**
+   * 获取会员套餐列表
+   * 接口: GET /marketing/membership/plans
+   * 通道: userRequest
+   */
+  getMembershipPlans: async (): Promise<MembershipPlan[]> => {
+    try {
+      return await userRequest<MembershipPlan[]>('/marketing/membership/plans')
+    } catch (error) {
+      if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
+        console.warn('[previewApi.getMembershipPlans] 使用 mock 数据')
+        return getMockMembershipPlans()
+      }
+      throw error
+    }
+  },
+
   // TODO: 其他营销中心接口（后续接入）
-  // getMembershipLevels: () => userRequest<MembershipLevel[]>('/marketing/membership/levels'),
-  // getMyMembership: () => userRequest<MembershipInfo | null>('/marketing/membership/my'),
   // getMyPoints: () => userRequest<PointsInfo>('/marketing/points/my'),
 
   // TODO: 陪诊员公开信息（用户端可查看，走 userRequest）

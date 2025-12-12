@@ -207,16 +207,48 @@ interface CouponsResponse {
 
 ---
 
-### Step 6: 页面组件接入
+### Step 6: 批量接入页面
 
-**目标**: 接入营销中心和陪诊员系统页面
+**目标**: 按模块逐批接入，每批最多 2 个页面
+
+---
+
+#### 批次 A: membership + membership-plans ✅
 
 **验收点**:
-- [ ] 新增 `components/pages/marketing/` 目录
-- [ ] 新增 `components/pages/escort/` 目录
-- [ ] 新增 `components/pages/workbench/` 目录
-- [ ] 扩展 `previewApi` 支持新接口
-- [ ] 管理后台相关页面可使用新页面类型预览
+- [x] 新增 `MembershipPage.tsx` (会员中心)
+- [x] 新增 `MembershipPlansPage.tsx` (会员套餐)
+- [x] `renderPageContent()` 增加 case 'membership' / 'membership-plans'
+- [x] `previewApi.getMyMembership()` / `getMembershipPlans()`
+- [x] 每个页面支持 loading / error / mock 降级
+- [x] TypeScript 编译通过
+
+**API 新增**:
+```typescript
+previewApi.getMyMembership(): Promise<MembershipInfo | null>
+previewApi.getMembershipPlans(): Promise<MembershipPlan[]>
+```
+
+---
+
+#### 批次 B: points + points-records（待接入）
+
+**任务**:
+- [ ] 新增 `PointsPage.tsx` (积分首页)
+- [ ] 新增 `PointsRecordsPage.tsx` (积分明细)
+- [ ] `previewApi.getMyPoints()` / `getPointsRecords()`
+
+---
+
+#### 批次 C: referrals + campaigns（待接入）
+
+---
+
+#### 批次 D: escort-list + escort-detail（待接入）
+
+---
+
+#### 批次 E: workbench + workbench-orders-pool（待接入，需 escortRequest）
 
 ---
 
