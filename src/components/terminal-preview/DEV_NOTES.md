@@ -774,6 +774,71 @@ workbench-orders-pool → 点击返回 → workbench
 
 ---
 
+### 工作台 API Mock Token 规则增强 ✅
+
+**目标**: 所有 escortRequest 通道的 API 遵守 mock token 规则。
+
+**规则**: token 以 `mock-` 开头时，直接返回静态 mock 数据，不请求真实后端。
+
+**已更新 API**:
+- [x] `getWorkbenchStats()` - 添加 mock token 检查
+- [x] `getWorkbenchSummary()` - 添加 mock token 检查
+- [x] `getWorkbenchOrdersPool()` - 添加 mock token 检查
+- [x] `getWorkbenchEarnings()` - 添加 mock token 检查
+- [x] `getWorkbenchWithdrawInfo()` - 添加 mock token 检查
+
+**实现模式**:
+```typescript
+getWorkbenchXxx: async () => {
+  const escortToken = getEscortToken()
+
+  // mock token 直接返回 mock 数据，不请求真实后端
+  if (escortToken?.startsWith('mock-')) {
+    console.log('[previewApi.getWorkbenchXxx] mock token, 返回 mock 数据')
+    return getMockXxx()
+  }
+
+  try {
+    return await escortRequest<Xxx>('/escort-app/xxx')
+  } catch (error) {
+    // 404/500 降级
+    if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
+      return getMockXxx()
+    }
+    throw error
+  }
+}
+```
+
+**Mock 数据结构**:
+```typescript
+// Earnings
+interface EarningsResponse {
+  balance: number           // 可提现余额
+  totalEarned: number       // 累计收入
+  totalWithdrawn: number    // 累计提现
+  pendingSettlement: number // 待结算
+  items: EarningsItem[]     // 收入明细
+  hasMore: boolean
+}
+
+// WithdrawInfo
+interface WithdrawInfo {
+  withdrawable: number      // 可提现金额
+  minWithdrawAmount: number // 最低提现金额
+  feeRate: number           // 手续费率
+  estimatedHours: number    // 预计到账时间
+  bankCards: {              // 已绑定银行卡
+    id: string
+    bankName: string
+    cardNo: string
+    isDefault: boolean
+  }[]
+}
+```
+
+---
+
 #### 批次 B: earnings + withdraw 页面（待接入）
 
 ---

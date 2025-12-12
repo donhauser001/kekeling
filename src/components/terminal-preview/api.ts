@@ -1332,8 +1332,18 @@ export const previewApi = {
    * 获取工作台统计数据
    * 接口: GET /escort-app/workbench/stats
    * 通道: escortRequest（⚠️ 必须 escortToken）
+   *
+   * Mock Token 规则：token 以 'mock-' 开头时直接返回 mock 数据
    */
   getWorkbenchStats: async (): Promise<WorkbenchStats> => {
+    const escortToken = getEscortToken()
+
+    // mock token 直接返回 mock 数据，不请求真实后端
+    if (escortToken?.startsWith('mock-')) {
+      console.log('[previewApi.getWorkbenchStats] mock token, 返回 mock 数据')
+      return getMockWorkbenchStats()
+    }
+
     try {
       return await escortRequest<WorkbenchStats>('/escort-app/workbench/stats')
     } catch (error) {
@@ -1349,8 +1359,18 @@ export const previewApi = {
    * 获取工作台汇总数据
    * 接口: GET /escort-app/workbench/summary
    * 通道: escortRequest（⚠️ 必须 escortToken）
+   *
+   * Mock Token 规则：token 以 'mock-' 开头时直接返回 mock 数据
    */
   getWorkbenchSummary: async (): Promise<WorkbenchSummary> => {
+    const escortToken = getEscortToken()
+
+    // mock token 直接返回 mock 数据，不请求真实后端
+    if (escortToken?.startsWith('mock-')) {
+      console.log('[previewApi.getWorkbenchSummary] mock token, 返回 mock 数据')
+      return getMockWorkbenchSummary()
+    }
+
     try {
       return await escortRequest<WorkbenchSummary>('/escort-app/workbench/summary')
     } catch (error) {
@@ -1366,8 +1386,18 @@ export const previewApi = {
    * 获取订单池列表
    * 接口: GET /escort-app/orders/pool
    * 通道: escortRequest（⚠️ 必须 escortToken）
+   *
+   * Mock Token 规则：token 以 'mock-' 开头时直接返回 mock 数据
    */
   getWorkbenchOrdersPool: async (): Promise<OrdersPoolResponse> => {
+    const escortToken = getEscortToken()
+
+    // mock token 直接返回 mock 数据，不请求真实后端
+    if (escortToken?.startsWith('mock-')) {
+      console.log('[previewApi.getWorkbenchOrdersPool] mock token, 返回 mock 数据')
+      return getMockOrdersPool()
+    }
+
     try {
       return await escortRequest<OrdersPoolResponse>('/escort-app/orders/pool')
     } catch (error) {
@@ -1383,8 +1413,18 @@ export const previewApi = {
    * 获取收入明细
    * 接口: GET /escort-app/earnings
    * 通道: escortRequest（⚠️ 必须 escortToken）
+   *
+   * Mock Token 规则：token 以 'mock-' 开头时直接返回 mock 数据
    */
   getWorkbenchEarnings: async (): Promise<EarningsResponse> => {
+    const escortToken = getEscortToken()
+
+    // mock token 直接返回 mock 数据，不请求真实后端
+    if (escortToken?.startsWith('mock-')) {
+      console.log('[previewApi.getWorkbenchEarnings] mock token, 返回 mock 数据')
+      return getMockEarnings()
+    }
+
     try {
       return await escortRequest<EarningsResponse>('/escort-app/earnings')
     } catch (error) {
@@ -1400,8 +1440,18 @@ export const previewApi = {
    * 获取提现信息
    * 接口: GET /escort-app/withdraw/info
    * 通道: escortRequest（⚠️ 必须 escortToken）
+   *
+   * Mock Token 规则：token 以 'mock-' 开头时直接返回 mock 数据
    */
   getWorkbenchWithdrawInfo: async (): Promise<WithdrawInfo> => {
+    const escortToken = getEscortToken()
+
+    // mock token 直接返回 mock 数据，不请求真实后端
+    if (escortToken?.startsWith('mock-')) {
+      console.log('[previewApi.getWorkbenchWithdrawInfo] mock token, 返回 mock 数据')
+      return getMockWithdrawInfo()
+    }
+
     try {
       return await escortRequest<WithdrawInfo>('/escort-app/withdraw/info')
     } catch (error) {
