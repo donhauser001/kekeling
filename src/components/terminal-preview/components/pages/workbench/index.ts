@@ -10,13 +10,21 @@ export type { WorkbenchPageProps } from './WorkbenchPage'
 export { OrdersPoolPage } from './OrdersPoolPage'
 export type { OrdersPoolPageProps } from './OrdersPoolPage'
 
-// 收入明细
+// 收入明细（API 版本）
 export { EarningsPage } from './EarningsPage'
 export type { EarningsPageProps } from './EarningsPage'
 
-// 提现
+// 收入明细（Mock 数据版本）
+export { WorkbenchEarningsPage } from './WorkbenchEarningsPage'
+export type { WorkbenchEarningsPageProps } from './WorkbenchEarningsPage'
+
+// 提现（API 版本）
 export { WithdrawPage } from './WithdrawPage'
 export type { WithdrawPageProps } from './WithdrawPage'
+
+// 提现（Mock 数据版本）
+export { WorkbenchWithdrawPage } from './WorkbenchWithdrawPage'
+export type { WorkbenchWithdrawPageProps } from './WorkbenchWithdrawPage'
 
 // 订单详情
 export { OrderDetailPage } from './OrderDetailPage'
