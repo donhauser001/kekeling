@@ -147,7 +147,7 @@ export class DistributionService {
     // 只保留最近3层
     const trimmedPath = ancestorPath.slice(-3);
 
-    // 5. 建立关系
+    // 5. 建立关系（强一致性事务 - 仅包含核心绑定逻辑）
     await this.prisma.$transaction(async (tx) => {
       // 更新被邀请人
       await tx.escort.update({
@@ -169,10 +169,64 @@ export class DistributionService {
           activatedAt: new Date(),
         },
       });
-
-      // 更新上级团队统计
-      await this.updateTeamStats(tx, inviter.id);
     });
+
+    // 6. 异步更新团队统计（最终一致性，不阻塞主链路）
+    this.scheduleTeamStatsUpdate(inviter.id);
+  }
+
+  /**
+   * 异步调度团队统计更新（带重试）
+   * 不阻塞主流程，失败时自动重试
+   */
+  private scheduleTeamStatsUpdate(escortId: string): void {
+    setImmediate(() => {
+      this.updateTeamStatsWithRetry(escortId).catch((err) => {
+        this.logger.error(`团队统计更新最终失败: ${escortId}`, err.stack);
+      });
+    });
+  }
+
+  /**
+   * 带指数退避重试的团队统计更新
+   * @param maxRetries 最大重试次数（默认 3）
+   */
+  private async updateTeamStatsWithRetry(
+    escortId: string,
+    maxRetries = 3,
+  ): Promise<void> {
+    let lastError: Error | null = null;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        await this.prisma.$transaction(async (tx) => {
+          await this.updateTeamStats(tx, escortId);
+        });
+        this.logger.log(`团队统计更新成功: ${escortId} (attempt ${attempt})`);
+        return;
+      } catch (error) {
+        lastError = error as Error;
+        this.logger.warn(
+          `团队统计更新失败 (attempt ${attempt}/${maxRetries}): ${escortId}`,
+          error.message,
+        );
+
+        if (attempt < maxRetries) {
+          // 指数退避：1s, 2s, 4s
+          const delayMs = Math.pow(2, attempt - 1) * 1000;
+          await this.delay(delayMs);
+        }
+      }
+    }
+
+    throw lastError;
+  }
+
+  /**
+   * 延迟工具函数
+   */
+  private delay(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**

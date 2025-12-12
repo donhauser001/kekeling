@@ -7,10 +7,16 @@ import { TeamService } from './team.service';
 import { DistributionController } from './distribution.controller';
 import { PromotionController } from './promotion.controller';
 import { TeamController } from './team.controller';
+import { DistributionReconciliationTask } from './distribution-reconciliation.task';
 
 @Module({
   imports: [PrismaModule, NotificationModule],
-  providers: [DistributionService, PromotionService, TeamService],
+  providers: [
+    DistributionService,
+    PromotionService,
+    TeamService,
+    DistributionReconciliationTask,
+  ],
   controllers: [DistributionController, PromotionController, TeamController],
   exports: [DistributionService, PromotionService, TeamService],
 })
