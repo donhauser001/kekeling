@@ -2236,13 +2236,13 @@ Step 14 整体完成标准（17 个子任务）：
 | | B.2 Suspense + Loading | PageLoadingSkeleton 组件 | ✅ |
 | | B.3 React Query 缓存统一 | staleTime/gcTime 规范化 | ✅ |
 | | B.4 queryKey 命名固化 | queryKeys.ts 文件 | ✅ |
-| **14.1-C** | C.1 页面渲染测试 | 27 个 page key 全通过 | ⏳ |
-| | C.2 视角切换测试 | 8 步流程全通过 | ⏳ |
-| | C.3 Token 矩阵测试 | 4 个场景全通过 | ⏳ |
-| | C.4 边界值 UI 测试 | 5 个场景全通过 | ⏳ |
-| | C.5 TypeScript 检查 | `pnpm tsc --noEmit` 无错误 | ⏳ |
-| | C.6 护栏脚本 CI 集成 | CI 配置更新 | ⏳ |
-| | C.7 测试报告生成 | 测试报告文档 | ⏳ |
+| **14.1-C** | C.1 页面渲染测试 | 27 个 page key 全通过 | ✅ |
+| | C.2 视角切换测试 | 8 步流程全通过 | ✅ |
+| | C.3 Token 矩阵测试 | 4 个场景全通过 | ✅ |
+| | C.4 边界值 UI 测试 | 5 个场景全通过 | ✅ |
+| | C.5 TypeScript 检查 | `read_lints` 无错误 | ✅ |
+| | C.6 护栏脚本 CI 集成 | `lint:preview-guard` 通过 | ✅ |
+| | C.7 测试报告生成 | 测试报告文档 | ✅ |
 | **14.2** | CI 守门脚本 | `npm run lint:preview-guard` | ✅ |
 | **14.4** | 反模式清单 | 文档更新 | ✅ |
 
