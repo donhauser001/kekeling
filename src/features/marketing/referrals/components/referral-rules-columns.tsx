@@ -36,6 +36,7 @@ export function getReferralRulesColumns({ onEdit, onDelete }: ReferralRulesColum
       cell: ({ row }) => (
         <div className='font-medium'>{row.getValue('name')}</div>
       ),
+      meta: { title: '规则名称' },
       enableHiding: false,
     },
     {
@@ -47,6 +48,7 @@ export function getReferralRulesColumns({ onEdit, onDelete }: ReferralRulesColum
         const type = row.getValue('type') as string
         return <span>{type === 'user' ? '用户邀请' : '就诊人邀请'}</span>
       },
+      meta: { title: '类型' },
       filterFn: (row, id, value) => {
         return value.includes(row.getValue(id))
       },
@@ -63,6 +65,7 @@ export function getReferralRulesColumns({ onEdit, onDelete }: ReferralRulesColum
         if (inviterCouponId) parts.push(`券ID:${inviterCouponId}`)
         return <span>{parts.length ? parts.join(' / ') : '-'}</span>
       },
+      meta: { title: '邀请人奖励' },
       enableSorting: false,
     },
     {
@@ -77,6 +80,7 @@ export function getReferralRulesColumns({ onEdit, onDelete }: ReferralRulesColum
         if (inviteeCouponId) parts.push(`券ID:${inviteeCouponId}`)
         return <span>{parts.length ? parts.join(' / ') : '-'}</span>
       },
+      meta: { title: '被邀请人奖励' },
       enableSorting: false,
     },
     {
@@ -87,6 +91,7 @@ export function getReferralRulesColumns({ onEdit, onDelete }: ReferralRulesColum
       cell: ({ row }) => (
         <span>{row.getValue('requireFirstOrder') ? '是' : '否'}</span>
       ),
+      meta: { title: '需首单' },
     },
     {
       accessorKey: 'status',
@@ -102,6 +107,7 @@ export function getReferralRulesColumns({ onEdit, onDelete }: ReferralRulesColum
           </Badge>
         )
       },
+      meta: { title: '状态' },
       filterFn: (row, id, value) => {
         return value.includes(row.getValue(id))
       },

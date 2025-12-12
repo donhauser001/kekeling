@@ -71,3 +71,17 @@ src/features/{module-name}/
 - ✅ 长文本列添加 `truncate` + `max-w`
 - ✅ 金额列右对齐 + `font-mono`
 - ✅ 日期时间必须格式化
+- ✅ **每列必须添加 `meta: { title: '中文名称' }`**
+
+### 列定义模板
+
+```tsx
+{
+  accessorKey: 'type',
+  header: ({ column }) => (
+    <DataTableColumnHeader column={column} title='类型' />
+  ),
+  cell: ({ row }) => <Badge>{row.getValue('type')}</Badge>,
+  meta: { title: '类型' },  // 必须：显示列菜单显示中文
+}
+```

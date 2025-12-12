@@ -53,6 +53,7 @@ export const escortsColumns: ColumnDef<Escort>[] = [
       <LongText className='max-w-36 ps-3'>{row.getValue('username')}</LongText>
     ),
     meta: {
+      title: '用户名',
       className: cn(
         'drop-shadow-[0_1px_2px_rgb(0_0_0_/_0.1)] dark:drop-shadow-[0_1px_2px_rgb(255_255_255_/_0.1)]',
         'ps-0.5 max-md:sticky start-6 @4xl/content:table-cell @4xl/content:drop-shadow-none'
@@ -70,7 +71,7 @@ export const escortsColumns: ColumnDef<Escort>[] = [
       const fullName = `${firstName} ${lastName}`
       return <LongText className='max-w-36'>{fullName}</LongText>
     },
-    meta: { className: 'w-36' },
+    meta: { title: '姓名', className: 'w-36' },
   },
   {
     accessorKey: 'email',
@@ -80,6 +81,7 @@ export const escortsColumns: ColumnDef<Escort>[] = [
     cell: ({ row }) => (
       <div className='w-fit ps-2 text-nowrap'>{row.getValue('email')}</div>
     ),
+    meta: { title: '邮箱' },
   },
   {
     accessorKey: 'phoneNumber',
@@ -87,6 +89,7 @@ export const escortsColumns: ColumnDef<Escort>[] = [
       <DataTableColumnHeader column={column} title='电话号码' />
     ),
     cell: ({ row }) => <div>{row.getValue('phoneNumber')}</div>,
+    meta: { title: '电话号码' },
     enableSorting: false,
   },
   {
@@ -153,6 +156,7 @@ export const escortsColumns: ColumnDef<Escort>[] = [
         </div>
       )
     },
+    meta: { title: '接诊数' },
   },
   {
     accessorKey: 'satisfaction',
@@ -168,6 +172,7 @@ export const escortsColumns: ColumnDef<Escort>[] = [
         </div>
       )
     },
+    meta: { title: '满意度' },
   },
   {
     id: 'actions',

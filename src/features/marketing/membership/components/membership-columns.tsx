@@ -36,6 +36,7 @@ export function getMembershipColumns({ onEdit, onDelete }: MembershipColumnsProp
       cell: ({ row }) => (
         <div className='font-medium'>{row.getValue('name')}</div>
       ),
+      meta: { title: '等级名称' },
       enableHiding: false,
     },
     {
@@ -46,6 +47,7 @@ export function getMembershipColumns({ onEdit, onDelete }: MembershipColumnsProp
       cell: ({ row }) => (
         <Badge variant='outline'>Lv.{row.getValue('level')}</Badge>
       ),
+      meta: { title: '等级' },
     },
     {
       accessorKey: 'discount',
@@ -53,6 +55,7 @@ export function getMembershipColumns({ onEdit, onDelete }: MembershipColumnsProp
         <DataTableColumnHeader column={column} title='折扣' />
       ),
       cell: ({ row }) => <span>{row.getValue('discount')}%</span>,
+      meta: { title: '折扣' },
     },
     {
       accessorKey: 'price',
@@ -60,6 +63,7 @@ export function getMembershipColumns({ onEdit, onDelete }: MembershipColumnsProp
         <DataTableColumnHeader column={column} title='价格' />
       ),
       cell: ({ row }) => <span>¥{row.getValue('price')}</span>,
+      meta: { title: '价格' },
     },
     {
       accessorKey: 'duration',
@@ -67,6 +71,7 @@ export function getMembershipColumns({ onEdit, onDelete }: MembershipColumnsProp
         <DataTableColumnHeader column={column} title='时长' />
       ),
       cell: ({ row }) => <span>{row.getValue('duration')}天</span>,
+      meta: { title: '时长' },
     },
     {
       accessorKey: 'status',
@@ -82,6 +87,7 @@ export function getMembershipColumns({ onEdit, onDelete }: MembershipColumnsProp
           </Badge>
         )
       },
+      meta: { title: '状态' },
       filterFn: (row, id, value) => {
         return value.includes(row.getValue(id))
       },

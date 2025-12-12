@@ -36,6 +36,7 @@ export function getPointsColumns({ onEdit, onDelete }: PointsColumnsProps): Colu
       cell: ({ row }) => (
         <div className='font-medium'>{row.getValue('name')}</div>
       ),
+      meta: { title: '规则名称' },
       enableHiding: false,
     },
     {
@@ -44,6 +45,7 @@ export function getPointsColumns({ onEdit, onDelete }: PointsColumnsProps): Colu
         <DataTableColumnHeader column={column} title='规则代码' />
       ),
       cell: ({ row }) => <span>{row.getValue('code')}</span>,
+      meta: { title: '规则代码' },
     },
     {
       id: 'pointsValue',
@@ -56,6 +58,7 @@ export function getPointsColumns({ onEdit, onDelete }: PointsColumnsProps): Colu
         if (pointsRate) return `${pointsRate} 比例`
         return '-'
       },
+      meta: { title: '积分值' },
       enableSorting: false,
     },
     {
@@ -67,6 +70,7 @@ export function getPointsColumns({ onEdit, onDelete }: PointsColumnsProps): Colu
         const dailyLimit = row.getValue('dailyLimit') as number | null
         return <span>{dailyLimit ?? '无限制'}</span>
       },
+      meta: { title: '每日上限' },
     },
     {
       accessorKey: 'status',
@@ -82,6 +86,7 @@ export function getPointsColumns({ onEdit, onDelete }: PointsColumnsProps): Colu
           </Badge>
         )
       },
+      meta: { title: '状态' },
       filterFn: (row, id, value) => {
         return value.includes(row.getValue(id))
       },

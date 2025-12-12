@@ -14,6 +14,29 @@ type DataTableViewOptionsProps<TData> = {
   table: Table<TData>
 }
 
+/**
+ * 获取列的显示名称
+ * 优先级：meta.title > header 字符串 > column.id
+ */
+function getColumnDisplayName<TData>(
+  column: ReturnType<Table<TData>['getAllColumns']>[number]
+): string {
+  // 优先使用 meta.title
+  const meta = column.columnDef.meta as { title?: string } | undefined
+  if (meta?.title) {
+    return meta.title
+  }
+
+  // 如果 header 是字符串，直接使用
+  const header = column.columnDef.header
+  if (typeof header === 'string') {
+    return header
+  }
+
+  // 最后使用 column.id
+  return column.id
+}
+
 export function DataTableViewOptions<TData>({
   table,
 }: DataTableViewOptionsProps<TData>) {
@@ -42,11 +65,10 @@ export function DataTableViewOptions<TData>({
             return (
               <DropdownMenuCheckboxItem
                 key={column.id}
-                className='capitalize'
                 checked={column.getIsVisible()}
                 onCheckedChange={(value) => column.toggleVisibility(!!value)}
               >
-                {column.id}
+                {getColumnDisplayName(column)}
               </DropdownMenuCheckboxItem>
             )
           })}

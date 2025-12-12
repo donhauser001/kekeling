@@ -47,6 +47,7 @@ export const ordersColumns: ColumnDef<Order>[] = [
       </div>
     ),
     meta: {
+      title: '订单号',
       className: cn(
         'drop-shadow-[0_1px_2px_rgb(0_0_0_/_0.1)] dark:drop-shadow-[0_1px_2px_rgb(255_255_255_/_0.1)]',
         'max-md:sticky start-6 @4xl/content:drop-shadow-none'
@@ -65,6 +66,7 @@ export const ordersColumns: ColumnDef<Order>[] = [
         <Badge variant='outline' className='text-xs'>{row.original.serviceCategory}</Badge>
       </div>
     ),
+    meta: { title: '服务' },
   },
   {
     accessorKey: 'customerName',
@@ -77,6 +79,7 @@ export const ordersColumns: ColumnDef<Order>[] = [
         <div className='text-muted-foreground text-xs'>{row.original.customerPhone}</div>
       </div>
     ),
+    meta: { title: '客户' },
   },
   {
     accessorKey: 'escortName',
@@ -94,6 +97,7 @@ export const ordersColumns: ColumnDef<Order>[] = [
         <span className='text-muted-foreground text-sm'>待分配</span>
       )
     },
+    meta: { title: '服务人员' },
   },
   {
     accessorKey: 'appointmentDate',
@@ -106,6 +110,7 @@ export const ordersColumns: ColumnDef<Order>[] = [
         <div className='text-muted-foreground text-xs'>{row.original.appointmentTime}</div>
       </div>
     ),
+    meta: { title: '预约时间' },
   },
   {
     accessorKey: 'amount',
@@ -115,6 +120,7 @@ export const ordersColumns: ColumnDef<Order>[] = [
     cell: ({ row }) => (
       <div className='font-medium text-primary'>¥{row.getValue('amount')}</div>
     ),
+    meta: { title: '金额' },
   },
   {
     accessorKey: 'status',
@@ -133,6 +139,7 @@ export const ordersColumns: ColumnDef<Order>[] = [
         </Badge>
       )
     },
+    meta: { title: '状态' },
     filterFn: (row, id, value) => {
       return value.includes(row.getValue(id))
     },
@@ -154,6 +161,7 @@ export const ordersColumns: ColumnDef<Order>[] = [
         </div>
       )
     },
+    meta: { title: '分类' },
     filterFn: (row, id, value) => {
       return value.includes(row.getValue(id))
     },

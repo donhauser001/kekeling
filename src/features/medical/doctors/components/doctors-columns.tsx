@@ -61,6 +61,7 @@ export const doctorsColumns: ColumnDef<Doctor>[] = [
             </div>
         ),
         meta: {
+            title: '医师',
             className: cn(
                 'drop-shadow-[0_1px_2px_rgb(0_0_0_/_0.1)] dark:drop-shadow-[0_1px_2px_rgb(255_255_255_/_0.1)]',
                 'max-md:sticky start-6 @4xl/content:drop-shadow-none'
@@ -81,6 +82,7 @@ export const doctorsColumns: ColumnDef<Doctor>[] = [
                 </Badge>
             )
         },
+        meta: { title: '职称' },
         filterFn: (row, id, value) => {
             return value.includes(row.getValue(id))
         },
@@ -93,6 +95,7 @@ export const doctorsColumns: ColumnDef<Doctor>[] = [
             <DataTableColumnHeader column={column} title='科室' />
         ),
         cell: ({ row }) => <div>{row.original.department?.name || '-'}</div>,
+        meta: { title: '科室' },
     },
     {
         // ✅ 使用 accessorFn 处理对象类型
@@ -106,6 +109,7 @@ export const doctorsColumns: ColumnDef<Doctor>[] = [
                 <span className='truncate max-w-[150px]'>{row.original.hospital?.name || '-'}</span>
             </div>
         ),
+        meta: { title: '医院' },
     },
     {
         // ✅ 字段名改为复数 specialties
@@ -130,6 +134,7 @@ export const doctorsColumns: ColumnDef<Doctor>[] = [
                 </div>
             )
         },
+        meta: { title: '专长' },
         enableSorting: false,
     },
     {
@@ -148,6 +153,7 @@ export const doctorsColumns: ColumnDef<Doctor>[] = [
                 <span className='text-muted-foreground'>-</span>
             )
         },
+        meta: { title: '联系方式' },
         enableSorting: false,
     },
     {
@@ -161,6 +167,7 @@ export const doctorsColumns: ColumnDef<Doctor>[] = [
                 {row.getValue<number>('consultCount').toLocaleString()}
             </div>
         ),
+        meta: { title: '接诊数' },
     },
     {
         // ✅ 字段名改为 rating
@@ -174,6 +181,7 @@ export const doctorsColumns: ColumnDef<Doctor>[] = [
                 {row.getValue<number>('rating')?.toFixed(1) || '-'}
             </div>
         ),
+        meta: { title: '评分' },
     },
     {
         accessorKey: 'status',
@@ -189,6 +197,7 @@ export const doctorsColumns: ColumnDef<Doctor>[] = [
                 </Badge>
             )
         },
+        meta: { title: '状态' },
         filterFn: (row, id, value) => {
             return value.includes(row.getValue(id))
         },

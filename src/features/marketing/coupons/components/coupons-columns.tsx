@@ -50,6 +50,7 @@ export function getCouponsColumns({ onEdit, onDelete }: CouponsColumnsProps): Co
       cell: ({ row }) => (
         <div className='font-medium'>{row.getValue('name')}</div>
       ),
+      meta: { title: '名称' },
       enableHiding: false,
     },
     {
@@ -65,6 +66,7 @@ export function getCouponsColumns({ onEdit, onDelete }: CouponsColumnsProps): Co
           </Badge>
         )
       },
+      meta: { title: '类型' },
       filterFn: (row, id, value) => {
         return value.includes(row.getValue(id))
       },
@@ -80,6 +82,7 @@ export function getCouponsColumns({ onEdit, onDelete }: CouponsColumnsProps): Co
         if (type === 'percent') return `${value}%`
         return '免费'
       },
+      meta: { title: '面值' },
       enableSorting: false,
     },
     {
@@ -91,6 +94,7 @@ export function getCouponsColumns({ onEdit, onDelete }: CouponsColumnsProps): Co
         const scope = row.getValue('applicableScope') as string
         return <span>{scopeMap[scope] || scope}</span>
       },
+      meta: { title: '适用范围' },
       filterFn: (row, id, value) => {
         return value.includes(row.getValue(id))
       },
@@ -109,6 +113,7 @@ export function getCouponsColumns({ onEdit, onDelete }: CouponsColumnsProps): Co
           </Badge>
         )
       },
+      meta: { title: '状态' },
       filterFn: (row, id, value) => {
         return value.includes(row.getValue(id))
       },

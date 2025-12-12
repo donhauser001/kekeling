@@ -53,6 +53,7 @@ export function getCampaignsColumns({ onEdit, onDelete }: CampaignsColumnsProps)
       cell: ({ row }) => (
         <div className='font-medium'>{row.getValue('name')}</div>
       ),
+      meta: { title: '活动名称' },
       enableHiding: false,
     },
     {
@@ -68,6 +69,7 @@ export function getCampaignsColumns({ onEdit, onDelete }: CampaignsColumnsProps)
           </Badge>
         )
       },
+      meta: { title: '类型' },
       filterFn: (row, id, value) => {
         return value.includes(row.getValue(id))
       },
@@ -85,6 +87,7 @@ export function getCampaignsColumns({ onEdit, onDelete }: CampaignsColumnsProps)
           </span>
         )
       },
+      meta: { title: '优惠' },
       enableSorting: false,
     },
     {
@@ -100,6 +103,7 @@ export function getCampaignsColumns({ onEdit, onDelete }: CampaignsColumnsProps)
           </span>
         )
       },
+      meta: { title: '时间' },
       enableSorting: false,
     },
     {
@@ -108,6 +112,7 @@ export function getCampaignsColumns({ onEdit, onDelete }: CampaignsColumnsProps)
         <DataTableColumnHeader column={column} title='参与人数' />
       ),
       cell: ({ row }) => <span>{row.getValue('participationCount') || 0}</span>,
+      meta: { title: '参与人数' },
     },
     {
       accessorKey: 'status',
@@ -123,6 +128,7 @@ export function getCampaignsColumns({ onEdit, onDelete }: CampaignsColumnsProps)
           </Badge>
         )
       },
+      meta: { title: '状态' },
       filterFn: (row, id, value) => {
         return value.includes(row.getValue(id))
       },
