@@ -26,3 +26,10 @@ export type { ReferralsPageProps } from './ReferralsPage'
 export { CampaignsPage } from './CampaignsPage'
 export type { CampaignsPageProps } from './CampaignsPage'
 
+// Step 9 批次 D
+export { CampaignDetailPage } from './CampaignDetailPage'
+export type { CampaignDetailPageProps } from './CampaignDetailPage'
+
+export { CouponsAvailablePage } from './CouponsAvailablePage'
+export type { CouponsAvailablePageProps } from './CouponsAvailablePage'
+

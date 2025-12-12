@@ -308,7 +308,57 @@ interface Campaign {
 
 ---
 
-#### 批次 D: escort-list + escort-detail（待接入）
+#### 批次 D: campaigns-detail + coupons-available ✅
+
+**验收点**:
+- [x] 新增 `CampaignDetailPage.tsx` (活动详情: 封面、规则、奖励、参与按钮)
+- [x] 新增 `CouponsAvailablePage.tsx` (可领取优惠券: 优惠券卡片、领取按钮)
+- [x] 增加路由参数支持 (`pageParams` + `navigateToPage`)
+- [x] `previewApi.getCampaignDetail(id)` / `getAvailableCoupons()`
+- [x] campaigns-detail 无 id 时显示友好提示
+- [x] TypeScript 编译通过
+
+**路由参数机制**:
+```typescript
+// index.tsx 新增
+const [pageParams, setPageParams] = useState<Record<string, string>>({})
+
+const navigateToPage = (page: string, params?: Record<string, string>) => {
+  setCurrentPage(page)
+  setPageParams(params ?? {})
+}
+
+// CampaignsPage 调用
+onNavigate?.('campaigns-detail', { id: campaign.id })
+
+// CampaignDetailPage 接收
+campaignId={pageParams.id}
+```
+
+**API 新增**:
+```typescript
+// GET /marketing/campaigns/:id
+previewApi.getCampaignDetail(id): Promise<CampaignDetail>
+interface CampaignDetail extends Campaign {
+  rules?: string      // 活动规则
+  rewards?: string[]  // 活动奖励列表
+}
+
+// GET /marketing/coupons/available
+previewApi.getAvailableCoupons(): Promise<AvailableCoupon[]>
+interface AvailableCoupon {
+  id: string
+  name: string
+  description?: string
+  amount: number
+  minAmount: number
+  remaining: number   // 剩余可领数量
+}
+```
+
+---
+
+#### 批次 E: escort-list + escort-detail（待接入）
 
 ---
 

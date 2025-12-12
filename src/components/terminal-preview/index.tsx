@@ -56,6 +56,8 @@ import {
   PointsRecordsPage,
   ReferralsPage,
   CampaignsPage,
+  CampaignDetailPage,
+  CouponsAvailablePage,
 } from './components/pages'
 
 export function TerminalPreview({
@@ -134,6 +136,15 @@ export function TerminalPreview({
 
   const [currentPage, setCurrentPage] = useState(initialPage)
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null)
+
+  // Step 9: 路由参数状态（用于传递 id 等参数到详情页）
+  const [pageParams, setPageParams] = useState<Record<string, string>>({})
+
+  // 带参数的页面跳转
+  const navigateToPage = useCallback((page: string, params?: Record<string, string>) => {
+    setCurrentPage(page as typeof currentPage)
+    setPageParams(params ?? {})
+  }, [])
 
   // 切换深色/浅色模式
   const toggleDarkMode = () => setIsDarkMode(!isDarkMode)
@@ -411,16 +422,25 @@ export function TerminalPreview({
           <CampaignsPage
             themeSettings={themeSettings}
             isDarkMode={isDarkMode}
-            onNavigate={(page) => setCurrentPage(page as typeof currentPage)}
+            onNavigate={(page, params) => navigateToPage(page, params)}
           />
         )
       case 'campaigns-detail':
-        // TODO: 活动详情页（后续实现）
         return (
-          <div className="flex flex-col items-center justify-center h-full">
-            <div className="text-4xl mb-2">🚧</div>
-            <div className="text-gray-400 text-sm">活动详情页开发中...</div>
-          </div>
+          <CampaignDetailPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            campaignId={pageParams.id}
+            onBack={() => setCurrentPage('campaigns')}
+          />
+        )
+      case 'coupons-available':
+        return (
+          <CouponsAvailablePage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            onBack={() => setCurrentPage('coupons')}
+          />
         )
 
       case 'home':

@@ -630,6 +630,93 @@ function getMockCampaigns(): Campaign[] {
 }
 
 /**
+ * 活动详情
+ * 对应接口: GET /marketing/campaigns/:id
+ */
+export interface CampaignDetail extends Campaign {
+  /** 活动规则 */
+  rules?: string
+  /** 活动奖励列表 */
+  rewards?: string[]
+}
+
+/**
+ * 可领取优惠券
+ * 对应接口: GET /marketing/coupons/available
+ */
+export interface AvailableCoupon {
+  id: string
+  name: string
+  description?: string
+  /** 优惠金额 */
+  amount: number
+  /** 最低消费金额 */
+  minAmount: number
+  /** 剩余可领数量 */
+  remaining: number
+}
+
+/**
+ * Mock 活动详情
+ */
+function getMockCampaignDetail(id: string): CampaignDetail {
+  const campaigns = getMockCampaigns()
+  const found = campaigns.find(c => c.id === id)
+
+  if (found) {
+    return {
+      ...found,
+      rules: `1. 活动期间，全场服务享受优惠价格\n2. 会员可叠加使用会员折扣\n3. 优惠券可与活动同时使用\n4. 每位用户限参与一次\n5. 最终解释权归平台所有`,
+      rewards: ['满减优惠券 x3', '双倍积分', '专属客服通道'],
+    }
+  }
+
+  // 未找到时返回默认 mock
+  return {
+    id: id,
+    title: '活动详情',
+    description: '这是一个精彩的活动',
+    startTime: '2024-12-01',
+    endTime: '2025-01-01',
+    status: 'ongoing',
+    rules: '活动规则说明...',
+    rewards: ['奖励1', '奖励2'],
+  }
+}
+
+/**
+ * Mock 可领取优惠券列表
+ */
+function getMockAvailableCoupons(): AvailableCoupon[] {
+  return [
+    {
+      id: 'avail-1',
+      name: '新人专享券',
+      description: '限新用户领取',
+      amount: 50,
+      minAmount: 200,
+      remaining: 100,
+    },
+    {
+      id: 'avail-2',
+      name: '限时折扣券',
+      description: '全场通用',
+      amount: 30,
+      minAmount: 100,
+      remaining: 50,
+    },
+    {
+      id: 'avail-3',
+      name: '会员专属券',
+      description: '限会员领取',
+      amount: 20,
+      minAmount: 80,
+      remaining: 0,
+    },
+  ]
+}
+
+/**
  * Mock 优惠券数据
  * 用于接口不存在时的降级显示
  */
@@ -838,8 +925,39 @@ export const previewApi = {
     }
   },
 
-  // TODO: 活动详情（后续接入）
-  // getCampaignDetail: (id: string) => userRequest(`/marketing/campaigns/${id}`),
+  /**
+   * 获取活动详情
+   * 接口: GET /marketing/campaigns/:id
+   * 通道: userRequest
+   */
+  getCampaignDetail: async (id: string): Promise<CampaignDetail> => {
+    try {
+      return await userRequest<CampaignDetail>(`/marketing/campaigns/${id}`)
+    } catch (error) {
+      if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
+        console.warn('[previewApi.getCampaignDetail] 使用 mock 数据, id:', id)
+        return getMockCampaignDetail(id)
+      }
+      throw error
+    }
+  },
+
+  /**
+   * 获取可领取优惠券列表
+   * 接口: GET /marketing/coupons/available
+   * 通道: userRequest
+   */
+  getAvailableCoupons: async (): Promise<AvailableCoupon[]> => {
+    try {
+      return await userRequest<AvailableCoupon[]>('/marketing/coupons/available')
+    } catch (error) {
+      if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
+        console.warn('[previewApi.getAvailableCoupons] 使用 mock 数据')
+        return getMockAvailableCoupons()
+      }
+      throw error
+    }
+  },
 
   // TODO: 陪诊员公开信息（用户端可查看，走 userRequest）
   // ⚠️ 注意：这是公开接口，后端不要强制 escortToken
