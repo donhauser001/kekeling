@@ -1,18 +1,8 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { Plus, Pencil, Trash2, Crown } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 import {
   Dialog,
   DialogContent,
@@ -24,7 +14,6 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { SimplePagination } from '@/components/simple-pagination'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
@@ -34,6 +23,7 @@ import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { membershipApi, type MembershipLevel } from '@/lib/api'
+import { MembershipTable } from './components/membership-table'
 
 const topNav = [
   { title: '会员等级', url: '/marketing/membership' },
@@ -43,15 +33,14 @@ const topNav = [
 
 export function Membership() {
   const [page, setPage] = useState(1)
-  const [pageSize] = useState(10)
-  const [status, setStatus] = useState<string>('')
+  const [pageSize, setPageSize] = useState(10)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingLevel, setEditingLevel] = useState<MembershipLevel | null>(null)
   const queryClient = useQueryClient()
 
   const { data, isLoading } = useQuery({
-    queryKey: ['membership-levels', page, pageSize, status],
-    queryFn: () => membershipApi.getLevels({ page, pageSize, status: status || undefined }),
+    queryKey: ['membership-levels', page, pageSize],
+    queryFn: () => membershipApi.getLevels({ page, pageSize }),
   })
 
   const createMutation = useMutation({
@@ -131,7 +120,7 @@ export function Membership() {
 
   return (
     <>
-      <Header>
+      <Header fixed>
         <TopNav links={topNav} />
         <div className='ms-auto flex items-center space-x-4'>
           <Search />
@@ -142,10 +131,10 @@ export function Membership() {
         </div>
       </Header>
 
-      <Main>
-        <div className='mb-4 flex items-center justify-between'>
+      <Main className='flex flex-1 flex-col gap-4 sm:gap-6'>
+        <div className='flex flex-wrap items-end justify-between gap-2'>
           <div>
-            <h1 className='text-2xl font-bold tracking-tight'>会员等级管理</h1>
+            <h2 className='text-2xl font-bold tracking-tight'>会员等级管理</h2>
             <p className='text-muted-foreground'>管理会员等级和权益配置</p>
           </div>
           <Button onClick={handleCreate}>
@@ -154,227 +143,138 @@ export function Membership() {
           </Button>
         </div>
 
-        <Card>
-          <CardHeader>
-            <div className='flex items-center justify-between'>
-              <CardTitle>会员等级列表</CardTitle>
-              <div className='flex gap-2'>
-                <Button
-                  variant={status === '' ? 'default' : 'outline'}
-                  size='sm'
-                  onClick={() => setStatus('')}
+        <MembershipTable
+          data={data?.data ?? []}
+          total={data?.total ?? 0}
+          page={page}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          isLoading={isLoading}
+        />
+      </Main>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className='max-w-2xl'>
+          <DialogHeader>
+            <DialogTitle>{editingLevel ? '编辑会员等级' : '新建会员等级'}</DialogTitle>
+            <DialogDescription>
+              {editingLevel ? '修改会员等级信息' : '创建一个新的会员等级'}
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSubmit}>
+            <div className='grid gap-4 py-4'>
+              <div className='grid grid-cols-2 gap-4'>
+                <div>
+                  <Label htmlFor='name'>等级名称 *</Label>
+                  <Input
+                    id='name'
+                    name='name'
+                    defaultValue={editingLevel?.name}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor='level'>等级 *</Label>
+                  <Input
+                    id='level'
+                    name='level'
+                    type='number'
+                    defaultValue={editingLevel?.level}
+                    required
+                  />
+                </div>
+              </div>
+              <div className='grid grid-cols-2 gap-4'>
+                <div>
+                  <Label htmlFor='discount'>折扣 (%) *</Label>
+                  <Input
+                    id='discount'
+                    name='discount'
+                    type='number'
+                    defaultValue={editingLevel?.discount}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor='price'>价格 (元) *</Label>
+                  <Input
+                    id='price'
+                    name='price'
+                    type='number'
+                    defaultValue={editingLevel?.price}
+                    required
+                  />
+                </div>
+              </div>
+              <div className='grid grid-cols-2 gap-4'>
+                <div>
+                  <Label htmlFor='duration'>时长 (天) *</Label>
+                  <Input
+                    id='duration'
+                    name='duration'
+                    type='number'
+                    defaultValue={editingLevel?.duration}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor='bonusDays'>赠送天数</Label>
+                  <Input
+                    id='bonusDays'
+                    name='bonusDays'
+                    type='number'
+                    defaultValue={editingLevel?.bonusDays || 0}
+                  />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor='description'>描述</Label>
+                <Textarea
+                  id='description'
+                  name='description'
+                  defaultValue={editingLevel?.description || ''}
+                />
+              </div>
+              <div>
+                <Label htmlFor='benefits'>权益（每行一个）</Label>
+                <Textarea
+                  id='benefits'
+                  name='benefits'
+                  defaultValue={editingLevel?.benefits?.join('\n') || ''}
+                  rows={4}
+                />
+              </div>
+              <div>
+                <Label htmlFor='status'>状态</Label>
+                <select
+                  id='status'
+                  name='status'
+                  className='flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm'
+                  defaultValue={editingLevel?.status || 'active'}
                 >
-                  全部
-                </Button>
-                <Button
-                  variant={status === 'active' ? 'default' : 'outline'}
-                  size='sm'
-                  onClick={() => setStatus('active')}
-                >
-                  启用
-                </Button>
-                <Button
-                  variant={status === 'inactive' ? 'default' : 'outline'}
-                  size='sm'
-                  onClick={() => setStatus('inactive')}
-                >
-                  禁用
-                </Button>
+                  <option value='active'>启用</option>
+                  <option value='inactive'>禁用</option>
+                </select>
               </div>
             </div>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className='py-8 text-center text-muted-foreground'>加载中...</div>
-            ) : (
-              <>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>等级名称</TableHead>
-                      <TableHead>等级</TableHead>
-                      <TableHead>折扣</TableHead>
-                      <TableHead>价格</TableHead>
-                      <TableHead>时长</TableHead>
-                      <TableHead>状态</TableHead>
-                      <TableHead className='text-right'>操作</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {data?.data.map((level) => (
-                      <TableRow key={level.id}>
-                        <TableCell className='font-medium'>{level.name}</TableCell>
-                        <TableCell>
-                          <Badge variant='outline'>Lv.{level.level}</Badge>
-                        </TableCell>
-                        <TableCell>{level.discount}%</TableCell>
-                        <TableCell>¥{level.price}</TableCell>
-                        <TableCell>{level.duration}天</TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={level.status === 'active' ? 'default' : 'secondary'}
-                          >
-                            {level.status === 'active' ? '启用' : '禁用'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className='text-right'>
-                          <div className='flex justify-end gap-2'>
-                            <Button
-                              variant='ghost'
-                              size='sm'
-                              onClick={() => handleEdit(level)}
-                            >
-                              <Pencil className='h-4 w-4' />
-                            </Button>
-                            <Button
-                              variant='ghost'
-                              size='sm'
-                              onClick={() => handleDelete(level.id)}
-                            >
-                              <Trash2 className='h-4 w-4' />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-                {data && data.total > 0 && (
-                  <div className='mt-4'>
-                    <SimplePagination
-                      page={page}
-                      pageSize={pageSize}
-                      total={data.total}
-                      onPageChange={setPage}
-                    />
-                  </div>
-                )}
-              </>
-            )}
-          </CardContent>
-        </Card>
-
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className='max-w-2xl'>
-            <DialogHeader>
-              <DialogTitle>{editingLevel ? '编辑会员等级' : '新建会员等级'}</DialogTitle>
-              <DialogDescription>
-                {editingLevel ? '修改会员等级信息' : '创建一个新的会员等级'}
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleSubmit}>
-              <div className='grid gap-4 py-4'>
-                <div className='grid grid-cols-2 gap-4'>
-                  <div>
-                    <Label htmlFor='name'>等级名称 *</Label>
-                    <Input
-                      id='name'
-                      name='name'
-                      defaultValue={editingLevel?.name}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor='level'>等级 *</Label>
-                    <Input
-                      id='level'
-                      name='level'
-                      type='number'
-                      defaultValue={editingLevel?.level}
-                      required
-                    />
-                  </div>
-                </div>
-                <div className='grid grid-cols-2 gap-4'>
-                  <div>
-                    <Label htmlFor='discount'>折扣 (%) *</Label>
-                    <Input
-                      id='discount'
-                      name='discount'
-                      type='number'
-                      defaultValue={editingLevel?.discount}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor='price'>价格 (元) *</Label>
-                    <Input
-                      id='price'
-                      name='price'
-                      type='number'
-                      defaultValue={editingLevel?.price}
-                      required
-                    />
-                  </div>
-                </div>
-                <div className='grid grid-cols-2 gap-4'>
-                  <div>
-                    <Label htmlFor='duration'>时长 (天) *</Label>
-                    <Input
-                      id='duration'
-                      name='duration'
-                      type='number'
-                      defaultValue={editingLevel?.duration}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor='bonusDays'>赠送天数</Label>
-                    <Input
-                      id='bonusDays'
-                      name='bonusDays'
-                      type='number'
-                      defaultValue={editingLevel?.bonusDays || 0}
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor='description'>描述</Label>
-                  <Textarea
-                    id='description'
-                    name='description'
-                    defaultValue={editingLevel?.description || ''}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor='benefits'>权益（每行一个）</Label>
-                  <Textarea
-                    id='benefits'
-                    name='benefits'
-                    defaultValue={editingLevel?.benefits?.join('\n') || ''}
-                    rows={4}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor='status'>状态</Label>
-                  <select
-                    id='status'
-                    name='status'
-                    className='flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm'
-                    defaultValue={editingLevel?.status || 'active'}
-                  >
-                    <option value='active'>启用</option>
-                    <option value='inactive'>禁用</option>
-                  </select>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button
-                  type='button'
-                  variant='outline'
-                  onClick={() => setDialogOpen(false)}
-                >
-                  取消
-                </Button>
-                <Button type='submit' disabled={createMutation.isPending || updateMutation.isPending}>
-                  {editingLevel ? '更新' : '创建'}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </Main>
+            <DialogFooter>
+              <Button
+                type='button'
+                variant='outline'
+                onClick={() => setDialogOpen(false)}
+              >
+                取消
+              </Button>
+              <Button type='submit' disabled={createMutation.isPending || updateMutation.isPending}>
+                {editingLevel ? '更新' : '创建'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }
-

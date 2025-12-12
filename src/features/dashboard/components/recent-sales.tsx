@@ -50,6 +50,13 @@ export function RecentSales() {
       {orders.map((order) => {
         const customerName = order.patient?.name ?? order.customerName ?? '用户'
         const initials = customerName.slice(0, 2)
+        const amountNumber =
+          typeof order.amount === 'number'
+            ? order.amount
+            : order.amount != null
+              ? Number(order.amount)
+              : Number.NaN
+        const amountLabel = Number.isFinite(amountNumber) ? amountNumber.toLocaleString() : '-'
 
         return (
           <div key={order.id} className='flex items-center gap-4'>
@@ -64,7 +71,7 @@ export function RecentSales() {
                   {order.service?.name ?? order.serviceName ?? '-'} · {statusMap[order.status] ?? order.status}
                 </p>
               </div>
-              <div className='font-medium'>+¥{order.amount.toLocaleString()}</div>
+              <div className='font-medium'>{amountLabel === '-' ? '¥-' : `+¥${amountLabel}`}</div>
             </div>
           </div>
         )
