@@ -744,7 +744,37 @@ interface WithdrawInfo {
 
 ---
 
-#### 批次 G: order-pool + income 页面（待接入）
+### Step 7/7 批次 A: 工作台页面（workbench + orders-pool） ✅
+
+**目标**: 接入工作台总览和订单池页面。
+
+**验收点**:
+- [x] WorkbenchPage 已存在，修复订单池导航路径
+- [x] 新增 OrdersPoolPage.tsx（订单池列表）
+- [x] renderPageContent() 增加 case 'workbench-orders-pool'
+- [x] 仅 viewerRole=escort 时允许进入
+- [x] loading / error / mock 降级齐全
+- [x] 可从工作台总览跳到订单池
+- [x] TypeScript 编译通过
+
+**新增页面**:
+| 页面 | 文件 | page key |
+|------|------|----------|
+| 订单池 | `OrdersPoolPage.tsx` | `workbench-orders-pool` |
+
+**导航路径**:
+```
+workbench → 点击"订单池" → workbench-orders-pool
+workbench-orders-pool → 点击返回 → workbench
+```
+
+**权限校验**:
+- 非 escort 视角显示 🔒 提示
+- 不发起 API 请求
+
+---
+
+#### 批次 B: earnings + withdraw 页面（待接入）
 
 ---
 

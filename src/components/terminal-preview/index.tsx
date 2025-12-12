@@ -67,6 +67,7 @@ import {
   EscortListPage,
   EscortDetailPage,
   WorkbenchPage,
+  OrdersPoolPage,
 } from './components/pages'
 
 export function TerminalPreview({
@@ -530,6 +531,18 @@ export function TerminalPreview({
             effectiveViewerRole={effectiveViewerRole}
             onNavigate={(page, params) => navigateToPage(page, params)}
             onExitEscortMode={handleExitEscortMode}
+          />
+        )
+
+      // Step 7/7 批次 A: 订单池
+      case 'workbench-orders-pool':
+        return (
+          <OrdersPoolPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            effectiveViewerRole={effectiveViewerRole}
+            onBack={() => setCurrentPage('workbench')}
+            onNavigate={(page, params) => navigateToPage(page, params)}
           />
         )
 

@@ -260,7 +260,7 @@ function WorkbenchContent({
           <QuickEntry
             icon="📋"
             label="订单池"
-            onClick={() => onNavigate?.('order-pool')}
+            onClick={() => onNavigate?.('workbench-orders-pool')}
           />
           <QuickEntry
             icon="📊"
