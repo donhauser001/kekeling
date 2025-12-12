@@ -37,6 +37,7 @@ export type FooterVisiblePage = 'home' | 'services' | 'cases' | 'profile'
  * - 营销中心：membership, coupons, points, referrals, campaigns
  * - 陪诊员（用户视角）：escort-list, escort-detail
  * - 工作台（陪诊员视角）：workbench, workbench-orders-pool, workbench-earnings, workbench-withdraw
+ * - 分销中心（陪诊员视角）：distribution, distribution-members, distribution-records, distribution-invite, distribution-promotion
  */
 export type PreviewPage =
   // 现有页面（TabBar）
@@ -63,12 +64,224 @@ export type PreviewPage =
   | 'workbench-order-detail'
   | 'workbench-earnings'
   | 'workbench-withdraw'
+  // 分销中心（陪诊员视角）
+  | 'distribution'
+  | 'distribution-members'
+  | 'distribution-records'
+  | 'distribution-invite'
+  | 'distribution-promotion'
 
 /**
  * 预览器视角角色
  * ⚠️ 仅用于预览器模拟，真实终端由 escortToken validate 推导
  */
 export type PreviewViewerRole = 'user' | 'escort'
+
+// ============================================================================
+// 分销中心类型定义（Step 11.1）
+// ============================================================================
+
+/**
+ * 分销中心路由参数类型映射
+ * 用于 navigateToPage 泛型约束，减少写错 key / 写错 params
+ */
+export interface PreviewPageParamsMap {
+  'distribution': Record<string, never>
+  'distribution-members': { relation?: 'direct' | 'indirect' }
+  'distribution-records': { range?: '7d' | '30d' | 'all'; status?: 'pending' | 'settled' }
+  'distribution-invite': Record<string, never>
+  'distribution-promotion': Record<string, never>
+}
+
+/**
+ * 分销统计数据
+ * 对应接口: GET /escort-app/distribution/stats
+ * 通道: escortRequest
+ *
+ * ⚠️ 金额单位约定：所有金额字段统一使用 元（保留两位小数）
+ */
+export interface DistributionStats {
+  /** 团队总人数 */
+  totalTeamSize: number
+  /** 直属人数 */
+  directCount: number
+  /** 间接人数 */
+  indirectCount: number
+  /** 累计分润（单位：元） */
+  totalDistribution: number
+  /** 本月分润（单位：元） */
+  monthlyDistribution: number
+  /** 待结算（单位：元） */
+  pendingDistribution: number
+  /** 当前等级 */
+  currentLevel: string
+  /** 下一等级 */
+  nextLevel?: string
+  /**
+   * 晋升进度 0-100
+   * - undefined: 后端没算或不适用（不显示进度条）
+   * - 0: 适用但完全没进度（显示 0% 进度条）
+   * ⚠️ 禁止把 0 当成 falsy 显示成 "–"
+   */
+  promotionProgress?: number
+}
+
+/**
+ * 分销成员列表查询参数
+ */
+export interface DistributionMembersParams {
+  /** 关系类型：direct=直属，indirect=间接 */
+  relation?: 'direct' | 'indirect'
+  /** 页码，默认 1 */
+  page?: number
+  /** 每页数量，默认 20 */
+  pageSize?: number
+}
+
+/**
+ * 分销成员
+ * 对应接口: GET /escort-app/distribution/members
+ * 通道: escortRequest
+ */
+export interface DistributionMember {
+  id: string
+  name: string
+  avatar?: string
+  /**
+   * 手机号（脱敏格式: 138****8888）
+   * ⚠️ 前 3 位 + **** + 后 4 位
+   */
+  phone: string
+  /** 等级 */
+  level: string
+  /** 关系类型 */
+  relation: 'direct' | 'indirect'
+  /** 加入时间 */
+  joinedAt: string
+  /** 累计订单数 */
+  totalOrders: number
+  /** 累计分润（单位：元） */
+  totalDistribution: number
+}
+
+/**
+ * 分销成员列表响应
+ */
+export interface DistributionMembersResponse {
+  items: DistributionMember[]
+  total: number
+  hasMore: boolean
+}
+
+/**
+ * 分润记录查询参数
+ */
+export interface DistributionRecordsParams {
+  /** 时间范围，默认 'all' */
+  range?: '7d' | '30d' | 'all'
+  /** 状态筛选，不传表示全部 */
+  status?: 'pending' | 'settled'
+  /** 页码 */
+  page?: number
+  /** 每页数量 */
+  pageSize?: number
+}
+
+/**
+ * 分润记录
+ * 对应接口: GET /escort-app/distribution/records
+ * 通道: escortRequest
+ */
+export interface DistributionRecord {
+  id: string
+  /** 记录类型 */
+  type: 'order' | 'bonus' | 'invite'
+  /** 标题 */
+  title: string
+  /** 金额（单位：元） */
+  amount: number
+  /** 状态 */
+  status: 'pending' | 'settled' | 'cancelled'
+  /** 来源成员名称 */
+  sourceEscortName?: string
+  /** 关联订单号 */
+  orderNo?: string
+  /** 创建时间 */
+  createdAt: string
+  /** 结算时间 */
+  settledAt?: string
+}
+
+/**
+ * 分润记录列表响应
+ */
+export interface DistributionRecordsResponse {
+  items: DistributionRecord[]
+  total: number
+  hasMore: boolean
+}
+
+/**
+ * 邀请信息
+ * 对应接口: GET /escort-app/distribution/invite-code
+ * 通道: escortRequest
+ */
+export interface DistributionInvite {
+  /** 邀请码 */
+  inviteCode: string
+  /** 邀请链接 */
+  inviteLink: string
+  /** 二维码图片 URL */
+  qrCodeUrl?: string
+  /** 累计邀请人数 */
+  totalInvited: number
+  /** 每次邀请奖励（单位：元） */
+  rewardPerInvite: number
+}
+
+/**
+ * 晋升等级信息
+ */
+export interface DistributionLevel {
+  /** 等级代码 */
+  code: string
+  /** 等级名称 */
+  name: string
+  /** 佣金比例（0-1） */
+  commissionRate: number
+  /** 权益列表 */
+  benefits: string[]
+}
+
+/**
+ * 晋升条件
+ */
+export interface DistributionRequirement {
+  /** 条件类型 */
+  type: 'team_size' | 'total_orders' | 'monthly_orders'
+  /** 当前值 */
+  current: number
+  /** 目标值 */
+  required: number
+}
+
+/**
+ * 晋升信息
+ * 对应接口: GET /escort-app/distribution/promotion
+ * 通道: escortRequest
+ */
+export interface DistributionPromotion {
+  /** 当前等级 */
+  currentLevel: DistributionLevel
+  /**
+   * 下一等级
+   * undefined 表示已达最高级
+   */
+  nextLevel?: DistributionLevel & {
+    /** 晋升条件列表 */
+    requirements: DistributionRequirement[]
+  }
+}
 
 /**
  * 用户会话（预览器模拟用）

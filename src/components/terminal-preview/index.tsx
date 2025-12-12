@@ -71,6 +71,12 @@ import {
   WorkbenchEarningsPage,
   WorkbenchWithdrawPage,
   OrderDetailPage,
+  // 分销中心页面（Step 11.3-11.5）
+  DistributionPage,
+  DistributionMembersPage,
+  DistributionRecordsPage,
+  DistributionInvitePage,
+  DistributionPromotionPage,
 } from './components/pages'
 
 export function TerminalPreview({
@@ -594,6 +600,65 @@ export function TerminalPreview({
             orderId={pageParams?.id}
             onBack={() => setCurrentPage('workbench-orders-pool')}
             onNavigate={(page, params) => navigateToPage(page, params)}
+          />
+        )
+
+      // Step 11.3: 分销中心页面
+      case 'distribution':
+        return (
+          <DistributionPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            effectiveViewerRole={effectiveViewerRole}
+            onNavigate={(page, params) => navigateToPage(page, params)}
+            onLoginClick={() => setShowEscortLoginDialog(true)}
+          />
+        )
+      case 'distribution-members':
+        return (
+          <DistributionMembersPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            effectiveViewerRole={effectiveViewerRole}
+            pageParams={pageParams}
+            onNavigate={(page, params) => navigateToPage(page, params)}
+            onLoginClick={() => setShowEscortLoginDialog(true)}
+          />
+        )
+
+      // Step 11.4: 分销中心页面批次 B
+      case 'distribution-records':
+        return (
+          <DistributionRecordsPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            effectiveViewerRole={effectiveViewerRole}
+            pageParams={pageParams}
+            onNavigate={(page, params) => navigateToPage(page, params)}
+            onLoginClick={() => setShowEscortLoginDialog(true)}
+          />
+        )
+
+      case 'distribution-invite':
+        return (
+          <DistributionInvitePage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            effectiveViewerRole={effectiveViewerRole}
+            onNavigate={(page, params) => navigateToPage(page, params)}
+            onLoginClick={() => setShowEscortLoginDialog(true)}
+          />
+        )
+
+      // Step 11.5: 晋升进度页面
+      case 'distribution-promotion':
+        return (
+          <DistributionPromotionPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            effectiveViewerRole={effectiveViewerRole}
+            onNavigate={(page, params) => navigateToPage(page, params)}
+            onLoginClick={() => setShowEscortLoginDialog(true)}
           />
         )
 
