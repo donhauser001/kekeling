@@ -1,11 +1,15 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { TreeQueryService } from './tree';
 
 @Injectable()
 export class TeamService {
   private readonly logger = new Logger(TeamService.name);
 
-  constructor(private prisma: PrismaService) { }
+  constructor(
+    private prisma: PrismaService,
+    private treeQuery: TreeQueryService,
+  ) { }
 
   /**
    * 获取团队成员列表
@@ -217,42 +221,20 @@ export class TeamService {
     };
   }
 
-  // 递归保护常量
-  private static readonly MAX_DEPTH = 3;
-  private static readonly MAX_NODES = 5000;
-
   /**
-   * 获取所有团队成员ID（带深度限制）
-   * @param depth 当前深度（从 1 开始）
-   * @param nodeCount 已访问节点计数器
+   * 获取所有团队成员ID
+   *
+   * ⚠️ 性能优化：使用物化路径（Materialized Path）查询
+   * - 无递归，O(1) 数据库查询
+   * - 自动限制深度 3 层
+   *
+   * @param escortId 当前陪诊员 ID
+   * @param maxDepth 最大深度（默认 3）
    */
   private async getAllTeamMemberIds(
     escortId: string,
-    depth = 1,
-    nodeCount = { value: 0 },
+    maxDepth = 3,
   ): Promise<string[]> {
-    if (depth > TeamService.MAX_DEPTH) {
-      this.logger.warn(`达到最大深度 ${TeamService.MAX_DEPTH}，停止`);
-      return [];
-    }
-    if (nodeCount.value >= TeamService.MAX_NODES) {
-      this.logger.warn(`达到最大节点数 ${TeamService.MAX_NODES}，停止`);
-      return [];
-    }
-
-    const children = await this.prisma.escort.findMany({
-      where: { parentId: escortId },
-      select: { id: true },
-    });
-
-    const allIds: string[] = [];
-    for (const child of children) {
-      if (nodeCount.value >= TeamService.MAX_NODES) break;
-      nodeCount.value++;
-      allIds.push(child.id);
-      const childIds = await this.getAllTeamMemberIds(child.id, depth + 1, nodeCount);
-      allIds.push(...childIds);
-    }
-    return allIds;
+    return this.treeQuery.getAllDescendantIds(escortId, maxDepth);
   }
 }

@@ -9,10 +9,12 @@ import { PromotionController } from './promotion.controller';
 import { TeamController } from './team.controller';
 import { DistributionReconciliationTask } from './distribution-reconciliation.task';
 import { DistributionStrategyFactory } from './strategies';
+import { TreeQueryService } from './tree';
 
 @Module({
   imports: [PrismaModule, NotificationModule],
   providers: [
+    TreeQueryService,
     DistributionStrategyFactory,
     DistributionService,
     PromotionService,
@@ -20,6 +22,12 @@ import { DistributionStrategyFactory } from './strategies';
     DistributionReconciliationTask,
   ],
   controllers: [DistributionController, PromotionController, TeamController],
-  exports: [DistributionService, PromotionService, TeamService, DistributionStrategyFactory],
+  exports: [
+    DistributionService,
+    PromotionService,
+    TeamService,
+    DistributionStrategyFactory,
+    TreeQueryService,
+  ],
 })
 export class DistributionModule { }
