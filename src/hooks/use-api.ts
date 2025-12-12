@@ -302,7 +302,7 @@ export function useReviewEscort() {
 // 陪诊员等级
 // ============================================
 
-import { escortLevelApi, escortTagApi, withdrawalApi, type WithdrawalQuery } from '@/lib/api'
+import { escortLevelApi, escortTagApi, withdrawalApi, adminEscortWithdrawApi, type WithdrawalQuery, type AdminEscortWithdrawRecordQuery } from '@/lib/api'
 
 export function useEscortLevels() {
   return useQuery({
@@ -435,6 +435,26 @@ export function useMarkWithdrawalFailed() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['withdrawals'] })
     },
+  })
+}
+
+// ============================================
+// Admin 陪诊员提现记录（全局列表）
+// ============================================
+
+export function useAdminEscortWithdrawRecords(query: AdminEscortWithdrawRecordQuery = {}) {
+  return useQuery({
+    queryKey: ['admin', 'escort-withdraw-records', query],
+    queryFn: () => adminEscortWithdrawApi.getList(query),
+    staleTime: 30 * 1000,
+  })
+}
+
+export function useAdminEscortWithdrawRecord(id: string) {
+  return useQuery({
+    queryKey: ['admin', 'escort-withdraw-records', id],
+    queryFn: () => adminEscortWithdrawApi.getById(id),
+    enabled: !!id,
   })
 }
 
