@@ -109,7 +109,7 @@ export function WorkflowFormDialog({
 
                 <div className='space-y-6'>
                     {/* 基本信息 */}
-                    <div className='grid grid-cols-2 gap-4'>
+                    <div className='grid grid-cols-2 items-start gap-4'>
                         <div className='space-y-2'>
                             <Label>流程名称 <span className='text-destructive'>*</span></Label>
                             <Input
@@ -276,7 +276,7 @@ export function WorkflowFormDialog({
                             <Label className='text-sm font-medium'>时长与超时配置</Label>
                         </div>
 
-                        <div className='grid grid-cols-2 gap-4'>
+                        <div className='grid grid-cols-2 items-start gap-4'>
                             <div className='space-y-2'>
                                 <Label>基础服务时长</Label>
                                 <div className='flex items-center gap-2'>
@@ -343,7 +343,7 @@ export function WorkflowFormDialog({
                         </div>
 
                         {formData.overtimeEnabled && (
-                            <div className='grid grid-cols-3 gap-4 pt-2'>
+                            <div className='grid grid-cols-3 items-start gap-4 pt-2'>
                                 <div className='space-y-2'>
                                     <Label>超时单价</Label>
                                     <div className='flex items-center gap-2'>

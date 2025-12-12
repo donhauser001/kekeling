@@ -226,7 +226,7 @@ export function EscortFormDialog({
             {/* 基本信息 */}
             <div className='space-y-4'>
               <h4 className='text-sm font-medium'>基本信息</h4>
-              <div className='grid grid-cols-2 gap-4'>
+              <div className='grid grid-cols-2 items-start gap-4'>
                 <div className='space-y-2'>
                   <Label htmlFor='name'>姓名 *</Label>
                   <Input
@@ -279,7 +279,7 @@ export function EscortFormDialog({
             {/* 职业信息 */}
             <div className='space-y-4'>
               <h4 className='text-sm font-medium'>职业信息</h4>
-              <div className='grid grid-cols-2 gap-4'>
+              <div className='grid grid-cols-2 items-start gap-4'>
                 <div className='space-y-2'>
                   <Label htmlFor='level'>等级 *</Label>
                   <Select

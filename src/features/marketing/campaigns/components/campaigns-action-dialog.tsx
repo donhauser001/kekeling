@@ -219,7 +219,7 @@ export function CampaignsActionDialog({
           <Form {...form}>
             <form id='campaign-form' onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>
               {/* 基础信息 */}
-              <div className='grid grid-cols-2 gap-4'>
+              <div className='grid grid-cols-2 items-start gap-4'>
                 <FormField
                   control={form.control}
                   name='name'
@@ -248,7 +248,7 @@ export function CampaignsActionDialog({
                 />
               </div>
 
-              <div className='grid grid-cols-2 gap-4'>
+              <div className='grid grid-cols-2 items-start gap-4'>
                 <FormField
                   control={form.control}
                   name='type'
@@ -294,7 +294,7 @@ export function CampaignsActionDialog({
               </div>
 
               {/* 时间设置 */}
-              <div className='grid grid-cols-2 gap-4'>
+              <div className='grid grid-cols-2 items-start gap-4'>
                 <FormField
                   control={form.control}
                   name='startAt'
@@ -324,7 +324,7 @@ export function CampaignsActionDialog({
               </div>
 
               {/* 优惠设置 */}
-              <div className='grid grid-cols-2 gap-4'>
+              <div className='grid grid-cols-2 items-start gap-4'>
                 <FormField
                   control={form.control}
                   name='discountType'
@@ -359,7 +359,7 @@ export function CampaignsActionDialog({
                 />
               </div>
 
-              <div className='grid grid-cols-2 gap-4'>
+              <div className='grid grid-cols-2 items-start gap-4'>
                 <FormField
                   control={form.control}
                   name='minAmount'
@@ -394,7 +394,7 @@ export function CampaignsActionDialog({
               </div>
 
               {/* 适用范围 */}
-              <div className='grid grid-cols-2 gap-4'>
+              <div className='grid grid-cols-2 items-start gap-4'>
                 <FormField
                   control={form.control}
                   name='applicableScope'
@@ -431,7 +431,7 @@ export function CampaignsActionDialog({
               </div>
 
               {/* 限制设置 */}
-              <div className='grid grid-cols-3 gap-4'>
+              <div className='grid grid-cols-3 items-start gap-4'>
                 <FormField
                   control={form.control}
                   name='totalQuantity'
@@ -495,7 +495,7 @@ export function CampaignsActionDialog({
               />
 
               {/* 图片链接 */}
-              <div className='grid grid-cols-2 gap-4'>
+              <div className='grid grid-cols-2 items-start gap-4'>
                 <FormField
                   control={form.control}
                   name='bannerUrl'

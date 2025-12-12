@@ -182,7 +182,7 @@ export function ReferralRulesActionDialog({
                 )}
               />
 
-              <div className='grid grid-cols-2 gap-4'>
+              <div className='grid grid-cols-2 items-start gap-4'>
                 <FormField
                   control={form.control}
                   name='type'
@@ -225,7 +225,7 @@ export function ReferralRulesActionDialog({
                 />
               </div>
 
-              <div className='grid grid-cols-2 gap-4'>
+              <div className='grid grid-cols-2 items-start gap-4'>
                 <FormField
                   control={form.control}
                   name='rewardValue'
@@ -277,7 +277,7 @@ export function ReferralRulesActionDialog({
                 )}
               />
 
-              <div className='grid grid-cols-2 gap-4'>
+              <div className='grid grid-cols-2 items-start gap-4'>
                 <FormField
                   control={form.control}
                   name='validDays'

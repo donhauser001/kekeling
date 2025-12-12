@@ -232,7 +232,7 @@ export function CouponsActionDialog({
           <Form {...form}>
             <form id='coupon-form' onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>
               {/* 基础信息 */}
-              <div className='grid grid-cols-2 gap-4'>
+              <div className='grid grid-cols-2 items-start gap-4'>
                 <FormField
                   control={form.control}
                   name='name'
@@ -261,7 +261,7 @@ export function CouponsActionDialog({
                 />
               </div>
 
-              <div className='grid grid-cols-3 gap-4'>
+              <div className='grid grid-cols-3 items-start gap-4'>
                 <FormField
                   control={form.control}
                   name='type'
@@ -310,7 +310,7 @@ export function CouponsActionDialog({
                 />
               </div>
 
-              <div className='grid grid-cols-2 gap-4'>
+              <div className='grid grid-cols-2 items-start gap-4'>
                 <FormField
                   control={form.control}
                   name='maxDiscount'
@@ -351,7 +351,7 @@ export function CouponsActionDialog({
               </div>
 
               {/* 适用范围 */}
-              <div className='grid grid-cols-2 gap-4'>
+              <div className='grid grid-cols-2 items-start gap-4'>
                 <FormField
                   control={form.control}
                   name='applicableScope'
@@ -388,7 +388,7 @@ export function CouponsActionDialog({
               </div>
 
               {/* 数量限制 */}
-              <div className='grid grid-cols-3 gap-4'>
+              <div className='grid grid-cols-3 items-start gap-4'>
                 <FormField
                   control={form.control}
                   name='totalQuantity'
@@ -442,7 +442,7 @@ export function CouponsActionDialog({
               </div>
 
               {/* 有效期设置 */}
-              <div className='grid grid-cols-3 gap-4'>
+              <div className='grid grid-cols-3 items-start gap-4'>
                 <FormField
                   control={form.control}
                   name='startAt'
@@ -493,7 +493,7 @@ export function CouponsActionDialog({
               </div>
 
               {/* 开关设置 */}
-              <div className='grid grid-cols-2 gap-4'>
+              <div className='grid grid-cols-2 items-start gap-4'>
                 <FormField
                   control={form.control}
                   name='stackWithMember'
@@ -524,7 +524,7 @@ export function CouponsActionDialog({
                 />
               </div>
 
-              <div className='grid grid-cols-2 gap-4'>
+              <div className='grid grid-cols-2 items-start gap-4'>
                 <FormField
                   control={form.control}
                   name='memberOnly'

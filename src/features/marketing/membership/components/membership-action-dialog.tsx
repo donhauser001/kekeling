@@ -161,7 +161,7 @@ export function MembershipActionDialog({
         <div className='max-h-[60vh] overflow-y-auto py-1 px-1'>
           <Form {...form}>
             <form id='membership-form' onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>
-              <div className='grid grid-cols-2 gap-4'>
+              <div className='grid grid-cols-2 items-start gap-4'>
                 <FormField
                   control={form.control}
                   name='name'
@@ -190,7 +190,7 @@ export function MembershipActionDialog({
                 />
               </div>
 
-              <div className='grid grid-cols-2 gap-4'>
+              <div className='grid grid-cols-2 items-start gap-4'>
                 <FormField
                   control={form.control}
                   name='discount'
@@ -219,7 +219,7 @@ export function MembershipActionDialog({
                 />
               </div>
 
-              <div className='grid grid-cols-2 gap-4'>
+              <div className='grid grid-cols-2 items-start gap-4'>
                 <FormField
                   control={form.control}
                   name='duration'
