@@ -2226,7 +2226,7 @@ Step 14 整体完成标准（17 个子任务）：
 
 | 卡片 | 子任务 | 验收方式 | 状态 |
 |------|--------|---------|------|
-| **14.1-A** | A.1 创建 mocks 目录结构 | `ls src/components/terminal-preview/mocks/` | ⏳ |
+| **14.1-A** | A.1 创建 mocks 目录结构 | `ls src/components/terminal-preview/mocks/` | ✅ |
 | | A.2 营销中心 mock 迁移 | 12 个函数迁移 | ⏳ |
 | | A.3 工作台 mock 迁移 | 9 个函数迁移 | ⏳ |
 | | A.4 分销中心 mock 迁移 | 6 个函数迁移 | ⏳ |
