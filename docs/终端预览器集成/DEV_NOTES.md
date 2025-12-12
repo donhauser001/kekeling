@@ -1,8 +1,30 @@
 # TerminalPreview 改造开发笔记
 
-> **文档版本**: v1.0  
+> **文档版本**: v2.0  
 > **创建日期**: 2024-12-12  
-> **适用范围**: `src/components/terminal-preview/**`
+> **最后更新**: 2024-12-12  
+> **适用范围**: `src/components/terminal-preview/**`  
+> **文档性质**: 📋 **唯一进度真源**
+
+---
+
+## 📊 当前进度总览
+
+| 模块 | 状态 | 说明 |
+|------|------|------|
+| **基础设施** | ✅ 完成 | Step 0-5: 类型系统 + 双通道请求 + viewerRole 推导 + DebugPanel |
+| **营销中心 Batch A-D** | ✅ 完成 | 9 个页面 + 9 个 API + 数据覆盖机制 |
+| **陪诊员前台页面** | ✅ 完成 | escort-list + escort-detail |
+| **工作台骨架** | ✅ 完成 | workbench + orders-pool + order-detail + earnings + withdraw |
+| **分销中心** | ⏳ 待开发 | 下一阶段主战场（规划文档 v1.0 已就绪） |
+
+### 下一阶段主战场
+
+| 优先级 | 任务 | 说明 |
+|--------|------|------|
+| **P0** | 分销中心终端页面 | 整体待开发，包含：团队管理、分润记录、邀请关系等 |
+| **P1** | 工作台业务页完善 | settings 等待扩展 |
+| **P1** | 管理后台预览器集成 | 积分/邀请/活动/陪诊员管理页面集成侧栏预览 |
 
 ---
 
@@ -1083,10 +1105,6 @@ const MOCK_RECORDS = [
 
 ---
 
-#### 批次 E: workbench + workbench-orders-pool（待接入，需 escortRequest）
-
----
-
 ## 代码规范
 
 ### 请求规范
@@ -1111,9 +1129,43 @@ escortSession={{ token: 'mock-escort-token', escortId: 'mock-id' }}
 
 ---
 
+---
+
+## 下一阶段：分销中心终端页面
+
+> 规划文档 v1.0 已就绪，整体待开发
+
+### 待开发页面
+
+| 页面 | page key | 通道 | 说明 |
+|------|----------|------|------|
+| 分销中心首页 | `distribution` | escortRequest | 团队统计 + 分润概览 |
+| 团队成员列表 | `distribution-team` | escortRequest | 直属/间接成员 + 等级 |
+| 分润记录 | `distribution-records` | escortRequest | 收入明细 + 筛选 |
+| 邀请页面 | `distribution-invite` | escortRequest | 邀请码 + 分享 |
+| 等级规则 | `distribution-levels` | escortRequest | 晋升条件 + 权益说明 |
+
+### 待对接 API
+
+| API | 路径 | 通道 |
+|-----|------|------|
+| `getDistributionStats()` | `/escort/distribution/stats` | escortRequest |
+| `getTeamMembers()` | `/escort/team/members` | escortRequest |
+| `getDistributionRecords()` | `/escort/distribution/records` | escortRequest |
+| `getInviteCode()` | `/escort/distribution/invite-code` | escortRequest |
+
+### 后端已完成
+
+- ✅ 分润计算（decimal.js 精确计算）
+- ✅ 团队统计（冗余字段 + 事件驱动更新）
+- ✅ 邀请关系建立
+- ✅ 分润记录查询
+
+---
+
 ## 相关文档
 
-- [终端预览器集成规格](../../../docs/终端预览器集成/01-TerminalPreview集成规格.md)
-- [双身份会话与视角切换规格](../../../docs/终端预览器集成/02-双身份会话与视角切换规格.md)
-- [模块页面接入清单与排期](../../../docs/终端预览器集成/03-模块页面接入清单与排期.md)
+- [终端预览器集成规格](./01-TerminalPreview集成规格.md)
+- [双身份会话与视角切换规格](./02-双身份会话与视角切换规格.md)
+- [模块页面接入清单与排期](./03-模块页面接入清单与排期.md)（计划表，进度以本文档为准）
 
