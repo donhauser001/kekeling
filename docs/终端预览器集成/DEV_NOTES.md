@@ -1129,37 +1129,244 @@ escortSession={{ token: 'mock-escort-token', escortId: 'mock-id' }}
 
 ---
 
----
-
 ## 下一阶段：分销中心终端页面
 
-> 规划文档 v1.0 已就绪，整体待开发
+> 整体待开发，遵循 Workbench 相同模式
 
-### 待开发页面
+---
 
-| 页面 | page key | 通道 | 说明 |
-|------|----------|------|------|
-| 分销中心首页 | `distribution` | escortRequest | 团队统计 + 分润概览 |
-| 团队成员列表 | `distribution-team` | escortRequest | 直属/间接成员 + 等级 |
-| 分润记录 | `distribution-records` | escortRequest | 收入明细 + 筛选 |
-| 邀请页面 | `distribution-invite` | escortRequest | 邀请码 + 分享 |
-| 等级规则 | `distribution-levels` | escortRequest | 晋升条件 + 权益说明 |
+### 🔒 分销中心 key 与 API 前缀对齐（锁定规范）
 
-### 待对接 API
+#### 页面 key 最终表
+
+| 页面 | page key | 说明 |
+|------|----------|------|
+| 分销中心首页 | `distribution` | 入口页：统计卡片 + 快捷入口 |
+| 团队成员列表 | `distribution-members` | 直属/间接成员 + 等级 + 订单数 |
+| 分润记录 | `distribution-records` | 收入明细 + 时间筛选 |
+| 邀请页面 | `distribution-invite` | 邀请码 + 海报 + 分享 |
+| 晋升进度 | `distribution-promotion` | 当前等级 + 晋升条件 + 权益说明 |
+
+⚠️ **命名约定**:
+- 使用 `distribution-members` 而非 `distribution-team`（避免与 `team` controller 混淆）
+- 使用 `distribution-promotion` 而非 `distribution-levels`（侧重"晋升进度"用户视角）
+
+#### API 前缀最终规则
+
+**规则**: 陪诊员私域接口统一前缀 `/escort-app/**`，与工作台保持一致。
 
 | API | 路径 | 通道 |
 |-----|------|------|
-| `getDistributionStats()` | `/escort/distribution/stats` | escortRequest |
-| `getTeamMembers()` | `/escort/team/members` | escortRequest |
-| `getDistributionRecords()` | `/escort/distribution/records` | escortRequest |
-| `getInviteCode()` | `/escort/distribution/invite-code` | escortRequest |
+| `getDistributionStats()` | `/escort-app/distribution/stats` | escortRequest |
+| `getDistributionMembers()` | `/escort-app/distribution/members` | escortRequest |
+| `getDistributionRecords()` | `/escort-app/distribution/records` | escortRequest |
+| `getDistributionInviteCode()` | `/escort-app/distribution/invite-code` | escortRequest |
+| `getDistributionPromotion()` | `/escort-app/distribution/promotion` | escortRequest |
+
+#### 权限规则
+
+| 规则 | 说明 |
+|------|------|
+| **视角限制** | 仅 `viewerRole=escort` 时允许进入 |
+| **请求限制** | `enabled: isEscort`，非 escort 不发请求 |
+| **UI 限制** | 非 escort 显示 🔒 权限提示 + "去登录"入口（开发环境显示"注入 token"） |
+
+---
+
+### Step 13: 分销中心类型定义
+
+**目标**: 建立分销中心数据类型
+
+**验收点**:
+- [ ] `types.ts` 增加分销中心相关类型
+- [ ] PreviewPage 增加 5 个 page key
+- [ ] TypeScript 编译通过
+
+**新增类型**:
+```typescript
+// 分销统计
+interface DistributionStats {
+  totalTeamSize: number        // 团队总人数
+  directCount: number          // 直属人数
+  indirectCount: number        // 间接人数
+  totalDistribution: number    // 累计分润
+  monthlyDistribution: number  // 本月分润
+  pendingDistribution: number  // 待结算
+  currentLevel: string         // 当前等级
+  nextLevel?: string           // 下一等级
+  promotionProgress?: number   // 晋升进度 0-100
+}
+
+// 团队成员
+interface DistributionMember {
+  id: string
+  name: string
+  avatar?: string
+  phone: string               // 脱敏
+  level: string
+  relation: 'direct' | 'indirect'
+  joinedAt: string
+  totalOrders: number
+  totalDistribution: number
+}
+
+// 分润记录
+interface DistributionRecord {
+  id: string
+  type: 'order' | 'bonus' | 'invite'
+  title: string
+  amount: number
+  status: 'pending' | 'settled' | 'cancelled'
+  sourceEscortName?: string   // 来源成员
+  orderNo?: string
+  createdAt: string
+  settledAt?: string
+}
+
+// 邀请信息
+interface DistributionInvite {
+  inviteCode: string
+  inviteLink: string
+  qrCodeUrl?: string
+  totalInvited: number
+  rewardPerInvite: number
+}
+
+// 晋升信息
+interface DistributionPromotion {
+  currentLevel: {
+    code: string
+    name: string
+    commissionRate: number
+    benefits: string[]
+  }
+  nextLevel?: {
+    code: string
+    name: string
+    commissionRate: number
+    benefits: string[]
+    requirements: {
+      type: 'team_size' | 'total_orders' | 'monthly_orders'
+      current: number
+      required: number
+    }[]
+  }
+}
+```
+
+---
+
+### Step 14: 分销中心 API（escortRequest 通道）
+
+**目标**: 新增分销中心 API，全部走 escortRequest + mock 降级
+
+**验收点**:
+- [ ] `getDistributionStats()` - 分销统计
+- [ ] `getDistributionMembers()` - 成员列表
+- [ ] `getDistributionRecords()` - 分润记录
+- [ ] `getDistributionInviteCode()` - 邀请信息
+- [ ] `getDistributionPromotion()` - 晋升信息
+- [ ] mock token 直接返回 mock 数据
+- [ ] 404/500 降级到 mock 数据
+- [ ] TypeScript 编译通过
+
+**API 实现模式**（与工作台一致）:
+```typescript
+getDistributionStats: async () => {
+  const escortToken = getEscortToken()
+
+  // 无 token 直接返回 mock
+  if (!escortToken) {
+    console.log('[previewApi.getDistributionStats] 无 escortToken, 返回 mock')
+    return getMockDistributionStats()
+  }
+
+  // mock token 直接返回 mock，不请求真实后端
+  if (escortToken.startsWith('mock-')) {
+    console.log('[previewApi.getDistributionStats] mock token, 返回 mock')
+    return getMockDistributionStats()
+  }
+
+  try {
+    return await escortRequest<DistributionStats>('/escort-app/distribution/stats')
+  } catch (error) {
+    if (error instanceof ApiError && [404, 500].includes(error.status)) {
+      return getMockDistributionStats()
+    }
+    throw error
+  }
+}
+```
+
+---
+
+### Step 15: 分销中心页面批次 A（distribution + distribution-members）
+
+**目标**: 接入分销中心入口页和成员列表
+
+**验收点**:
+- [ ] 新增 `DistributionPage.tsx`（入口页）
+- [ ] 新增 `DistributionMembersPage.tsx`（成员列表）
+- [ ] renderPageContent() 增加 case 'distribution' / 'distribution-members'
+- [ ] 仅 viewerRole=escort 时允许进入
+- [ ] 非 escort 显示 🔒 提示 + "去登录"入口
+- [ ] loading / error / mock 降级齐全
+- [ ] TypeScript 编译通过
+
+**权限校验（硬约束）**:
+```typescript
+// DistributionPage.tsx
+const { isEscort } = useViewerRole(...)
+
+// 非 escort 显示权限提示
+if (!isEscort) {
+  return (
+    <PermissionPrompt
+      title="需要陪诊员身份"
+      description="请先登录陪诊员账号"
+      onLogin={() => setShowLoginDialog(true)}
+      showDebugInject={isDev}  // 开发环境显示"注入 token"
+    />
+  )
+}
+
+// Query 必须 enabled: isEscort
+const { data, isLoading } = useQuery({
+  queryKey: ['preview', 'distribution', 'stats'],
+  queryFn: () => previewApi.getDistributionStats(),
+  enabled: isEscort, // ⚠️ 关键
+})
+```
+
+---
+
+### Step 16: 分销中心页面批次 B（distribution-records + distribution-invite）
+
+**验收点**:
+- [ ] 新增 `DistributionRecordsPage.tsx`
+- [ ] 新增 `DistributionInvitePage.tsx`
+- [ ] renderPageContent() 增加 case
+- [ ] enabled: isEscort
+- [ ] TypeScript 编译通过
+
+---
+
+### Step 17: 分销中心页面批次 C（distribution-promotion）
+
+**验收点**:
+- [ ] 新增 `DistributionPromotionPage.tsx`
+- [ ] renderPageContent() 增加 case
+- [ ] enabled: isEscort
+- [ ] TypeScript 编译通过
+
+---
 
 ### 后端已完成
 
 - ✅ 分润计算（decimal.js 精确计算）
 - ✅ 团队统计（冗余字段 + 事件驱动更新）
 - ✅ 邀请关系建立
-- ✅ 分润记录查询
+- ✅ 分润记录查询（分页 + 筛选）
 
 ---
 
@@ -1168,4 +1375,3 @@ escortSession={{ token: 'mock-escort-token', escortId: 'mock-id' }}
 - [终端预览器集成规格](./01-TerminalPreview集成规格.md)
 - [双身份会话与视角切换规格](./02-双身份会话与视角切换规格.md)
 - [模块页面接入清单与排期](./03-模块页面接入清单与排期.md)（计划表，进度以本文档为准）
-
