@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -16,6 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { ConfirmDialog } from '@/components/confirm-dialog'
 import {
   Form,
   FormControl,
@@ -50,15 +51,18 @@ type ReferralRulesActionDialogProps = {
   currentRow?: ReferralRule
   open: boolean
   onOpenChange: (open: boolean) => void
+  onSuccess?: () => void
 }
 
 export function ReferralRulesActionDialog({
   currentRow,
   open,
   onOpenChange,
+  onSuccess,
 }: ReferralRulesActionDialogProps) {
   const isEdit = !!currentRow
   const queryClient = useQueryClient()
+  const [confirmCloseOpen, setConfirmCloseOpen] = useState(false)
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -112,6 +116,7 @@ export function ReferralRulesActionDialog({
       queryClient.invalidateQueries({ queryKey: ['referral-rules'] })
       onOpenChange(false)
       toast.success('创建成功')
+      onSuccess?.()
     },
     onError: (error: Error) => {
       toast.error(error.message || '创建失败')
@@ -125,6 +130,7 @@ export function ReferralRulesActionDialog({
       queryClient.invalidateQueries({ queryKey: ['referral-rules'] })
       onOpenChange(false)
       toast.success('更新成功')
+      onSuccess?.()
     },
     onError: (error: Error) => {
       toast.error(error.message || '更新失败')
@@ -148,24 +154,29 @@ export function ReferralRulesActionDialog({
 
   const isPending = createMutation.isPending || updateMutation.isPending
 
-  return (
-    <Dialog
-      open={open}
-      onOpenChange={(state) => {
-        if (!isPending) {
-          onOpenChange(state)
-        }
-      }}
-    >
-      <DialogContent className='sm:max-w-lg'>
-        <DialogHeader className='text-start'>
-          <DialogTitle>{isEdit ? '编辑邀请规则' : '新建邀请规则'}</DialogTitle>
-          <DialogDescription>
-            {isEdit ? '修改邀请规则信息' : '创建一个新的邀请规则'}
-          </DialogDescription>
-        </DialogHeader>
+  // 脏表单关闭拦截
+  const onOpenChangeWrapper = (open: boolean) => {
+    if (!open && form.formState.isDirty && !isPending) {
+      setConfirmCloseOpen(true)
+      return
+    }
+    if (!isPending) {
+      onOpenChange(open)
+    }
+  }
 
-        <div className='max-h-[60vh] overflow-y-auto py-1 px-1'>
+  return (
+    <>
+      <Dialog open={open} onOpenChange={onOpenChangeWrapper}>
+        <DialogContent className='sm:max-w-lg'>
+          <DialogHeader className='text-start'>
+            <DialogTitle>{isEdit ? '编辑邀请规则' : '新建邀请规则'}</DialogTitle>
+            <DialogDescription>
+              {isEdit ? '修改邀请规则信息' : '创建一个新的邀请规则'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className='max-h-[60vh] min-h-[300px] overflow-y-auto py-1 px-1'>
           <Form {...form}>
             <form id='referral-rules-form' onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>
               <FormField
@@ -348,16 +359,30 @@ export function ReferralRulesActionDialog({
           </Form>
         </div>
 
-        <DialogFooter>
-          <Button type='button' variant='outline' onClick={() => onOpenChange(false)} disabled={isPending}>
-            取消
-          </Button>
-          <Button type='submit' form='referral-rules-form' disabled={isPending}>
-            {isPending && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
-            {isEdit ? '更新' : '创建'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          <DialogFooter>
+            <Button type='button' variant='outline' onClick={() => onOpenChangeWrapper(false)} disabled={isPending}>
+              取消
+            </Button>
+            <Button type='submit' form='referral-rules-form' disabled={isPending}>
+              {isPending && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
+              {isEdit ? '更新' : '创建'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDialog
+        open={confirmCloseOpen}
+        onOpenChange={setConfirmCloseOpen}
+        handleConfirm={() => {
+          setConfirmCloseOpen(false)
+          onOpenChange(false)
+        }}
+        title='放弃修改？'
+        desc='您有未保存的修改，确定要关闭吗？'
+        confirmText='放弃'
+        destructive
+      />
+    </>
   )
 }

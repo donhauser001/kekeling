@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -16,6 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { ConfirmDialog } from '@/components/confirm-dialog'
 import {
   Form,
   FormControl,
@@ -61,15 +62,18 @@ type CouponsActionDialogProps = {
   currentRow?: CouponTemplate
   open: boolean
   onOpenChange: (open: boolean) => void
+  onSuccess?: () => void
 }
 
 export function CouponsActionDialog({
   currentRow,
   open,
   onOpenChange,
+  onSuccess,
 }: CouponsActionDialogProps) {
   const isEdit = !!currentRow
   const queryClient = useQueryClient()
+  const [confirmCloseOpen, setConfirmCloseOpen] = useState(false)
 
   const toDatetimeLocal = (value?: string | null) => {
     if (!value) return ''
@@ -163,6 +167,7 @@ export function CouponsActionDialog({
       queryClient.invalidateQueries({ queryKey: ['coupon-templates'] })
       onOpenChange(false)
       toast.success('创建成功')
+      onSuccess?.()
     },
     onError: (error: Error) => {
       toast.error(error.message || '创建失败')
@@ -176,6 +181,7 @@ export function CouponsActionDialog({
       queryClient.invalidateQueries({ queryKey: ['coupon-templates'] })
       onOpenChange(false)
       toast.success('更新成功')
+      onSuccess?.()
     },
     onError: (error: Error) => {
       toast.error(error.message || '更新失败')
@@ -211,24 +217,29 @@ export function CouponsActionDialog({
   const isPending = createMutation.isPending || updateMutation.isPending
   const validityType = form.watch('validityType')
 
-  return (
-    <Dialog
-      open={open}
-      onOpenChange={(state) => {
-        if (!isPending) {
-          onOpenChange(state)
-        }
-      }}
-    >
-      <DialogContent className='sm:max-w-2xl'>
-        <DialogHeader className='text-start'>
-          <DialogTitle>{isEdit ? '编辑优惠券模板' : '新建优惠券模板'}</DialogTitle>
-          <DialogDescription>
-            {isEdit ? '修改模板基础信息' : '创建一个新的优惠券模板'}
-          </DialogDescription>
-        </DialogHeader>
+  // 脏表单关闭拦截
+  const onOpenChangeWrapper = (open: boolean) => {
+    if (!open && form.formState.isDirty && !isPending) {
+      setConfirmCloseOpen(true)
+      return
+    }
+    if (!isPending) {
+      onOpenChange(open)
+    }
+  }
 
-        <div className='max-h-[60vh] overflow-y-auto py-1 px-1'>
+  return (
+    <>
+      <Dialog open={open} onOpenChange={onOpenChangeWrapper}>
+        <DialogContent className='sm:max-w-2xl'>
+          <DialogHeader className='text-start'>
+            <DialogTitle>{isEdit ? '编辑优惠券模板' : '新建优惠券模板'}</DialogTitle>
+            <DialogDescription>
+              {isEdit ? '修改模板基础信息' : '创建一个新的优惠券模板'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className='max-h-[60vh] min-h-[300px] overflow-y-auto py-1 px-1'>
           <Form {...form}>
             <form id='coupon-form' onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>
               {/* 基础信息 */}
@@ -585,16 +596,30 @@ export function CouponsActionDialog({
           </Form>
         </div>
 
-        <DialogFooter>
-          <Button type='button' variant='outline' onClick={() => onOpenChange(false)} disabled={isPending}>
-            取消
-          </Button>
-          <Button type='submit' form='coupon-form' disabled={isPending}>
-            {isPending && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
-            {isEdit ? '更新' : '创建'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          <DialogFooter>
+            <Button type='button' variant='outline' onClick={() => onOpenChangeWrapper(false)} disabled={isPending}>
+              取消
+            </Button>
+            <Button type='submit' form='coupon-form' disabled={isPending}>
+              {isPending && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
+              {isEdit ? '更新' : '创建'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDialog
+        open={confirmCloseOpen}
+        onOpenChange={setConfirmCloseOpen}
+        handleConfirm={() => {
+          setConfirmCloseOpen(false)
+          onOpenChange(false)
+        }}
+        title='放弃修改？'
+        desc='您有未保存的修改，确定要关闭吗？'
+        confirmText='放弃'
+        destructive
+      />
+    </>
   )
 }

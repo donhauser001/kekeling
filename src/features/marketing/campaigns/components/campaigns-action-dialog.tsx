@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -16,6 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { ConfirmDialog } from '@/components/confirm-dialog'
 import {
   Form,
   FormControl,
@@ -58,15 +59,18 @@ type CampaignsActionDialogProps = {
   currentRow?: Campaign
   open: boolean
   onOpenChange: (open: boolean) => void
+  onSuccess?: () => void
 }
 
 export function CampaignsActionDialog({
   currentRow,
   open,
   onOpenChange,
+  onSuccess,
 }: CampaignsActionDialogProps) {
   const isEdit = !!currentRow
   const queryClient = useQueryClient()
+  const [confirmCloseOpen, setConfirmCloseOpen] = useState(false)
 
   const toDatetimeLocal = (value?: string | null) => {
     if (!value) return ''
@@ -154,6 +158,7 @@ export function CampaignsActionDialog({
       queryClient.invalidateQueries({ queryKey: ['campaigns'] })
       onOpenChange(false)
       toast.success('创建成功')
+      onSuccess?.()
     },
     onError: (error: Error) => {
       toast.error(error.message || '创建失败')
@@ -167,11 +172,23 @@ export function CampaignsActionDialog({
       queryClient.invalidateQueries({ queryKey: ['campaigns'] })
       onOpenChange(false)
       toast.success('更新成功')
+      onSuccess?.()
     },
     onError: (error: Error) => {
       toast.error(error.message || '更新失败')
     },
   })
+
+  // 脏表单关闭拦截
+  const onOpenChangeWrapper = (open: boolean) => {
+    if (!open && form.formState.isDirty && !isPending) {
+      setConfirmCloseOpen(true)
+      return
+    }
+    if (!isPending) {
+      onOpenChange(open)
+    }
+  }
 
   const onSubmit = (values: FormValues) => {
     const payload = {
@@ -199,23 +216,17 @@ export function CampaignsActionDialog({
   const isPending = createMutation.isPending || updateMutation.isPending
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(state) => {
-        if (!isPending) {
-          onOpenChange(state)
-        }
-      }}
-    >
-      <DialogContent className='sm:max-w-2xl'>
-        <DialogHeader className='text-start'>
-          <DialogTitle>{isEdit ? '编辑活动' : '新建活动'}</DialogTitle>
-          <DialogDescription>
-            {isEdit ? '修改活动基础信息' : '创建一个新的营销活动'}
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChangeWrapper}>
+        <DialogContent className='sm:max-w-2xl'>
+          <DialogHeader className='text-start'>
+            <DialogTitle>{isEdit ? '编辑活动' : '新建活动'}</DialogTitle>
+            <DialogDescription>
+              {isEdit ? '修改活动基础信息' : '创建一个新的营销活动'}
+            </DialogDescription>
+          </DialogHeader>
 
-        <div className='max-h-[60vh] overflow-y-auto py-1 px-1'>
+          <div className='max-h-[60vh] min-h-[300px] overflow-y-auto py-1 px-1'>
           <Form {...form}>
             <form id='campaign-form' onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>
               {/* 基础信息 */}
@@ -542,16 +553,30 @@ export function CampaignsActionDialog({
           </Form>
         </div>
 
-        <DialogFooter>
-          <Button type='button' variant='outline' onClick={() => onOpenChange(false)} disabled={isPending}>
-            取消
-          </Button>
-          <Button type='submit' form='campaign-form' disabled={isPending}>
-            {isPending && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
-            {isEdit ? '更新' : '创建'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          <DialogFooter>
+            <Button type='button' variant='outline' onClick={() => onOpenChangeWrapper(false)} disabled={isPending}>
+              取消
+            </Button>
+            <Button type='submit' form='campaign-form' disabled={isPending}>
+              {isPending && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
+              {isEdit ? '更新' : '创建'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDialog
+        open={confirmCloseOpen}
+        onOpenChange={setConfirmCloseOpen}
+        handleConfirm={() => {
+          setConfirmCloseOpen(false)
+          onOpenChange(false)
+        }}
+        title='放弃修改？'
+        desc='您有未保存的修改，确定要关闭吗？'
+        confirmText='放弃'
+        destructive
+      />
+    </>
   )
 }
