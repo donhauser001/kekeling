@@ -501,6 +501,42 @@ function deriveViewerRole(escortToken, isValidated) {
 
 ---
 
+### Step 2/7: 请求分流增强 + verifyEscortToken ✅
+
+**目标**: 确保双通道请求机制完整，并增加 escort token 验证占位。
+
+**验收点**:
+- [x] userRequest 自动携带 `Authorization: Bearer ${userToken}`
+- [x] escortRequest 自动携带 `Authorization: Bearer ${escortToken}`
+- [x] 统一错误处理（401/403/500 不崩溃，返回可降级错误）
+- [x] `previewApi.verifyEscortToken()` 占位实现
+- [x] 现有营销中心 previewApi 请求不受影响
+- [x] TypeScript 编译通过
+
+**新增 API**:
+```typescript
+// 验证 escortToken 有效性
+previewApi.verifyEscortToken(): Promise<boolean>
+// - mock token (mock-*) 直接返回 true
+// - 真实 token: v1 占位返回 true，TODO 后续接真实接口
+// - 无 token 返回 false
+// - 401 时清除 token 并返回 false
+```
+
+**请求通道规则回顾**:
+```typescript
+// User Channel: 用户端功能
+userRequest<T>(endpoint, options?)
+// 自动: Authorization: Bearer ${userToken}
+
+// Escort Channel: 陪诊员工作台
+escortRequest<T>(endpoint, options?)
+// 自动: Authorization: Bearer ${escortToken}
+// 仅用于: /escort-app/**
+```
+
+---
+
 #### 批次 G: order-pool + income（待接入，需 escortRequest）
 
 ---

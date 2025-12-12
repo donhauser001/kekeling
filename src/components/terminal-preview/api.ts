@@ -1064,6 +1064,54 @@ export const previewApi = {
   // ==========================================================================
 
   /**
+   * 验证 escortToken 有效性
+   * 接口: GET /escort-app/session/verify
+   * 通道: escortRequest
+   *
+   * ⚠️ 这是进入陪诊员视角的必要校验
+   * 返回 false 时应清除 escortToken 并回退到用户视角
+   *
+   * @returns 是否有效
+   */
+  verifyEscortToken: async (): Promise<boolean> => {
+    const escortToken = getEscortToken()
+
+    // 无 token 直接返回 false
+    if (!escortToken) {
+      return false
+    }
+
+    // mock token 直接视为有效（用于预览器调试）
+    if (escortToken.startsWith('mock-')) {
+      console.log('[previewApi.verifyEscortToken] mock token 视为有效')
+      return true
+    }
+
+    try {
+      // 真实校验：调用后端接口
+      // TODO: 后端接口就绪后替换为真实 endpoint
+      // await escortRequest<{ valid: boolean }>('/escort-app/session/verify')
+      // return true
+
+      // v1 占位实现：token 存在即视为有效
+      console.log('[previewApi.verifyEscortToken] v1 占位实现，token 存在视为有效')
+      return true
+    } catch (error) {
+      if (error instanceof ApiError) {
+        if (error.status === 401) {
+          // token 无效，清除
+          clearEscortToken()
+          console.warn('[previewApi.verifyEscortToken] escortToken 无效，已清除')
+          return false
+        }
+      }
+      // 其他错误（网络等）视为验证失败
+      console.error('[previewApi.verifyEscortToken] 验证失败:', error)
+      return false
+    }
+  },
+
+  /**
    * 获取工作台统计数据
    * 接口: GET /escort-app/workbench/stats
    * 通道: escortRequest（⚠️ 必须 escortToken）
