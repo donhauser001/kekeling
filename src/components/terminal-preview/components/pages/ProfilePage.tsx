@@ -21,6 +21,7 @@ import {
   Building,
   ChevronRight,
   Briefcase,
+  LogOut,
 } from 'lucide-react'
 import type { ThemeSettings, PreviewViewerRole } from '../../types'
 
@@ -33,6 +34,8 @@ interface ProfilePageProps {
   onEscortEntryClick?: () => void
   /** 点击进入工作台回调 */
   onWorkbenchClick?: () => void
+  /** 退出陪诊员视角回调 */
+  onExitEscortMode?: () => void
 }
 
 // 订单入口
@@ -59,6 +62,7 @@ export function ProfilePage({
   effectiveViewerRole = 'user',
   onEscortEntryClick,
   onWorkbenchClick,
+  onExitEscortMode,
 }: ProfilePageProps) {
   // 深色模式颜色
   const bgColor = isDarkMode ? '#1a1a1a' : '#f5f7fa'
@@ -79,6 +83,23 @@ export function ProfilePage({
           background: `linear-gradient(180deg, ${themeSettings.primaryColor} 0%, ${themeSettings.primaryColor}dd 100%)`,
         }}
       >
+        {/* 陪诊员身份提示条 */}
+        {isEscort && (
+          <div className='flex items-center justify-between mb-4 px-3 py-2 rounded-lg bg-white/10'>
+            <div className='flex items-center gap-2'>
+              <Briefcase className='h-4 w-4 text-white' />
+              <span className='text-sm text-white'>陪诊员模式</span>
+            </div>
+            <button
+              onClick={onExitEscortMode}
+              className='flex items-center gap-1 px-2 py-1 rounded text-xs text-white/80 hover:text-white hover:bg-white/10 transition-colors'
+            >
+              <LogOut className='h-3 w-3' />
+              <span>退出</span>
+            </button>
+          </div>
+        )}
+
         <div className='flex items-center gap-3'>
           {/* 头像 */}
           <div className='h-16 w-16 rounded-full bg-white/20 flex items-center justify-center'>
@@ -88,6 +109,11 @@ export function ProfilePage({
           <div className='flex-1'>
             <div className='flex items-center gap-2'>
               <span className='text-lg font-semibold text-white'>微信用户</span>
+              {isEscort && (
+                <span className='px-1.5 py-0.5 rounded text-[10px] bg-white/20 text-white'>
+                  陪诊员
+                </span>
+              )}
             </div>
             <span className='text-sm text-white/80'>138****8888</span>
           </div>

@@ -164,6 +164,15 @@ export function TerminalPreview({
     setCurrentPage('workbench')
   }, [])
 
+  // Step 5/7: 退出陪诊员视角
+  const handleExitEscortMode = useCallback(() => {
+    console.log('[TerminalPreview] 退出陪诊员视角')
+    clearPreviewEscortToken()    // 清除持久化
+    setLocalEscortToken(null)    // 更新状态
+    setCurrentPage('profile')    // 回到我的页
+    // useViewerRole 会自动检测到 token 清除并切换回 user 视角
+  }, [])
+
   // 获取 token 用于 DebugPanel 显示
   const currentUserToken = getUserToken()
   const currentEscortToken = mergedEscortSession?.token ?? null
@@ -421,6 +430,7 @@ export function TerminalPreview({
             effectiveViewerRole={effectiveViewerRole}
             onEscortEntryClick={handleEscortEntryClick}
             onWorkbenchClick={handleWorkbenchClick}
+            onExitEscortMode={handleExitEscortMode}
           />
         )
 
@@ -519,6 +529,7 @@ export function TerminalPreview({
             isDarkMode={isDarkMode}
             effectiveViewerRole={effectiveViewerRole}
             onNavigate={(page, params) => navigateToPage(page, params)}
+            onExitEscortMode={handleExitEscortMode}
           />
         )
 

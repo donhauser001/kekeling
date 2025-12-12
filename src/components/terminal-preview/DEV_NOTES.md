@@ -648,6 +648,45 @@ interface ProfilePageProps {
 
 ---
 
+### Step 5/7: 退出陪诊员功能 ✅
+
+**目标**: 在 escort 视角下提供退出入口，退出后回到 user 视角且不影响 user 登录态。
+
+**验收点**:
+- [x] ProfilePage 顶部显示"陪诊员模式"提示条 + 退出按钮
+- [x] WorkbenchPage 标题栏显示退出按钮
+- [x] 点击退出清理 escortToken (state + localStorage)
+- [x] viewerRole 立刻回落为 user
+- [x] userToken 保持不变
+- [x] 退出后自动跳回"我的页"
+- [x] TypeScript 编译通过
+
+**退出入口位置**:
+| 页面 | 位置 | UI |
+|------|------|-----|
+| ProfilePage | 头部顶部 | 陪诊员模式提示条 + [退出] 按钮 |
+| WorkbenchPage | 标题栏右侧 | [退出] 按钮 |
+
+**退出流程**:
+```typescript
+const handleExitEscortMode = useCallback(() => {
+  clearPreviewEscortToken()    // 清除 localStorage
+  setLocalEscortToken(null)    // 清除状态
+  setCurrentPage('profile')    // 跳回我的页
+  // useViewerRole 自动检测 token 清除 → effectiveViewerRole = 'user'
+}, [])
+```
+
+**UI 变化**:
+| 退出前 | 退出后 |
+|--------|--------|
+| effectiveViewerRole = 'escort' | effectiveViewerRole = 'user' |
+| 显示"陪诊员模式"提示条 | 提示条消失 |
+| 显示"陪诊员"标签 | 标签消失 |
+| 入口显示"进入工作台" | 入口显示"成为陪诊员" |
+
+---
+
 #### 批次 G: order-pool + income（待接入，需 escortRequest）
 
 ---

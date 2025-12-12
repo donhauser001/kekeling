@@ -11,6 +11,7 @@
  */
 
 import { useQuery } from '@tanstack/react-query'
+import { LogOut } from 'lucide-react'
 import type { ThemeSettings, PreviewViewerRole } from '../../../types'
 import { previewApi, type WorkbenchStats } from '../../../api'
 
@@ -24,6 +25,8 @@ export interface WorkbenchPageProps {
   /** 当前有效视角（必须为 escort 才能预览） */
   effectiveViewerRole: PreviewViewerRole
   onNavigate?: (page: string, params?: Record<string, string>) => void
+  /** 退出陪诊员视角回调 */
+  onExitEscortMode?: () => void
 }
 
 // ============================================================================
@@ -35,6 +38,7 @@ export function WorkbenchPage({
   isDarkMode,
   effectiveViewerRole,
   onNavigate,
+  onExitEscortMode,
 }: WorkbenchPageProps) {
   const isEscort = effectiveViewerRole === 'escort'
 
@@ -106,14 +110,23 @@ export function WorkbenchPage({
     >
       {/* 页面标题 */}
       <div
-        className="sticky top-0 z-10 px-4 py-3"
+        className="sticky top-0 z-10 px-4 py-3 flex items-center justify-between"
         style={{
           backgroundColor: themeSettings.primaryColor,
         }}
       >
-        <h1 className="text-lg font-semibold text-white text-center">
+        <div className="w-16" /> {/* 占位 */}
+        <h1 className="text-lg font-semibold text-white">
           工作台
         </h1>
+        {/* 退出按钮 */}
+        <button
+          onClick={onExitEscortMode}
+          className="w-16 flex items-center justify-end gap-1 text-white/80 hover:text-white transition-colors"
+        >
+          <LogOut className="w-4 h-4" />
+          <span className="text-xs">退出</span>
+        </button>
       </div>
 
       {/* 内容区 */}
