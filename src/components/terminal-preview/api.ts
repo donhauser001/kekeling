@@ -781,6 +781,223 @@ function getMockWorkbenchStats(): WorkbenchStats {
   }
 }
 
+// ==========================================================================
+// Step 6/7: 工作台扩展类型
+// ==========================================================================
+
+/**
+ * 工作台汇总数据
+ * 对应接口: GET /escort-app/workbench/summary
+ */
+export interface WorkbenchSummary {
+  /** 今日订单数 */
+  todayOrders: number
+  /** 本周订单数 */
+  weekOrders: number
+  /** 本月订单数 */
+  monthOrders: number
+  /** 累计订单数 */
+  totalOrders: number
+  /** 今日收入 */
+  todayIncome: number
+  /** 本周收入 */
+  weekIncome: number
+  /** 本月收入 */
+  monthIncome: number
+  /** 累计收入 */
+  totalIncome: number
+  /** 服务评分（0-5） */
+  rating: number
+  /** 好评率（0-100） */
+  satisfactionRate: number
+}
+
+/**
+ * 订单池订单项
+ */
+export interface PoolOrderItem {
+  id: string
+  /** 订单号 */
+  orderNo: string
+  /** 服务类型 */
+  serviceType: string
+  /** 服务名称 */
+  serviceName: string
+  /** 预约时间 */
+  appointmentTime: string
+  /** 医院名称 */
+  hospitalName: string
+  /** 科室 */
+  department?: string
+  /** 订单金额 */
+  amount: number
+  /** 预计佣金 */
+  commission: number
+  /** 距离（km） */
+  distance?: number
+  /** 创建时间 */
+  createdAt: string
+}
+
+/**
+ * 订单池响应
+ * 对应接口: GET /escort-app/orders/pool
+ */
+export interface OrdersPoolResponse {
+  items: PoolOrderItem[]
+  total: number
+  hasMore: boolean
+}
+
+/**
+ * 收入明细项
+ */
+export interface EarningsItem {
+  id: string
+  /** 类型 */
+  type: 'order' | 'bonus' | 'withdraw' | 'refund'
+  /** 标题 */
+  title: string
+  /** 金额（正为收入，负为支出） */
+  amount: number
+  /** 时间 */
+  createdAt: string
+  /** 关联订单号 */
+  orderNo?: string
+}
+
+/**
+ * 收入统计响应
+ * 对应接口: GET /escort-app/earnings
+ */
+export interface EarningsResponse {
+  /** 可提现余额 */
+  balance: number
+  /** 累计收入 */
+  totalEarned: number
+  /** 累计提现 */
+  totalWithdrawn: number
+  /** 待结算 */
+  pendingSettlement: number
+  /** 收入明细 */
+  items: EarningsItem[]
+  hasMore: boolean
+}
+
+/**
+ * 提现信息
+ * 对应接口: GET /escort-app/withdraw/info
+ */
+export interface WithdrawInfo {
+  /** 可提现金额 */
+  withdrawable: number
+  /** 最低提现金额 */
+  minWithdrawAmount: number
+  /** 提现手续费率（0-1） */
+  feeRate: number
+  /** 预计到账时间（小时） */
+  estimatedHours: number
+  /** 已绑定银行卡 */
+  bankCards: {
+    id: string
+    bankName: string
+    cardNo: string // 仅显示后4位
+    isDefault: boolean
+  }[]
+}
+
+function getMockWorkbenchSummary(): WorkbenchSummary {
+  return {
+    todayOrders: 3,
+    weekOrders: 18,
+    monthOrders: 45,
+    totalOrders: 328,
+    todayIncome: 580.0,
+    weekIncome: 3200.0,
+    monthIncome: 8650.0,
+    totalIncome: 52800.0,
+    rating: 4.9,
+    satisfactionRate: 98,
+  }
+}
+
+function getMockOrdersPool(): OrdersPoolResponse {
+  return {
+    items: [
+      {
+        id: 'pool-1',
+        orderNo: 'PZ202412120001',
+        serviceType: 'accompany',
+        serviceName: '全程陪诊',
+        appointmentTime: '2024-12-13 09:00',
+        hospitalName: '北京协和医院',
+        department: '内科',
+        amount: 299,
+        commission: 180,
+        distance: 3.2,
+        createdAt: '2024-12-12 14:30',
+      },
+      {
+        id: 'pool-2',
+        orderNo: 'PZ202412120002',
+        serviceType: 'report',
+        serviceName: '代取报告',
+        appointmentTime: '2024-12-13 14:00',
+        hospitalName: '北京朝阳医院',
+        amount: 99,
+        commission: 60,
+        distance: 5.8,
+        createdAt: '2024-12-12 15:20',
+      },
+      {
+        id: 'pool-3',
+        orderNo: 'PZ202412120003',
+        serviceType: 'accompany',
+        serviceName: '产检陪护',
+        appointmentTime: '2024-12-14 08:30',
+        hospitalName: '北京妇产医院',
+        department: '产科',
+        amount: 399,
+        commission: 240,
+        distance: 2.1,
+        createdAt: '2024-12-12 16:00',
+      },
+    ],
+    total: 3,
+    hasMore: false,
+  }
+}
+
+function getMockEarnings(): EarningsResponse {
+  return {
+    balance: 6200.0,
+    totalEarned: 52800.0,
+    totalWithdrawn: 46000.0,
+    pendingSettlement: 580.0,
+    items: [
+      { id: 'e1', type: 'order', title: '订单收入', amount: 180, createdAt: '2024-12-12 16:00', orderNo: 'PZ202412120001' },
+      { id: 'e2', type: 'order', title: '订单收入', amount: 240, createdAt: '2024-12-11 18:30', orderNo: 'PZ202412110003' },
+      { id: 'e3', type: 'bonus', title: '周冠军奖励', amount: 100, createdAt: '2024-12-10 10:00' },
+      { id: 'e4', type: 'withdraw', title: '提现', amount: -1000, createdAt: '2024-12-08 14:00' },
+      { id: 'e5', type: 'order', title: '订单收入', amount: 160, createdAt: '2024-12-07 17:20', orderNo: 'PZ202412070002' },
+    ],
+    hasMore: true,
+  }
+}
+
+function getMockWithdrawInfo(): WithdrawInfo {
+  return {
+    withdrawable: 6200.0,
+    minWithdrawAmount: 100,
+    feeRate: 0,
+    estimatedHours: 24,
+    bankCards: [
+      { id: 'card-1', bankName: '招商银行', cardNo: '6789', isDefault: true },
+      { id: 'card-2', bankName: '工商银行', cardNo: '1234', isDefault: false },
+    ],
+  }
+}
+
 /**
  * Mock 优惠券数据
  * 用于接口不存在时的降级显示
@@ -1128,10 +1345,75 @@ export const previewApi = {
     }
   },
 
-  // TODO: 订单池（后续接入）
-  // getOrderPool: () => escortRequest<OrderPoolResponse>('/escort-app/orders/pool'),
+  /**
+   * 获取工作台汇总数据
+   * 接口: GET /escort-app/workbench/summary
+   * 通道: escortRequest（⚠️ 必须 escortToken）
+   */
+  getWorkbenchSummary: async (): Promise<WorkbenchSummary> => {
+    try {
+      return await escortRequest<WorkbenchSummary>('/escort-app/workbench/summary')
+    } catch (error) {
+      if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
+        console.warn('[previewApi.getWorkbenchSummary] 使用 mock 数据')
+        return getMockWorkbenchSummary()
+      }
+      throw error
+    }
+  },
+
+  /**
+   * 获取订单池列表
+   * 接口: GET /escort-app/orders/pool
+   * 通道: escortRequest（⚠️ 必须 escortToken）
+   */
+  getWorkbenchOrdersPool: async (): Promise<OrdersPoolResponse> => {
+    try {
+      return await escortRequest<OrdersPoolResponse>('/escort-app/orders/pool')
+    } catch (error) {
+      if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
+        console.warn('[previewApi.getWorkbenchOrdersPool] 使用 mock 数据')
+        return getMockOrdersPool()
+      }
+      throw error
+    }
+  },
+
+  /**
+   * 获取收入明细
+   * 接口: GET /escort-app/earnings
+   * 通道: escortRequest（⚠️ 必须 escortToken）
+   */
+  getWorkbenchEarnings: async (): Promise<EarningsResponse> => {
+    try {
+      return await escortRequest<EarningsResponse>('/escort-app/earnings')
+    } catch (error) {
+      if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
+        console.warn('[previewApi.getWorkbenchEarnings] 使用 mock 数据')
+        return getMockEarnings()
+      }
+      throw error
+    }
+  },
+
+  /**
+   * 获取提现信息
+   * 接口: GET /escort-app/withdraw/info
+   * 通道: escortRequest（⚠️ 必须 escortToken）
+   */
+  getWorkbenchWithdrawInfo: async (): Promise<WithdrawInfo> => {
+    try {
+      return await escortRequest<WithdrawInfo>('/escort-app/withdraw/info')
+    } catch (error) {
+      if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
+        console.warn('[previewApi.getWorkbenchWithdrawInfo] 使用 mock 数据')
+        return getMockWithdrawInfo()
+      }
+      throw error
+    }
+  },
+
+  // TODO: 后续扩展
   // getWorkbenchOrderDetail: (id: string) => escortRequest<WorkbenchOrderDetail>(`/escort-app/orders/${id}`),
-  // getEarningsStats: () => escortRequest<EarningsStats>('/escort-app/earnings/stats'),
-  // getWithdrawInfo: () => escortRequest<WithdrawInfo>('/escort-app/withdraw/info'),
   // getMyEscortProfile: () => escortRequest<EscortProfile>('/escort-app/profile'),
 }

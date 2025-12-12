@@ -687,7 +687,64 @@ const handleExitEscortMode = useCallback(() => {
 
 ---
 
-#### 批次 G: order-pool + income（待接入，需 escortRequest）
+### Step 6/7: 工作台 API（escortRequest 通道） ✅
+
+**目标**: 新增工作台相关 API，全部走 escortRequest 通道，具备 mock 降级。
+
+**验收点**:
+- [x] `getWorkbenchSummary()` - 工作台汇总
+- [x] `getWorkbenchOrdersPool()` - 订单池
+- [x] `getWorkbenchEarnings()` - 收入明细
+- [x] `getWorkbenchWithdrawInfo()` - 提现信息
+- [x] 每个接口 404/500 时返回 mock 数据
+- [x] TypeScript 编译通过
+
+**新增类型**:
+```typescript
+// 工作台汇总
+interface WorkbenchSummary {
+  todayOrders, weekOrders, monthOrders, totalOrders,
+  todayIncome, weekIncome, monthIncome, totalIncome,
+  rating, satisfactionRate,
+}
+
+// 订单池
+interface OrdersPoolResponse {
+  items: PoolOrderItem[], total, hasMore,
+}
+interface PoolOrderItem {
+  id, orderNo, serviceType, serviceName, appointmentTime,
+  hospitalName, department?, amount, commission, distance?, createdAt,
+}
+
+// 收入明细
+interface EarningsResponse {
+  balance, totalEarned, totalWithdrawn, pendingSettlement,
+  items: EarningsItem[], hasMore,
+}
+interface EarningsItem {
+  id, type: 'order'|'bonus'|'withdraw'|'refund',
+  title, amount, createdAt, orderNo?,
+}
+
+// 提现信息
+interface WithdrawInfo {
+  withdrawable, minWithdrawAmount, feeRate, estimatedHours,
+  bankCards: { id, bankName, cardNo, isDefault }[],
+}
+```
+
+**API 路径**:
+| API | 路径 | 通道 |
+|-----|------|------|
+| `getWorkbenchSummary()` | `/escort-app/workbench/summary` | escortRequest |
+| `getWorkbenchOrdersPool()` | `/escort-app/orders/pool` | escortRequest |
+| `getWorkbenchEarnings()` | `/escort-app/earnings` | escortRequest |
+| `getWorkbenchWithdrawInfo()` | `/escort-app/withdraw/info` | escortRequest |
+
+---
+
+#### 批次 G: order-pool + income 页面（待接入）
 
 ---
 
