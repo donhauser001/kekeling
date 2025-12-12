@@ -1,10 +1,33 @@
 # TerminalPreview 改造开发笔记
 
-> **文档版本**: v3.1  
+> **文档版本**: v3.2  
 > **创建日期**: 2024-12-12  
 > **最后更新**: 2024-12-13  
 > **适用范围**: `src/components/terminal-preview/**`  
 > **文档性质**: 📋 **唯一进度真源**（PR/Commit/需求卡片的 Step 唯一指代）
+
+---
+
+## 🎯 系统定位
+
+**TerminalPreview** 是一个 **Terminal Behavior Simulator（终端行为模拟器）**，
+用于在管理后台中以安全、可控的方式模拟真实终端行为。
+
+### 它是什么
+
+| 角色 | 说明 |
+|------|------|
+| 🖥️ 终端行为模拟系统 | 完整还原小程序/H5/App 的 UI 与交互逻辑 |
+| 🔐 权限/通道/视角演练场 | 验证 user/escort 双身份下的数据隔离 |
+| 🛡️ 真实端上线前的安全缓冲层 | 在不触碰真实 token 的情况下，提前暴露权限漏洞 |
+
+### 它不是什么
+
+| ❌ 不是 | 说明 |
+|--------|------|
+| 简单的 UI 预览 | 它验证的是行为，不仅仅是样式 |
+| 真实终端的代码复用 | 预览器有 mock/debug 能力，真实端不可有 |
+| 可随意扩展的组件库 | 每个扩展都必须遵循双通道规范 |
 
 ---
 
@@ -1891,6 +1914,23 @@ Step 14 整体完成标准：
 
 ---
 
+### 14.4 常见反模式（Anti-Patterns）
+
+> 以下是开发过程中**曾经可能犯的错**，专门列出作为"踩坑保险"。
+
+| ❌ 反模式 | ✅ 正确做法 | 为什么 |
+|----------|-----------|--------|
+| 在页面内直接判断 `escortToken` 存在就发请求 | 必须使用 `useViewerRole` + `enabled: isEscort` | Token 存在不代表有效，必须经过 viewerRole 推导 |
+| 为了方便预览，把 escort API 改成 `userRequest` | 坚持使用 `escortRequest`，mock token 自动返回假数据 | 这是权限漏洞，不是开发技巧 |
+| 在真实端复用 `DebugPanel` | DebugPanel 仅限 `process.env.NODE_ENV === 'development'` | 会导致用户越权切换视角 |
+| 把 `promotionProgress === 0` 当成 falsy | `0` 表示"适用但未达成"，`undefined` 表示"不适用" | 0 是有意义的进度值，不是"无数据" |
+| 在 `renderPageContent` 中遗漏新增的 page key | 新增 page key 必须同步添加 case | `lint:preview-guard` 会检测一致性 |
+| 把 mock 数据散落在各页面组件里 | mock 数据统一放 `mocks/*.ts` | 后期无法统一管理和覆盖测试 |
+| 非 escort 视角时仍发起 escort 请求 | 所有 escort 请求必须 `enabled: isEscort` | 浪费请求 + 可能暴露接口结构 |
+| 手动在 Props 中传入 `viewerRole` 给真实端 | 真实端 viewerRole 只能由 token 推导 | Props 覆盖是预览器特权，真实端禁止 |
+
+---
+
 ## Step 15: 真实终端接入准备（占位） 📋
 
 > ⚠️ **本 Step 不在本阶段实现**，仅作为未来接入真实终端的约束清单。
@@ -1988,6 +2028,37 @@ function shouldShowDebugPanel(): boolean {
 | 5 | escortRequest 携带正确 Authorization | 网络请求检查 |
 | 6 | 401 时正确清除 token | 错误流程测试 |
 | 7 | 非 escort 视角不发 escort 请求 | 网络请求检查 |
+
+---
+
+### 15.6 数据一致性声明
+
+> ⚠️ 真实端接入后，以下字段在预览器与真实端**必须保持语义一致**。
+> 
+> 否则会出现："预览器看着对，真实端却怪怪的"。
+
+| 字段类型 | 一致性约束 | 示例 |
+|---------|-----------|------|
+| **金额字段** | 单位（元）、精度（2 位小数）、符号（正负） | `amount: 299.00` |
+| **时间字段** | 时区（服务器 UTC+8）、格式（ISO 8601 或 YYYY-MM-DD HH:mm:ss） | `createdAt: "2024-12-13T10:30:00+08:00"` |
+| **状态字段** | 枚举值不可漂移，预览器与后端必须使用相同枚举 | `status: 'pending' \| 'completed'` |
+| **空值语义** | `null` / `undefined` / `0` / `""` 的含义不可改变 | `promotionProgress: 0` ≠ `undefined` |
+| **脱敏格式** | 手机号 `138****8888`（前3后4）、银行卡 `****6789`（后4位） | |
+| **列表结构** | `items` + `total` + `hasMore`，空态为 `items: [], total: 0` | |
+
+**跨端数据格式示例**:
+
+```typescript
+// ✅ 正确：预览器与真实端返回格式一致
+interface DistributionStats {
+  totalDistribution: number  // 单位：元，保留 2 位小数
+  promotionProgress?: number // 0-100 或 undefined
+  currentLevel: string       // 枚举值，不可自造
+}
+
+// ❌ 错误：预览器用 "pending"，真实端用 "PENDING"
+// 会导致前端状态判断失效
+```
 
 ---
 
