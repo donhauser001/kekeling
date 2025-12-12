@@ -180,179 +180,179 @@ export function PointsActionDialog({
           </DialogHeader>
 
           <div className='max-h-[60vh] min-h-[300px] overflow-y-auto py-1 px-1'>
-          <Form {...form}>
-            <form id='points-form' onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>
-              <div className='grid grid-cols-2 items-start gap-4'>
-                <FormField
-                  control={form.control}
-                  name='name'
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>规则名称 *</FormLabel>
-                      <FormControl>
-                        <Input placeholder='如：下单奖励' {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name='code'
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>规则编码 *</FormLabel>
-                      <FormControl>
-                        <Input placeholder='如：order_reward' {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+            <Form {...form}>
+              <form id='points-form' onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>
+                <div className='grid grid-cols-2 items-start gap-4'>
+                  <FormField
+                    control={form.control}
+                    name='name'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>规则名称 *</FormLabel>
+                        <FormControl>
+                          <Input placeholder='如：下单奖励' {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name='code'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>规则编码 *</FormLabel>
+                        <FormControl>
+                          <Input placeholder='如：order_reward' {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
-              <div className='grid grid-cols-2 items-start gap-4'>
-                <FormField
-                  control={form.control}
-                  name='type'
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>类型 *</FormLabel>
-                      <SelectDropdown
-                        defaultValue={field.value}
-                        onValueChange={field.onChange}
-                        placeholder='请选择类型'
-                        items={[
-                          { label: '获取积分', value: 'earn' },
-                          { label: '消耗积分', value: 'spend' },
-                        ]}
-                      />
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name='points'
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>积分数 *</FormLabel>
-                      <FormControl>
-                        <Input type='number' {...field} />
-                      </FormControl>
-                      <FormDescription>获取为正，消耗为负</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className='grid grid-cols-2 items-start gap-4'>
-                <FormField
-                  control={form.control}
-                  name='applicableScope'
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>适用范围</FormLabel>
-                      <SelectDropdown
-                        defaultValue={field.value}
-                        onValueChange={field.onChange}
-                        placeholder='请选择适用范围'
-                        items={[
-                          { label: '全部', value: 'all' },
-                          { label: '分类', value: 'category' },
-                          { label: '服务', value: 'service' },
-                        ]}
-                      />
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name='applicableIds'
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>适用ID（逗号分隔）</FormLabel>
-                      <FormControl>
-                        <Input placeholder='如：cat_1,cat_2' {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className='grid grid-cols-2 items-start gap-4'>
-                <FormField
-                  control={form.control}
-                  name='dailyLimit'
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>每日上限</FormLabel>
-                      <FormControl>
-                        <Input
-                          type='number'
-                          placeholder='留空不限制'
-                          value={field.value ?? ''}
-                          onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                <div className='grid grid-cols-2 items-start gap-4'>
+                  <FormField
+                    control={form.control}
+                    name='type'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>类型 *</FormLabel>
+                        <SelectDropdown
+                          defaultValue={field.value}
+                          onValueChange={field.onChange}
+                          placeholder='请选择类型'
+                          items={[
+                            { label: '获取积分', value: 'earn' },
+                            { label: '消耗积分', value: 'spend' },
+                          ]}
                         />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name='points'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>积分数 *</FormLabel>
+                        <FormControl>
+                          <Input type='number' {...field} />
+                        </FormControl>
+                        <FormDescription>获取为正，消耗为负</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className='grid grid-cols-2 items-start gap-4'>
+                  <FormField
+                    control={form.control}
+                    name='applicableScope'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>适用范围</FormLabel>
+                        <SelectDropdown
+                          defaultValue={field.value}
+                          onValueChange={field.onChange}
+                          placeholder='请选择适用范围'
+                          items={[
+                            { label: '全部', value: 'all' },
+                            { label: '分类', value: 'category' },
+                            { label: '服务', value: 'service' },
+                          ]}
+                        />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name='applicableIds'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>适用ID（逗号分隔）</FormLabel>
+                        <FormControl>
+                          <Input placeholder='如：cat_1,cat_2' {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className='grid grid-cols-2 items-start gap-4'>
+                  <FormField
+                    control={form.control}
+                    name='dailyLimit'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>每日上限</FormLabel>
+                        <FormControl>
+                          <Input
+                            type='number'
+                            placeholder='留空不限制'
+                            value={field.value ?? ''}
+                            onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name='totalLimit'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>总上限</FormLabel>
+                        <FormControl>
+                          <Input
+                            type='number'
+                            placeholder='留空不限制'
+                            value={field.value ?? ''}
+                            onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
                 <FormField
                   control={form.control}
-                  name='totalLimit'
+                  name='isActive'
+                  render={({ field }) => (
+                    <FormItem className='flex flex-row items-center justify-between rounded-lg border p-3'>
+                      <div className='space-y-0.5'>
+                        <FormLabel>启用规则</FormLabel>
+                      </div>
+                      <FormControl>
+                        <Switch checked={field.value} onCheckedChange={field.onChange} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name='description'
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>总上限</FormLabel>
+                      <FormLabel>描述</FormLabel>
                       <FormControl>
-                        <Input
-                          type='number'
-                          placeholder='留空不限制'
-                          value={field.value ?? ''}
-                          onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
-                        />
+                        <Textarea placeholder='可选' className='resize-none' {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              </div>
-
-              <FormField
-                control={form.control}
-                name='isActive'
-                render={({ field }) => (
-                  <FormItem className='flex flex-row items-center justify-between rounded-lg border p-3'>
-                    <div className='space-y-0.5'>
-                      <FormLabel>启用规则</FormLabel>
-                    </div>
-                    <FormControl>
-                      <Switch checked={field.value} onCheckedChange={field.onChange} />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name='description'
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>描述</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder='可选' className='resize-none' {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </form>
-          </Form>
-        </div>
+              </form>
+            </Form>
+          </div>
 
           <DialogFooter>
             <Button type='button' variant='outline' onClick={() => onOpenChangeWrapper(false)} disabled={isPending}>
