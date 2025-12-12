@@ -2613,6 +2613,58 @@ export const pricingConfigApi = {
 }
 
 // ============================================
+// 陪诊员提现记录 API（Admin 全局视图）
+// ============================================
+
+export type AdminWithdrawStatus = 'pending' | 'processing' | 'completed' | 'failed'
+export type AdminWithdrawMethod = 'bank' | 'alipay' | 'wechat'
+
+export interface AdminEscortWithdrawRecord {
+  id: string                      // 提现记录ID
+  withdrawNo: string              // 提现单号（展示用）
+  escortId: string
+  escortName: string
+  escortPhoneMasked: string       // 138****8888
+
+  amount: number                  // 提现金额
+  fee: number                     // 手续费
+  netAmount: number               // 实际到账
+
+  method: AdminWithdrawMethod
+  accountMasked: string           // ****6789 / 138****8888
+  bankName?: string               // method=bank 可选
+
+  status: AdminWithdrawStatus
+  createdAt: string               // 申请时间
+  paidAt?: string                 // 打款完成时间（可空）
+  failReason?: string             // 失败原因（可空）
+}
+
+export interface AdminEscortWithdrawRecordQuery {
+  page?: number
+  pageSize?: number
+  status?: AdminWithdrawStatus
+  method?: AdminWithdrawMethod
+  keyword?: string                // escortId / 手机号 / 提现单号
+  startAt?: string                // 申请时间起
+  endAt?: string                  // 申请时间止
+  minAmount?: number
+  maxAmount?: number
+}
+
+export const adminEscortWithdrawApi = {
+  // 获取提现记录列表
+  getList: (query: AdminEscortWithdrawRecordQuery = {}) =>
+    request<PaginatedData<AdminEscortWithdrawRecord>>('/admin/escorts/withdraw-records', {
+      params: query as Record<string, string | number | boolean | undefined>,
+    }),
+
+  // 获取单条提现记录详情
+  getById: (id: string) =>
+    request<AdminEscortWithdrawRecord>(`/admin/escorts/withdraw-records/${id}`),
+}
+
+// ============================================
 // 分销中心 API
 // ============================================
 
