@@ -56,28 +56,52 @@ EscortContext        // { id?, name?, level?, workStatus?, ... }
 
 ---
 
-### Step 2: 双会话骨架
+### Step 2: 请求层双通道封装 ✅
 
-**目标**: 实现 UserSession + EscortSession 双会话存储机制
+**目标**: 建立强制规范的双请求通道，避免 token 串用
 
 **验收点**:
-- [ ] 新增 `sessions.ts`，定义 token 存储/读取/清除函数
-- [ ] 统一 key 命名（小程序: `userToken`/`escortToken`，H5: `kekeling_userToken`/`kekeling_escortToken`）
-- [ ] 编写 `validateEscortSession()` 函数（调用后端 validate 接口）
-- [ ] TypeScript 编译通过
+- [x] 实现 `getUserToken()` 和 `getEscortToken()`（预览器用管理后台 token，终端 TODO）
+- [x] 实现 `userRequest<T>(endpoint, options?)`，自动携带 userToken
+- [x] 实现 `escortRequest<T>(endpoint, options?)`，自动携带 escortToken
+- [x] 统一错误处理：401 清 token / 403 无权限 / 500 服务器错误
+- [x] 添加 `ApiError` 和 `ChannelMismatchError` 错误类
+- [x] 现有 previewApi 方法全部改为 userRequest
+- [x] 添加 Escort Channel TODO 注释（Step 6 接入）
+- [x] TypeScript 编译通过
+- [x] 现有预览器功能正常
+
+**Token 存储位置**:
+| 环境 | userToken | escortToken |
+|------|-----------|-------------|
+| 管理后台预览器 | Cookie: `thisisjustarandomstring` | 暂无（TODO） |
+| 小程序 | `wx.storage: userToken` | `wx.storage: escortToken` |
+| H5 | `localStorage: kekeling_userToken` | `localStorage: kekeling_escortToken` |
+
+**导出函数**:
+```typescript
+// api.ts 新增导出
+getUserToken()      // 获取用户 token
+getEscortToken()    // 获取陪诊员 token
+clearEscortToken()  // 清除陪诊员 token
+userRequest<T>()    // 用户通道请求
+escortRequest<T>()  // 陪诊员通道请求
+ApiError            // API 错误类
+ChannelMismatchError // 通道不匹配错误
+```
 
 ---
 
-### Step 3: 请求通道分流
+### Step 3: 双会话验证机制
 
-**目标**: 实现 userRequest / escortRequest 双通道封装
+**目标**: 实现 escortToken 验证与视角自动回退
 
 **验收点**:
-- [ ] 修改 `api.ts`，拆分 `userRequest()` 和 `escortRequest()`
-- [ ] 实现 `selectRequestChannel()` 通道选择器
-- [ ] 401 错误时自动清 token + 触发视角回退
-- [ ] 添加 `ChannelMismatchError` 错误类
-- [ ] 现有 API 调用不受影响
+- [ ] 实现 `validateEscortSession()` 函数（调用 `/escort-app/session/validate`）
+- [ ] 进入 escort 视角时强制验证
+- [ ] 验证失败自动清 token + 回退 user 视角
+- [ ] 页面刷新时自动验证 escortToken
+- [ ] TypeScript 编译通过
 
 ---
 
