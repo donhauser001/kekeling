@@ -447,6 +447,60 @@ interface WorkbenchStats {
 
 ---
 
+### Step 12: 双会话（Dual-Session）模型 ✅
+
+**目标**: 建立统一的会话状态层，支持同时存在 userToken 与 escortToken。
+
+**验收点**:
+- [x] 新增 `session.ts` 统一会话状态管理
+- [x] 实现 Token 持久化（localStorage）
+- [x] 提供 token 有效性检查占位函数（支持异步校验扩展）
+- [x] viewerRole 从 escortToken 有效性推导，不是存储字段
+- [x] 废弃 role 字段，提供迁移函数
+- [x] TypeScript 编译通过
+- [x] 不影响现有营销中心页面预览
+
+**Token 存储 Key**:
+| Key | 说明 |
+|-----|------|
+| `terminalPreview.userToken` | 预览器用户 Token |
+| `terminalPreview.escortToken` | 预览器陪诊员 Token |
+
+**session.ts 导出函数**:
+```typescript
+// Token 读写
+getPreviewUserToken(): string | null
+setPreviewUserToken(token: string): void
+clearPreviewUserToken(): void
+getPreviewEscortToken(): string | null
+setPreviewEscortToken(token: string): void
+clearPreviewEscortToken(): void
+clearAllPreviewTokens(): void
+
+// Token 验证（v1 占位，支持异步）
+validateUserToken(token): Promise<TokenValidationResult>
+validateEscortToken(token): Promise<TokenValidationResult>
+
+// viewerRole 推导
+deriveViewerRole(escortToken, isValidated): PreviewViewerRole
+
+// 废弃兼容
+migrateRoleToViewerRole(role): PreviewViewerRole // @deprecated
+```
+
+**viewerRole 推导规则**:
+```typescript
+// escortToken 存在且有效 => 'escort'
+// 否则 => 'user'
+function deriveViewerRole(escortToken, isValidated) {
+  if (escortToken?.startsWith('mock-')) return 'escort'
+  if (escortToken && isValidated) return 'escort'
+  return 'user'
+}
+```
+
+---
+
 #### 批次 G: order-pool + income（待接入，需 escortRequest）
 
 ---

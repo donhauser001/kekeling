@@ -45,6 +45,11 @@ import {
 } from './components'
 import { getUserToken } from './api'
 import {
+  getPreviewEscortToken,
+  setPreviewEscortToken,
+  clearPreviewEscortToken,
+} from './session'
+import {
   ServicesPage,
   ServiceDetailPage,
   CasesPage,
@@ -92,7 +97,10 @@ export function TerminalPreview({
   // ============================================================================
 
   // 本地 escortToken 状态（用于 DebugPanel 注入/清除模拟）
-  const [localEscortToken, setLocalEscortToken] = useState<string | null>(null)
+  // 从 localStorage 初始化，支持持久化
+  const [localEscortToken, setLocalEscortToken] = useState<string | null>(() => {
+    return getPreviewEscortToken()
+  })
 
   // 合并 escortSession：Props 优先，其次本地状态
   const mergedEscortSession = useMemo(() => {
@@ -117,13 +125,15 @@ export function TerminalPreview({
     isPreviewMode: true, // 当前组件仅用于预览器
   })
 
-  // DebugPanel 回调
+  // DebugPanel 回调（同时持久化到 localStorage）
   const handleInjectEscortToken = useCallback((token: string) => {
-    setLocalEscortToken(token)
+    setPreviewEscortToken(token) // 持久化
+    setLocalEscortToken(token)   // 更新状态
   }, [])
 
   const handleClearEscortToken = useCallback(() => {
-    setLocalEscortToken(null)
+    clearPreviewEscortToken()    // 清除持久化
+    setLocalEscortToken(null)    // 更新状态
   }, [])
 
   // 获取 token 用于 DebugPanel 显示

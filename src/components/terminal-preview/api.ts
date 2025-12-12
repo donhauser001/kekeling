@@ -37,17 +37,18 @@ const API_BASE_URL = '/api'
 /**
  * Token 存储 Key 定义
  *
- * 管理后台预览器：使用管理后台 cookie
+ * 管理后台预览器：使用管理后台 cookie + localStorage
  * 终端小程序：wx.setStorageSync('userToken') / ('escortToken')
  * 终端 H5：localStorage('kekeling_userToken') / ('kekeling_escortToken')
+ *
+ * @see session.ts 双会话状态管理
  */
 const ADMIN_TOKEN_KEY = 'thisisjustarandomstring' // 管理后台 cookie key
 
-// TODO: 终端环境 token key（后续终端集成时使用）
-// const USER_TOKEN_KEY = 'userToken'           // 小程序
-// const ESCORT_TOKEN_KEY = 'escortToken'       // 小程序
-// const USER_TOKEN_KEY_H5 = 'kekeling_userToken'     // H5
-// const ESCORT_TOKEN_KEY_H5 = 'kekeling_escortToken' // H5
+import {
+  getPreviewEscortToken,
+  clearPreviewEscortToken,
+} from './session'
 
 // ============================================================================
 // Token 读取函数
@@ -89,33 +90,22 @@ export function getUserToken(): string | null {
 /**
  * 获取陪诊员 Token
  *
- * ⚠️ 当前实现：预览器暂无陪诊员 token，返回 null
- * TODO: 终端环境需要从 localStorage/wx.storage 读取 escortToken
+ * 当前实现：从 localStorage 读取（terminalPreview.escortToken）
+ * @see session.ts
  */
 export function getEscortToken(): string | null {
-  // 预览器环境：暂无陪诊员 token
-  // TODO: 后续可通过 Props 注入 mock escortToken
-  return null
-
-  // TODO: 终端环境实现
-  // if (typeof wx !== 'undefined') {
-  //   return wx.getStorageSync(ESCORT_TOKEN_KEY) || null
-  // }
-  // return localStorage.getItem(ESCORT_TOKEN_KEY_H5)
+  // 从 session 模块读取
+  return getPreviewEscortToken()
 }
 
 /**
  * 清除陪诊员 Token
  * 用于 401 错误时自动清除
+ * @see session.ts
  */
 export function clearEscortToken(): void {
-  // TODO: 终端环境实现
-  // if (typeof wx !== 'undefined') {
-  //   wx.removeStorageSync(ESCORT_TOKEN_KEY)
-  // } else {
-  //   localStorage.removeItem(ESCORT_TOKEN_KEY_H5)
-  // }
-  console.warn('[previewApi] clearEscortToken called (no-op in preview mode)')
+  clearPreviewEscortToken()
+  console.warn('[previewApi] clearEscortToken called')
 }
 
 // ============================================================================

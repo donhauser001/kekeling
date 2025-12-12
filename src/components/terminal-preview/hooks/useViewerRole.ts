@@ -13,6 +13,10 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import type { PreviewViewerRole, UserSession, EscortSession } from '../types'
 import { getEscortToken, clearEscortToken } from '../api'
+import {
+  validateEscortToken as validateEscortTokenSession,
+  type TokenValidationResult,
+} from '../session'
 
 // ============================================================================
 // 类型定义
@@ -79,39 +83,15 @@ export interface UseViewerRoleResult {
 /**
  * 验证陪诊员会话是否有效
  *
- * 当前实现（v1 mock）：token 存在即视为有效
- * TODO: 真实环境需调用 /escort-app/session/validate 接口
+ * 委托给 session.ts 的 validateEscortToken 实现
+ * @see session.ts
  *
  * @param token 陪诊员 token
  * @returns 是否有效
  */
 export async function validateEscortSession(token: string | null): Promise<boolean> {
-  // 无 token 直接返回 false
-  if (!token) {
-    return false
-  }
-
-  // mock token 直接视为有效（用于预览器调试）
-  if (token.startsWith('mock-')) {
-    return true
-  }
-
-  // v1 实现：token 存在即视为有效
-  // TODO: v2 真实环境调用后端验证接口
-  // try {
-  //   const response = await fetch('/api/escort-app/session/validate', {
-  //     headers: { 'Authorization': `Bearer ${token}` }
-  //   })
-  //   if (!response.ok) {
-  //     return false
-  //   }
-  //   const result = await response.json()
-  //   return result.valid === true
-  // } catch {
-  //   return false
-  // }
-
-  return true
+  const result: TokenValidationResult = await validateEscortTokenSession(token)
+  return result.valid
 }
 
 // ============================================================================
