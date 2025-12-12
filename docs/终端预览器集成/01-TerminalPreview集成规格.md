@@ -1,6 +1,6 @@
 # TerminalPreview 集成规格
 
-> **文档版本**: v1.2  
+> **文档版本**: v1.3  
 > **创建日期**: 2024-12-12  
 > **状态**: 📋 规划中  
 > **返回**: [总览](./README.md)
@@ -184,9 +184,64 @@ export interface TerminalPreviewProps {
 
 ---
 
-## 三、路由分发扩展
+## 三、路由注册表（单一真源）
 
-### 3.1 路由分发逻辑
+### 3.0 RouteRegistry 映射表
+
+> ⚠️ **这是单一真源**：终端路由、预览器路由、管理后台预览入口必须统一引用此表，禁止各写各的。
+
+| 路由 Key | 终端页面路径 | 预览器组件 | TabBar | 所需通道 | 优先级 |
+|---------|-------------|-----------|--------|---------|--------|
+| **基础功能** |
+| `home` | `/pages/index/index` | `renderHomePage()` | ✅ 首页 | user | - |
+| `services` | `/pages/services/index` | `ServicesPage` | ✅ 服务 | user | - |
+| `cases` | `/pages/cases/index` | `CasesPage` | ✅ 病历 | user | - |
+| `profile` | `/pages/user/index` | `ProfilePage` | ✅ 我的 | user | - |
+| **营销中心** |
+| `membership` | `/pages/marketing/membership/index` | `MembershipPage` | ❌ | user | P0 |
+| `membership-plans` | `/pages/marketing/membership/plans` | `MembershipPlansPage` | ❌ | user | P0 |
+| `coupons` | `/pages/marketing/coupons/index` | `CouponsPage` | ❌ | user | P0 |
+| `coupons-available` | `/pages/marketing/coupons/available` | `CouponsAvailablePage` | ❌ | user | P1 |
+| `points` | `/pages/marketing/points/index` | `PointsPage` | ❌ | user | P1 |
+| `points-records` | `/pages/marketing/points/records` | `PointsRecordsPage` | ❌ | user | P1 |
+| `referrals` | `/pages/marketing/referrals/index` | `ReferralsPage` | ❌ | user | P1 |
+| `campaigns` | `/pages/marketing/campaigns/index` | `CampaignsPage` | ❌ | user | P1 |
+| `campaigns-detail` | `/pages/marketing/campaigns/detail` | `CampaignDetailPage` | ❌ | user | P1 |
+| **陪诊员（用户视角）** |
+| `escort-list` | `/pages/escort/list` | `EscortListPage` | ❌ | user | P1 |
+| `escort-detail` | `/pages/escort/detail` | `EscortDetailPage` | ❌ | user | P1 |
+| **陪诊员工作台（陪诊员视角）** |
+| `workbench` | `/pages/workbench/index` | `WorkbenchPage` | ✅ 工作台 | **escort** | P2 |
+| `workbench-orders-pool` | `/pages/workbench/orders/pool` | `WorkbenchOrdersPoolPage` | ❌ | **escort** | P2 |
+| `workbench-order-detail` | `/pages/workbench/orders/detail` | `WorkbenchOrderDetailPage` | ❌ | **escort** | P2 |
+| `workbench-earnings` | `/pages/workbench/earnings/index` | `WorkbenchEarningsPage` | ❌ | **escort** | P2 |
+| `workbench-withdraw` | `/pages/workbench/withdraw/index` | `WorkbenchWithdrawPage` | ❌ | **escort** | P2 |
+
+### 3.1 TypeScript 类型定义
+
+```typescript
+// routes.ts（单一真源）
+
+export const ROUTE_REGISTRY = {
+  // 基础功能
+  home: { path: '/pages/index/index', component: 'renderHomePage', tabBar: true, channel: 'user' },
+  services: { path: '/pages/services/index', component: 'ServicesPage', tabBar: true, channel: 'user' },
+  cases: { path: '/pages/cases/index', component: 'CasesPage', tabBar: true, channel: 'user' },
+  profile: { path: '/pages/user/index', component: 'ProfilePage', tabBar: true, channel: 'user' },
+  
+  // 营销中心
+  membership: { path: '/pages/marketing/membership/index', component: 'MembershipPage', tabBar: false, channel: 'user' },
+  // ... 其他路由
+  
+  // 陪诊员工作台（注意 channel: 'escort'）
+  workbench: { path: '/pages/workbench/index', component: 'WorkbenchPage', tabBar: true, channel: 'escort' },
+  // ...
+} as const
+
+export type PreviewPage = keyof typeof ROUTE_REGISTRY
+```
+
+### 3.2 路由分发逻辑
 
 ```typescript
 // index.tsx
