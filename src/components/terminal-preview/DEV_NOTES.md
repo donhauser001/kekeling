@@ -588,6 +588,66 @@ return 'user'
 
 ---
 
+### Step 4/7: "我的页"陪诊员入口 + 二次登录流程 ✅
+
+**目标**: 普通用户可点击入口触发二次登录，登录成功后写入 escortToken 并切换视角。
+
+**验收点**:
+- [x] ProfilePage 增加陪诊员入口卡片
+- [x] 普通用户视角：显示"成为陪诊员"入口
+- [x] 陪诊员视角：显示"进入工作台"入口
+- [x] 新增 EscortLoginDialog 二次登录对话框
+- [x] 登录成功后写入 escortToken 并触发校验闭环
+- [x] userToken 不受影响
+- [x] TypeScript 编译通过
+
+**新增组件**:
+```typescript
+// components/EscortLoginDialog.tsx
+interface EscortLoginDialogProps {
+  open: boolean
+  onClose: () => void
+  onLoginSuccess: (escortToken: string) => void
+  themeSettings: ThemeSettings
+  isDarkMode?: boolean
+}
+```
+
+**ProfilePage 新增 Props**:
+```typescript
+interface ProfilePageProps {
+  // ...existing
+  effectiveViewerRole?: PreviewViewerRole
+  onEscortEntryClick?: () => void
+  onWorkbenchClick?: () => void
+}
+```
+
+**流程**:
+```
+1. 用户在"我的"页点击"成为陪诊员"
+   ↓
+2. 弹出 EscortLoginDialog
+   ↓
+3. 输入手机号 + 验证码
+   ↓
+4. 登录成功 → onLoginSuccess(escortToken)
+   ↓
+5. setPreviewEscortToken + setLocalEscortToken
+   ↓
+6. useViewerRole 自动验证 + effectiveViewerRole = 'escort'
+   ↓
+7. ProfilePage 显示"进入工作台"
+```
+
+**UI 状态**:
+| 视角 | 入口文案 | 按钮文案 | 点击行为 |
+|------|----------|----------|----------|
+| user | 成为陪诊员 | 立即加入 | 打开登录对话框 |
+| escort | 陪诊员工作台 | 进入工作台 | 跳转 workbench |
+
+---
+
 #### 批次 G: order-pool + income（待接入，需 escortRequest）
 
 ---

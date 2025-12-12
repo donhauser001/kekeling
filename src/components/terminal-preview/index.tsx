@@ -42,6 +42,7 @@ import {
   PhoneFrame,
   DebugPanel,
   shouldShowDebugPanel,
+  EscortLoginDialog,
 } from './components'
 import { getUserToken } from './api'
 import {
@@ -102,6 +103,9 @@ export function TerminalPreview({
     return getPreviewEscortToken()
   })
 
+  // Step 4/7: 陪诊员登录对话框状态
+  const [showEscortLoginDialog, setShowEscortLoginDialog] = useState(false)
+
   // 合并 escortSession：Props 优先，其次本地状态
   const mergedEscortSession = useMemo(() => {
     if (escortSession?.token) return escortSession
@@ -140,6 +144,24 @@ export function TerminalPreview({
   const handleClearEscortToken = useCallback(() => {
     clearPreviewEscortToken()    // 清除持久化
     setLocalEscortToken(null)    // 更新状态
+  }, [])
+
+  // Step 4/7: 陪诊员登录成功处理
+  const handleEscortLoginSuccess = useCallback((escortToken: string) => {
+    console.log('[TerminalPreview] 陪诊员登录成功，escortToken:', escortToken)
+    setPreviewEscortToken(escortToken) // 持久化
+    setLocalEscortToken(escortToken)   // 更新状态
+    // useViewerRole 会自动触发验证并切换视角
+  }, [])
+
+  // Step 4/7: 陪诊员入口点击处理
+  const handleEscortEntryClick = useCallback(() => {
+    setShowEscortLoginDialog(true)
+  }, [])
+
+  // Step 4/7: 进入工作台处理
+  const handleWorkbenchClick = useCallback(() => {
+    setCurrentPage('workbench')
   }, [])
 
   // 获取 token 用于 DebugPanel 显示
@@ -392,7 +414,15 @@ export function TerminalPreview({
       case 'cases':
         return <CasesPage themeSettings={themeSettings} isDarkMode={isDarkMode} />
       case 'profile':
-        return <ProfilePage themeSettings={themeSettings} isDarkMode={isDarkMode} />
+        return (
+          <ProfilePage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            effectiveViewerRole={effectiveViewerRole}
+            onEscortEntryClick={handleEscortEntryClick}
+            onWorkbenchClick={handleWorkbenchClick}
+          />
+        )
 
       // Step 5-6: 营销中心页面
       case 'coupons':
@@ -553,6 +583,15 @@ export function TerminalPreview({
         show={showScrollIndicator}
         progress={scrollProgress}
         themeSettings={themeSettings}
+      />
+
+      {/* Step 4/7: 陪诊员登录对话框 */}
+      <EscortLoginDialog
+        open={showEscortLoginDialog}
+        onClose={() => setShowEscortLoginDialog(false)}
+        onLoginSuccess={handleEscortLoginSuccess}
+        themeSettings={themeSettings}
+        isDarkMode={isDarkMode}
       />
     </div>
   )

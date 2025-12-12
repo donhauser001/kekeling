@@ -1,5 +1,9 @@
 /**
  * 个人中心页预览组件
+ *
+ * Step 4/7: 增加陪诊员入口
+ * - 普通用户视角：显示入口但需要二次登录
+ * - 陪诊员视角：显示"进入工作台"
  */
 
 import {
@@ -16,12 +20,19 @@ import {
   HelpCircle,
   Building,
   ChevronRight,
+  Briefcase,
 } from 'lucide-react'
-import type { ThemeSettings } from '../../types'
+import type { ThemeSettings, PreviewViewerRole } from '../../types'
 
 interface ProfilePageProps {
   themeSettings: ThemeSettings
   isDarkMode?: boolean
+  /** 当前视角角色 */
+  effectiveViewerRole?: PreviewViewerRole
+  /** 点击陪诊员入口回调 */
+  onEscortEntryClick?: () => void
+  /** 点击进入工作台回调 */
+  onWorkbenchClick?: () => void
 }
 
 // 订单入口
@@ -42,7 +53,13 @@ const menuItems = [
   { key: 'about', title: '关于我们', icon: Building },
 ]
 
-export function ProfilePage({ themeSettings, isDarkMode = false }: ProfilePageProps) {
+export function ProfilePage({
+  themeSettings,
+  isDarkMode = false,
+  effectiveViewerRole = 'user',
+  onEscortEntryClick,
+  onWorkbenchClick,
+}: ProfilePageProps) {
   // 深色模式颜色
   const bgColor = isDarkMode ? '#1a1a1a' : '#f5f7fa'
   const cardBg = isDarkMode ? '#2a2a2a' : '#ffffff'
@@ -50,6 +67,8 @@ export function ProfilePage({ themeSettings, isDarkMode = false }: ProfilePagePr
   const textPrimary = isDarkMode ? '#f3f4f6' : '#111827'
   const textSecondary = isDarkMode ? '#9ca3af' : '#6b7280'
   const textMuted = isDarkMode ? '#6b7280' : '#9ca3af'
+
+  const isEscort = effectiveViewerRole === 'escort'
 
   return (
     <div style={{ backgroundColor: bgColor }} className='min-h-full pb-4'>
@@ -147,6 +166,44 @@ export function ProfilePage({ themeSettings, isDarkMode = false }: ProfilePagePr
               </div>
             )
           })}
+        </div>
+      </div>
+
+      {/* 陪诊员入口卡片 */}
+      <div className='px-3 mt-3'>
+        <div
+          className='rounded-xl flex items-center gap-3 px-4 py-3 cursor-pointer transition-all hover:shadow-md'
+          style={{
+            backgroundColor: cardBg,
+            border: isEscort ? `1px solid ${themeSettings.primaryColor}40` : 'none',
+          }}
+          onClick={isEscort ? onWorkbenchClick : onEscortEntryClick}
+        >
+          <div
+            className='w-10 h-10 rounded-full flex items-center justify-center'
+            style={{
+              backgroundColor: isEscort ? themeSettings.primaryColor : `${themeSettings.primaryColor}20`,
+            }}
+          >
+            <Briefcase
+              className='h-5 w-5'
+              style={{ color: isEscort ? '#ffffff' : themeSettings.primaryColor }}
+            />
+          </div>
+          <div className='flex-1'>
+            <p className='text-sm font-medium' style={{ color: textPrimary }}>
+              {isEscort ? '陪诊员工作台' : '成为陪诊员'}
+            </p>
+            <p className='text-xs' style={{ color: textMuted }}>
+              {isEscort ? '管理订单、查看收入' : '加入我们，开启陪诊服务'}
+            </p>
+          </div>
+          <div
+            className='px-4 py-1.5 rounded-full text-xs text-white'
+            style={{ backgroundColor: themeSettings.primaryColor }}
+          >
+            {isEscort ? '进入工作台' : '立即加入'}
+          </div>
         </div>
       </div>
 
