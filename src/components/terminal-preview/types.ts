@@ -1,5 +1,15 @@
 /**
  * 终端全局预览器类型定义
+ *
+ * ⚠️ 重要声明：
+ * 本文件定义的 Props（如 viewerRole / userSession / escortSession）
+ * 仅用于管理后台的预览模拟，不代表真实终端逻辑。
+ *
+ * - 真实终端的 viewerRole 由 escortToken 的 validate 结果推导
+ * - 预览器允许通过 Props 强制模拟视角，用于后台调试
+ * - 禁止将预览器的视角切换逻辑搬到真实终端
+ *
+ * @see docs/终端预览器集成/01-TerminalPreview集成规格.md
  */
 
 // 品牌布局模式
@@ -16,6 +26,103 @@ export type ThemeMode = 'light' | 'dark' | 'system'
 
 // 页脚可见页面类型
 export type FooterVisiblePage = 'home' | 'services' | 'cases' | 'profile'
+
+// ============================================================================
+// 预览器页面路由与会话类型（Step 1 类型系统骨架）
+// ============================================================================
+
+/**
+ * 预览页面类型
+ * - 现有页面：home, services, cases, profile
+ * - 营销中心：membership, coupons, points, referrals, campaigns
+ * - 陪诊员（用户视角）：escort-list, escort-detail
+ * - 工作台（陪诊员视角）：workbench, workbench-orders-pool, workbench-earnings, workbench-withdraw
+ */
+export type PreviewPage =
+  // 现有页面（TabBar）
+  | 'home'
+  | 'services'
+  | 'cases'
+  | 'profile'
+  // 营销中心
+  | 'membership'
+  | 'membership-plans'
+  | 'coupons'
+  | 'coupons-available'
+  | 'points'
+  | 'points-records'
+  | 'referrals'
+  | 'campaigns'
+  | 'campaigns-detail'
+  // 陪诊员（用户视角可查看）
+  | 'escort-list'
+  | 'escort-detail'
+  // 工作台（陪诊员视角）
+  | 'workbench'
+  | 'workbench-orders-pool'
+  | 'workbench-order-detail'
+  | 'workbench-earnings'
+  | 'workbench-withdraw'
+
+/**
+ * 预览器视角角色
+ * ⚠️ 仅用于预览器模拟，真实终端由 escortToken validate 推导
+ */
+export type PreviewViewerRole = 'user' | 'escort'
+
+/**
+ * 用户会话（预览器模拟用）
+ * ⚠️ 真实终端从 storage 读取，预览器通过 Props 注入
+ */
+export interface UserSession {
+  /** 用户 token（mock 开头表示模拟） */
+  token?: string
+  /** 用户 ID */
+  userId?: string
+}
+
+/**
+ * 陪诊员会话（预览器模拟用）
+ * ⚠️ 真实终端从 storage 读取，预览器通过 Props 注入
+ */
+export interface EscortSession {
+  /** 陪诊员 token（mock 开头表示模拟） */
+  token?: string
+  /** 陪诊员 ID */
+  escortId?: string
+}
+
+/**
+ * 用户上下文（预览器数据覆盖用）
+ */
+export interface UserContext {
+  /** 会员等级 */
+  membershipLevel?: string
+  /** 会员到期时间 */
+  membershipExpireAt?: string
+  /** 积分余额 */
+  points?: number
+  /** 优惠券数量 */
+  couponCount?: number
+}
+
+/**
+ * 陪诊员上下文（预览器数据覆盖用）
+ */
+export interface EscortContext {
+  /** 陪诊员 ID */
+  id?: string
+  /** 陪诊员姓名 */
+  name?: string
+  /** 陪诊员等级 */
+  level?: string
+  /** 工作状态 */
+  workStatus?: 'available' | 'busy' | 'offline'
+  /** 累计收入 */
+  earnings?: number
+  /** 完成订单数 */
+  orderCount?: number
+}
 
 // 主题设置
 export interface ThemeSettings {
@@ -171,10 +278,54 @@ export interface ServiceListResponse {
   pageSize: number
 }
 
-// 预览器 Props
+/**
+ * 预览器 Props
+ *
+ * ⚠️ 注意：以下 Props 仅用于管理后台预览模拟
+ * - viewerRole: 预览器强制模拟视角（真实终端由 token validate 推导）
+ * - userSession / escortSession: 预览器会话模拟（真实终端从 storage 读取）
+ */
 export interface TerminalPreviewProps {
-  /** 预览的页面类型 */
-  page?: 'home' | 'services' | 'cases' | 'profile'
+  /** 预览的页面类型（扩展后支持营销中心、陪诊员、工作台页面） */
+  page?: PreviewPage
+
+  // ============================================================================
+  // 视角与会话（Step 1 新增，仅用于预览模拟）
+  // ============================================================================
+
+  /**
+   * 预览器视角角色
+   * ⚠️ 仅用于预览模拟，真实终端由 escortToken validate 推导
+   * @default 'user'
+   */
+  viewerRole?: PreviewViewerRole
+
+  /**
+   * 用户会话模拟
+   * ⚠️ 仅用于预览模拟，真实终端从 storage 读取
+   */
+  userSession?: UserSession
+
+  /**
+   * 陪诊员会话模拟
+   * ⚠️ 仅用于预览模拟，真实终端从 storage 读取
+   */
+  escortSession?: EscortSession
+
+  /**
+   * 用户上下文数据覆盖
+   */
+  userContext?: UserContext
+
+  /**
+   * 陪诊员上下文数据覆盖
+   */
+  escortContext?: EscortContext
+
+  // ============================================================================
+  // 现有 Props（保持向后兼容）
+  // ============================================================================
+
   /** 主题设置覆盖 */
   themeSettings?: Partial<ThemeSettings>
   /** 首页设置覆盖 */

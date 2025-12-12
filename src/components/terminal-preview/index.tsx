@@ -1,6 +1,15 @@
 /**
  * 终端全局预览器组件
  * 完全还原终端界面（小程序/App/H5），支持真实数据预览
+ *
+ * ⚠️ 重要声明：
+ * 本组件（TerminalPreview）仅用于管理后台的预览模拟，不代表真实终端逻辑。
+ * - viewerRole / userSession / escortSession 等字段仅用于后台预览调试
+ * - 真实终端的视角切换由 token validate 结果推导，不允许手动写入
+ * - 禁止将本组件的视角切换逻辑搬到真实终端，否则会导致越权风险
+ *
+ * @see docs/终端预览器集成/01-TerminalPreview集成规格.md
+ * @see src/components/terminal-preview/DEV_NOTES.md
  */
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
@@ -18,6 +27,7 @@ import {
   defaultStatsData,
 } from './types'
 import { useScrollDrag } from './hooks/useScrollDrag'
+import { useViewerRole } from './hooks/useViewerRole'
 import {
   BrandSection,
   SearchBar,
@@ -30,11 +40,48 @@ import {
   TabBarNav,
   ScrollIndicator,
   PhoneFrame,
+  DebugPanel,
+  shouldShowDebugPanel,
+  EscortLoginDialog,
 } from './components'
-import { ServicesPage, ServiceDetailPage, CasesPage, ProfilePage } from './components/pages'
+import { getUserToken } from './api'
+import {
+  getPreviewEscortToken,
+  setPreviewEscortToken,
+  clearPreviewEscortToken,
+} from './session'
+import {
+  ServicesPage,
+  ServiceDetailPage,
+  CasesPage,
+  ProfilePage,
+  CouponsPage,
+  MembershipPage,
+  MembershipPlansPage,
+  PointsPage,
+  PointsRecordsPage,
+  ReferralsPage,
+  CampaignsPage,
+  CampaignDetailPage,
+  CouponsAvailablePage,
+  EscortListPage,
+  EscortDetailPage,
+  WorkbenchPage,
+  OrdersPoolPage,
+  EarningsPage,
+  WithdrawPage,
+  OrderDetailPage,
+} from './components/pages'
 
 export function TerminalPreview({
   page: initialPage = 'home',
+  // Step 1 新增：视角与会话 Props
+  viewerRole: viewerRoleProp,
+  userSession,
+  escortSession,
+  userContext,
+  escortContext,
+  // 现有 Props
   themeSettings: themeSettingsOverride,
   homeSettings: homeSettingsOverride,
   bannerData: bannerDataOverride,
@@ -49,8 +96,109 @@ export function TerminalPreview({
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<ServiceTabType>('recommended')
   const [isDarkMode, setIsDarkMode] = useState(false)
+
+  // ============================================================================
+  // Step 3 & 4: 视角角色推导 + DebugPanel 状态
+  // ============================================================================
+
+  // 本地 escortToken 状态（用于 DebugPanel 注入/清除模拟）
+  // 从 localStorage 初始化，支持持久化
+  const [localEscortToken, setLocalEscortToken] = useState<string | null>(() => {
+    return getPreviewEscortToken()
+  })
+
+  // Step 4/7: 陪诊员登录对话框状态
+  const [showEscortLoginDialog, setShowEscortLoginDialog] = useState(false)
+
+  // 合并 escortSession：Props 优先，其次本地状态
+  const mergedEscortSession = useMemo(() => {
+    if (escortSession?.token) return escortSession
+    if (localEscortToken) return { token: localEscortToken }
+    return undefined
+  }, [escortSession, localEscortToken])
+
+  /**
+   * 视角角色推导
+   *
+   * 推导规则（按优先级）：
+   * 1. 预览器模式 + 显式 viewerRole Props → 使用 viewerRole（强制模拟）
+   * 2. 预览器模式 + escortSession.token 存在 → escort
+   * 3. 真实终端 + escortToken 存在且验证有效 → escort
+   * 4. 其他情况 → user
+   */
+  const { effectiveViewerRole, isCheckingEscortToken, revalidate } = useViewerRole({
+    userSession,
+    escortSession: mergedEscortSession,
+    onEscortTokenChange: (token) => {
+      // 当 token 被清除时同步更新本地状态
+      if (token === null) {
+        setLocalEscortToken(null)
+      }
+    },
+    viewerRole: viewerRoleProp,
+    isPreviewMode: true, // 当前组件仅用于预览器
+  })
+
+  // DebugPanel 回调（同时持久化到 localStorage）
+  const handleInjectEscortToken = useCallback((token: string) => {
+    setPreviewEscortToken(token) // 持久化
+    setLocalEscortToken(token)   // 更新状态
+  }, [])
+
+  const handleClearEscortToken = useCallback(() => {
+    clearPreviewEscortToken()    // 清除持久化
+    setLocalEscortToken(null)    // 更新状态
+  }, [])
+
+  // Step 4/7: 陪诊员登录成功处理
+  const handleEscortLoginSuccess = useCallback((escortToken: string) => {
+    console.log('[TerminalPreview] 陪诊员登录成功，escortToken:', escortToken)
+    setPreviewEscortToken(escortToken) // 持久化
+    setLocalEscortToken(escortToken)   // 更新状态
+    // useViewerRole 会自动触发验证并切换视角
+  }, [])
+
+  // Step 4/7: 陪诊员入口点击处理
+  const handleEscortEntryClick = useCallback(() => {
+    setShowEscortLoginDialog(true)
+  }, [])
+
+  // Step 4/7: 进入工作台处理
+  const handleWorkbenchClick = useCallback(() => {
+    setCurrentPage('workbench')
+  }, [])
+
+  // Step 5/7: 退出陪诊员视角
+  const handleExitEscortMode = useCallback(() => {
+    console.log('[TerminalPreview] 退出陪诊员视角')
+    clearPreviewEscortToken()    // 清除持久化
+    setLocalEscortToken(null)    // 更新状态
+    setCurrentPage('profile')    // 回到我的页
+    // useViewerRole 会自动检测到 token 清除并切换回 user 视角
+  }, [])
+
+  // 获取 token 用于 DebugPanel 显示
+  const currentUserToken = getUserToken()
+  const currentEscortToken = mergedEscortSession?.token ?? null
+
+  // 是否显示 DebugPanel
+  const showDebugPanel = shouldShowDebugPanel()
+
+  // 预留 userContext/escortContext 供后续使用
+  void userContext
+  void escortContext
+
   const [currentPage, setCurrentPage] = useState(initialPage)
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null)
+
+  // Step 9: 路由参数状态（用于传递 id 等参数到详情页）
+  const [pageParams, setPageParams] = useState<Record<string, string>>({})
+
+  // 带参数的页面跳转
+  const navigateToPage = useCallback((page: string, params?: Record<string, string>) => {
+    setCurrentPage(page as typeof currentPage)
+    setPageParams(params ?? {})
+  }, [])
 
   // 切换深色/浅色模式
   const toggleDarkMode = () => setIsDarkMode(!isDarkMode)
@@ -279,7 +427,165 @@ export function TerminalPreview({
       case 'cases':
         return <CasesPage themeSettings={themeSettings} isDarkMode={isDarkMode} />
       case 'profile':
-        return <ProfilePage themeSettings={themeSettings} isDarkMode={isDarkMode} />
+        return (
+          <ProfilePage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            effectiveViewerRole={effectiveViewerRole}
+            onEscortEntryClick={handleEscortEntryClick}
+            onWorkbenchClick={handleWorkbenchClick}
+            onExitEscortMode={handleExitEscortMode}
+          />
+        )
+
+      // Step 5-6: 营销中心页面
+      case 'coupons':
+        return <CouponsPage themeSettings={themeSettings} isDarkMode={isDarkMode} />
+      case 'membership':
+        return (
+          <MembershipPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            onNavigate={(page) => setCurrentPage(page as typeof currentPage)}
+          />
+        )
+      case 'membership-plans':
+        return (
+          <MembershipPlansPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            onBack={() => setCurrentPage('membership')}
+          />
+        )
+      case 'points':
+        return (
+          <PointsPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            onNavigate={(page) => setCurrentPage(page as typeof currentPage)}
+          />
+        )
+      case 'points-records':
+        return (
+          <PointsRecordsPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            onBack={() => setCurrentPage('points')}
+          />
+        )
+      case 'referrals':
+        return (
+          <ReferralsPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+          />
+        )
+      case 'campaigns':
+        return (
+          <CampaignsPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            onNavigate={(page, params) => navigateToPage(page, params)}
+          />
+        )
+      case 'campaigns-detail':
+        return (
+          <CampaignDetailPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            campaignId={pageParams.id}
+            onBack={() => setCurrentPage('campaigns')}
+          />
+        )
+      case 'coupons-available':
+        return (
+          <CouponsAvailablePage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            onBack={() => setCurrentPage('coupons')}
+          />
+        )
+
+      // Step 10: 陪诊员公开页面
+      case 'escort-list':
+        return (
+          <EscortListPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            onNavigate={(page, params) => navigateToPage(page, params)}
+          />
+        )
+      case 'escort-detail':
+        return (
+          <EscortDetailPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            escortId={pageParams.id}
+            onBack={() => setCurrentPage('escort-list')}
+          />
+        )
+
+      // Step 11: 陪诊员工作台（需要 escortToken）
+      case 'workbench':
+        return (
+          <WorkbenchPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            effectiveViewerRole={effectiveViewerRole}
+            onNavigate={(page, params) => navigateToPage(page, params)}
+            onExitEscortMode={handleExitEscortMode}
+          />
+        )
+
+      // Step 7/7 批次 A: 订单池
+      case 'workbench-orders-pool':
+        return (
+          <OrdersPoolPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            effectiveViewerRole={effectiveViewerRole}
+            onBack={() => setCurrentPage('workbench')}
+            onNavigate={(page, params) => navigateToPage(page, params)}
+          />
+        )
+
+      // 收入明细
+      case 'workbench-earnings':
+        return (
+          <EarningsPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            effectiveViewerRole={effectiveViewerRole}
+            onBack={() => setCurrentPage('workbench')}
+            onNavigate={(page, params) => navigateToPage(page, params)}
+          />
+        )
+
+      // 提现
+      case 'workbench-withdraw':
+        return (
+          <WithdrawPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            effectiveViewerRole={effectiveViewerRole}
+            onBack={() => setCurrentPage('workbench-earnings')}
+            onNavigate={(page, params) => navigateToPage(page, params)}
+          />
+        )
+
+      // 订单详情
+      case 'workbench-order-detail':
+        return (
+          <OrderDetailPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            effectiveViewerRole={effectiveViewerRole}
+            orderId={currentPageParams?.id}
+            onBack={() => setCurrentPage('workbench-orders-pool')}
+            onNavigate={(page, params) => navigateToPage(page, params)}
+          />
+        )
+
       case 'home':
       default:
         return renderHomePage()
@@ -289,6 +595,19 @@ export function TerminalPreview({
   // 渲染内容
   const renderContent = () => (
     <div className='relative flex flex-col' style={{ height: `${height}px` }}>
+      {/* Step 4: DebugPanel - 仅开发环境显示 */}
+      {showDebugPanel && (
+        <DebugPanel
+          effectiveViewerRole={effectiveViewerRole}
+          userToken={currentUserToken}
+          escortToken={currentEscortToken}
+          isValidating={isCheckingEscortToken}
+          onInjectEscortToken={handleInjectEscortToken}
+          onClearEscortToken={handleClearEscortToken}
+          onRevalidate={revalidate}
+        />
+      )}
+
       {/* 可滚动内容区 */}
       <div
         ref={scrollContainerRef}
@@ -329,6 +648,15 @@ export function TerminalPreview({
         progress={scrollProgress}
         themeSettings={themeSettings}
       />
+
+      {/* Step 4/7: 陪诊员登录对话框 */}
+      <EscortLoginDialog
+        open={showEscortLoginDialog}
+        onClose={() => setShowEscortLoginDialog(false)}
+        onLoginSuccess={handleEscortLoginSuccess}
+        themeSettings={themeSettings}
+        isDarkMode={isDarkMode}
+      />
     </div>
   )
 
@@ -357,3 +685,5 @@ export function TerminalPreview({
 // 导出类型和默认值
 export * from './types'
 export { previewApi } from './api'
+export { useViewerRole, validateEscortSession } from './hooks/useViewerRole'
+export type { UseViewerRoleOptions, UseViewerRoleResult } from './hooks/useViewerRole'

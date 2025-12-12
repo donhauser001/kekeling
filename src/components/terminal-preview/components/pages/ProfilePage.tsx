@@ -1,5 +1,9 @@
 /**
  * 个人中心页预览组件
+ *
+ * Step 4/7: 增加陪诊员入口
+ * - 普通用户视角：显示入口但需要二次登录
+ * - 陪诊员视角：显示"进入工作台"
  */
 
 import {
@@ -16,12 +20,22 @@ import {
   HelpCircle,
   Building,
   ChevronRight,
+  Briefcase,
+  LogOut,
 } from 'lucide-react'
-import type { ThemeSettings } from '../../types'
+import type { ThemeSettings, PreviewViewerRole } from '../../types'
 
 interface ProfilePageProps {
   themeSettings: ThemeSettings
   isDarkMode?: boolean
+  /** 当前视角角色 */
+  effectiveViewerRole?: PreviewViewerRole
+  /** 点击陪诊员入口回调 */
+  onEscortEntryClick?: () => void
+  /** 点击进入工作台回调 */
+  onWorkbenchClick?: () => void
+  /** 退出陪诊员视角回调 */
+  onExitEscortMode?: () => void
 }
 
 // 订单入口
@@ -42,7 +56,14 @@ const menuItems = [
   { key: 'about', title: '关于我们', icon: Building },
 ]
 
-export function ProfilePage({ themeSettings, isDarkMode = false }: ProfilePageProps) {
+export function ProfilePage({
+  themeSettings,
+  isDarkMode = false,
+  effectiveViewerRole = 'user',
+  onEscortEntryClick,
+  onWorkbenchClick,
+  onExitEscortMode,
+}: ProfilePageProps) {
   // 深色模式颜色
   const bgColor = isDarkMode ? '#1a1a1a' : '#f5f7fa'
   const cardBg = isDarkMode ? '#2a2a2a' : '#ffffff'
@@ -50,6 +71,8 @@ export function ProfilePage({ themeSettings, isDarkMode = false }: ProfilePagePr
   const textPrimary = isDarkMode ? '#f3f4f6' : '#111827'
   const textSecondary = isDarkMode ? '#9ca3af' : '#6b7280'
   const textMuted = isDarkMode ? '#6b7280' : '#9ca3af'
+
+  const isEscort = effectiveViewerRole === 'escort'
 
   return (
     <div style={{ backgroundColor: bgColor }} className='min-h-full pb-4'>
@@ -60,6 +83,23 @@ export function ProfilePage({ themeSettings, isDarkMode = false }: ProfilePagePr
           background: `linear-gradient(180deg, ${themeSettings.primaryColor} 0%, ${themeSettings.primaryColor}dd 100%)`,
         }}
       >
+        {/* 陪诊员身份提示条 */}
+        {isEscort && (
+          <div className='flex items-center justify-between mb-4 px-3 py-2 rounded-lg bg-white/10'>
+            <div className='flex items-center gap-2'>
+              <Briefcase className='h-4 w-4 text-white' />
+              <span className='text-sm text-white'>陪诊员模式</span>
+            </div>
+            <button
+              onClick={onExitEscortMode}
+              className='flex items-center gap-1 px-2 py-1 rounded text-xs text-white/80 hover:text-white hover:bg-white/10 transition-colors'
+            >
+              <LogOut className='h-3 w-3' />
+              <span>退出</span>
+            </button>
+          </div>
+        )}
+
         <div className='flex items-center gap-3'>
           {/* 头像 */}
           <div className='h-16 w-16 rounded-full bg-white/20 flex items-center justify-center'>
@@ -69,6 +109,11 @@ export function ProfilePage({ themeSettings, isDarkMode = false }: ProfilePagePr
           <div className='flex-1'>
             <div className='flex items-center gap-2'>
               <span className='text-lg font-semibold text-white'>微信用户</span>
+              {isEscort && (
+                <span className='px-1.5 py-0.5 rounded text-[10px] bg-white/20 text-white'>
+                  陪诊员
+                </span>
+              )}
             </div>
             <span className='text-sm text-white/80'>138****8888</span>
           </div>
@@ -147,6 +192,44 @@ export function ProfilePage({ themeSettings, isDarkMode = false }: ProfilePagePr
               </div>
             )
           })}
+        </div>
+      </div>
+
+      {/* 陪诊员入口卡片 */}
+      <div className='px-3 mt-3'>
+        <div
+          className='rounded-xl flex items-center gap-3 px-4 py-3 cursor-pointer transition-all hover:shadow-md'
+          style={{
+            backgroundColor: cardBg,
+            border: isEscort ? `1px solid ${themeSettings.primaryColor}40` : 'none',
+          }}
+          onClick={isEscort ? onWorkbenchClick : onEscortEntryClick}
+        >
+          <div
+            className='w-10 h-10 rounded-full flex items-center justify-center'
+            style={{
+              backgroundColor: isEscort ? themeSettings.primaryColor : `${themeSettings.primaryColor}20`,
+            }}
+          >
+            <Briefcase
+              className='h-5 w-5'
+              style={{ color: isEscort ? '#ffffff' : themeSettings.primaryColor }}
+            />
+          </div>
+          <div className='flex-1'>
+            <p className='text-sm font-medium' style={{ color: textPrimary }}>
+              {isEscort ? '陪诊员工作台' : '成为陪诊员'}
+            </p>
+            <p className='text-xs' style={{ color: textMuted }}>
+              {isEscort ? '管理订单、查看收入' : '加入我们，开启陪诊服务'}
+            </p>
+          </div>
+          <div
+            className='px-4 py-1.5 rounded-full text-xs text-white'
+            style={{ backgroundColor: themeSettings.primaryColor }}
+          >
+            {isEscort ? '进入工作台' : '立即加入'}
+          </div>
         </div>
       </div>
 
