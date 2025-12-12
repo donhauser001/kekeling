@@ -68,8 +68,8 @@ import {
   EscortDetailPage,
   WorkbenchPage,
   OrdersPoolPage,
-  EarningsPage,
-  WithdrawPage,
+  WorkbenchEarningsPage,
+  WorkbenchWithdrawPage,
   OrderDetailPage,
 } from './components/pages'
 
@@ -549,10 +549,10 @@ export function TerminalPreview({
           />
         )
 
-      // 收入明细
+      // 收入明细（使用 Mock 数据版本）
       case 'workbench-earnings':
         return (
-          <EarningsPage
+          <WorkbenchEarningsPage
             themeSettings={themeSettings}
             isDarkMode={isDarkMode}
             effectiveViewerRole={effectiveViewerRole}
@@ -561,10 +561,10 @@ export function TerminalPreview({
           />
         )
 
-      // 提现
+      // 提现（previewApi.getWithdrawStats，escortRequest 通道）
       case 'workbench-withdraw':
         return (
-          <WithdrawPage
+          <WorkbenchWithdrawPage
             themeSettings={themeSettings}
             isDarkMode={isDarkMode}
             effectiveViewerRole={effectiveViewerRole}
@@ -580,7 +580,7 @@ export function TerminalPreview({
             themeSettings={themeSettings}
             isDarkMode={isDarkMode}
             effectiveViewerRole={effectiveViewerRole}
-            orderId={currentPageParams?.id}
+            orderId={pageParams?.id}
             onBack={() => setCurrentPage('workbench-orders-pool')}
             onNavigate={(page, params) => navigateToPage(page, params)}
           />

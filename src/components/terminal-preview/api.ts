@@ -934,6 +934,49 @@ export interface EarningsResponse {
 }
 
 /**
+ * 收入统计汇总（用于 WorkbenchEarningsPage 指标卡片）
+ * 对应接口: GET /escort-app/earnings/stats
+ * 通道: escortRequest
+ */
+export interface EarningsStats {
+  /** 总收入 */
+  totalEarnings: number
+  /** 本月收入 */
+  monthlyEarnings: number
+  /** 可提现金额 */
+  withdrawable: number
+  /** 提现中金额 */
+  pendingWithdraw: number
+  /** 累计订单数 */
+  totalOrders: number
+  /** 本月订单数 */
+  monthlyOrders: number
+  /** 环比增长率（本月订单数相比上月，百分比） */
+  monthlyOrdersGrowth?: number
+  /** 最近收入记录 */
+  recentRecords: EarningsStatsRecord[]
+}
+
+/**
+ * 收入统计记录项
+ */
+export interface EarningsStatsRecord {
+  id: string
+  /** 收入类型 */
+  type: 'order' | 'bonus' | 'withdraw' | 'refund'
+  /** 标题 */
+  title: string
+  /** 金额（正数为收入，负数为支出） */
+  amount: number
+  /** 订单号 */
+  orderNo?: string
+  /** 时间 */
+  createdAt: string
+  /** 状态 */
+  status: 'completed' | 'pending' | 'failed'
+}
+
+/**
  * 提现信息
  * 对应接口: GET /escort-app/withdraw/info
  */
@@ -953,6 +996,70 @@ export interface WithdrawInfo {
     cardNo: string // 仅显示后4位
     isDefault: boolean
   }[]
+}
+
+/**
+ * 提现账户类型
+ */
+export interface WithdrawAccount {
+  id: string
+  /** 账户类型 */
+  type: 'bank' | 'alipay' | 'wechat'
+  /** 账户名称 */
+  name: string
+  /** 账号信息（脱敏） */
+  accountNo: string
+  /** 银行名称（仅银行卡） */
+  bankName?: string
+  /** 是否默认 */
+  isDefault: boolean
+}
+
+/**
+ * 提现记录
+ */
+export interface WithdrawRecord {
+  id: string
+  /** 提现金额 */
+  amount: number
+  /** 手续费 */
+  fee: number
+  /** 实际到账 */
+  actualAmount: number
+  /** 提现账户名称 */
+  accountName: string
+  /** 提现时间 */
+  createdAt: string
+  /** 到账时间 */
+  completedAt?: string
+  /** 状态 */
+  status: 'pending' | 'processing' | 'completed' | 'failed'
+}
+
+/**
+ * 提现统计汇总（用于 WorkbenchWithdrawPage）
+ * 对应接口: GET /escort-app/withdraw/stats
+ * 通道: escortRequest
+ */
+export interface WithdrawStats {
+  /** 可提现金额 */
+  withdrawable: number
+  /** 提现中金额 */
+  pendingAmount: number
+  /** 最低提现金额 */
+  minAmount: number
+  /** 单笔最高金额 */
+  maxAmount: number
+  /** 手续费率（0-1） */
+  feeRate: number
+  /** 预计到账时间（小时） */
+  estimatedHours: number
+  /** 今日剩余提现次数 */
+  remainingTimes: number
+  /** 提现账户列表 */
+  accounts: WithdrawAccount[]
+  /** 最近提现记录 */
+  recentRecords: WithdrawRecord[]
 }
 
 function getMockWorkbenchSummary(): WorkbenchSummary {
@@ -1034,6 +1141,68 @@ function getMockEarnings(): EarningsResponse {
   }
 }
 
+/**
+ * Mock 收入统计数据
+ * 用于 WorkbenchEarningsPage 展示
+ */
+function getMockEarningsStats(): EarningsStats {
+  return {
+    totalEarnings: 28650.00,
+    monthlyEarnings: 4280.50,
+    withdrawable: 3650.00,
+    pendingWithdraw: 500.00,
+    totalOrders: 186,
+    monthlyOrders: 23,
+    monthlyOrdersGrowth: 12,
+    recentRecords: [
+      {
+        id: '1',
+        type: 'order',
+        title: '全程陪诊服务',
+        amount: 280.00,
+        orderNo: 'PZ2024121201',
+        createdAt: '2024-12-12 14:30',
+        status: 'completed',
+      },
+      {
+        id: '2',
+        type: 'bonus',
+        title: '好评奖励',
+        amount: 20.00,
+        orderNo: 'PZ2024121101',
+        createdAt: '2024-12-11 18:20',
+        status: 'completed',
+      },
+      {
+        id: '3',
+        type: 'order',
+        title: '代问诊服务',
+        amount: 150.00,
+        orderNo: 'PZ2024121102',
+        createdAt: '2024-12-11 10:15',
+        status: 'completed',
+      },
+      {
+        id: '4',
+        type: 'withdraw',
+        title: '提现至微信',
+        amount: -500.00,
+        createdAt: '2024-12-10 16:45',
+        status: 'pending',
+      },
+      {
+        id: '5',
+        type: 'order',
+        title: '检查陪同服务',
+        amount: 200.00,
+        orderNo: 'PZ2024121001',
+        createdAt: '2024-12-10 09:30',
+        status: 'completed',
+      },
+    ],
+  }
+}
+
 function getMockWithdrawInfo(): WithdrawInfo {
   return {
     withdrawable: 6200.0,
@@ -1043,6 +1212,97 @@ function getMockWithdrawInfo(): WithdrawInfo {
     bankCards: [
       { id: 'card-1', bankName: '招商银行', cardNo: '6789', isDefault: true },
       { id: 'card-2', bankName: '工商银行', cardNo: '1234', isDefault: false },
+    ],
+  }
+}
+
+/**
+ * Mock 提现统计数据
+ * 用于 WorkbenchWithdrawPage 展示
+ */
+function getMockWithdrawStats(): WithdrawStats {
+  return {
+    withdrawable: 3650.00,
+    pendingAmount: 500.00,
+    minAmount: 100,
+    maxAmount: 50000,
+    feeRate: 0,
+    estimatedHours: 24,
+    remainingTimes: 3,
+    accounts: [
+      {
+        id: 'acc-1',
+        type: 'bank',
+        name: '储蓄卡',
+        accountNo: '****6789',
+        bankName: '招商银行',
+        isDefault: true,
+      },
+      {
+        id: 'acc-2',
+        type: 'bank',
+        name: '储蓄卡',
+        accountNo: '****1234',
+        bankName: '工商银行',
+        isDefault: false,
+      },
+      {
+        id: 'acc-3',
+        type: 'alipay',
+        name: '支付宝',
+        accountNo: '138****8888',
+        isDefault: false,
+      },
+    ],
+    recentRecords: [
+      {
+        id: 'wd-1',
+        amount: 500.00,
+        fee: 0,
+        actualAmount: 500.00,
+        accountName: '招商银行 ****6789',
+        createdAt: '2024-12-10 16:45',
+        status: 'processing',
+      },
+      {
+        id: 'wd-2',
+        amount: 1000.00,
+        fee: 0,
+        actualAmount: 1000.00,
+        accountName: '招商银行 ****6789',
+        createdAt: '2024-12-05 10:20',
+        completedAt: '2024-12-05 18:30',
+        status: 'completed',
+      },
+      {
+        id: 'wd-3',
+        amount: 2000.00,
+        fee: 0,
+        actualAmount: 2000.00,
+        accountName: '工商银行 ****1234',
+        createdAt: '2024-11-28 14:15',
+        completedAt: '2024-11-29 09:00',
+        status: 'completed',
+      },
+      {
+        id: 'wd-4',
+        amount: 800.00,
+        fee: 0,
+        actualAmount: 800.00,
+        accountName: '支付宝 138****8888',
+        createdAt: '2024-11-20 09:30',
+        completedAt: '2024-11-20 10:15',
+        status: 'completed',
+      },
+      {
+        id: 'wd-5',
+        amount: 500.00,
+        fee: 0,
+        actualAmount: 500.00,
+        accountName: '招商银行 ****6789',
+        createdAt: '2024-11-15 16:00',
+        status: 'failed',
+      },
     ],
   }
 }
@@ -1486,6 +1746,43 @@ export const previewApi = {
   },
 
   /**
+   * 获取收入统计汇总（用于 WorkbenchEarningsPage）
+   * 接口: GET /escort-app/earnings/stats
+   * 通道: escortRequest（⚠️ 必须 escortToken，禁止 userRequest）
+   *
+   * Mock Token 规则：token 以 'mock-' 开头时直接返回 mock 数据
+   * Fallback 规则：接口 404/500 时返回 mock 数据，保证预览器可用
+   */
+  getEarningsStats: async (): Promise<EarningsStats> => {
+    const escortToken = getEscortToken()
+
+    // 无 token 时返回 mock 数据（非 escort 视角）
+    if (!escortToken) {
+      console.log('[previewApi.getEarningsStats] 无 escortToken，返回 mock 数据')
+      return getMockEarningsStats()
+    }
+
+    // mock token 直接返回 mock 数据，不请求真实后端
+    if (escortToken.startsWith('mock-')) {
+      console.log('[previewApi.getEarningsStats] mock token, 返回 mock 数据')
+      return getMockEarningsStats()
+    }
+
+    try {
+      return await escortRequest<EarningsStats>('/escort-app/earnings/stats')
+    } catch (error) {
+      // 404/500 降级到 mock 数据
+      if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
+        console.warn('[previewApi.getEarningsStats] 接口错误，使用 mock 数据')
+        return getMockEarningsStats()
+      }
+      // 401 等其他错误：也降级到 mock，保证预览器可用
+      console.warn('[previewApi.getEarningsStats] 请求失败，降级使用 mock 数据:', error)
+      return getMockEarningsStats()
+    }
+  },
+
+  /**
    * 获取提现信息
    * 接口: GET /escort-app/withdraw/info
    * 通道: escortRequest（⚠️ 必须 escortToken）
@@ -1509,6 +1806,43 @@ export const previewApi = {
         return getMockWithdrawInfo()
       }
       throw error
+    }
+  },
+
+  /**
+   * 获取提现统计汇总（用于 WorkbenchWithdrawPage）
+   * 接口: GET /escort-app/withdraw/stats
+   * 通道: escortRequest（⚠️ 必须 escortToken，禁止 userRequest）
+   *
+   * Mock Token 规则：token 以 'mock-' 开头时直接返回 mock 数据
+   * Fallback 规则：接口 404/500 时返回 mock 数据，保证预览器可用
+   */
+  getWithdrawStats: async (): Promise<WithdrawStats> => {
+    const escortToken = getEscortToken()
+
+    // 无 token 时返回 mock 数据（非 escort 视角）
+    if (!escortToken) {
+      console.log('[previewApi.getWithdrawStats] 无 escortToken，返回 mock 数据')
+      return getMockWithdrawStats()
+    }
+
+    // mock token 直接返回 mock 数据，不请求真实后端
+    if (escortToken.startsWith('mock-')) {
+      console.log('[previewApi.getWithdrawStats] mock token, 返回 mock 数据')
+      return getMockWithdrawStats()
+    }
+
+    try {
+      return await escortRequest<WithdrawStats>('/escort-app/withdraw/stats')
+    } catch (error) {
+      // 404/500 降级到 mock 数据
+      if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
+        console.warn('[previewApi.getWithdrawStats] 接口错误，使用 mock 数据')
+        return getMockWithdrawStats()
+      }
+      // 401 等其他错误：也降级到 mock，保证预览器可用
+      console.warn('[previewApi.getWithdrawStats] 请求失败，降级使用 mock 数据:', error)
+      return getMockWithdrawStats()
     }
   },
 

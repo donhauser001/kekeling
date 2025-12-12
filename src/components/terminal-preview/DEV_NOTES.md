@@ -696,6 +696,8 @@ const handleExitEscortMode = useCallback(() => {
 - [x] `getWorkbenchOrdersPool()` - 订单池
 - [x] `getWorkbenchEarnings()` - 收入明细
 - [x] `getWorkbenchWithdrawInfo()` - 提现信息
+- [x] `getEarningsStats()` - 收入统计汇总（WorkbenchEarningsPage）
+- [x] `getWithdrawStats()` - 提现统计汇总（WorkbenchWithdrawPage）
 - [x] 每个接口 404/500 时返回 mock 数据
 - [x] TypeScript 编译通过
 
@@ -741,6 +743,8 @@ interface WithdrawInfo {
 | `getWorkbenchOrdersPool()` | `/escort-app/orders/pool` | escortRequest |
 | `getWorkbenchEarnings()` | `/escort-app/earnings` | escortRequest |
 | `getWorkbenchWithdrawInfo()` | `/escort-app/withdraw/info` | escortRequest |
+| `getEarningsStats()` | `/escort-app/earnings/stats` | escortRequest |
+| `getWithdrawStats()` | `/escort-app/withdraw/stats` | escortRequest |
 
 ---
 
@@ -786,6 +790,8 @@ workbench-orders-pool → 点击返回 → workbench
 - [x] `getWorkbenchOrdersPool()` - 添加 mock token 检查
 - [x] `getWorkbenchEarnings()` - 添加 mock token 检查
 - [x] `getWorkbenchWithdrawInfo()` - 添加 mock token 检查
+- [x] `getEarningsStats()` - 添加 mock token 检查
+- [x] `getWithdrawStats()` - 添加 mock token 检查 + 无 token 降级
 
 **实现模式**:
 ```typescript
@@ -822,6 +828,28 @@ interface EarningsResponse {
   hasMore: boolean
 }
 
+// EarningsStats（用于 WorkbenchEarningsPage）
+interface EarningsStats {
+  totalEarnings: number     // 总收入
+  monthlyEarnings: number   // 本月收入
+  withdrawable: number      // 可提现金额
+  pendingWithdraw: number   // 提现中金额
+  totalOrders: number       // 累计订单数
+  monthlyOrders: number     // 本月订单数
+  monthlyOrdersGrowth?: number // 环比增长率
+  recentRecords: EarningsStatsRecord[] // 最近收入记录
+}
+
+interface EarningsStatsRecord {
+  id: string
+  type: 'order' | 'bonus' | 'withdraw' | 'refund'
+  title: string
+  amount: number
+  orderNo?: string
+  createdAt: string
+  status: 'completed' | 'pending' | 'failed'
+}
+
 // WithdrawInfo
 interface WithdrawInfo {
   withdrawable: number      // 可提现金额
@@ -839,16 +867,48 @@ interface WithdrawInfo {
 
 ---
 
+### getEarningsStats API ✅
+
+**接口**: `GET /escort-app/earnings/stats`
+**通道**: escortRequest（⚠️ 必须 escortToken，禁止 userRequest）
+
+**调用方式**:
+```typescript
+const { data, isLoading, isError } = useQuery({
+  queryKey: ['preview', 'workbench', 'earnings-stats'],
+  queryFn: () => previewApi.getEarningsStats(),
+  staleTime: 60 * 1000,
+  enabled: isEscort,
+})
+```
+
+**降级策略**:
+1. 无 escortToken → 返回 mock 数据
+2. mock token (mock-*) → 返回 mock 数据，不请求真实后端
+3. 真实 token + 请求成功 → 返回真实数据
+4. 真实 token + 404/500 → 降级到 mock 数据
+5. 真实 token + 其他错误 → 降级到 mock 数据（保证预览器可用）
+
+---
+
 ### 工作台收入明细页面 ✅
 
 **页面**: `workbench-earnings`
-**文件**: `components/pages/workbench/EarningsPage.tsx`
+
+**文件**:
+- `components/pages/workbench/EarningsPage.tsx` - 旧版 API 版本（调用 getWorkbenchEarnings）
+- `components/pages/workbench/WorkbenchEarningsPage.tsx` - 新版（调用 getEarningsStats，支持 mock 降级）
+
+**当前使用**: `WorkbenchEarningsPage.tsx`（使用 React Query + getEarningsStats API）
 
 **验收点**:
 - [x] 仅 viewerRole=escort 时允许进入
 - [x] 非 escort 显示 🔒 提示，不发起 API 请求
-- [x] 调用 previewApi.getWorkbenchEarnings()
-- [x] loading / error / empty / mock 降级
+- [x] 使用 React Query 调用 previewApi.getEarningsStats()
+- [x] 有 escortToken 时走真实请求（escortRequest 通道）
+- [x] 无 token 或请求失败时自动降级到 mock 数据
+- [x] 5+ 指标卡片：总收入、本月收入、可提现、提现中、累计订单、本月订单
+- [x] 最近 5 笔收入记录列表
 - [x] renderPageContent() 增加 case 'workbench-earnings'
 - [x] TypeScript 编译通过
 
@@ -856,30 +916,81 @@ interface WithdrawInfo {
 | 区域 | 内容 |
 |------|------|
 | 标题栏 | ← 返回 + "收入明细" |
-| 概览卡片 | 可提现余额 + 累计收入/提现/待结算 + [去提现] |
-| 收支列表 | 图标 + 标题 + 时间 + 金额（+绿/-灰） |
-| 加载更多 | hasMore 时显示 |
+| 概览卡片 | 渐变背景 + 可提现余额 + 提现中金额 + [立即提现] |
+| 指标卡片 | 2x2 网格：总收入 / 本月收入 / 提现中 / 累计订单 |
+| 本月订单行 | 本月完成订单数 + 环比增长 |
+| 收支列表 | 图标 + 标题 + 时间 + 订单号 + 金额（+绿/-灰）+ 状态标签 |
 
 **收支类型图标**:
 | type | 图标 |
 |------|------|
-| order | TrendingUp |
+| order | ArrowUpRight |
 | bonus | Gift |
-| withdraw | TrendingDown |
+| withdraw | ArrowDownRight |
 | refund | RefreshCw |
+
+**Mock 数据**:
+```typescript
+// 汇总数据
+const MOCK_SUMMARY = {
+  totalEarnings: 28650.00,     // 总收入
+  monthlyEarnings: 4280.50,    // 本月收入
+  withdrawable: 3650.00,       // 可提现
+  pendingWithdraw: 500.00,     // 提现中
+  totalOrders: 186,            // 累计订单
+  monthlyOrders: 23,           // 本月订单
+}
+
+// 收入记录（5 条）
+const MOCK_RECORDS = [
+  { type: 'order', title: '全程陪诊服务', amount: 280.00, ... },
+  { type: 'bonus', title: '好评奖励', amount: 20.00, ... },
+  { type: 'order', title: '代问诊服务', amount: 150.00, ... },
+  { type: 'withdraw', title: '提现至微信', amount: -500.00, status: 'pending', ... },
+  { type: 'order', title: '检查陪同服务', amount: 200.00, ... },
+]
+```
 
 ---
 
 ### 工作台提现页面 ✅
 
 **页面**: `workbench-withdraw`
-**文件**: `components/pages/workbench/WithdrawPage.tsx`
+
+**文件**:
+- `components/pages/workbench/WithdrawPage.tsx` - API 版本（调用 getWorkbenchWithdrawInfo）
+- `components/pages/workbench/WorkbenchWithdrawPage.tsx` - API 版本（调用 getWithdrawStats）
+
+**当前使用**: `WorkbenchWithdrawPage.tsx`（调用 `previewApi.getWithdrawStats()`）
+
+**getWithdrawStats API**:
+- 接口路径: `/escort-app/withdraw/stats`
+- 数据通道: `escortRequest`（⚠️ 需要 escortToken）
+- Mock Token 规则: token 以 `mock-` 开头时直接返回 mock 数据
+- Fallback: 无 token / 接口 404/500 / 其他错误 均降级到 mock 数据
+
+**Mock 数据结构**:
+```typescript
+interface WithdrawStats {
+  withdrawable: number      // 可提现金额
+  pendingAmount: number     // 处理中金额
+  minAmount: number         // 最低提现
+  maxAmount: number         // 单笔最高
+  feeRate: number           // 手续费率
+  estimatedHours: number    // 预计到账时间
+  remainingTimes: number    // 今日剩余次数
+  accounts: WithdrawAccount[]
+  recentRecords: WithdrawRecord[]
+}
+```
 
 **验收点**:
 - [x] 仅 viewerRole=escort 时允许进入
-- [x] 非 escort 显示 🔒 提示，不发起 API 请求
-- [x] 调用 previewApi.getWorkbenchWithdrawInfo()
-- [x] loading / error / empty（无银行卡）/ mock 降级
+- [x] 非 escort 显示 🔒 提示
+- [x] 可提现余额展示
+- [x] 提现账户信息（银行卡/支付宝等）
+- [x] 提现表单（金额输入、提交按钮、禁用状态演示）
+- [x] 最近提现记录列表（5 条 mock）
 - [x] renderPageContent() 增加 case 'workbench-withdraw'
 - [x] TypeScript 编译通过
 
@@ -887,20 +998,43 @@ interface WithdrawInfo {
 | 区域 | 内容 |
 |------|------|
 | 标题栏 | ← 返回 + "提现" |
-| 可提现金额 | 大字显示 |
-| 金额输入 | ¥ + 输入框 + [全部提现] |
-| 提现规则 | 最低金额 / 手续费 / 预计到账时间 |
-| 银行卡选择 | 卡列表（可选中）/ 无卡时显示添加入口 |
+| 可提现余额卡片 | 渐变背景 + 余额 + 处理中金额 |
+| 金额输入 | ¥ + 输入框 + [全部提现] + 剩余次数 |
+| 提现规则 | 最低/最高金额 / 手续费 / 预计到账时间 |
+| 账户选择 | 银行卡/支付宝列表（可选中）+ 添加账户按钮 |
 | 到账预览 | 实际到账金额 + 手续费 |
-| 提现按钮 | 满足条件时可用 |
+| 提现按钮 | 满足条件时可用，否则显示禁用原因 |
+| 提现记录 | 最近 5 条提现记录 + 查看全部 |
 
-**银行卡数据**:
-| 字段 | 说明 |
-|------|------|
-| id | 银行卡ID |
-| bankName | 银行名称 |
-| cardNo | 卡号后4位 |
-| isDefault | 是否默认 |
+**Mock 数据**:
+```typescript
+// 提现信息
+const MOCK_WITHDRAW_INFO = {
+  withdrawable: 3650.00,    // 可提现金额
+  pendingAmount: 500.00,    // 处理中金额
+  minAmount: 100,           // 最低提现
+  maxAmount: 50000,         // 单笔最高
+  feeRate: 0,               // 手续费率
+  estimatedHours: 24,       // 预计到账时间
+  remainingTimes: 3,        // 今日剩余次数
+}
+
+// 提现账户（3 个）
+const MOCK_ACCOUNTS = [
+  { type: 'bank', bankName: '招商银行', accountNo: '****6789', isDefault: true },
+  { type: 'bank', bankName: '工商银行', accountNo: '****1234', isDefault: false },
+  { type: 'alipay', name: '支付宝', accountNo: '138****8888', isDefault: false },
+]
+
+// 提现记录（5 条）
+const MOCK_RECORDS = [
+  { status: 'processing', amount: 500, accountName: '招商银行', ... },
+  { status: 'completed', amount: 1000, accountName: '招商银行', ... },
+  { status: 'completed', amount: 2000, accountName: '工商银行', ... },
+  { status: 'completed', amount: 800, accountName: '支付宝', ... },
+  { status: 'failed', amount: 500, accountName: '招商银行', ... },
+]
+```
 
 ---
 
