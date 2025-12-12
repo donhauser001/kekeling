@@ -451,6 +451,103 @@ function getMockMembershipPlans(): MembershipPlan[] {
 }
 
 /**
+ * 积分信息
+ * 对应接口: GET /marketing/points/my
+ */
+export interface PointsInfo {
+  /** 当前积分余额 */
+  balance: number
+  /** 累计获得 */
+  totalEarned: number
+  /** 累计使用 */
+  totalUsed: number
+  /** 即将过期（30天内） */
+  expiringSoon: number
+}
+
+/**
+ * 积分记录
+ * 对应接口: GET /marketing/points/records
+ */
+export interface PointsRecord {
+  id: string
+  /** 标题 */
+  title: string
+  /** 积分变动数量 */
+  points: number
+  /** 类型: earn=获得, use=使用 */
+  type: 'earn' | 'use'
+  /** 创建时间 */
+  createdAt: string
+}
+
+/**
+ * 积分记录列表响应
+ */
+export interface PointsRecordsResponse {
+  items: PointsRecord[]
+  total: number
+}
+
+/**
+ * Mock 积分信息
+ */
+function getMockPointsData(): PointsInfo {
+  return {
+    balance: 1280,
+    totalEarned: 2500,
+    totalUsed: 1220,
+    expiringSoon: 100,
+  }
+}
+
+/**
+ * Mock 积分记录
+ */
+function getMockPointsRecords(): PointsRecordsResponse {
+  return {
+    items: [
+      {
+        id: 'record-1',
+        title: '每日签到',
+        points: 10,
+        type: 'earn',
+        createdAt: '2024-12-12 09:00',
+      },
+      {
+        id: 'record-2',
+        title: '完成订单奖励',
+        points: 50,
+        type: 'earn',
+        createdAt: '2024-12-11 15:30',
+      },
+      {
+        id: 'record-3',
+        title: '兑换优惠券',
+        points: 100,
+        type: 'use',
+        createdAt: '2024-12-10 12:00',
+      },
+      {
+        id: 'record-4',
+        title: '邀请好友奖励',
+        points: 200,
+        type: 'earn',
+        createdAt: '2024-12-09 18:00',
+      },
+      {
+        id: 'record-5',
+        title: '抵扣订单',
+        points: 50,
+        type: 'use',
+        createdAt: '2024-12-08 10:30',
+      },
+    ],
+    total: 5,
+  }
+}
+
+/**
  * Mock 优惠券数据
  * 用于接口不存在时的降级显示
  */
@@ -587,8 +684,47 @@ export const previewApi = {
     }
   },
 
+  /**
+   * 获取我的积分信息
+   * 接口: GET /marketing/points/my
+   * 通道: userRequest
+   */
+  getMyPoints: async (): Promise<PointsInfo> => {
+    try {
+      return await userRequest<PointsInfo>('/marketing/points/my')
+    } catch (error) {
+      if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
+        console.warn('[previewApi.getMyPoints] 使用 mock 数据')
+        return getMockPointsData()
+      }
+      throw error
+    }
+  },
+
+  /**
+   * 获取积分记录
+   * 接口: GET /marketing/points/records
+   * 通道: userRequest
+   */
+  getPointsRecords: async (params?: { page?: number; pageSize?: number }): Promise<PointsRecordsResponse> => {
+    try {
+      const searchParams = new URLSearchParams()
+      if (params?.page) searchParams.set('page', params.page.toString())
+      if (params?.pageSize) searchParams.set('pageSize', params.pageSize.toString())
+      const query = searchParams.toString()
+      return await userRequest<PointsRecordsResponse>(`/marketing/points/records${query ? `?${query}` : ''}`)
+    } catch (error) {
+      if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
+        console.warn('[previewApi.getPointsRecords] 使用 mock 数据')
+        return getMockPointsRecords()
+      }
+      throw error
+    }
+  },
+
   // TODO: 其他营销中心接口（后续接入）
-  // getMyPoints: () => userRequest<PointsInfo>('/marketing/points/my'),
+  // getReferralInfo: () => userRequest('/marketing/referrals/info'),
+  // getCampaigns: () => userRequest('/marketing/campaigns'),
 
   // TODO: 陪诊员公开信息（用户端可查看，走 userRequest）
   // ⚠️ 注意：这是公开接口，后端不要强制 escortToken

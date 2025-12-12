@@ -52,6 +52,8 @@ import {
   CouponsPage,
   MembershipPage,
   MembershipPlansPage,
+  PointsPage,
+  PointsRecordsPage,
 } from './components/pages'
 
 export function TerminalPreview({
@@ -377,6 +379,22 @@ export function TerminalPreview({
             themeSettings={themeSettings}
             isDarkMode={isDarkMode}
             onBack={() => setCurrentPage('membership')}
+          />
+        )
+      case 'points':
+        return (
+          <PointsPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            onNavigate={(page) => setCurrentPage(page as typeof currentPage)}
+          />
+        )
+      case 'points-records':
+        return (
+          <PointsRecordsPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            onBack={() => setCurrentPage('points')}
           />
         )
 

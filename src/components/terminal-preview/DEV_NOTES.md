@@ -231,12 +231,43 @@ previewApi.getMembershipPlans(): Promise<MembershipPlan[]>
 
 ---
 
-#### 批次 B: points + points-records（待接入）
+#### 批次 B: points + points-records ✅
 
-**任务**:
-- [ ] 新增 `PointsPage.tsx` (积分首页)
-- [ ] 新增 `PointsRecordsPage.tsx` (积分明细)
-- [ ] `previewApi.getMyPoints()` / `getPointsRecords()`
+**验收点**:
+- [x] 新增 `PointsPage.tsx` (积分首页: 积分卡片、任务列表、商城入口)
+- [x] 新增 `PointsRecordsPage.tsx` (积分明细: 收支记录列表)
+- [x] `renderPageContent()` 增加 case 'points' / 'points-records'
+- [x] `previewApi.getMyPoints()` / `getPointsRecords()`
+- [x] 每个页面支持 loading / error / mock 降级
+- [x] TypeScript 编译通过
+
+**API 新增**:
+```typescript
+// 接口路径 + mock 字段映射
+
+// GET /marketing/points/my
+previewApi.getMyPoints(): Promise<PointsInfo>
+interface PointsInfo {
+  balance: number      // 当前积分余额
+  totalEarned: number  // 累计获得
+  totalUsed: number    // 累计使用
+  expiringSoon: number // 即将过期（30天内）
+}
+
+// GET /marketing/points/records
+previewApi.getPointsRecords(params?): Promise<PointsRecordsResponse>
+interface PointsRecord {
+  id: string
+  title: string        // 标题
+  points: number       // 积分变动数量
+  type: 'earn' | 'use' // 类型
+  createdAt: string    // 创建时间
+}
+interface PointsRecordsResponse {
+  items: PointsRecord[]
+  total: number
+}
+```
 
 ---
 

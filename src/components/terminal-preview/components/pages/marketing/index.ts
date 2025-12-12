@@ -12,3 +12,10 @@ export type { MembershipPageProps } from './MembershipPage'
 export { MembershipPlansPage } from './MembershipPlansPage'
 export type { MembershipPlansPageProps } from './MembershipPlansPage'
 
+// Step 7 批次 B
+export { PointsPage } from './PointsPage'
+export type { PointsPageProps } from './PointsPage'
+
+export { PointsRecordsPage } from './PointsRecordsPage'
+export type { PointsRecordsPageProps } from './PointsRecordsPage'
+
