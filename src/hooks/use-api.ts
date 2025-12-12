@@ -458,6 +458,48 @@ export function useAdminEscortWithdrawRecord(id: string) {
   })
 }
 
+// P2: 获取提现详情（含日志）
+export function useAdminEscortWithdrawDetail(id: string) {
+  return useQuery({
+    queryKey: ['admin', 'escort-withdraw-records', id, 'detail'],
+    queryFn: () => adminEscortWithdrawApi.getDetailWithLogs(id),
+    enabled: !!id,
+  })
+}
+
+// P2: 获取提现操作日志
+export function useAdminEscortWithdrawLogs(id: string) {
+  return useQuery({
+    queryKey: ['admin', 'escort-withdraw-records', id, 'logs'],
+    queryFn: () => adminEscortWithdrawApi.getLogs(id),
+    enabled: !!id,
+  })
+}
+
+// P2: 审核提现
+export function useAdminWithdrawReview() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: import('@/lib/api').AdminWithdrawReviewRequest }) =>
+      adminEscortWithdrawApi.review(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'escort-withdraw-records'] })
+    },
+  })
+}
+
+// P2: 打款
+export function useAdminWithdrawPayout() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: import('@/lib/api').AdminWithdrawPayoutRequest }) =>
+      adminEscortWithdrawApi.payout(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'escort-withdraw-records'] })
+    },
+  })
+}
+
 // ============================================
 // 服务分类
 // ============================================
