@@ -273,11 +273,13 @@ export class CommissionService {
 
   /**
    * 异步处理分润计算
+   *
+   * ⚠️ 注意：orderAmount 参数为元，内部转换为分进行计算
    */
   private async handleDistributionAsync(
     orderId: string,
     escortId: string,
-    orderAmount: number,
+    orderAmount: number, // 元
   ): Promise<void> {
     // 延迟加载 DistributionService 避免循环依赖
     if (!this.distributionService) {
@@ -293,16 +295,20 @@ export class CommissionService {
     }
 
     try {
+      // ⚠️ 元 -> 分 转换（I/O 边界）
+      const { yuanToCents } = await import('../distribution/distribution.service');
+      const orderAmountCents = yuanToCents(orderAmount);
+
       const distributionResult = await this.distributionService.calculateDistribution(
         orderId,
         escortId,
-        orderAmount,
+        orderAmountCents, // 使用分
       );
 
       if (distributionResult.records.length > 0) {
         await this.distributionService.createDistributionRecords(
           orderId,
-          orderAmount,
+          orderAmountCents, // 使用分
           escortId,
           distributionResult,
         );

@@ -2,17 +2,35 @@ import { Injectable, BadRequestException, NotFoundException, Logger } from '@nes
 import { PrismaService } from '../../prisma/prisma.service';
 import { Decimal } from '@prisma/client/runtime/library';
 
-// 分润计算结果
+// 分润计算结果（金额单位：分）
 export interface DistributionResult {
   records: Array<{
     beneficiaryId: string;
     beneficiaryLevel: number;
     relationLevel: number;
-    rate: number;
-    amount: number;
+    rate: number;        // 费率（百分比，如 10 表示 10%）
+    amountCents: number; // 分润金额（分）
     type: string;
   }>;
-  totalDistribution: number;
+  totalDistributionCents: number; // 总分润（分）
+}
+
+/**
+ * 金额工具函数
+ * 统一在 I/O 边界进行元<->分转换
+ */
+export function yuanToCents(yuan: number): number {
+  // 先乘 100，再四舍五入，避免浮点精度问题
+  return Math.round(yuan * 100);
+}
+
+export function centsToYuan(cents: number): number {
+  return cents / 100;
+}
+
+export function centsToDecimalString(cents: number): string {
+  // 转换为保留两位小数的字符串，用于写入 Decimal(12,2) 字段
+  return (cents / 100).toFixed(2);
 }
 
 // 晋升配置类型
@@ -235,11 +253,18 @@ export class DistributionService {
 
   /**
    * 计算订单分润
+   *
+   * ⚠️ 重要：所有金额计算使用整数（分）进行，避免浮点精度问题
+   *
+   * @param orderId 订单ID
+   * @param escortId 陪诊员ID
+   * @param orderAmountCents 订单金额（单位：分）
+   * @returns 分润结果（金额单位：分）
    */
   async calculateDistribution(
     orderId: string,
     escortId: string,
-    orderAmount: number,
+    orderAmountCents: number,
   ): Promise<DistributionResult> {
     const config = await this.prisma.distributionConfig.findFirst({
       where: { status: 'active' },
@@ -247,7 +272,7 @@ export class DistributionService {
 
     if (!config) {
       this.logger.warn('未找到激活的分润配置，跳过分润计算');
-      return { records: [], totalDistribution: 0 };
+      return { records: [], totalDistributionCents: 0 };
     }
 
     const escort = await this.prisma.escort.findUnique({
@@ -259,7 +284,7 @@ export class DistributionService {
     }
 
     const records: DistributionResult['records'] = [];
-    let totalDistribution = 0;
+    let totalDistributionCents = 0;
 
     // 获取上级链路
     const ancestors = escort.ancestorPath
@@ -296,28 +321,38 @@ export class DistributionService {
       }
 
       if (rate > 0) {
-        const amount = Math.round(orderAmount * rate) / 100;
+        // ⚠️ 核心计算：使用整数分计算，避免浮点精度问题
+        // amountCents = orderAmountCents * rate / 100
+        // 先乘后除，使用 Math.round 四舍五入到分
+        const amountCents = Math.round(orderAmountCents * rate / 100);
         records.push({
           beneficiaryId: ancestorId,
           beneficiaryLevel: ancestor.distributionLevel,
           relationLevel,
           rate,
-          amount,
+          amountCents,
           type: 'order',
         });
-        totalDistribution += amount;
+        totalDistributionCents += amountCents;
       }
     }
 
-    return { records, totalDistribution };
+    return { records, totalDistributionCents };
   }
 
   /**
    * 创建分润记录
+   *
+   * ⚠️ 重要：金额参数使用分，写入数据库时转换为元（Decimal）
+   *
+   * @param orderId 订单ID
+   * @param orderAmountCents 订单金额（分）
+   * @param sourceEscortId 源陪诊员ID
+   * @param distributionResult 分润计算结果（金额为分）
    */
   async createDistributionRecords(
     orderId: string,
-    orderAmount: number,
+    orderAmountCents: number,
     sourceEscortId: string,
     distributionResult: DistributionResult,
   ): Promise<void> {
@@ -326,13 +361,15 @@ export class DistributionService {
         await tx.distributionRecord.create({
           data: {
             orderId,
-            orderAmount: new Decimal(orderAmount),
+            // 分 -> 元（Decimal 字符串）
+            orderAmount: new Decimal(centsToDecimalString(orderAmountCents)),
             beneficiaryId: record.beneficiaryId,
             beneficiaryLevel: record.beneficiaryLevel,
             sourceEscortId,
             relationLevel: record.relationLevel,
             rate: record.rate,
-            amount: new Decimal(record.amount),
+            // 分 -> 元（Decimal 字符串）
+            amount: new Decimal(centsToDecimalString(record.amountCents)),
             type: record.type,
             status: 'pending', // 待结算（订单完成后7天）
           },
