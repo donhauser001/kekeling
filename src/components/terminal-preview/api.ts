@@ -716,6 +716,47 @@ function getMockAvailableCoupons(): AvailableCoupon[] {
   ]
 }
 
+// ==========================================================================
+// 陪诊员公开信息类型（用户端可查看）
+// ⚠️ /escorts 是公开接口，允许 userToken 或匿名访问
+// ==========================================================================
+
+/** 陪诊员列表项 */
+export interface EscortListItem {
+  id: string
+  name: string
+  avatar?: string
+  level?: string
+  serviceCount: number
+  rating: number
+  tags?: string[]
+  status: 'available' | 'offline'
+}
+
+/** 陪诊员详情 */
+export interface EscortDetail extends EscortListItem {
+  bio?: string
+  experience: number
+  serviceAreas?: string[]
+}
+
+function getMockEscorts(): EscortListItem[] {
+  return [
+    { id: 'escort-1', name: '王丽华', level: '金牌', serviceCount: 328, rating: 99, tags: ['全程陪诊', '代取报告'], status: 'available' },
+    { id: 'escort-2', name: '张明', level: '银牌', serviceCount: 156, rating: 97, tags: ['产检陪护', '儿科陪诊'], status: 'available' },
+    { id: 'escort-3', name: '李秀英', level: '金牌', serviceCount: 412, rating: 98, tags: ['肿瘤科', '慢病管理'], status: 'offline' },
+  ]
+}
+
+function getMockEscortDetail(id: string): EscortDetail {
+  const escorts = getMockEscorts()
+  const found = escorts.find(e => e.id === id)
+  if (found) {
+    return { ...found, bio: `从事陪诊服务多年，累计服务${found.serviceCount}位客户。`, experience: found.level === '金牌' ? 5 : 3, serviceAreas: ['北京朝阳区', '北京海淀区'] }
+  }
+  return { id, name: '陪诊员', serviceCount: 0, rating: 0, status: 'offline', bio: '暂无简介', experience: 0, serviceAreas: [] }
+}
+
 /**
  * Mock 优惠券数据
  * 用于接口不存在时的降级显示
@@ -959,10 +1000,39 @@ export const previewApi = {
     }
   },
 
-  // TODO: 陪诊员公开信息（用户端可查看，走 userRequest）
-  // ⚠️ 注意：这是公开接口，后端不要强制 escortToken
-  // getEscorts: (params?: EscortQueryParams) => userRequest<EscortListResponse>('/escorts'),
-  // getEscortDetail: (id: string) => userRequest<EscortDetail>(`/escorts/${id}`),
+  /**
+   * 获取陪诊员列表（公开信息）
+   * 接口: GET /escorts
+   * 通道: userRequest（⚠️ 公开接口，不需要 escortToken）
+   */
+  getEscorts: async (): Promise<EscortListItem[]> => {
+    try {
+      return await userRequest<EscortListItem[]>('/escorts')
+    } catch (error) {
+      if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
+        console.warn('[previewApi.getEscorts] 使用 mock 数据')
+        return getMockEscorts()
+      }
+      throw error
+    }
+  },
+
+  /**
+   * 获取陪诊员详情（公开信息）
+   * 接口: GET /escorts/:id
+   * 通道: userRequest（⚠️ 公开接口，不需要 escortToken）
+   */
+  getEscortDetail: async (id: string): Promise<EscortDetail> => {
+    try {
+      return await userRequest<EscortDetail>(`/escorts/${id}`)
+    } catch (error) {
+      if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
+        console.warn('[previewApi.getEscortDetail] 使用 mock 数据, id:', id)
+        return getMockEscortDetail(id)
+      }
+      throw error
+    }
+  },
 
   // ==========================================================================
   // Escort Channel（陪诊员通道）

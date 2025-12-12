@@ -58,6 +58,8 @@ import {
   CampaignsPage,
   CampaignDetailPage,
   CouponsAvailablePage,
+  EscortListPage,
+  EscortDetailPage,
 } from './components/pages'
 
 export function TerminalPreview({
@@ -440,6 +442,25 @@ export function TerminalPreview({
             themeSettings={themeSettings}
             isDarkMode={isDarkMode}
             onBack={() => setCurrentPage('coupons')}
+          />
+        )
+
+      // Step 10: 陪诊员公开页面
+      case 'escort-list':
+        return (
+          <EscortListPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            onNavigate={(page, params) => navigateToPage(page, params)}
+          />
+        )
+      case 'escort-detail':
+        return (
+          <EscortDetailPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            escortId={pageParams.id}
+            onBack={() => setCurrentPage('escort-list')}
           />
         )
 

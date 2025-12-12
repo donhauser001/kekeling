@@ -358,7 +358,48 @@ interface AvailableCoupon {
 
 ---
 
-#### 批次 E: escort-list + escort-detail（待接入）
+### Step 10: 陪诊员公开页批次 A ✅
+
+#### 批次 E: escort-list + escort-detail ✅
+
+**验收点**:
+- [x] 新增 `components/pages/escort/EscortListPage.tsx` (陪诊员卡片: 头像、等级、服务次数、好评率、状态)
+- [x] 新增 `components/pages/escort/EscortDetailPage.tsx` (详情: 统计、简介、标签、服务区域、预约按钮)
+- [x] 复用 Step 9 路由参数机制
+- [x] `previewApi.getEscorts()` / `getEscortDetail(id)`（走 userRequest 公开通道）
+- [x] escort-detail 无 id 时显示友好提示
+- [x] 现有营销中心不回归
+- [x] TypeScript 编译通过
+
+**API 新增（公开接口，userRequest）**:
+```typescript
+// GET /escorts
+previewApi.getEscorts(): Promise<EscortListItem[]>
+interface EscortListItem {
+  id: string
+  name: string
+  avatar?: string
+  level?: string           // 金牌/银牌
+  serviceCount: number
+  rating: number           // 0-100
+  tags?: string[]
+  status: 'available' | 'offline'
+}
+
+// GET /escorts/:id
+previewApi.getEscortDetail(id): Promise<EscortDetail>
+interface EscortDetail extends EscortListItem {
+  bio?: string             // 个人简介
+  experience: number       // 从业年限
+  serviceAreas?: string[]  // 服务区域
+}
+```
+
+⚠️ **重要**: `/escorts` 是公开接口，后端不要强制 `escortToken`！
+
+---
+
+#### 批次 F: workbench（待接入，需 escortRequest）
 
 ---
 
