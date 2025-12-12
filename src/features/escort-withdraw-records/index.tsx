@@ -51,14 +51,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { WithdrawDetailDrawer } from './components/WithdrawDetailDrawer'
+import { WithdrawExportButton } from './components/WithdrawExportButton'
+import { WithdrawReviewDrawer } from './components/WithdrawReviewDrawer'
+import { WithdrawPayoutModal } from './components/WithdrawPayoutModal'
+import { canShowAction, type WithdrawPermissions } from './utils/withdrawPermissions'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -71,11 +68,9 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { Calendar } from '@/components/ui/calendar'
-import { Separator } from '@/components/ui/separator'
 import { SimplePagination } from '@/components/simple-pagination'
-import { useAdminEscortWithdrawRecords, useAdminEscortWithdrawRecord } from '@/hooks/use-api'
+import { useAdminEscortWithdrawRecords } from '@/hooks/use-api'
 import type {
-  AdminEscortWithdrawRecord,
   AdminWithdrawStatus,
   AdminWithdrawMethod,
 } from '@/lib/api'
@@ -121,6 +116,14 @@ const methodConfig: Record<AdminWithdrawMethod, { label: string; icon: React.Rea
   },
 }
 
+// P2: 管理员默认拥有全部权限
+const defaultPermissions: WithdrawPermissions = {
+  read: true,
+  export: true,
+  approve: true,
+  payout: true,
+}
+
 export function EscortWithdrawRecords() {
   // 筛选状态
   const [keyword, setKeyword] = useState('')
@@ -131,9 +134,17 @@ export function EscortWithdrawRecords() {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
 
-  // 详情对话框
-  const [detailDialogOpen, setDetailDialogOpen] = useState(false)
+  // 详情抽屉
+  const [detailDrawerOpen, setDetailDrawerOpen] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>(null)
+
+  // P2: 审核抽屉
+  const [reviewDrawerOpen, setReviewDrawerOpen] = useState(false)
+  const [reviewId, setReviewId] = useState<string | null>(null)
+
+  // P2: 打款 Modal
+  const [payoutModalOpen, setPayoutModalOpen] = useState(false)
+  const [payoutId, setPayoutId] = useState<string | null>(null)
 
   // 构建查询参数
   const query = {
@@ -148,16 +159,46 @@ export function EscortWithdrawRecords() {
 
   // API 查询 - queryKey 包含筛选条件
   const { data, isLoading, isError, error, refetch } = useAdminEscortWithdrawRecords(query)
-  const { data: detail, isLoading: detailLoading } = useAdminEscortWithdrawRecord(selectedId || '')
 
   const records = data?.data || []
   const total = data?.total || 0
   const totalPages = Math.ceil(total / pageSize)
 
-  // 打开详情
+  // 打开详情抽屉
   const openDetail = (id: string) => {
     setSelectedId(id)
-    setDetailDialogOpen(true)
+    setDetailDrawerOpen(true)
+  }
+
+  // 关闭详情抽屉
+  const closeDetail = () => {
+    setDetailDrawerOpen(false)
+    // 延迟清除 ID，避免抽屉关闭动画时出现空白
+    setTimeout(() => setSelectedId(null), 300)
+  }
+
+  // P2: 打开审核抽屉
+  const openReview = (id: string) => {
+    setReviewId(id)
+    setReviewDrawerOpen(true)
+  }
+
+  // P2: 关闭审核抽屉
+  const closeReview = () => {
+    setReviewDrawerOpen(false)
+    setTimeout(() => setReviewId(null), 300)
+  }
+
+  // P2: 打开打款 Modal
+  const openPayout = (id: string) => {
+    setPayoutId(id)
+    setPayoutModalOpen(true)
+  }
+
+  // P2: 关闭打款 Modal
+  const closePayout = () => {
+    setPayoutModalOpen(false)
+    setTimeout(() => setPayoutId(null), 300)
   }
 
   // 重置筛选
@@ -334,6 +375,17 @@ export function EscortWithdrawRecords() {
               <Button variant='outline' onClick={resetFilters}>
                 重置
               </Button>
+
+              {/* 导出 */}
+              <WithdrawExportButton
+                filters={{
+                  status: statusFilter || undefined,
+                  method: methodFilter || undefined,
+                  keyword: keyword || undefined,
+                  startAt: startDate ? startDate.toISOString() : undefined,
+                  endAt: endDate ? endDate.toISOString() : undefined,
+                }}
+              />
             </div>
           </CardContent>
         </Card>
@@ -457,6 +509,20 @@ export function EscortWithdrawRecords() {
                                   <Eye className='mr-2 h-4 w-4' />
                                   查看详情
                                 </DropdownMenuItem>
+                                {/* P2: 审核按钮 - 仅 pending 状态且有权限时显示 */}
+                                {canShowAction(record.status, defaultPermissions, 'review') && (
+                                  <DropdownMenuItem onClick={() => openReview(record.id)}>
+                                    <CheckCircle className='mr-2 h-4 w-4' />
+                                    审核
+                                  </DropdownMenuItem>
+                                )}
+                                {/* P2: 打款按钮 - 仅 approved 状态且有权限时显示 */}
+                                {canShowAction(record.status, defaultPermissions, 'payout') && (
+                                  <DropdownMenuItem onClick={() => openPayout(record.id)}>
+                                    <Wallet className='mr-2 h-4 w-4' />
+                                    打款
+                                  </DropdownMenuItem>
+                                )}
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </TableCell>
@@ -488,134 +554,26 @@ export function EscortWithdrawRecords() {
         </Card>
       </Main>
 
-      {/* 详情对话框 */}
-      <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
-        <DialogContent className='max-w-lg'>
-          <DialogHeader>
-            <DialogTitle>提现详情</DialogTitle>
-            <DialogDescription>提现记录详细信息</DialogDescription>
-          </DialogHeader>
+      {/* 详情抽屉 */}
+      <WithdrawDetailDrawer
+        open={detailDrawerOpen}
+        withdrawId={selectedId}
+        onClose={closeDetail}
+      />
 
-          {detailLoading ? (
-            <div className='flex h-48 items-center justify-center'>
-              <Loader2 className='h-6 w-6 animate-spin text-primary' />
-            </div>
-          ) : detail ? (
-            <div className='space-y-4 py-4'>
-              {/* 状态 */}
-              <div className='flex items-center justify-between'>
-                <span className='text-muted-foreground'>状态</span>
-                <Badge className={cn('gap-1', statusConfig[detail.status]?.color)}>
-                  {statusConfig[detail.status]?.icon}
-                  {statusConfig[detail.status]?.label || detail.status}
-                </Badge>
-              </div>
+      {/* P2: 审核抽屉 */}
+      <WithdrawReviewDrawer
+        open={reviewDrawerOpen}
+        withdrawId={reviewId}
+        onClose={closeReview}
+      />
 
-              <Separator />
-
-              {/* 基本信息 */}
-              <div className='grid gap-3 text-sm'>
-                <div className='flex justify-between'>
-                  <span className='text-muted-foreground'>提现单号</span>
-                  <span className='font-mono'>{detail.withdrawNo}</span>
-                </div>
-                <div className='flex justify-between'>
-                  <span className='text-muted-foreground'>陪诊员</span>
-                  <span>{detail.escortName}</span>
-                </div>
-                <div className='flex justify-between'>
-                  <span className='text-muted-foreground'>陪诊员ID</span>
-                  <span className='font-mono text-xs'>{detail.escortId}</span>
-                </div>
-                <div className='flex justify-between'>
-                  <span className='text-muted-foreground'>手机号</span>
-                  <span>{detail.escortPhoneMasked}</span>
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* 金额信息 */}
-              <div className='grid gap-3 text-sm'>
-                <div className='flex justify-between'>
-                  <span className='text-muted-foreground'>提现金额</span>
-                  <span className='font-medium'>¥{detail.amount.toFixed(2)}</span>
-                </div>
-                <div className='flex justify-between'>
-                  <span className='text-muted-foreground'>手续费</span>
-                  <span>¥{detail.fee.toFixed(2)}</span>
-                </div>
-                <div className='flex justify-between'>
-                  <span className='text-muted-foreground'>实际到账</span>
-                  <span className='font-medium text-green-600'>
-                    ¥{detail.netAmount.toFixed(2)}
-                  </span>
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* 账户信息 */}
-              <div className='grid gap-3 text-sm'>
-                <div className='flex justify-between'>
-                  <span className='text-muted-foreground'>提现方式</span>
-                  <div className='flex items-center gap-1.5'>
-                    {methodConfig[detail.method]?.icon}
-                    <span>{methodConfig[detail.method]?.label || detail.method}</span>
-                  </div>
-                </div>
-                <div className='flex justify-between'>
-                  <span className='text-muted-foreground'>收款账户</span>
-                  <span className='font-mono'>{detail.accountMasked}</span>
-                </div>
-                {detail.bankName && (
-                  <div className='flex justify-between'>
-                    <span className='text-muted-foreground'>银行名称</span>
-                    <span>{detail.bankName}</span>
-                  </div>
-                )}
-              </div>
-
-              <Separator />
-
-              {/* 时间信息 */}
-              <div className='grid gap-3 text-sm'>
-                <div className='flex justify-between'>
-                  <span className='text-muted-foreground'>申请时间</span>
-                  <span>{formatTime(detail.createdAt)}</span>
-                </div>
-                <div className='flex justify-between'>
-                  <span className='text-muted-foreground'>打款时间</span>
-                  <span>{formatTime(detail.paidAt)}</span>
-                </div>
-              </div>
-
-              {/* 失败原因 */}
-              {detail.status === 'failed' && detail.failReason && (
-                <>
-                  <Separator />
-                  <div className='text-sm'>
-                    <span className='text-muted-foreground'>失败原因</span>
-                    <p className='mt-1 rounded-md bg-red-50 p-2 text-red-600 dark:bg-red-900/20'>
-                      {detail.failReason}
-                    </p>
-                  </div>
-                </>
-              )}
-            </div>
-          ) : (
-            <div className='flex h-48 items-center justify-center text-muted-foreground'>
-              暂无数据
-            </div>
-          )}
-
-          <DialogFooter>
-            <Button variant='outline' onClick={() => setDetailDialogOpen(false)}>
-              关闭
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* P2: 打款 Modal */}
+      <WithdrawPayoutModal
+        open={payoutModalOpen}
+        withdrawId={payoutId}
+        onClose={closePayout}
+      />
     </>
   )
 }

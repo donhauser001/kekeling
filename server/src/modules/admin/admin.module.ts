@@ -3,7 +3,7 @@ import { AdminOrdersController } from './controllers/admin-orders.controller';
 import { AdminEscortsController } from './controllers/admin-escorts.controller';
 import { AdminEscortLevelsController } from './controllers/admin-escort-levels.controller';
 import { AdminEscortTagsController } from './controllers/admin-escort-tags.controller';
-import { AdminWithdrawalsController } from './controllers/admin-withdrawals.controller';
+import { AdminWithdrawalsController, AdminWithdrawalsLegacyController } from './controllers/admin-withdrawals.controller';
 import { AdminCommissionController } from './controllers/admin-commission.controller';
 import { AdminComplaintsController } from './controllers/admin-complaints.controller';
 import { AdminDashboardController } from './controllers/admin-dashboard.controller';
@@ -47,6 +47,7 @@ import { DistributionModule } from '../distribution/distribution.module';
     AdminEscortLevelsController,
     AdminEscortTagsController,
     AdminWithdrawalsController,
+    AdminWithdrawalsLegacyController,
     AdminCommissionController,
     AdminComplaintsController,
     AdminDashboardController,

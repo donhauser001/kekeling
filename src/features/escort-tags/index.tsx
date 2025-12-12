@@ -205,15 +205,15 @@ export function EscortTags() {
     const [tagDialogMode, setTagDialogMode] = useState<'create' | 'edit'>('create')
     const [editingTag, setEditingTag] = useState<LocalEscortTag | null>(null)
     const [tagFormData, setTagFormData] = useState<TagFormData>(defaultTagFormData)
-    const [tagFormErrors, setTagFormErrors] = useState<Record<string, string>>({}))
+    const [tagFormErrors, setTagFormErrors] = useState<Record<string, string>>({})
 
-        // 从 URL 同步视图模式
-        useEffect(() => {
-            const view = search.view as string | undefined
-            if (view === 'list' || view === 'grid') {
-                setViewMode(view)
-            }
-        }, [search.view])
+    // 从 URL 同步视图模式
+    useEffect(() => {
+        const view = search.view as string | undefined
+        if (view === 'list' || view === 'grid') {
+            setViewMode(view)
+        }
+    }, [search.view])
 
     // 切换视图时更新 URL
     const handleViewModeChange = (mode: string) => {

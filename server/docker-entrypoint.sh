@@ -5,7 +5,11 @@ echo "🔄 等待数据库就绪..."
 sleep 3
 
 echo "🔄 运行数据库迁移..."
-./node_modules/.bin/prisma db push --accept-data-loss
+# 优先使用 migrate deploy（生产环境安全），不使用 --accept-data-loss
+./node_modules/.bin/prisma migrate deploy 2>/dev/null || ./node_modules/.bin/prisma db push
+
+echo "👤 确保管理员账号存在..."
+./node_modules/.bin/ts-node prisma/create-admin.ts 2>/dev/null || echo "⚠️ 管理员账号检查跳过"
 
 echo "🌱 检查是否需要初始化数据..."
 node -e "

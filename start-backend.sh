@@ -114,10 +114,22 @@ run_migrations() {
         $PKG_MANAGER install
     fi
     
-    # 运行 Prisma 迁移
+    # 运行 Prisma 迁移（不使用 --accept-data-loss 以保护数据）
     echo -e "${YELLOW}   运行 Prisma 迁移...${NC}"
-    npx prisma migrate deploy 2>/dev/null || npx prisma db push --accept-data-loss
+    if ! npx prisma migrate deploy 2>/dev/null; then
+        echo -e "${YELLOW}   ⚠️  migrate deploy 失败，尝试 db push（保留数据）...${NC}"
+        # 不使用 --accept-data-loss，避免数据丢失
+        npx prisma db push || {
+            echo -e "${RED}   ❌ 数据库同步失败，可能需要手动处理迁移${NC}"
+            echo -e "${YELLOW}   💡 提示: 运行 'cd server && npx prisma migrate dev' 创建新迁移${NC}"
+            exit 1
+        }
+    fi
     echo -e "${GREEN}   ✅ 数据库结构已同步${NC}"
+    
+    # 确保管理员账号存在
+    echo -e "${YELLOW}   检查管理员账号...${NC}"
+    npx ts-node prisma/create-admin.ts 2>/dev/null || true
 }
 
 # ==========================================

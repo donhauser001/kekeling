@@ -1,6 +1,7 @@
 # 后台陪诊员提现模块 - API 接口契约
 
-> **版本**: v1.0  
+> **版本**: v2.0  
+> **最后更新**: 2025-12-13  
 > **适用范围**: Admin Console  
 > **关联文档**: [01-资金域总设计图.md](./01-资金域总设计图.md) · [03-任务卡拆解.md](./03-任务卡拆解.md) · [04-P2审核打款设计.md](./04-P2审核打款设计.md)  
 > **资金真源**: 后台（仅 Admin 可写状态）  
@@ -13,14 +14,17 @@
 ### 1.1 统一前缀
 
 ```
-/admin/escorts/**
+/admin/escorts/withdraw-records
 ```
+
+> 兼容旧路由 `/admin/withdrawals`（即将废弃）
 
 ### 1.2 权限 Header
 
 ```http
 Authorization: Bearer <adminToken>
-X-Admin-Role: finance | superadmin | ops
+X-Admin-Id: admin_xxx
+X-Admin-Name: 张三
 ```
 
 ### 1.3 通用响应格式
@@ -43,7 +47,7 @@ interface ErrorResponse {
 
 ---
 
-## 2. 提现记录列表（P0）
+## 2. 提现记录列表（P0）✅
 
 ### 请求
 
@@ -56,19 +60,20 @@ GET /admin/escorts/withdraw-records
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
 | `page` | number | 否 | 默认 1 |
-| `pageSize` | number | 否 | 默认 20，最大 100 |
+| `pageSize` | number | 否 | 默认 10，最大 100 |
 | `status` | enum | 否 | `pending`/`approved`/`processing`/`completed`/`failed`/`rejected` |
-| `dateRange` | enum | 否 | `7d`/`30d` |
-| `startDate` | string | 否 | 自定义开始日期 YYYY-MM-DD |
-| `endDate` | string | 否 | 自定义结束日期 YYYY-MM-DD |
-| `escortId` | string | 否 | 精确匹配陪诊员 ID |
-| `keyword` | string | 否 | 提现单号/手机号(脱敏)/交易号 |
+| `method` | enum | 否 | `bank`/`alipay`/`wechat` |
+| `startAt` | string | 否 | 申请时间起 YYYY-MM-DD |
+| `endAt` | string | 否 | 申请时间止 YYYY-MM-DD |
+| `minAmount` | number | 否 | 最小金额 |
+| `maxAmount` | number | 否 | 最大金额 |
+| `keyword` | string | 否 | 提现单号/陪诊员ID/手机号 |
 
 ### 响应
 
 ```typescript
 interface WithdrawRecordListResponse {
-  items: WithdrawRecordListItem[]
+  data: WithdrawRecordListItem[]
   total: number
   page: number
   pageSize: number
@@ -76,18 +81,20 @@ interface WithdrawRecordListResponse {
 
 interface WithdrawRecordListItem {
   id: string                    // 提现记录 ID
-  withdrawNo: string            // 提现单号 WD202412120001
+  withdrawNo: string            // 提现单号（ID前8位大写）
   escortId: string              // 陪诊员 ID
   escortName: string            // 陪诊员姓名
-  phone: string                 // 手机号（脱敏）138****8888
+  escortPhoneMasked: string     // 手机号（脱敏）138****8888
   amount: number                // 提现金额
   fee: number                   // 手续费
   netAmount: number             // 实际到账
-  status: WithdrawStatus        // 状态
-  accountType: 'bank' | 'alipay' | 'wechat'
+  method: 'bank' | 'alipay' | 'wechat'  // 提现方式
   accountMasked: string         // 账户（脱敏）****6789
+  bankName?: string             // 银行名称（仅 bank）
+  status: WithdrawStatus        // 状态
   createdAt: string             // 申请时间 ISO8601
-  riskFlag?: 'normal' | 'manual_check'  // [P2 预留] 风险标记，用于审核时高亮
+  paidAt?: string               // 打款时间
+  failReason?: string           // 失败原因
 }
 ```
 
@@ -97,41 +104,55 @@ interface WithdrawRecordListItem {
 {
   "code": 0,
   "data": {
-    "items": [
+    "data": [
       {
-        "id": "wd_123",
-        "withdrawNo": "WD202412120001",
+        "id": "clx123456789",
+        "withdrawNo": "CLX12345",
         "escortId": "esc_001",
         "escortName": "王小明",
-        "phone": "138****8888",
+        "escortPhoneMasked": "138****8888",
         "amount": 500,
         "fee": 0,
         "netAmount": 500,
-        "status": "processing",
-        "accountType": "bank",
-        "accountMasked": "****6789",
-        "createdAt": "2024-12-12T10:30:00Z"
+        "method": "alipay",
+        "accountMasked": "****8888",
+        "status": "pending",
+        "createdAt": "2024-12-12T10:30:00.000Z"
       }
     ],
     "total": 128,
     "page": 1,
-    "pageSize": 20
+    "pageSize": 10
   }
 }
 ```
 
-### 后端校验
+---
 
-| 校验项 | 规则 | 错误码 |
-|--------|------|--------|
-| `pageSize` | ≤ 100 | 422 |
-| `keyword` | 长度 ≤ 50 | 422 |
-| `status` | 必须在枚举内 | 422 |
-| `dateRange` + 自定义日期 | 互斥 | 422 |
+## 3. 提现统计（P0）✅
+
+### 请求
+
+```http
+GET /admin/escorts/withdraw-records/stats
+```
+
+### 响应
+
+```typescript
+interface WithdrawStatsResponse {
+  pendingCount: number       // 待审核数量
+  pendingAmount: number      // 待审核金额
+  approvedCount: number      // 已审核待打款数量
+  completedCount: number     // 已完成数量
+  completedAmount: number    // 已完成金额
+  todayCount: number         // 今日申请数
+}
+```
 
 ---
 
-## 3. 提现记录详情（P1）
+## 4. 提现详情（P1）✅
 
 ### 请求
 
@@ -145,212 +166,367 @@ GET /admin/escorts/withdraw-records/:id
 interface WithdrawRecordDetailResponse {
   id: string
   withdrawNo: string
-  
-  escort: {
-    id: string
-    name: string
-    phone: string              // 脱敏
-  }
-  
+  escortId: string
+  escortName: string
+  escortPhoneMasked: string
   amount: number
   fee: number
   netAmount: number
-  
+  method: 'bank' | 'alipay' | 'wechat'
+  accountMasked: string
+  bankName?: string
   status: WithdrawStatus
-  failReason?: string          // 仅 rejected/failed 时有值
-  
-  account: {
-    type: 'bank' | 'alipay' | 'wechat'
-    bankName?: string
-    accountMasked: string      // 脱敏
-  }
-  
-  transactionNo?: string       // 第三方交易号
-  channelResponse?: string     // 渠道回执（脱敏）
-  
+  failReason?: string
+  transactionNo?: string
   createdAt: string
-  approvedAt?: string
   paidAt?: string
-  
-  logs: WithdrawLog[]          // 操作日志
+  reviewedAt?: string
+  reviewNote?: string
+}
+```
+
+---
+
+## 5. 提现详情（含日志）（P2）✅
+
+### 请求
+
+```http
+GET /admin/escorts/withdraw-records/:id/detail
+```
+
+### 响应
+
+```typescript
+interface WithdrawDetailWithLogsResponse extends WithdrawRecordDetailResponse {
+  logs: WithdrawLog[]
 }
 
 interface WithdrawLog {
-  action: 'CREATE' | 'APPROVE' | 'REJECT' | 'PAY_START' | 'PAY_SUCCESS' | 'PAY_FAIL'
-  operatorType: 'system' | 'admin'
-  operatorName: string
+  id: string
+  action: 'create' | 'approve' | 'reject' | 'payout' | 'complete' | 'fail'
+  operator: 'system' | 'admin'
+  operatorName?: string
   message?: string
   createdAt: string
 }
 ```
 
-### 响应示例
-
-```json
-{
-  "code": 0,
-  "data": {
-    "id": "wd_123",
-    "withdrawNo": "WD202412120001",
-    "escort": {
-      "id": "esc_001",
-      "name": "王小明",
-      "phone": "138****8888"
-    },
-    "amount": 500,
-    "fee": 0,
-    "netAmount": 500,
-    "status": "failed",
-    "failReason": "银行卡信息不匹配",
-    "account": {
-      "type": "bank",
-      "bankName": "招商银行",
-      "accountMasked": "****6789"
-    },
-    "transactionNo": "TXN20241212XXXX",
-    "createdAt": "2024-12-12T10:30:00Z",
-    "approvedAt": "2024-12-12T11:00:00Z",
-    "paidAt": null,
-    "logs": [
-      {
-        "action": "CREATE",
-        "operatorType": "system",
-        "operatorName": "system",
-        "message": "陪诊员提交提现申请",
-        "createdAt": "2024-12-12T10:30:00Z"
-      },
-      {
-        "action": "PAY_FAIL",
-        "operatorType": "system",
-        "operatorName": "system",
-        "message": "银行卡信息不匹配",
-        "createdAt": "2024-12-12T11:20:00Z"
-      }
-    ]
-  }
-}
-```
-
 ---
 
-## 4. 导出接口（P1）
+## 6. 提现操作日志（P2）✅
 
 ### 请求
 
 ```http
-GET /admin/escorts/withdraw-records/export?format=csv
+GET /admin/escorts/withdraw-records/:id/logs
+```
+
+### 响应
+
+```typescript
+type WithdrawLogsResponse = WithdrawLog[]
+```
+
+---
+
+## 7. 导出接口（P1）✅
+
+### 请求
+
+```http
+GET /admin/escorts/withdraw-records/export
 ```
 
 ### Query 参数
 
-与列表接口完全一致，额外增加：
+与列表接口一致，额外增加：
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| `format` | enum | 是 | `csv` / `xlsx` |
+| `format` | enum | 否 | `csv`（默认）/ `xlsx` |
+
+### Headers
+
+```http
+X-Admin-Id: admin_xxx
+X-Admin-Name: 张三
+```
 
 ### 响应
 
-- **Content-Type**: `text/csv; charset=utf-8` 或 `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
-- **Content-Disposition**: `attachment; filename="withdraw_records_20241212.csv"`
+- **Content-Type**: `text/csv; charset=utf-8`
+- **Content-Disposition**: `attachment; filename*=UTF-8''提现记录_2024-12-12.csv`
 
 ### 导出字段
 
 | 列名 | 字段 | 说明 |
 |------|------|------|
-| 提现单号 | withdrawNo | |
-| 陪诊员姓名 | escortName | |
+| 提现单号 | withdrawNo | ID前8位大写 |
 | 陪诊员ID | escortId | |
-| 手机号 | phone | 脱敏 |
+| 陪诊员姓名 | escortName | |
+| 手机号 | escortPhoneMasked | 脱敏 |
 | 提现金额 | amount | |
 | 手续费 | fee | |
 | 实际到账 | netAmount | |
-| 提现方式 | accountType | 中文：银行卡/支付宝/微信 |
-| 账户 | accountMasked | 脱敏 |
+| 提现方式 | method | 中文：银行卡/支付宝/微信 |
+| 收款账户 | accountMasked | 脱敏 |
 | 状态 | status | 中文状态名 |
 | 申请时间 | createdAt | |
 | 打款时间 | paidAt | |
+| 失败原因 | failReason | |
 
-### 审计要求（强制）
+### 审计日志
 
-每次导出**必须**写 `ADMIN_AUDIT_LOG`：
+每次导出**自动**写入 `AdminAuditLog`：
 
 ```typescript
 {
-  action: 'EXPORT_WITHDRAW_RECORDS',
+  module: 'withdraw',
+  action: 'export',
   adminId: string,
-  filters: object,      // 筛选条件
-  exportCount: number,  // 导出条数
-  format: 'csv' | 'xlsx',
-  createdAt: string
+  adminName: string,
+  detail: JSON.stringify({ count, format }),
+  filters: JSON.stringify({ status, method, ... })
 }
 ```
 
 ---
 
-## 5. 陪诊员详情页 Tab（P1）
+## 8. 审核接口（P2）✅
 
 ### 请求
 
 ```http
-GET /admin/escorts/:escortId/withdraw-records
+POST /admin/escorts/withdraw-records/:id/review
 ```
 
-### 说明
+### Headers
 
-- 逻辑同列表接口
-- **强制** `escortId` 过滤，不可移除
-- 禁止跨 Escort 查询
-- 响应格式与列表接口一致
+```http
+X-Admin-Id: admin_xxx
+X-Admin-Name: 张三
+```
+
+### Body
+
+```typescript
+interface ReviewRequest {
+  action: 'approve' | 'reject'
+  rejectReason?: string  // 驳回时必填
+}
+```
+
+### 响应
+
+返回更新后的提现详情
+
+### 状态转换
+
+```
+pending → approved  (action: 'approve')
+pending → rejected  (action: 'reject', rejectReason 必填)
+```
+
+### 业务逻辑
+
+1. **approve**: 更新状态为 `approved`
+2. **reject**: 
+   - 更新状态为 `rejected`
+   - 解冻金额到可用余额
+   - 记录解冻流水（`WalletTransaction.type = 'unfrozen'`）
+
+### 审计日志
+
+写入 `WithdrawLog` + `AdminAuditLog`
 
 ---
 
-## 6. 错误码规范
+## 9. 打款接口（P2）✅ 🔴 高危
 
-| HTTP 状态码 | 业务码 | 含义 |
-|------------|--------|------|
-| 401 | 10401 | 未登录 / Token 过期 |
-| 403 | 10403 | 无权限（缺少 `withdraw.read` 等） |
-| 404 | 10404 | 提现记录不存在 |
-| 409 | 10409 | 状态冲突（非法状态机跳转） |
-| 422 | 10422 | 参数校验失败 |
-| 500 | 10500 | 系统错误 |
+### 请求
+
+```http
+POST /admin/escorts/withdraw-records/:id/payout
+```
+
+### Headers
+
+```http
+X-Admin-Id: admin_xxx
+X-Admin-Name: 张三
+```
+
+### Body
+
+```typescript
+interface PayoutRequest {
+  payoutMethod: 'manual' | 'channel'  // 打款方式
+  operatorConfirmText: string          // 必须为 'CONFIRM'
+  transactionNo?: string               // 交易号（手动打款时填写）
+}
+```
+
+### 响应
+
+返回更新后的提现详情
+
+### 状态转换
+
+```
+approved → processing → completed
+```
+
+> 当前实现：手动打款场景下，直接从 `approved` 变为 `completed`
+
+### 业务逻辑
+
+1. **校验确认文本**: `operatorConfirmText !== 'CONFIRM'` → 400
+2. **状态机校验**: 当前状态必须是 `approved`
+3. **幂等性检查**: `transactionNo` 不能重复
+4. **事务操作**:
+   - 更新提现状态为 `completed`
+   - 记录交易号和打款时间
+   - 从冻结余额扣除（`frozenBalance -= amount`）
+   - 累计提现金额增加（`totalWithdrawn += netAmount`）
+5. **写入日志**: `WithdrawLog`（payout + complete）+ `AdminAuditLog`
+
+### 红线规则
+
+```typescript
+/**
+ * ⚠️ 打款红线
+ * 
+ * 1. operatorConfirmText 必须是 'CONFIRM'
+ * 2. 前置状态必须是 approved
+ * 3. transactionNo 唯一约束，防重复打款
+ * 4. 状态变更 + Ledger 在同一事务内
+ */
+```
+
+---
+
+## 10. 标记失败接口（P2）✅
+
+### 请求
+
+```http
+POST /admin/escorts/withdraw-records/:id/fail
+```
+
+### Headers
+
+```http
+X-Admin-Id: admin_xxx
+X-Admin-Name: 张三
+```
+
+### Body
+
+```typescript
+interface MarkFailedRequest {
+  reason: string  // 失败原因（必填）
+}
+```
+
+### 响应
+
+返回更新后的提现详情
+
+### 状态转换
+
+```
+approved → failed
+processing → failed
+```
+
+### 业务逻辑
+
+1. **状态机校验**: 当前状态必须是 `approved` 或 `processing`
+2. **事务操作**:
+   - 更新提现状态为 `failed`
+   - 记录失败原因
+   - 解冻金额到可用余额
+   - 记录解冻流水
+3. **写入日志**: `WithdrawLog` + `AdminAuditLog`
+
+---
+
+## 11. 错误码规范
+
+| HTTP 状态码 | 含义 |
+|------------|------|
+| 400 | 参数校验失败（如 CONFIRM 不匹配） |
+| 401 | 未登录 / Token 过期 |
+| 403 | 无权限 |
+| 404 | 提现记录不存在 |
+| 409 | 状态冲突（非法状态机跳转） |
+| 500 | 系统错误 |
 
 ### 错误响应示例
 
 ```json
 {
-  "code": 10422,
-  "message": "参数校验失败",
-  "details": {
-    "pageSize": "不能超过 100"
-  }
+  "code": 409,
+  "message": "状态转换非法: pending → completed"
+}
+```
+
+```json
+{
+  "code": 400,
+  "message": "确认文本不匹配，请输入 CONFIRM"
+}
+```
+
+```json
+{
+  "code": 400,
+  "message": "驳回必须填写原因"
 }
 ```
 
 ---
 
-## 7. 状态机规则
+## 12. 状态机规则
 
-### 状态流转（后端强制校验）
+### 状态流转图
 
+```mermaid
+stateDiagram-v2
+    [*] --> pending: 陪诊员提交申请
+    pending --> approved: Admin 审核通过
+    pending --> rejected: Admin 驳回
+    approved --> processing: Admin 发起打款
+    approved --> failed: 打款失败
+    processing --> completed: 打款成功
+    processing --> failed: 打款失败
+    rejected --> [*]
+    completed --> [*]
+    failed --> [*]
 ```
-pending
-  ├── approved  (Admin 审核通过)
-  │     └── processing  (Admin 发起打款)
-  │           ├── completed  (渠道成功)
-  │           └── failed     (渠道失败)
-  ├── rejected  (Admin 驳回)
-  └── cancelled (用户取消)
+
+### 后端状态机定义
+
+```typescript
+const WITHDRAW_STATE_MACHINE = {
+  pending: ['approved', 'rejected'],
+  approved: ['processing', 'failed'],
+  processing: ['completed', 'failed'],
+  // 终态，不可变更
+  completed: [],
+  rejected: [],
+  failed: [],
+};
 ```
 
-### 非法跳转（必须返回 409）
+### 非法跳转（返回 409）
 
 ```typescript
 // ❌ 禁止的跳转
 pending → completed      // 必须经过 approved + processing
 pending → processing     // 必须先 approved
-approved → completed     // 必须先 processing
+approved → completed     // 必须先 processing（当前实现允许）
 rejected → approved      // 终态不可逆
 failed → completed       // 终态不可逆
 completed → *            // 终态不可逆
@@ -358,72 +534,127 @@ completed → *            // 终态不可逆
 
 ---
 
-## 8. Ledger 落账规则
+## 13. 数据库模型
 
-### 类型枚举
+### Withdrawal 表
 
-```typescript
-type LedgerType =
-  | 'order_income'      // 订单收入
-  | 'bonus'             // 奖励
-  | 'withdraw_hold'     // 提现冻结
-  | 'withdraw_done'     // 提现完成
-  | 'withdraw_fail'     // 提现失败（释放）
+```prisma
+model Withdrawal {
+  id           String    @id @default(uuid())
+  walletId     String    @map("wallet_id")
+  amount       Decimal   @db.Decimal(10, 2)
+  fee          Decimal   @default(0) @db.Decimal(10, 2)
+  actualAmount Decimal   @db.Decimal(10, 2) @map("actual_amount")
+  method       String    // wechat, alipay, bank
+  account      String    // 提现账户
+  status       String    @default("pending")
+  reviewedAt   DateTime? @map("reviewed_at")
+  reviewedBy   String?   @map("reviewed_by")
+  reviewNote   String?   @map("review_note")
+  transferNo   String?   @map("transfer_no")
+  transferAt   DateTime? @map("transfer_at")
+  failReason   String?   @map("fail_reason")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  wallet       EscortWallet @relation(...)
+  logs         WithdrawLog[]
+
+  @@map("withdrawals")
+}
 ```
 
-### 落账时机
+### WithdrawLog 表
 
-| 状态变更 | Ledger 操作 |
-|----------|-------------|
-| 提交申请 → `pending` | `withdraw_hold = -amount`（冻结） |
-| 审核驳回 → `rejected` | 冲回 `withdraw_hold`（释放） |
-| 打款成功 → `completed` | `withdraw_done`（确认扣减） |
-| 打款失败 → `failed` | `withdraw_fail = +amount`（释放） |
+```prisma
+model WithdrawLog {
+  id           String    @id @default(uuid())
+  withdrawId   String    @map("withdraw_id")
+  action       String    // create, approve, reject, payout, complete, fail
+  operator     String    // system, admin
+  operatorId   String?   @map("operator_id")
+  operatorName String?   @map("operator_name")
+  message      String?
+  oldStatus    String?   @map("old_status")
+  newStatus    String?   @map("new_status")
+  createdAt    DateTime  @default(now()) @map("created_at")
 
----
+  withdrawal   Withdrawal @relation(...)
 
-## 9. 幂等与唯一约束
+  @@map("withdraw_logs")
+}
+```
 
-| 项目 | 约束 |
-|------|------|
-| `withdrawNo` | 唯一 |
-| `transactionNo` | 唯一 |
-| 状态变更 | `version` / `updatedAt` 乐观锁 |
-| 打款请求 | `idempotencyKey` |
+### AdminAuditLog 表
 
----
+```prisma
+model AdminAuditLog {
+  id           String    @id @default(uuid())
+  adminId      String?   @map("admin_id")
+  adminName    String?   @map("admin_name")
+  module       String    // withdraw, refund, settlement
+  action       String    // export, approve, reject, payout, fail
+  targetId     String?   @map("target_id")
+  targetType   String?   @map("target_type")
+  detail       String?   // JSON
+  filters      String?   // JSON (导出时的筛选条件)
+  ip           String?
+  userAgent    String?   @map("user_agent")
+  createdAt    DateTime  @default(now()) @map("created_at")
 
-## 10. 红线规则
-
-```typescript
-/**
- * ⚠️ RED LINE - 资金安全红线
- * 
- * 1. Escort App 永远不能修改提现状态
- * 2. 仅 Admin 可写 withdraw.status
- * 3. 所有资金变化必须有 LedgerEntry
- * 4. 所有操作必须可审计
- * 5. 状态机跳转必须后端校验
- */
+  @@map("admin_audit_logs")
+}
 ```
 
 ---
 
-## 附录：任务拆分建议
+## 14. 脱敏规则
 
-### 后端任务
+### 手机号脱敏
 
-| 任务 | 内容 |
-|------|------|
-| ADMIN-WD-API-01 | 提现列表 + 详情接口 |
-| ADMIN-WD-API-02 | 导出接口 + 审计日志 |
-| ADMIN-WD-LEDGER-01 | 冻结/释放/确认落账 |
+```typescript
+function maskPhone(phone: string): string {
+  if (!phone || phone.length < 7) return phone;
+  return phone.slice(0, 3) + '****' + phone.slice(-4);
+}
+// 13812345678 → 138****5678
+```
 
-### 前端任务
+### 账户脱敏
 
-| 任务 | 内容 | 优先级 |
-|------|------|--------|
-| ADMIN-WD-UI-01 | 提现记录列表页 | P0 ✅ |
-| ADMIN-WD-UI-02 | 详情抽屉 | P1 |
-| ADMIN-WD-UI-03 | 导出按钮 | P1 |
-| ADMIN-WD-UI-04 | 陪诊员详情页 Tab | P1 |
+```typescript
+function maskAccount(account: string): string {
+  if (!account || account.length < 4) return account;
+  return '****' + account.slice(-4);
+}
+// 6228480012345678 → ****5678
+```
+
+---
+
+## 15. 兼容性说明
+
+### 旧版路由（即将废弃）
+
+```
+/admin/withdrawals        → /admin/escorts/withdraw-records
+/admin/withdrawals/:id    → /admin/escorts/withdraw-records/:id
+```
+
+旧版路由保持兼容，由 `AdminWithdrawalsLegacyController` 处理。
+
+---
+
+## 附录：完成状态
+
+| 接口 | 状态 | 说明 |
+|------|------|------|
+| 列表 | ✅ 完成 | P0 |
+| 统计 | ✅ 完成 | P0 |
+| 详情 | ✅ 完成 | P1 |
+| 详情（含日志）| ✅ 完成 | P2 |
+| 操作日志 | ✅ 完成 | P2 |
+| 导出 | ✅ 完成 | P1 |
+| 审核 | ✅ 完成 | P2 |
+| 打款 | ✅ 完成 | P2 |
+| 标记失败 | ✅ 完成 | P2 |
