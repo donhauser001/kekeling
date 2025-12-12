@@ -159,16 +159,51 @@ export type { UseViewerRoleOptions, UseViewerRoleResult } from './hooks/useViewe
 
 ---
 
-### Step 5: Props 扩展与路由注册
+### Step 5: 路由扩展样板（coupons 页面） ✅
 
-**目标**: 扩展 TerminalPreviewProps，支持新页面类型
+**目标**: 跑通 "page key → 页面组件 → renderPageContent → userRequest" 最小闭环
 
 **验收点**:
-- [ ] 扩展 `types.ts` 中的 `PreviewPage` 类型
-- [ ] 新增 `viewerRole` / `userSession` / `escortSession` Props
-- [ ] 新增 `routes.ts`，定义 RouteRegistry 映射表
-- [ ] 更新 `index.tsx` 路由分发逻辑
-- [ ] 向后兼容，现有使用方无需修改
+- [x] 新增 `components/pages/marketing/CouponsPage.tsx`
+- [x] 在 `renderPageContent()` 增加 `case 'coupons'`
+- [x] 在 `previewApi` 增加 `getMyCoupons()`（走 userRequest）
+- [x] 接口失败时自动降级为 mock 数据
+- [x] `PreviewPage` 类型已包含 `'coupons'`
+- [x] TypeScript 编译通过
+- [x] 请求失败也能显示空态，不崩溃
+
+**新增文件**:
+```
+components/pages/marketing/CouponsPage.tsx  # 优惠券页面
+components/pages/marketing/index.ts         # 营销页面导出
+```
+
+**API 新增**:
+```typescript
+// api.ts
+previewApi.getMyCoupons(): Promise<CouponsResponse>
+// 接口: GET /marketing/coupons/my
+// 通道: userRequest
+// 降级: 接口 404/500 时返回 mock 数据
+```
+
+**Mock 数据结构**（与未来接口映射）:
+```typescript
+interface CouponItem {
+  id: string           // 优惠券 ID
+  name: string         // 名称
+  description?: string // 描述
+  amount: number       // 优惠金额
+  minAmount: number    // 最低消费
+  expireAt: string     // 过期时间 (YYYY-MM-DD)
+  status: 'available' | 'used' | 'expired'
+}
+
+interface CouponsResponse {
+  items: CouponItem[]
+  total: number
+}
+```
 
 ---
 

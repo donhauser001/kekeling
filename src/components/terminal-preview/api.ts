@@ -337,6 +337,75 @@ export interface ServiceDetail {
 }
 
 // ============================================================================
+// 营销中心类型定义（Step 5 新增）
+// ============================================================================
+
+/**
+ * 优惠券项
+ * 对应接口: GET /marketing/coupons/my
+ */
+export interface CouponItem {
+  id: string
+  name: string
+  description?: string
+  /** 优惠金额 */
+  amount: number
+  /** 最低消费金额 */
+  minAmount: number
+  /** 过期时间（格式: YYYY-MM-DD） */
+  expireAt: string
+  /** 状态 */
+  status: 'available' | 'used' | 'expired'
+}
+
+/**
+ * 优惠券列表响应
+ */
+export interface CouponsResponse {
+  items: CouponItem[]
+  total: number
+}
+
+/**
+ * Mock 优惠券数据
+ * 用于接口不存在时的降级显示
+ */
+function getMockCouponsData(): CouponsResponse {
+  return {
+    items: [
+      {
+        id: 'mock-1',
+        name: '新人专享券',
+        description: '全场通用',
+        amount: 50,
+        minAmount: 200,
+        expireAt: '2025-01-31',
+        status: 'available',
+      },
+      {
+        id: 'mock-2',
+        name: '会员折扣券',
+        description: '限指定服务使用',
+        amount: 30,
+        minAmount: 100,
+        expireAt: '2025-02-28',
+        status: 'available',
+      },
+      {
+        id: 'mock-3',
+        name: '节日优惠券',
+        description: '全场通用',
+        amount: 20,
+        minAmount: 80,
+        expireAt: '2024-12-01',
+        status: 'expired',
+      },
+    ],
+    total: 3,
+  }
+}
+
+// ============================================================================
 // 预览器 API
 // ============================================================================
 
@@ -378,10 +447,31 @@ export const previewApi = {
   },
   getServiceDetail: (id: string) => userRequest<ServiceDetail>(`/services/${id}`),
 
-  // TODO: 营销中心（Step 6 接入）
+  // ==========================================================================
+  // 营销中心（Step 5 开始接入）
+  // ==========================================================================
+
+  /**
+   * 获取我的优惠券
+   * 接口: GET /marketing/coupons/my
+   * 通道: userRequest
+   */
+  getMyCoupons: async (): Promise<CouponsResponse> => {
+    try {
+      return await userRequest<CouponsResponse>('/marketing/coupons/my')
+    } catch (error) {
+      // 接口不存在时返回 mock 数据（开发阶段）
+      if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
+        console.warn('[previewApi.getMyCoupons] 使用 mock 数据')
+        return getMockCouponsData()
+      }
+      throw error
+    }
+  },
+
+  // TODO: 其他营销中心接口（后续接入）
   // getMembershipLevels: () => userRequest<MembershipLevel[]>('/marketing/membership/levels'),
   // getMyMembership: () => userRequest<MembershipInfo | null>('/marketing/membership/my'),
-  // getMyCoupons: () => userRequest<CouponListResponse>('/marketing/coupons/my'),
   // getMyPoints: () => userRequest<PointsInfo>('/marketing/points/my'),
 
   // TODO: 陪诊员公开信息（用户端可查看，走 userRequest）
