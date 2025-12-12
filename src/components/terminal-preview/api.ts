@@ -1,5 +1,15 @@
 /**
  * 终端全局预览器 API
+ *
+ * ⚠️ 重要声明：
+ * 本文件的 API 封装仅用于管理后台预览器，使用管理后台的 token。
+ *
+ * 后续改造计划（见 DEV_NOTES.md）：
+ * - Step 3 将拆分 userRequest / escortRequest 双通道
+ * - 业务页面不得直接使用 fetch/axios，必须走 previewApi 封装
+ * - mock token（以 'mock-' 开头）不允许调真实后端
+ *
+ * @see src/components/terminal-preview/DEV_NOTES.md
  */
 
 import { getCookie } from '@/lib/cookies'

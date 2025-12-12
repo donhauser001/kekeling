@@ -1,5 +1,15 @@
 /**
  * 终端全局预览器类型定义
+ *
+ * ⚠️ 重要声明：
+ * 本文件定义的 Props（如 viewerRole / userSession / escortSession）
+ * 仅用于管理后台的预览模拟，不代表真实终端逻辑。
+ *
+ * - 真实终端的 viewerRole 由 escortToken 的 validate 结果推导
+ * - 预览器允许通过 Props 强制模拟视角，用于后台调试
+ * - 禁止将预览器的视角切换逻辑搬到真实终端
+ *
+ * @see docs/终端预览器集成/01-TerminalPreview集成规格.md
  */
 
 // 品牌布局模式
@@ -171,7 +181,13 @@ export interface ServiceListResponse {
   pageSize: number
 }
 
-// 预览器 Props
+/**
+ * 预览器 Props
+ *
+ * ⚠️ 注意：以下 Props 仅用于管理后台预览模拟
+ * - viewerRole: 预览器强制模拟视角（真实终端由 token validate 推导）
+ * - userSession / escortSession: 预览器会话模拟（真实终端从 storage 读取）
+ */
 export interface TerminalPreviewProps {
   /** 预览的页面类型 */
   page?: 'home' | 'services' | 'cases' | 'profile'

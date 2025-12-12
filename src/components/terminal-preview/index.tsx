@@ -1,6 +1,15 @@
 /**
  * 终端全局预览器组件
  * 完全还原终端界面（小程序/App/H5），支持真实数据预览
+ *
+ * ⚠️ 重要声明：
+ * 本组件（TerminalPreview）仅用于管理后台的预览模拟，不代表真实终端逻辑。
+ * - viewerRole / userSession / escortSession 等字段仅用于后台预览调试
+ * - 真实终端的视角切换由 token validate 结果推导，不允许手动写入
+ * - 禁止将本组件的视角切换逻辑搬到真实终端，否则会导致越权风险
+ *
+ * @see docs/终端预览器集成/01-TerminalPreview集成规格.md
+ * @see src/components/terminal-preview/DEV_NOTES.md
  */
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
