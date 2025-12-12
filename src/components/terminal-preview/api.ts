@@ -850,6 +850,55 @@ export interface OrdersPoolResponse {
 }
 
 /**
+ * 工作台订单详情
+ * 对应接口: GET /escort-app/orders/:id
+ */
+export interface WorkbenchOrderDetail {
+  id: string
+  orderNo: string
+  /** 订单状态 */
+  status: 'pending' | 'accepted' | 'ongoing' | 'completed' | 'cancelled'
+  statusText: string
+  /** 服务信息 */
+  service: {
+    id: string
+    name: string
+    type: string
+    /** 服务时长（分钟） */
+    duration?: number
+  }
+  /** 预约信息 */
+  appointment: {
+    date: string
+    time: string
+    hospitalName: string
+    department?: string
+    address?: string
+  }
+  /** 用户信息 */
+  user: {
+    id: string
+    name: string
+    phone: string
+    /** 脱敏手机号 */
+    maskedPhone: string
+    avatar?: string
+  }
+  /** 金额信息 */
+  payment: {
+    amount: number
+    commission: number
+    tip?: number
+  }
+  /** 备注 */
+  remark?: string
+  /** 创建时间 */
+  createdAt: string
+  /** 更新时间 */
+  updatedAt: string
+}
+
+/**
  * 收入明细项
  */
 export interface EarningsItem {
@@ -1463,7 +1512,69 @@ export const previewApi = {
     }
   },
 
+  /**
+   * 获取工作台订单详情
+   * 接口: GET /escort-app/orders/:id
+   * 通道: escortRequest（⚠️ 必须 escortToken）
+   */
+  getWorkbenchOrderDetail: async (orderId: string): Promise<WorkbenchOrderDetail> => {
+    const currentEscortToken = getEscortToken()
+    if (currentEscortToken?.startsWith('mock-')) {
+      console.warn('[previewApi.getWorkbenchOrderDetail] mock token, 返回 mock 数据')
+      return getMockWorkbenchOrderDetail(orderId)
+    }
+    try {
+      return await escortRequest<WorkbenchOrderDetail>(`/escort-app/orders/${orderId}`)
+    } catch (error) {
+      if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
+        console.warn('[previewApi.getWorkbenchOrderDetail] 使用 mock 数据')
+        return getMockWorkbenchOrderDetail(orderId)
+      }
+      throw error
+    }
+  },
+
   // TODO: 后续扩展
-  // getWorkbenchOrderDetail: (id: string) => escortRequest<WorkbenchOrderDetail>(`/escort-app/orders/${id}`),
   // getMyEscortProfile: () => escortRequest<EscortProfile>('/escort-app/profile'),
+}
+
+// ============================================================================
+// Mock 数据：工作台订单详情
+// ============================================================================
+
+function getMockWorkbenchOrderDetail(orderId: string): WorkbenchOrderDetail {
+  return {
+    id: orderId || 'mock-order-001',
+    orderNo: 'ORD202412120001',
+    status: 'accepted',
+    statusText: '已接单',
+    service: {
+      id: 'svc-001',
+      name: '门诊陪诊服务',
+      type: 'outpatient',
+      duration: 120,
+    },
+    appointment: {
+      date: '2024-12-15',
+      time: '09:00',
+      hospitalName: '北京协和医院',
+      department: '心内科',
+      address: '北京市东城区帅府园1号',
+    },
+    user: {
+      id: 'user-001',
+      name: '张先生',
+      phone: '13800138001',
+      maskedPhone: '138****8001',
+      avatar: undefined,
+    },
+    payment: {
+      amount: 299,
+      commission: 239.2,
+      tip: 20,
+    },
+    remark: '请准时到达，老人行动不便需要轮椅',
+    createdAt: '2024-12-12 10:30:00',
+    updatedAt: '2024-12-12 11:00:00',
+  }
 }

@@ -18,3 +18,7 @@ export type { EarningsPageProps } from './EarningsPage'
 export { WithdrawPage } from './WithdrawPage'
 export type { WithdrawPageProps } from './WithdrawPage'
 
+// 订单详情
+export { OrderDetailPage } from './OrderDetailPage'
+export type { OrderDetailPageProps } from './OrderDetailPage'
+

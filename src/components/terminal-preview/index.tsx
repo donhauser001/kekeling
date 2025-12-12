@@ -70,6 +70,7 @@ import {
   OrdersPoolPage,
   EarningsPage,
   WithdrawPage,
+  OrderDetailPage,
 } from './components/pages'
 
 export function TerminalPreview({
@@ -568,6 +569,19 @@ export function TerminalPreview({
             isDarkMode={isDarkMode}
             effectiveViewerRole={effectiveViewerRole}
             onBack={() => setCurrentPage('workbench-earnings')}
+            onNavigate={(page, params) => navigateToPage(page, params)}
+          />
+        )
+
+      // 订单详情
+      case 'workbench-order-detail':
+        return (
+          <OrderDetailPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            effectiveViewerRole={effectiveViewerRole}
+            orderId={currentPageParams?.id}
+            onBack={() => setCurrentPage('workbench-orders-pool')}
             onNavigate={(page, params) => navigateToPage(page, params)}
           />
         )
