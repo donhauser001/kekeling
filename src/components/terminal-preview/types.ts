@@ -64,6 +64,7 @@ export type PreviewPage =
   | 'workbench-order-detail'
   | 'workbench-earnings'
   | 'workbench-withdraw'
+  | 'workbench-settings'
   // 分销中心（陪诊员视角）
   | 'distribution'
   | 'distribution-members'

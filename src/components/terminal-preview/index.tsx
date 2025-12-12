@@ -71,6 +71,7 @@ import {
   WorkbenchEarningsPage,
   WorkbenchWithdrawPage,
   OrderDetailPage,
+  WorkbenchSettingsPage,
   // 分销中心页面（Step 11.3-11.5）
   DistributionPage,
   DistributionMembersPage,
@@ -600,6 +601,18 @@ export function TerminalPreview({
             orderId={pageParams?.id}
             onBack={() => setCurrentPage('workbench-orders-pool')}
             onNavigate={(page, params) => navigateToPage(page, params)}
+          />
+        )
+
+      // Step 13: 工作台设置
+      case 'workbench-settings':
+        return (
+          <WorkbenchSettingsPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            effectiveViewerRole={effectiveViewerRole}
+            onNavigate={(page, params) => navigateToPage(page, params)}
+            onShowLoginDialog={() => setShowEscortLoginDialog(true)}
           />
         )
 

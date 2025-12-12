@@ -909,6 +909,51 @@ export interface WorkbenchOrderDetail {
 }
 
 /**
+ * 工作台设置
+ * 对应接口: GET /escort-app/workbench/settings
+ * 通道: escortRequest（⚠️ 必须 escortToken）
+ */
+export interface WorkbenchSettings {
+  /** 是否在线（接单开关） */
+  isOnline: boolean
+  /** 自动接单 */
+  autoAcceptOrders: boolean
+  /** 接单偏好 */
+  preferences: {
+    /** 服务类型偏好 */
+    serviceTypes: string[]
+    /** 服务区域偏好 */
+    serviceAreas: string[]
+    /** 最大接单距离（km） */
+    maxDistance?: number
+    /** 工作时间段 */
+    workingHours?: {
+      start: string // HH:mm
+      end: string   // HH:mm
+    }
+  }
+  /** 通知设置 */
+  notifications: {
+    /** 新订单通知 */
+    newOrder: boolean
+    /** 订单状态变更通知 */
+    orderStatus: boolean
+    /** 系统通知 */
+    system: boolean
+    /** 营销通知 */
+    marketing: boolean
+  }
+  /** 个人资料 */
+  profile: {
+    name: string
+    avatar?: string
+    phone: string
+    level: string
+    rating: number
+  }
+}
+
+/**
  * 收入明细项
  */
 export interface EarningsItem {
@@ -1878,6 +1923,39 @@ export const previewApi = {
     }
   },
 
+  /**
+   * 获取工作台设置
+   * 接口: GET /escort-app/workbench/settings
+   * 通道: escortRequest（⚠️ 必须 escortToken）
+   */
+  getWorkbenchSettings: async (): Promise<WorkbenchSettings> => {
+    const currentEscortToken = getEscortToken()
+
+    // 无 token 直接返回 mock
+    if (!currentEscortToken) {
+      console.log('[previewApi.getWorkbenchSettings] 无 escortToken, 返回 mock')
+      return getMockWorkbenchSettings()
+    }
+
+    // mock token 直接返回 mock，不请求真实后端
+    if (currentEscortToken.startsWith('mock-')) {
+      console.log('[previewApi.getWorkbenchSettings] mock token, 返回 mock')
+      return getMockWorkbenchSettings()
+    }
+
+    try {
+      return await escortRequest<WorkbenchSettings>('/escort-app/workbench/settings')
+    } catch (error) {
+      if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
+        console.warn('[previewApi.getWorkbenchSettings] 使用 mock 数据')
+        return getMockWorkbenchSettings()
+      }
+      // 其他错误也降级到 mock，保证预览器可用
+      console.warn('[previewApi.getWorkbenchSettings] 请求失败，降级 mock:', error)
+      return getMockWorkbenchSettings()
+    }
+  },
+
   // ==========================================================================
   // 分销中心（Step 11.2）
   // ⚠️ 分销中心所有 API 必须走 escortRequest，禁止 userRequest
@@ -2098,6 +2176,39 @@ function getMockWorkbenchOrderDetail(orderId: string): WorkbenchOrderDetail {
     remark: '请准时到达，老人行动不便需要轮椅',
     createdAt: '2024-12-12 10:30:00',
     updatedAt: '2024-12-12 11:00:00',
+  }
+}
+
+// ============================================================================
+// Mock 数据：工作台设置
+// ============================================================================
+
+function getMockWorkbenchSettings(): WorkbenchSettings {
+  return {
+    isOnline: true,
+    autoAcceptOrders: false,
+    preferences: {
+      serviceTypes: ['outpatient', 'inpatient', 'examination'],
+      serviceAreas: ['朝阳区', '海淀区', '东城区', '西城区'],
+      maxDistance: 15,
+      workingHours: {
+        start: '08:00',
+        end: '18:00',
+      },
+    },
+    notifications: {
+      newOrder: true,
+      orderStatus: true,
+      system: true,
+      marketing: false,
+    },
+    profile: {
+      name: '李陪诊',
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=escort001',
+      phone: '138****8888',
+      level: '金牌陪诊员',
+      rating: 4.9,
+    },
   }
 }
 

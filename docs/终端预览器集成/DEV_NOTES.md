@@ -19,7 +19,7 @@
 | **工作台** | ✅ 完成 | Step 10 | API + 页面批次（5 页面 + 7 API） |
 | **分销中心** | ✅ 完成 | Step 11 | 5 个页面 + 5 个 API + PermissionPrompt |
 | **管理后台集成** | ✅ 完成 | Step 12 | 积分/邀请/活动/陪诊员管理页面集成侧栏预览 |
-| **工作台扩展** | ⏳ 待开发 | Step 13 | workbench-settings 等待扩展 |
+| **工作台扩展** | ✅ 完成 | Step 13 | workbench-settings 设置页面 |
 
 ### Step 编号体系（单线制，禁止跳号或多套并存）
 
@@ -31,7 +31,7 @@ Step 9     双会话模型（session + verify + 登录/退出流程）
 Step 10    工作台（API + 页面批次）
 Step 11    分销中心（11.1 类型 → 11.2 API → 11.3-11.5 页面批次）✅
 Step 12    管理后台预览器集成（积分/邀请/活动/陪诊员）✅
-Step 13    工作台扩展（settings 页面）⏳
+Step 13    工作台扩展（settings 页面）✅
 ```
 
 ### 下一阶段主战场
@@ -39,7 +39,7 @@ Step 13    工作台扩展（settings 页面）⏳
 | 优先级 | 任务 | 说明 |
 |--------|------|------|
 | ~~**P1**~~ | ~~Step 12: 管理后台预览器集成~~ | ✅ 已完成 |
-| **P2** | Step 13: 工作台扩展 | workbench-settings 页面开发 |
+| ~~**P2**~~ | ~~Step 13: 工作台扩展~~ | ✅ 已完成 |
 | **P2** | 优化与测试 | Mock 数据完善、性能优化、全面测试 |
 
 ---
@@ -1610,7 +1610,7 @@ import { TerminalPreview } from '@/components/terminal-preview'
 
 > P2 优先级，扩展工作台功能页面
 
-### CARD 13.1-A: 工作台设置页面
+### CARD 13.1-A: 工作台设置页面 ✅
 
 **目标**: 新增工作台设置页面
 
@@ -1626,14 +1626,14 @@ import { TerminalPreview } from '@/components/terminal-preview'
 - 个人资料入口
 
 **验收点**:
-- [ ] 新增 `WorkbenchSettingsPage.tsx`
-- [ ] PreviewPage 增加 `workbench-settings` key
-- [ ] previewApi 增加 `getWorkbenchSettings()` 方法（escortRequest）
-- [ ] renderPageContent() 增加 case
-- [ ] 非 escort 显示 `<PermissionPrompt />`
-- [ ] TypeScript 编译通过
+- [x] 新增 `WorkbenchSettingsPage.tsx`
+- [x] PreviewPage 增加 `workbench-settings` key
+- [x] previewApi 增加 `getWorkbenchSettings()` 方法（escortRequest）
+- [x] renderPageContent() 增加 case
+- [x] 非 escort 显示 `<PermissionPrompt />`
+- [x] TypeScript 编译通过
 
-**预估工时**: 4h
+**完成时间**: 2024-12-13
 
 ---
 
@@ -1682,7 +1682,7 @@ import { TerminalPreview } from '@/components/terminal-preview'
 | 12.2-B | 邀请奖励集成 | 邀请管理页面侧栏预览 | P1 | 1.5h | ✅ |
 | 12.2-C | 活动管理集成 | 活动管理页面侧栏预览 | P1 | 2h | ✅ |
 | 12.2-D | 陪诊员管理集成 | 陪诊员管理页面侧栏预览 | P1 | 2h | ✅ |
-| 13.1-A | 工作台设置 | workbench-settings 页面 | P2 | 4h | ⏳ |
+| 13.1-A | 工作台设置 | workbench-settings 页面 | P2 | 4h | ✅ |
 | 14.1-A | Mock 完善 | Mock 数据覆盖 | P2 | 4h | ⏳ |
 | 14.1-B | 性能优化 | 懒加载、缓存优化 | P2 | 4h | ⏳ |
 | 14.1-C | 全面测试 | 功能、权限、边界测试 | P2 | 8h | ⏳ |
