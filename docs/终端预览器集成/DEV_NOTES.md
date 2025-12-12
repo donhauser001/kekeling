@@ -1833,17 +1833,56 @@ echo "✅ 护栏检查通过"
 
 ---
 
-### 14.2 完成标准
+### CARD 14.2: CI 守门脚本 ✅
+
+**目标**: 把护栏约束从文档变成可执行规则
+
+**范围**:
+- 脚本文件: `scripts/check-preview-guardrails.sh`
+- NPM 命令: `npm run lint:preview-guard`
+
+**检查项**:
+| # | 检查内容 | 失败行为 |
+|---|----------|---------|
+| 1 | 分销中心页面必须使用 PermissionPrompt | ❌ Error |
+| 2 | 分销中心页面必须有 enabled: isEscort | ❌ Error |
+| 3 | 分销 API 禁止使用 userRequest | ❌ Error |
+| 4 | 工作台页面必须检查 effectiveViewerRole | ⚠️ Warning |
+| 5 | 营销中心页面禁止 escortRequest | ❌ Error |
+| 6 | mock token 检测逻辑存在 | ⚠️ Warning |
+| 7 | PreviewPage 类型与 renderPageContent 一致 | ⚠️ Warning |
+
+**使用方式**:
+```bash
+# 本地运行
+npm run lint:preview-guard
+
+# CI 集成（在 .github/workflows/ci.yml 中添加）
+- name: Preview Guardrails Check
+  run: npm run lint:preview-guard
+```
+
+**验收点**:
+- [x] 脚本创建并可执行
+- [x] package.json 添加 `lint:preview-guard` 命令
+- [x] 所有检查项通过
+- [x] 错误时返回非零退出码（CI 会失败）
+
+**完成时间**: 2024-12-13
+
+---
+
+### 14.3 完成标准
 
 Step 14 整体完成标准：
 
-| 检查项 | 验收方式 |
-|--------|---------|
-| Mock 数据独立模块 | `ls src/components/terminal-preview/mocks/` |
-| 懒加载生效 | DevTools Network 观察按需加载 |
-| 护栏脚本可执行 | `bash scripts/check-preview-guardrails.sh` |
-| 全页面可渲染 | 手工遍历 27 个 page key |
-| 无 TS 错误 | `pnpm tsc --noEmit` |
+| 检查项 | 验收方式 | 状态 |
+|--------|---------|------|
+| CI 守门脚本 | `npm run lint:preview-guard` | ✅ |
+| Mock 数据独立模块 | `ls src/components/terminal-preview/mocks/` | ⏳ |
+| 懒加载生效 | DevTools Network 观察按需加载 | ⏳ |
+| 全页面可渲染 | 手工遍历 27 个 page key | ⏳ |
+| 无 TS 错误 | `pnpm tsc --noEmit` | ⏳ |
 
 ---
 
@@ -1859,8 +1898,9 @@ Step 14 整体完成标准：
 | 14.1-A | Mock 完善 | Mock 数据覆盖 | P2 | 4h | ⏳ |
 | 14.1-B | 性能优化 | 懒加载、缓存优化 | P2 | 4h | ⏳ |
 | 14.1-C | 全面测试 | 功能、权限、边界测试 | P2 | 8h | ⏳ |
+| 14.2 | CI 守门脚本 | lint:preview-guard | P2 | 1h | ✅ |
 
-**总预估**: 27.5h
+**总预估**: 28.5h（已完成 Step 0-13 + 14.2）
 
 ---
 
