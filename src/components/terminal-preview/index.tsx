@@ -68,6 +68,7 @@ import {
   EscortDetailPage,
   WorkbenchPage,
   OrdersPoolPage,
+  EarningsPage,
 } from './components/pages'
 
 export function TerminalPreview({
@@ -538,6 +539,18 @@ export function TerminalPreview({
       case 'workbench-orders-pool':
         return (
           <OrdersPoolPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            effectiveViewerRole={effectiveViewerRole}
+            onBack={() => setCurrentPage('workbench')}
+            onNavigate={(page, params) => navigateToPage(page, params)}
+          />
+        )
+
+      // 收入明细
+      case 'workbench-earnings':
+        return (
+          <EarningsPage
             themeSettings={themeSettings}
             isDarkMode={isDarkMode}
             effectiveViewerRole={effectiveViewerRole}

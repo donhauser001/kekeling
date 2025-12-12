@@ -839,7 +839,38 @@ interface WithdrawInfo {
 
 ---
 
-#### 批次 B: earnings + withdraw 页面（待接入）
+### 工作台收入明细页面 ✅
+
+**页面**: `workbench-earnings`
+**文件**: `components/pages/workbench/EarningsPage.tsx`
+
+**验收点**:
+- [x] 仅 viewerRole=escort 时允许进入
+- [x] 非 escort 显示 🔒 提示，不发起 API 请求
+- [x] 调用 previewApi.getWorkbenchEarnings()
+- [x] loading / error / empty / mock 降级
+- [x] renderPageContent() 增加 case 'workbench-earnings'
+- [x] TypeScript 编译通过
+
+**UI 结构**:
+| 区域 | 内容 |
+|------|------|
+| 标题栏 | ← 返回 + "收入明细" |
+| 概览卡片 | 可提现余额 + 累计收入/提现/待结算 + [去提现] |
+| 收支列表 | 图标 + 标题 + 时间 + 金额（+绿/-灰） |
+| 加载更多 | hasMore 时显示 |
+
+**收支类型图标**:
+| type | 图标 |
+|------|------|
+| order | TrendingUp |
+| bonus | Gift |
+| withdraw | TrendingDown |
+| refund | RefreshCw |
+
+---
+
+#### 批次 B: withdraw 页面（待接入）
 
 ---
 

@@ -10,3 +10,7 @@ export type { WorkbenchPageProps } from './WorkbenchPage'
 export { OrdersPoolPage } from './OrdersPoolPage'
 export type { OrdersPoolPageProps } from './OrdersPoolPage'
 
+// 收入明细
+export { EarningsPage } from './EarningsPage'
+export type { EarningsPageProps } from './EarningsPage'
+

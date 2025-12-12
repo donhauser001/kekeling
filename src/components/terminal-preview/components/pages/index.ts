@@ -24,4 +24,4 @@ export {
 export { EscortListPage, EscortDetailPage } from './escort'
 
 // 工作台页面（Step 11 + Step 7/7 新增）
-export { WorkbenchPage, OrdersPoolPage } from './workbench'
+export { WorkbenchPage, OrdersPoolPage, EarningsPage } from './workbench'
