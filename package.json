@@ -11,7 +11,8 @@
     "format:check": "prettier --check .",
     "format": "prettier --write .",
     "knip": "knip",
-    "check:distribution": "bash scripts/check-distribution-guardrails.sh"
+    "check:distribution": "bash scripts/check-distribution-guardrails.sh",
+    "lint:preview-guard": "bash scripts/check-preview-guardrails.sh"
   },
   "dependencies": {
     "@clerk/clerk-react": "^5.57.0",

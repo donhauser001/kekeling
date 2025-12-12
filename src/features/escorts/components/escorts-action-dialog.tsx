@@ -24,6 +24,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/password-input'
 import { SelectDropdown } from '@/components/select-dropdown'
+import { TerminalPreview } from '@/components/terminal-preview'
 import { categories } from '../data/data'
 import { type Escort } from '../data/schema'
 
@@ -143,7 +144,7 @@ export function EscortsActionDialog({
         onOpenChange(state)
       }}
     >
-      <DialogContent className='sm:max-w-lg'>
+      <DialogContent className='sm:max-w-[900px]'>
         <DialogHeader className='text-start'>
           <DialogTitle>{isEdit ? '编辑陪诊员' : '添加新陪诊员'}</DialogTitle>
           <DialogDescription>
@@ -151,170 +152,186 @@ export function EscortsActionDialog({
             完成后点击保存。
           </DialogDescription>
         </DialogHeader>
-        <div className='max-h-[60vh] min-h-[300px] overflow-y-auto py-1 px-1'>
-          <Form {...form}>
-            <form
-              id='escort-form'
-              onSubmit={form.handleSubmit(onSubmit)}
-              className='space-y-4 px-0.5'
-            >
-              <FormField
-                control={form.control}
-                name='firstName'
-                render={({ field }) => (
-                  <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                    <FormLabel className='col-span-2 text-end'>
-                      名字
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder='张'
+
+        <div className='flex gap-6'>
+          {/* 左侧：表单 */}
+          <div className='flex-1 max-h-[60vh] min-h-[300px] overflow-y-auto py-1 px-1'>
+            <Form {...form}>
+              <form
+                id='escort-form'
+                onSubmit={form.handleSubmit(onSubmit)}
+                className='space-y-4 px-0.5'
+              >
+                <FormField
+                  control={form.control}
+                  name='firstName'
+                  render={({ field }) => (
+                    <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
+                      <FormLabel className='col-span-2 text-end'>
+                        名字
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder='张'
+                          className='col-span-4'
+                          autoComplete='off'
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage className='col-span-4 col-start-3' />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name='lastName'
+                  render={({ field }) => (
+                    <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
+                      <FormLabel className='col-span-2 text-end'>
+                        姓氏
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder='三'
+                          className='col-span-4'
+                          autoComplete='off'
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage className='col-span-4 col-start-3' />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name='username'
+                  render={({ field }) => (
+                    <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
+                      <FormLabel className='col-span-2 text-end'>
+                        用户名
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder='zhangsan'
+                          className='col-span-4'
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage className='col-span-4 col-start-3' />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name='email'
+                  render={({ field }) => (
+                    <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
+                      <FormLabel className='col-span-2 text-end'>邮箱</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder='zhangsan@example.com'
+                          className='col-span-4'
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage className='col-span-4 col-start-3' />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name='phoneNumber'
+                  render={({ field }) => (
+                    <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
+                      <FormLabel className='col-span-2 text-end'>
+                        电话号码
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder='13800138000'
+                          className='col-span-4'
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage className='col-span-4 col-start-3' />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name='category'
+                  render={({ field }) => (
+                    <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
+                      <FormLabel className='col-span-2 text-end'>分类</FormLabel>
+                      <SelectDropdown
+                        defaultValue={field.value}
+                        onValueChange={field.onChange}
+                        placeholder='请选择分类'
                         className='col-span-4'
-                        autoComplete='off'
-                        {...field}
+                        items={categories.map(({ label, value }) => ({
+                          label,
+                          value,
+                        }))}
                       />
-                    </FormControl>
-                    <FormMessage className='col-span-4 col-start-3' />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name='lastName'
-                render={({ field }) => (
-                  <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                    <FormLabel className='col-span-2 text-end'>
-                      姓氏
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder='三'
-                        className='col-span-4'
-                        autoComplete='off'
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage className='col-span-4 col-start-3' />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name='username'
-                render={({ field }) => (
-                  <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                    <FormLabel className='col-span-2 text-end'>
-                      用户名
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder='zhangsan'
-                        className='col-span-4'
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage className='col-span-4 col-start-3' />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name='email'
-                render={({ field }) => (
-                  <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                    <FormLabel className='col-span-2 text-end'>邮箱</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder='zhangsan@example.com'
-                        className='col-span-4'
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage className='col-span-4 col-start-3' />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name='phoneNumber'
-                render={({ field }) => (
-                  <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                    <FormLabel className='col-span-2 text-end'>
-                      电话号码
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder='13800138000'
-                        className='col-span-4'
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage className='col-span-4 col-start-3' />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name='category'
-                render={({ field }) => (
-                  <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                    <FormLabel className='col-span-2 text-end'>分类</FormLabel>
-                    <SelectDropdown
-                      defaultValue={field.value}
-                      onValueChange={field.onChange}
-                      placeholder='请选择分类'
-                      className='col-span-4'
-                      items={categories.map(({ label, value }) => ({
-                        label,
-                        value,
-                      }))}
-                    />
-                    <FormMessage className='col-span-4 col-start-3' />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name='password'
-                render={({ field }) => (
-                  <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                    <FormLabel className='col-span-2 text-end'>
-                      密码
-                    </FormLabel>
-                    <FormControl>
-                      <PasswordInput
-                        placeholder='请输入密码'
-                        className='col-span-4'
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage className='col-span-4 col-start-3' />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name='confirmPassword'
-                render={({ field }) => (
-                  <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                    <FormLabel className='col-span-2 text-end'>
-                      确认密码
-                    </FormLabel>
-                    <FormControl>
-                      <PasswordInput
-                        disabled={!isPasswordTouched}
-                        placeholder='请再次输入密码'
-                        className='col-span-4'
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage className='col-span-4 col-start-3' />
-                  </FormItem>
-                )}
-              />
-            </form>
-          </Form>
+                      <FormMessage className='col-span-4 col-start-3' />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name='password'
+                  render={({ field }) => (
+                    <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
+                      <FormLabel className='col-span-2 text-end'>
+                        密码
+                      </FormLabel>
+                      <FormControl>
+                        <PasswordInput
+                          placeholder='请输入密码'
+                          className='col-span-4'
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage className='col-span-4 col-start-3' />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name='confirmPassword'
+                  render={({ field }) => (
+                    <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
+                      <FormLabel className='col-span-2 text-end'>
+                        确认密码
+                      </FormLabel>
+                      <FormControl>
+                        <PasswordInput
+                          disabled={!isPasswordTouched}
+                          placeholder='请再次输入密码'
+                          className='col-span-4'
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage className='col-span-4 col-start-3' />
+                    </FormItem>
+                  )}
+                />
+              </form>
+            </Form>
+          </div>
+
+          {/* 右侧：预览器 */}
+          <div className='w-[375px] flex-shrink-0'>
+            <div className='text-sm text-muted-foreground mb-2'>终端预览</div>
+            <TerminalPreview
+              page={isEdit ? 'escort-detail' : 'escort-list'}
+              height={500}
+              showFrame={false}
+              autoLoad={false}
+            />
+          </div>
         </div>
+
         <DialogFooter>
           <Button type='submit' form='escort-form'>
             保存
