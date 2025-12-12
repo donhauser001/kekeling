@@ -27,6 +27,7 @@ import {
   defaultStatsData,
 } from './types'
 import { useScrollDrag } from './hooks/useScrollDrag'
+import { useViewerRole } from './hooks/useViewerRole'
 import {
   BrandSection,
   SearchBar,
@@ -44,6 +45,13 @@ import { ServicesPage, ServiceDetailPage, CasesPage, ProfilePage } from './compo
 
 export function TerminalPreview({
   page: initialPage = 'home',
+  // Step 1 新增：视角与会话 Props
+  viewerRole: viewerRoleProp,
+  userSession,
+  escortSession,
+  userContext,
+  escortContext,
+  // 现有 Props
   themeSettings: themeSettingsOverride,
   homeSettings: homeSettingsOverride,
   bannerData: bannerDataOverride,
@@ -58,6 +66,38 @@ export function TerminalPreview({
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<ServiceTabType>('recommended')
   const [isDarkMode, setIsDarkMode] = useState(false)
+
+  // ============================================================================
+  // Step 3: 视角角色推导
+  // ============================================================================
+
+  /**
+   * 视角角色推导
+   *
+   * 推导规则（按优先级）：
+   * 1. 预览器模式 + 显式 viewerRole Props → 使用 viewerRole（强制模拟）
+   * 2. 预览器模式 + escortSession.token 存在 → escort
+   * 3. 真实终端 + escortToken 存在且验证有效 → escort
+   * 4. 其他情况 → user
+   *
+   * ⚠️ 当前仅产出 effectiveViewerRole，后续 Step 4 用于 DebugPanel
+   */
+  const { effectiveViewerRole, isEscort, isUser, isValidating } = useViewerRole({
+    userSession,
+    escortSession,
+    viewerRole: viewerRoleProp,
+    isPreviewMode: true, // 当前组件仅用于预览器
+  })
+
+  // TODO: Step 4 将在 DebugPanel 中使用 effectiveViewerRole
+  // TODO: Step 5 将根据 effectiveViewerRole 控制路由和权限
+  // 当前仅保留在内部，不影响现有渲染逻辑
+  void effectiveViewerRole
+  void isEscort
+  void isUser
+  void isValidating
+  void userContext
+  void escortContext
   const [currentPage, setCurrentPage] = useState(initialPage)
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null)
 
@@ -366,3 +406,5 @@ export function TerminalPreview({
 // 导出类型和默认值
 export * from './types'
 export { previewApi } from './api'
+export { useViewerRole, validateEscortSession } from './hooks/useViewerRole'
+export type { UseViewerRoleOptions, UseViewerRoleResult } from './hooks/useViewerRole'

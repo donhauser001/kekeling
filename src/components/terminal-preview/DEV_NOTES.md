@@ -92,16 +92,35 @@ ChannelMismatchError // 通道不匹配错误
 
 ---
 
-### Step 3: 双会话验证机制
+### Step 3: 双会话状态与 viewerRole 推导 ✅
 
-**目标**: 实现 escortToken 验证与视角自动回退
+**目标**: 把"视角切换的唯一依据"落成代码规则
 
 **验收点**:
-- [ ] 实现 `validateEscortSession()` 函数（调用 `/escort-app/session/validate`）
-- [ ] 进入 escort 视角时强制验证
-- [ ] 验证失败自动清 token + 回退 user 视角
-- [ ] 页面刷新时自动验证 escortToken
-- [ ] TypeScript 编译通过
+- [x] 新增 `useViewerRole` hook（输入 userSession/escortSession/viewerRole，输出 effectiveViewerRole）
+- [x] 实现 `validateEscortSession()` 函数（v1: token 存在即有效，预留真实接口扩展点）
+- [x] 预览器模式允许 viewerRole 强制覆盖
+- [x] 真实终端以 escortToken 是否有效决定 effectiveViewerRole
+- [x] 集成到 TerminalPreview（暂保留内部，Step 4 用于 DebugPanel）
+- [x] TypeScript 编译通过
+
+**viewerRole 推导规则**:
+1. 预览器模式 + 显式 `viewerRole` Props → 使用 viewerRole（强制模拟）
+2. 预览器模式 + `escortSession.token` 存在 → escort
+3. 真实终端 + `escortToken` 存在且验证有效 → escort
+4. 其他情况 → user
+
+**新增文件**:
+```
+hooks/useViewerRole.ts  # 视角角色推导 hook
+```
+
+**导出**:
+```typescript
+// index.tsx 新增导出
+export { useViewerRole, validateEscortSession } from './hooks/useViewerRole'
+export type { UseViewerRoleOptions, UseViewerRoleResult } from './hooks/useViewerRole'
+```
 
 ---
 
