@@ -54,6 +54,8 @@ import {
   MembershipPlansPage,
   PointsPage,
   PointsRecordsPage,
+  ReferralsPage,
+  CampaignsPage,
 } from './components/pages'
 
 export function TerminalPreview({
@@ -396,6 +398,29 @@ export function TerminalPreview({
             isDarkMode={isDarkMode}
             onBack={() => setCurrentPage('points')}
           />
+        )
+      case 'referrals':
+        return (
+          <ReferralsPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+          />
+        )
+      case 'campaigns':
+        return (
+          <CampaignsPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            onNavigate={(page) => setCurrentPage(page as typeof currentPage)}
+          />
+        )
+      case 'campaigns-detail':
+        // TODO: 活动详情页（后续实现）
+        return (
+          <div className="flex flex-col items-center justify-center h-full">
+            <div className="text-4xl mb-2">🚧</div>
+            <div className="text-gray-400 text-sm">活动详情页开发中...</div>
+          </div>
         )
 
       case 'home':

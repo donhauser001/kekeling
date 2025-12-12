@@ -548,6 +548,88 @@ function getMockPointsRecords(): PointsRecordsResponse {
 }
 
 /**
+ * 邀请信息
+ * 对应接口: GET /marketing/referrals/info
+ */
+export interface ReferralInfo {
+  /** 邀请码 */
+  inviteCode: string
+  /** 已邀请人数 */
+  invitedCount: number
+  /** 已获得积分 */
+  earnedPoints: number
+  /** 待领取积分 */
+  pendingPoints: number
+  /** 每次邀请奖励积分 */
+  rewardPoints: number
+}
+
+/**
+ * 活动信息
+ * 对应接口: GET /marketing/campaigns
+ */
+export interface Campaign {
+  id: string
+  /** 活动标题 */
+  title: string
+  /** 活动描述 */
+  description: string
+  /** 封面图 */
+  coverImage?: string
+  /** 开始时间 */
+  startTime: string
+  /** 结束时间 */
+  endTime: string
+  /** 状态 */
+  status: 'upcoming' | 'ongoing' | 'ended'
+}
+
+/**
+ * Mock 邀请信息
+ */
+function getMockReferralInfo(): ReferralInfo {
+  return {
+    inviteCode: 'KKL2024',
+    invitedCount: 5,
+    earnedPoints: 500,
+    pendingPoints: 100,
+    rewardPoints: 100,
+  }
+}
+
+/**
+ * Mock 活动列表
+ */
+function getMockCampaigns(): Campaign[] {
+  return [
+    {
+      id: 'campaign-1',
+      title: '新年特惠活动',
+      description: '全场服务8折起，会员更享折上折',
+      startTime: '2024-12-20',
+      endTime: '2025-01-20',
+      status: 'ongoing',
+    },
+    {
+      id: 'campaign-2',
+      title: '邀请好友送好礼',
+      description: '邀请好友注册，双方各得100积分',
+      startTime: '2024-12-01',
+      endTime: '2025-03-01',
+      status: 'ongoing',
+    },
+    {
+      id: 'campaign-3',
+      title: '双十一狂欢节',
+      description: '限时秒杀，超值优惠券等你领',
+      startTime: '2024-11-01',
+      endTime: '2024-11-15',
+      status: 'ended',
+    },
+  ]
+}
+
+/**
  * Mock 优惠券数据
  * 用于接口不存在时的降级显示
  */
@@ -722,9 +804,42 @@ export const previewApi = {
     }
   },
 
-  // TODO: 其他营销中心接口（后续接入）
-  // getReferralInfo: () => userRequest('/marketing/referrals/info'),
-  // getCampaigns: () => userRequest('/marketing/campaigns'),
+  /**
+   * 获取邀请信息
+   * 接口: GET /marketing/referrals/info
+   * 通道: userRequest
+   */
+  getReferralInfo: async (): Promise<ReferralInfo> => {
+    try {
+      return await userRequest<ReferralInfo>('/marketing/referrals/info')
+    } catch (error) {
+      if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
+        console.warn('[previewApi.getReferralInfo] 使用 mock 数据')
+        return getMockReferralInfo()
+      }
+      throw error
+    }
+  },
+
+  /**
+   * 获取活动列表
+   * 接口: GET /marketing/campaigns
+   * 通道: userRequest
+   */
+  getCampaigns: async (): Promise<Campaign[]> => {
+    try {
+      return await userRequest<Campaign[]>('/marketing/campaigns')
+    } catch (error) {
+      if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
+        console.warn('[previewApi.getCampaigns] 使用 mock 数据')
+        return getMockCampaigns()
+      }
+      throw error
+    }
+  },
+
+  // TODO: 活动详情（后续接入）
+  // getCampaignDetail: (id: string) => userRequest(`/marketing/campaigns/${id}`),
 
   // TODO: 陪诊员公开信息（用户端可查看，走 userRequest）
   // ⚠️ 注意：这是公开接口，后端不要强制 escortToken

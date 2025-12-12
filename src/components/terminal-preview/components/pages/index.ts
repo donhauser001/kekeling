@@ -7,11 +7,13 @@ export { ServiceDetailPage } from './ServiceDetailPage'
 export { CasesPage } from './CasesPage'
 export { ProfilePage } from './ProfilePage'
 
-// 营销中心页面（Step 5-7 新增）
+// 营销中心页面（Step 5-8 新增）
 export {
   CouponsPage,
   MembershipPage,
   MembershipPlansPage,
   PointsPage,
   PointsRecordsPage,
+  ReferralsPage,
+  CampaignsPage,
 } from './marketing'

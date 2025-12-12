@@ -271,7 +271,40 @@ interface PointsRecordsResponse {
 
 ---
 
-#### 批次 C: referrals + campaigns（待接入）
+#### 批次 C: referrals + campaigns ✅
+
+**验收点**:
+- [x] 新增 `ReferralsPage.tsx` (邀请好友: 邀请码、统计、规则)
+- [x] 新增 `CampaignsPage.tsx` (活动列表: 活动卡片、状态标签)
+- [x] `renderPageContent()` 增加 case 'referrals' / 'campaigns' / 'campaigns-detail'
+- [x] `previewApi.getReferralInfo()` / `getCampaigns()`
+- [x] campaigns 点击条目跳转 campaigns-detail（占位页）
+- [x] TypeScript 编译通过
+
+**API 新增**:
+```typescript
+// GET /marketing/referrals/info
+previewApi.getReferralInfo(): Promise<ReferralInfo>
+interface ReferralInfo {
+  inviteCode: string    // 邀请码
+  invitedCount: number  // 已邀请人数
+  earnedPoints: number  // 已获得积分
+  pendingPoints: number // 待领取积分
+  rewardPoints: number  // 每次邀请奖励积分
+}
+
+// GET /marketing/campaigns
+previewApi.getCampaigns(): Promise<Campaign[]>
+interface Campaign {
+  id: string
+  title: string
+  description: string
+  coverImage?: string
+  startTime: string
+  endTime: string
+  status: 'upcoming' | 'ongoing' | 'ended'
+}
+```
 
 ---
 

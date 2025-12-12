@@ -19,3 +19,10 @@ export type { PointsPageProps } from './PointsPage'
 export { PointsRecordsPage } from './PointsRecordsPage'
 export type { PointsRecordsPageProps } from './PointsRecordsPage'
 
+// Step 8 批次 C
+export { ReferralsPage } from './ReferralsPage'
+export type { ReferralsPageProps } from './ReferralsPage'
+
+export { CampaignsPage } from './CampaignsPage'
+export type { CampaignsPageProps } from './CampaignsPage'
+
