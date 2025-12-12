@@ -20,7 +20,7 @@ import {
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Skeleton } from '@/components/ui/skeleton'
-import { cn } from '@/lib/utils'
+import { cn, normalizeLevel } from '@/lib/utils'
 import type { Escort } from '@/lib/api'
 
 interface EscortsDetailSheetProps {
@@ -53,12 +53,10 @@ const workStatusConfig: Record<string, { label: string; color: string }> = {
     busy: { label: '服务中', color: 'text-blue-600 bg-blue-50' },
 }
 
-// 安全获取等级配置
+// 安全获取等级配置（使用 normalizeLevel 适配器）
 const getLevelConfig = (escort: Escort) => {
-    const levelCode = typeof escort.level === 'object' && escort.level !== null
-        ? (escort.level as { code?: string })?.code
-        : escort.level
-    return levelConfig[levelCode as string] || { label: '未知', color: 'bg-gray-400' }
+    const level = normalizeLevel(escort.level)
+    return levelConfig[level.code] || { label: level.name, color: 'bg-gray-400' }
 }
 
 export function EscortsDetailSheet({

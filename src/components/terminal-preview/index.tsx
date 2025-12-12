@@ -81,6 +81,8 @@ export function TerminalPreview({
   escortSession,
   userContext,
   escortContext,
+  // 营销中心数据覆盖
+  marketingData,
   // 现有 Props
   themeSettings: themeSettingsOverride,
   homeSettings: homeSettingsOverride,
@@ -438,15 +440,22 @@ export function TerminalPreview({
           />
         )
 
-      // Step 5-6: 营销中心页面
+      // Step 5-6: 营销中心页面（支持 marketingData 覆盖）
       case 'coupons':
-        return <CouponsPage themeSettings={themeSettings} isDarkMode={isDarkMode} />
+        return (
+          <CouponsPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            couponsOverride={marketingData?.coupons}
+          />
+        )
       case 'membership':
         return (
           <MembershipPage
             themeSettings={themeSettings}
             isDarkMode={isDarkMode}
             onNavigate={(page) => setCurrentPage(page as typeof currentPage)}
+            membershipOverride={marketingData?.membership}
           />
         )
       case 'membership-plans':
@@ -455,6 +464,7 @@ export function TerminalPreview({
             themeSettings={themeSettings}
             isDarkMode={isDarkMode}
             onBack={() => setCurrentPage('membership')}
+            plansOverride={marketingData?.membershipPlans}
           />
         )
       case 'points':
@@ -503,6 +513,7 @@ export function TerminalPreview({
             themeSettings={themeSettings}
             isDarkMode={isDarkMode}
             onBack={() => setCurrentPage('coupons')}
+            availableCouponsOverride={marketingData?.availableCoupons}
           />
         )
 

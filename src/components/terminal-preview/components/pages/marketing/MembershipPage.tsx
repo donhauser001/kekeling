@@ -5,10 +5,15 @@
  * - page key: 'membership'
  * - API: previewApi.getMyMembership()
  * - 数据通道: userRequest
+ *
+ * 支持 marketingData.membership 覆盖：
+ * - 优先使用覆盖数据（即时预览）
+ * - 覆盖数据不存在时，调用 previewApi
  */
 
+import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import type { ThemeSettings } from '../../../types'
+import type { ThemeSettings, MembershipInfoOverride } from '../../../types'
 import { previewApi, type MembershipInfo } from '../../../api'
 
 // ============================================================================
@@ -19,24 +24,55 @@ export interface MembershipPageProps {
   themeSettings: ThemeSettings
   isDarkMode: boolean
   onNavigate?: (page: string) => void
+  /**
+   * 会员信息覆盖
+   * - undefined: 不覆盖，使用 API 数据
+   * - null: 用户未开通会员
+   * - object: 覆盖数据
+   */
+  membershipOverride?: MembershipInfoOverride | null
 }
 
 // ============================================================================
 // 组件实现
 // ============================================================================
 
-export function MembershipPage({ themeSettings, isDarkMode, onNavigate }: MembershipPageProps) {
-  // 获取会员信息
+export function MembershipPage({ themeSettings, isDarkMode, onNavigate, membershipOverride }: MembershipPageProps) {
+  // 是否使用覆盖数据（undefined 表示不覆盖）
+  const hasOverride = membershipOverride !== undefined
+
+  // 获取会员信息（仅在无覆盖时调用 API）
   const {
-    data: membership,
-    isLoading,
-    isError,
+    data: apiMembership,
+    isLoading: apiLoading,
+    isError: apiError,
   } = useQuery({
     queryKey: ['preview', 'membership', 'my'],
     queryFn: previewApi.getMyMembership,
     staleTime: 60 * 1000,
+    enabled: !hasOverride, // 有覆盖数据时不请求 API
   })
 
+  // 合并数据：覆盖优先
+  const membership = useMemo<MembershipInfo | null>(() => {
+    if (hasOverride) {
+      // null 表示用户未开通会员
+      if (membershipOverride === null) return null
+      // 覆盖数据转换为完整类型（提供默认值）
+      return {
+        id: membershipOverride.id ?? 'override-membership',
+        level: membershipOverride.level ?? 'default',
+        levelName: membershipOverride.levelName ?? '会员',
+        expireAt: membershipOverride.expireAt ?? '2099-12-31',
+        points: membershipOverride.points ?? 0,
+      }
+    }
+    return apiMembership ?? null
+  }, [hasOverride, membershipOverride, apiMembership])
+
+  // 状态计算
+  const isLoading = !hasOverride && apiLoading
+  const isError = !hasOverride && apiError
   const hasMembership = !!membership
 
   return (

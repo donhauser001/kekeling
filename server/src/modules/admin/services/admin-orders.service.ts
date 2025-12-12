@@ -265,8 +265,10 @@ export class AdminOrdersService {
       throw new BadRequestException('当前状态无法派单');
     }
 
+    // 获取陪诊员完整信息（包含等级）
     const escort = await this.prisma.escort.findUnique({
       where: { id: escortId },
+      include: { level: true },
     });
 
     if (!escort) {
@@ -288,9 +290,20 @@ export class AdminOrdersService {
 
     const fromStatus = order.status;
 
+    // 构建陪诊员快照（软删除支持）
+    const escortSnapshot = {
+      id: escort.id,
+      name: escort.name,
+      phone: escort.phone,
+      avatar: escort.avatar,
+      levelCode: escort.levelCode,
+      levelName: escort.level?.name || null,
+      rating: escort.rating,
+    };
+
     // 使用事务更新订单和记录日志
     const updatedOrder = await this.prisma.$transaction(async (tx) => {
-      // 更新订单
+      // 更新订单（包含陪诊员快照）
       const updated = await tx.order.update({
         where: { id: orderId },
         data: {
@@ -299,6 +312,7 @@ export class AdminOrdersService {
           assignMethod: 'manual', // 手动派单
           assignedAt: new Date(),
           preAssignWorkStatus: escort.workStatus,
+          escortSnapshot, // ✅ 保存陪诊员快照
         },
         include: {
           escort: true,

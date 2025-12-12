@@ -371,8 +371,10 @@ export class EscortAppService {
 
   // 抢单
   async grabOrder(userId: string, orderId: string) {
+    // 获取陪诊员完整信息（包含等级）
     const escort = await this.prisma.escort.findFirst({
       where: { userId },
+      include: { level: true },
     });
 
     if (!escort) {
@@ -420,6 +422,17 @@ export class EscortAppService {
       throw new BadRequestException(conflictReason || '时段冲突');
     }
 
+    // 构建陪诊员快照（软删除支持）
+    const escortSnapshot = {
+      id: escort.id,
+      name: escort.name,
+      phone: escort.phone,
+      avatar: escort.avatar,
+      levelCode: escort.levelCode,
+      levelName: escort.level?.name || null,
+      rating: escort.rating,
+    };
+
     // 使用事务 + 条件更新保证并发安全
     return this.prisma.$transaction(async (tx) => {
       // 原子抢占：只有 status 为 paid 且 escortId 为空的订单可以被抢占
@@ -435,6 +448,7 @@ export class EscortAppService {
           assignedAt: new Date(),
           assignMethod: 'grab',
           preAssignWorkStatus: escort.workStatus,
+          escortSnapshot, // ✅ 保存陪诊员快照
         },
       });
 

@@ -1,10 +1,9 @@
-import { Controller, Get, Post, Body, Query, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, UseGuards, Request, NotFoundException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { DistributionService } from './distribution.service';
 import { PrismaService } from '../../prisma/prisma.service';
-import { NotFoundException } from '@nestjs/common';
-import { PaginationDto } from '../../common/dto/pagination.dto';
+import { QueryRecordsDto } from './dto/query-records.dto';
 
 @ApiTags('陪诊员-分销')
 @Controller('escort/distribution')
@@ -35,10 +34,12 @@ export class DistributionController {
 
   @Get('records')
   @ApiOperation({ summary: '获取分润记录' })
-  async getDistributionRecords(@Request() req, @Query() query: PaginationDto) {
+  async getDistributionRecords(
+    @Request() req,
+    @Query() query: QueryRecordsDto,
+  ) {
     const escort = await this.getEscortByUserId(req.user.sub);
-    const p = query.page ?? 1;
-    const ps = query.pageSize ?? 20;
+    const { page = 1, pageSize = 20 } = query;
 
     const where = { beneficiaryId: escort.id };
 
@@ -61,8 +62,8 @@ export class DistributionController {
           },
         },
         orderBy: { createdAt: 'desc' },
-        skip: (p - 1) * ps,
-        take: ps,
+        skip: (page - 1) * pageSize,
+        take: pageSize,
       }),
       this.prisma.distributionRecord.count({ where }),
     ]);
@@ -74,8 +75,8 @@ export class DistributionController {
         orderAmount: Number(record.orderAmount),
       })),
       total,
-      page: p,
-      pageSize: ps,
+      page,
+      pageSize,
     };
   }
 

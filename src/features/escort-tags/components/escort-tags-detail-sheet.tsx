@@ -1,8 +1,9 @@
 import {
     Tag,
-    Users,
     Calendar,
     Layers,
+    CheckCircle,
+    XCircle,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -14,16 +15,7 @@ import {
 } from '@/components/ui/sheet'
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
-
-interface EscortTag {
-    id: string
-    name: string
-    description: string
-    escortCount: number
-    color: string
-    category: string
-    createdAt: string
-}
+import type { EscortTag } from '@/lib/api'
 
 interface TagCategory {
     value: string
@@ -62,16 +54,18 @@ export function EscortTagsDetailSheet({
             <SheetContent className='sm:max-w-lg overflow-y-auto'>
                 <SheetHeader className='pb-4'>
                     <div className='flex items-start gap-4'>
-                        <div className={cn('flex h-14 w-14 items-center justify-center rounded-lg', tag.color)}>
+                        <div className={cn('flex h-14 w-14 items-center justify-center rounded-lg', tag.color || 'bg-gray-400')}>
                             <Tag className='h-7 w-7 text-white' />
                         </div>
                         <div className='flex-1 space-y-1'>
                             <SheetTitle className='flex items-center gap-2'>
                                 {tag.name}
+                                <Badge variant={tag.status === 'active' ? 'default' : 'secondary'}>
+                                    {tag.status === 'active' ? '启用' : '停用'}
+                                </Badge>
                             </SheetTitle>
-                            <SheetDescription className='flex items-center gap-2'>
-                                <Users className='h-4 w-4' />
-                                {tag.escortCount.toLocaleString()} 名陪诊员
+                            <SheetDescription>
+                                ID: {tag.id}
                             </SheetDescription>
                         </div>
                     </div>
@@ -80,16 +74,6 @@ export function EscortTagsDetailSheet({
                 <Separator className='my-4' />
 
                 <div className='space-y-6'>
-                    {/* 标签描述 */}
-                    <div className='space-y-2'>
-                        <h4 className='text-sm font-medium'>标签描述</h4>
-                        <p className='text-muted-foreground text-sm leading-relaxed'>
-                            {tag.description}
-                        </p>
-                    </div>
-
-                    <Separator />
-
                     {/* 基本信息 */}
                     <div className='space-y-3'>
                         <h4 className='text-sm font-medium'>基本信息</h4>
@@ -109,11 +93,22 @@ export function EscortTagsDetailSheet({
                             <div className='flex items-center justify-between'>
                                 <span className='text-muted-foreground flex items-center gap-2'>
                                     <div className='flex h-4 w-4 items-center justify-center'>
-                                        <span className={cn('h-3 w-3 rounded-full', tag.color)} />
+                                        <span className={cn('h-3 w-3 rounded-full', tag.color || 'bg-gray-400')} />
                                     </div>
                                     标签颜色
                                 </span>
-                                <span className={cn('h-6 w-6 rounded-full', tag.color)} />
+                                <span className={cn('h-6 w-6 rounded-full', tag.color || 'bg-gray-400')} />
+                            </div>
+                            <div className='flex items-center justify-between'>
+                                <span className='text-muted-foreground flex items-center gap-2'>
+                                    {tag.status === 'active' ? (
+                                        <CheckCircle className='h-4 w-4 text-green-500' />
+                                    ) : (
+                                        <XCircle className='h-4 w-4 text-gray-400' />
+                                    )}
+                                    状态
+                                </span>
+                                <span>{tag.status === 'active' ? '启用中' : '已停用'}</span>
                             </div>
                             <div className='flex items-center justify-between'>
                                 <span className='text-muted-foreground flex items-center gap-2'>
@@ -121,6 +116,13 @@ export function EscortTagsDetailSheet({
                                     创建时间
                                 </span>
                                 <span>{formatDate(tag.createdAt)}</span>
+                            </div>
+                            <div className='flex items-center justify-between'>
+                                <span className='text-muted-foreground flex items-center gap-2'>
+                                    <Calendar className='h-4 w-4' />
+                                    更新时间
+                                </span>
+                                <span>{formatDate(tag.updatedAt)}</span>
                             </div>
                         </div>
                     </div>

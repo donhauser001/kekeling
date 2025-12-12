@@ -1,10 +1,9 @@
-import { Controller, Get, Query, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards, Request, NotFoundException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { TeamService } from './team.service';
 import { PrismaService } from '../../prisma/prisma.service';
-import { NotFoundException } from '@nestjs/common';
-import { PaginationDto } from '../../common/dto/pagination.dto';
+import { QueryRecordsDto } from './dto/query-records.dto';
 
 @ApiTags('陪诊员-团队')
 @Controller('escort/team')
@@ -18,12 +17,12 @@ export class TeamController {
 
   @Get('members')
   @ApiOperation({ summary: '获取团队成员列表' })
-  async getTeamMembers(@Request() req, @Query() query: PaginationDto) {
+  async getTeamMembers(
+    @Request() req,
+    @Query() query: QueryRecordsDto,
+  ) {
     const escort = await this.getEscortByUserId(req.user.sub);
-    return this.teamService.getTeamMembers(escort.id, {
-      page: query.page,
-      pageSize: query.pageSize,
-    });
+    return this.teamService.getTeamMembers(escort.id, query);
   }
 
   @Get('stats')

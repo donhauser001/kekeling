@@ -124,6 +124,119 @@ export interface EscortContext {
   orderCount?: number
 }
 
+// ============================================================================
+// 营销中心数据覆盖类型（P0 页面数据覆盖）
+// ============================================================================
+
+/**
+ * 会员信息（预览器覆盖用）
+ * 与 api.ts 的 MembershipInfo 保持一致
+ */
+export interface MembershipInfoOverride {
+  id?: string
+  /** 会员等级 */
+  level?: string
+  /** 等级名称 */
+  levelName?: string
+  /** 过期时间 (YYYY-MM-DD) */
+  expireAt?: string
+  /** 积分余额 */
+  points?: number
+}
+
+/**
+ * 会员套餐（预览器覆盖用）
+ * 与 api.ts 的 MembershipPlan 保持一致
+ */
+export interface MembershipPlanOverride {
+  id: string
+  name?: string
+  description?: string
+  /** 价格 */
+  price?: number
+  /** 原价 */
+  originalPrice?: number
+  /** 有效天数 */
+  durationDays?: number
+  /** 是否推荐 */
+  isRecommended?: boolean
+}
+
+/**
+ * 优惠券项（预览器覆盖用）
+ * 与 api.ts 的 CouponItem 保持一致
+ */
+export interface CouponItemOverride {
+  id: string
+  name?: string
+  description?: string
+  /** 优惠金额 */
+  amount?: number
+  /** 最低消费金额 */
+  minAmount?: number
+  /** 过期时间（格式: YYYY-MM-DD） */
+  expireAt?: string
+  /** 状态 */
+  status?: 'available' | 'used' | 'expired'
+}
+
+/**
+ * 可领取优惠券（预览器覆盖用）
+ * 与 api.ts 的 AvailableCoupon 保持一致
+ */
+export interface AvailableCouponOverride {
+  id: string
+  name?: string
+  description?: string
+  /** 优惠金额 */
+  amount?: number
+  /** 最低消费金额 */
+  minAmount?: number
+  /** 剩余可领数量 */
+  remaining?: number
+}
+
+/**
+ * 营销中心数据覆盖
+ *
+ * ⚠️ 用于管理后台预览，支持 Partial 覆盖
+ * - 优先使用覆盖数据
+ * - 覆盖数据不存在时，调用 previewApi 获取
+ */
+export interface MarketingDataOverride {
+  /**
+   * 会员信息覆盖
+   * - null: 表示用户未开通会员
+   * - undefined: 不覆盖，使用 API 数据
+   * - object: 覆盖数据
+   */
+  membership?: MembershipInfoOverride | null
+
+  /**
+   * 会员套餐列表覆盖
+   * - undefined: 不覆盖，使用 API 数据
+   * - array: 覆盖数据
+   */
+  membershipPlans?: MembershipPlanOverride[]
+
+  /**
+   * 我的优惠券列表覆盖
+   * - undefined: 不覆盖，使用 API 数据
+   * - object: 覆盖数据（包含 items 和 total）
+   */
+  coupons?: {
+    items?: CouponItemOverride[]
+    total?: number
+  }
+
+  /**
+   * 可领取优惠券列表覆盖
+   * - undefined: 不覆盖，使用 API 数据
+   * - array: 覆盖数据
+   */
+  availableCoupons?: AvailableCouponOverride[]
+}
+
 // 主题设置
 export interface ThemeSettings {
   primaryColor: string
@@ -321,6 +434,17 @@ export interface TerminalPreviewProps {
    * 陪诊员上下文数据覆盖
    */
   escortContext?: EscortContext
+
+  /**
+   * 营销中心数据覆盖
+   *
+   * ⚠️ 用于管理后台预览，优先使用覆盖数据
+   * - membership: 会员信息（null 表示未开通）
+   * - membershipPlans: 会员套餐列表
+   * - coupons: 我的优惠券
+   * - availableCoupons: 可领取优惠券
+   */
+  marketingData?: MarketingDataOverride
 
   // ============================================================================
   // 现有 Props（保持向后兼容）

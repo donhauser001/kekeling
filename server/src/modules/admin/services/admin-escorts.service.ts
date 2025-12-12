@@ -452,6 +452,11 @@ export class AdminEscortsService {
 
   /**
    * 更新接单状态
+   *
+   * ⚠️ 非对称权限设计：
+   * - 管理员只能将陪诊员设置为 resting（强制下线）
+   * - 不能将陪诊员设置为 working（强制上线），需由陪诊员自行操作
+   * - busy 状态由系统在指派订单时自动设置
    */
   async updateWorkStatus(id: string, workStatus: string) {
     const escort = await this.prisma.escort.findFirst({
@@ -465,6 +470,21 @@ export class AdminEscortsService {
     // 只有 active 状态的陪诊员才能切换接单状态
     if (escort.status !== 'active') {
       throw new BadRequestException('只有已激活的陪诊员才能切换接单状态');
+    }
+
+    // ⚠️ 非对称权限：禁止管理员将陪诊员设置为"接单中"
+    // 原因：workStatus 反映陪诊员的实时履约能力和主观意愿
+    // 强制上线可能导致派单后无人响应，引发客诉
+    if (workStatus === 'working') {
+      throw new BadRequestException(
+        '管理员不能强制上线陪诊员，需由陪诊员在 App 端自行操作',
+      );
+    }
+
+    // ✅ 允许设置为 resting（强制下线）- 用于处理违规、投诉调查或账号异常
+    // ✅ busy 状态仅在手动指派订单时由系统自动触发
+    if (!['resting', 'busy'].includes(workStatus)) {
+      throw new BadRequestException('无效的接单状态');
     }
 
     return this.prisma.escort.update({

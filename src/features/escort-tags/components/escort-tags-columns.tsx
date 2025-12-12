@@ -4,7 +4,6 @@ import {
     Eye,
     Pencil,
     Trash2,
-    Users,
     Tag,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -19,16 +18,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { DataTableColumnHeader } from '@/components/data-table'
-
-interface EscortTag {
-    id: string
-    name: string
-    description: string
-    escortCount: number
-    color: string
-    category: string
-    createdAt: string
-}
+import type { EscortTag } from '@/lib/api'
 
 interface TagCategory {
     value: string
@@ -59,7 +49,7 @@ export function getEscortTagsColumns({
                 const tag = row.original
                 return (
                     <div className='flex items-center gap-3'>
-                        <div className={cn('flex h-8 w-8 items-center justify-center rounded-md', tag.color)}>
+                        <div className={cn('flex h-8 w-8 items-center justify-center rounded-md', tag.color || 'bg-gray-400')}>
                             <Tag className='h-4 w-4 text-white' />
                         </div>
                         <span className='font-medium'>{tag.name}</span>
@@ -91,29 +81,19 @@ export function getEscortTagsColumns({
             },
         },
         {
-            accessorKey: 'description',
+            accessorKey: 'status',
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title='描述' />
+                <DataTableColumnHeader column={column} title='状态' />
             ),
-            cell: ({ row }) => (
-                <span className='text-muted-foreground line-clamp-1'>
-                    {row.getValue('description')}
-                </span>
-            ),
-            meta: { title: '描述' },
-        },
-        {
-            accessorKey: 'escortCount',
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title='使用人数' />
-            ),
-            cell: ({ row }) => (
-                <div className='flex items-center gap-1'>
-                    <Users className='h-4 w-4 text-muted-foreground' />
-                    <span className='font-medium'>{row.getValue<number>('escortCount').toLocaleString()}</span>
-                </div>
-            ),
-            meta: { title: '使用人数' },
+            cell: ({ row }) => {
+                const status = row.getValue('status') as string
+                return (
+                    <Badge variant={status === 'active' ? 'default' : 'secondary'}>
+                        {status === 'active' ? '启用' : '停用'}
+                    </Badge>
+                )
+            },
+            meta: { title: '状态' },
         },
         {
             accessorKey: 'createdAt',

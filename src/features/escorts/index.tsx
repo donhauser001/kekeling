@@ -64,7 +64,7 @@ import {
     useUpdateEscortWorkStatus,
 } from '@/hooks/use-api'
 import type { Escort } from '@/lib/api'
-import { cn } from '@/lib/utils'
+import { cn, normalizeLevel } from '@/lib/utils'
 
 // 导入新组件
 import { getEscortsColumns } from './components/escorts-columns-new'
@@ -82,12 +82,10 @@ const levelConfig: Record<string, { label: string; color: string }> = {
     trainee: { label: '实习', color: 'bg-gray-500' },
 }
 
-// 安全获取等级配置
+// 安全获取等级配置（使用 normalizeLevel 适配器）
 const getLevelConfig = (escort: Escort) => {
-    const levelCode = typeof escort.level === 'object' && escort.level !== null
-        ? (escort.level as { code?: string })?.code
-        : escort.level
-    return levelConfig[levelCode as string] || { label: '未知', color: 'bg-gray-400' }
+    const level = normalizeLevel(escort.level)
+    return levelConfig[level.code] || { label: level.name, color: 'bg-gray-400' }
 }
 
 // 城市代码映射

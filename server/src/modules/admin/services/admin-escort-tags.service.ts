@@ -1,9 +1,18 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 
+/**
+ * 标签分类枚举
+ * - skill: 技能标签（如：急救、驾驶、护理）
+ * - feature: 特点标签（如：耐心、准时、细心）
+ * - cert: 资质标签（如：护士证、急救证）
+ * - region: 区域标签（如：朝阳区、海淀区）
+ */
+export type EscortTagCategory = 'skill' | 'feature' | 'cert' | 'region';
+
 export interface CreateEscortTagDto {
   name: string;
-  category?: 'feature' | 'skill' | 'cert';
+  category?: EscortTagCategory;
   icon?: string;
   color?: string;
   sort?: number;
@@ -11,7 +20,7 @@ export interface CreateEscortTagDto {
 
 export interface UpdateEscortTagDto {
   name?: string;
-  category?: 'feature' | 'skill' | 'cert';
+  category?: EscortTagCategory;
   icon?: string;
   color?: string;
   sort?: number;
@@ -48,9 +57,10 @@ export class AdminEscortTagsService {
     });
 
     const grouped = {
-      feature: tags.filter((t) => t.category === 'feature'),
       skill: tags.filter((t) => t.category === 'skill'),
+      feature: tags.filter((t) => t.category === 'feature'),
       cert: tags.filter((t) => t.category === 'cert'),
+      region: tags.filter((t) => t.category === 'region'),
     };
 
     return grouped;
