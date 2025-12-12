@@ -30,6 +30,7 @@ export function getReferralRecordsColumns(): ColumnDef<ReferralRecord>[] {
         const { inviter, inviterId } = row.original
         return <span>{inviter?.nickname || inviterId}</span>
       },
+      meta: { title: '邀请人' },
       enableSorting: false,
     },
     {
@@ -41,6 +42,7 @@ export function getReferralRecordsColumns(): ColumnDef<ReferralRecord>[] {
         const { invitee, inviteeId } = row.original
         return <span>{invitee?.nickname || inviteeId || '未注册'}</span>
       },
+      meta: { title: '被邀请人' },
       enableSorting: false,
     },
     {
@@ -52,6 +54,7 @@ export function getReferralRecordsColumns(): ColumnDef<ReferralRecord>[] {
         const type = row.getValue('type') as string
         return <span>{type === 'user' ? '用户邀请' : '就诊人邀请'}</span>
       },
+      meta: { title: '类型' },
       filterFn: (row, id, value) => {
         return value.includes(row.getValue(id))
       },
@@ -70,6 +73,7 @@ export function getReferralRecordsColumns(): ColumnDef<ReferralRecord>[] {
           </Badge>
         )
       },
+      meta: { title: '状态' },
       filterFn: (row, id, value) => {
         return value.includes(row.getValue(id))
       },
@@ -84,6 +88,7 @@ export function getReferralRecordsColumns(): ColumnDef<ReferralRecord>[] {
         const createdAt = row.getValue('createdAt') as string
         return <span className='text-nowrap'>{new Date(createdAt).toLocaleString()}</span>
       },
+      meta: { title: '创建时间' },
     },
   ]
 }

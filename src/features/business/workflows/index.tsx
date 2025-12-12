@@ -3,13 +3,17 @@ import {
     Plus,
     Search as SearchIcon,
     X,
-    Loader2,
-    AlertTriangle,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
+import {
+    Card,
+    CardContent,
+    CardHeader,
+} from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
@@ -247,18 +251,38 @@ export function Workflows() {
                     </div>
                 </div>
 
-                {/* 加载状态 */}
+                {/* 加载状态 - 骨架屏 */}
                 {isLoading && (
-                    <div className='flex items-center justify-center py-12'>
-                        <Loader2 className='h-8 w-8 animate-spin text-muted-foreground' />
-                    </div>
-                )}
-
-                {/* 错误状态 */}
-                {error && (
-                    <div className='flex flex-col items-center justify-center py-12'>
-                        <AlertTriangle className='h-12 w-12 text-destructive mb-4' />
-                        <p className='text-muted-foreground'>加载失败，请稍后重试</p>
+                    <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
+                        {Array.from({ length: 6 }).map((_, i) => (
+                            <Card key={i}>
+                                <CardHeader className='pb-3'>
+                                    <div className='flex items-start justify-between'>
+                                        <div className='flex items-center gap-3'>
+                                            <Skeleton className='h-10 w-10 rounded-lg' />
+                                            <div className='space-y-2'>
+                                                <Skeleton className='h-4 w-24' />
+                                                <div className='flex gap-2'>
+                                                    <Skeleton className='h-5 w-16' />
+                                                    <Skeleton className='h-5 w-12' />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <Skeleton className='h-8 w-8 rounded' />
+                                    </div>
+                                </CardHeader>
+                                <CardContent className='space-y-3'>
+                                    <Skeleton className='h-8 w-full' />
+                                    <Skeleton className='h-6 w-full' />
+                                    <div className='border-t pt-2'>
+                                        <div className='flex justify-between'>
+                                            <Skeleton className='h-4 w-20' />
+                                            <Skeleton className='h-4 w-16' />
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
                     </div>
                 )}
 

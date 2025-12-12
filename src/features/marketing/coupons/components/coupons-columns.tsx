@@ -1,6 +1,6 @@
 import { DotsHorizontalIcon } from '@radix-ui/react-icons'
 import { type ColumnDef } from '@tanstack/react-table'
-import { Pencil, Trash2 } from 'lucide-react'
+import { Eye, Pencil, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -36,11 +36,12 @@ const statusColors = new Map<string, string>([
 ])
 
 interface CouponsColumnsProps {
+  onView: (template: CouponTemplate) => void
   onEdit: (template: CouponTemplate) => void
   onDelete: (template: CouponTemplate) => void
 }
 
-export function getCouponsColumns({ onEdit, onDelete }: CouponsColumnsProps): ColumnDef<CouponTemplate>[] {
+export function getCouponsColumns({ onView, onEdit, onDelete }: CouponsColumnsProps): ColumnDef<CouponTemplate>[] {
   return [
     {
       accessorKey: 'name',
@@ -126,7 +127,7 @@ export function getCouponsColumns({ onEdit, onDelete }: CouponsColumnsProps): Co
         const template = row.original
         return (
           <DropdownMenu modal={false}>
-            <DropdownMenuTrigger asChild>
+            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
               <Button
                 variant='ghost'
                 className='data-[state=open]:bg-muted flex h-8 w-8 p-0'
@@ -136,6 +137,12 @@ export function getCouponsColumns({ onEdit, onDelete }: CouponsColumnsProps): Co
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align='end' className='w-[160px]'>
+              <DropdownMenuItem onClick={() => onView(template)}>
+                查看详情
+                <DropdownMenuShortcut>
+                  <Eye size={16} />
+                </DropdownMenuShortcut>
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onEdit(template)}>
                 编辑
                 <DropdownMenuShortcut>
@@ -145,7 +152,7 @@ export function getCouponsColumns({ onEdit, onDelete }: CouponsColumnsProps): Co
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={() => onDelete(template)}
-                className='text-red-500!'
+                className='text-destructive focus:text-destructive focus:bg-destructive/10'
               >
                 删除
                 <DropdownMenuShortcut>

@@ -7,11 +7,9 @@ import {
     Trash2,
     PackageSearch,
     Loader2,
-    AlertTriangle,
     Hospital,
     FileText,
     Heart,
-    MoreHorizontal as MoreIcon,
     Pin,
     Stethoscope,
     Truck,
@@ -21,7 +19,7 @@ import {
     Pill,
     Syringe,
     Baby,
-    Eye,
+    Eye as EyeIcon,
     Bone,
     Brain,
 } from 'lucide-react'
@@ -48,21 +46,12 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog'
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
+import { Skeleton } from '@/components/ui/skeleton'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
@@ -70,6 +59,7 @@ import { MessageButton } from '@/components/message-button'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
+import { ConfirmDialog } from '@/components/confirm-dialog'
 import { cn } from '@/lib/utils'
 import {
     useServiceCategories,
@@ -78,6 +68,7 @@ import {
     useDeleteServiceCategory,
 } from '@/hooks/use-api'
 import type { ServiceCategory } from '@/lib/api'
+import { ServiceCategoriesDetailSheet } from './components'
 
 // 图标选项 - 与小程序 Icon 组件对应
 const iconOptions = [
@@ -142,8 +133,8 @@ const defaultFormData: FormData = {
 export function ServiceCategories() {
     const [dialogOpen, setDialogOpen] = useState(false)
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-    const [editingCategory, setEditingCategory] = useState<ServiceCategory | null>(null)
-    const [deletingCategory, setDeletingCategory] = useState<ServiceCategory | null>(null)
+    const [detailSheetOpen, setDetailSheetOpen] = useState(false)
+    const [currentRow, setCurrentRow] = useState<ServiceCategory | null>(null)
     const [formData, setFormData] = useState<FormData>(defaultFormData)
 
     // API hooks
@@ -154,16 +145,25 @@ export function ServiceCategories() {
 
     const categories = data?.data || []
 
+    // 获取当前已置顶的分类数量
+    const pinnedCount = categories.filter(c => c.isPinned).length
+
     // 打开创建对话框
-    const openCreateDialog = () => {
-        setEditingCategory(null)
+    const handleCreate = () => {
+        setCurrentRow(null)
         setFormData(defaultFormData)
         setDialogOpen(true)
     }
 
+    // 查看详情
+    const handleView = (category: ServiceCategory) => {
+        setCurrentRow(category)
+        setDetailSheetOpen(true)
+    }
+
     // 打开编辑对话框
-    const openEditDialog = (category: ServiceCategory) => {
-        setEditingCategory(category)
+    const handleEdit = (category: ServiceCategory) => {
+        setCurrentRow(category)
         setFormData({
             name: category.name,
             icon: category.icon || 'stethoscope',
@@ -176,12 +176,9 @@ export function ServiceCategories() {
         setDialogOpen(true)
     }
 
-    // 获取当前已置顶的分类数量
-    const pinnedCount = categories.filter(c => c.isPinned).length
-
     // 打开删除确认
-    const openDeleteDialog = (category: ServiceCategory) => {
-        setDeletingCategory(category)
+    const handleDelete = (category: ServiceCategory) => {
+        setCurrentRow(category)
         setDeleteDialogOpen(true)
     }
 
@@ -193,15 +190,15 @@ export function ServiceCategories() {
         }
 
         // 检查置顶限制
-        if (formData.isPinned && !editingCategory?.isPinned && pinnedCount >= 2) {
+        if (formData.isPinned && !currentRow?.isPinned && pinnedCount >= 2) {
             toast.error('最多只能置顶 2 个分类')
             return
         }
 
         try {
-            if (editingCategory) {
+            if (currentRow) {
                 await updateMutation.mutateAsync({
-                    id: editingCategory.id,
+                    id: currentRow.id,
                     data: {
                         name: formData.name,
                         icon: formData.icon,
@@ -225,22 +222,24 @@ export function ServiceCategories() {
                 toast.success('创建成功')
             }
             setDialogOpen(false)
-        } catch (err: any) {
-            toast.error(err.message || '操作失败')
+        } catch (err: unknown) {
+            const error = err as Error
+            toast.error(error.message || '操作失败')
         }
     }
 
-    // 删除分类
-    const handleDelete = async () => {
-        if (!deletingCategory) return
+    // 确认删除分类
+    const handleConfirmDelete = async () => {
+        if (!currentRow) return
 
         try {
-            await deleteMutation.mutateAsync(deletingCategory.id)
+            await deleteMutation.mutateAsync(currentRow.id)
             toast.success('删除成功')
             setDeleteDialogOpen(false)
-            setDeletingCategory(null)
-        } catch (err: any) {
-            toast.error(err.message || '删除失败')
+            setCurrentRow(null)
+        } catch (err: unknown) {
+            const error = err as Error
+            toast.error(error.message || '删除失败')
         }
     }
 
@@ -254,8 +253,9 @@ export function ServiceCategories() {
                 },
             })
             toast.success('状态已更新')
-        } catch (err: any) {
-            toast.error(err.message || '更新失败')
+        } catch (err: unknown) {
+            const error = err as Error
+            toast.error(error.message || '更新失败')
         }
     }
 
@@ -279,24 +279,38 @@ export function ServiceCategories() {
                             管理服务分类，用于小程序首页金刚区展示
                         </p>
                     </div>
-                    <Button onClick={openCreateDialog}>
+                    <Button onClick={handleCreate}>
                         <Plus className='mr-2 h-4 w-4' />
                         新建分类
                     </Button>
                 </div>
 
-                {/* 加载状态 */}
+                {/* 加载状态 - 骨架屏 */}
                 {isLoading && (
-                    <div className='flex h-64 items-center justify-center'>
-                        <Loader2 className='h-8 w-8 animate-spin text-primary' />
-                    </div>
-                )}
-
-                {/* 错误状态 */}
-                {error && (
-                    <div className='flex h-64 flex-col items-center justify-center gap-2'>
-                        <AlertTriangle className='h-12 w-12 text-destructive' />
-                        <p className='text-muted-foreground'>加载失败，请刷新重试</p>
+                    <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'>
+                        {Array.from({ length: 8 }).map((_, i) => (
+                            <Card key={i}>
+                                <CardHeader className='pb-3'>
+                                    <div className='flex items-start justify-between'>
+                                        <div className='flex items-center gap-3'>
+                                            <Skeleton className='h-10 w-10 rounded-lg' />
+                                            <div className='space-y-2'>
+                                                <Skeleton className='h-4 w-24' />
+                                                <Skeleton className='h-3 w-16' />
+                                            </div>
+                                        </div>
+                                        <Skeleton className='h-8 w-8 rounded' />
+                                    </div>
+                                </CardHeader>
+                                <CardContent>
+                                    <Skeleton className='mb-3 h-8 w-full' />
+                                    <div className='flex items-center justify-between'>
+                                        <Skeleton className='h-5 w-16' />
+                                        <Skeleton className='h-4 w-12' />
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
                     </div>
                 )}
 
@@ -305,7 +319,7 @@ export function ServiceCategories() {
                     <div className='flex h-64 flex-col items-center justify-center gap-4'>
                         <Layers className='h-12 w-12 text-muted-foreground' />
                         <p className='text-muted-foreground'>暂无服务分类</p>
-                        <Button onClick={openCreateDialog}>
+                        <Button onClick={handleCreate}>
                             <Plus className='mr-2 h-4 w-4' />
                             创建第一个分类
                         </Button>
@@ -319,7 +333,7 @@ export function ServiceCategories() {
                             const IconComponent = getIconComponent(category.icon)
                             // 使用动态颜色
                             const hasGradient = category.color?.includes('gradient')
-                            const bgStyle = category.color 
+                            const bgStyle = category.color
                                 ? { background: category.color }
                                 : { backgroundColor: '#6b7280' }
 
@@ -327,10 +341,11 @@ export function ServiceCategories() {
                                 <Card
                                     key={category.id}
                                     className={cn(
-                                        'transition-all hover:shadow-md',
+                                        'cursor-pointer transition-all hover:shadow-md',
                                         category.status === 'inactive' && 'opacity-60',
                                         category.isPinned && 'ring-2 ring-primary ring-offset-2'
                                     )}
+                                    onClick={() => handleView(category)}
                                 >
                                     <CardHeader className='pb-3'>
                                         <div className='flex items-start justify-between'>
@@ -355,7 +370,7 @@ export function ServiceCategories() {
                                                 </div>
                                             </div>
                                             <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
+                                                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                                                     <Button
                                                         variant='ghost'
                                                         size='icon'
@@ -366,20 +381,26 @@ export function ServiceCategories() {
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align='end'>
                                                     <DropdownMenuItem
-                                                        onClick={() => openEditDialog(category)}
+                                                        onClick={(e) => { e.stopPropagation(); handleView(category) }}
+                                                    >
+                                                        <EyeIcon className='mr-2 h-4 w-4' />
+                                                        查看详情
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem
+                                                        onClick={(e) => { e.stopPropagation(); handleEdit(category) }}
                                                     >
                                                         <Pencil className='mr-2 h-4 w-4' />
                                                         编辑
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem
-                                                        onClick={() => handleToggleStatus(category)}
+                                                        onClick={(e) => { e.stopPropagation(); handleToggleStatus(category) }}
                                                     >
                                                         {category.status === 'active' ? '停用' : '启用'}
                                                     </DropdownMenuItem>
                                                     <DropdownMenuSeparator />
                                                     <DropdownMenuItem
-                                                        className='text-destructive'
-                                                        onClick={() => openDeleteDialog(category)}
+                                                        className='text-destructive focus:text-destructive focus:bg-destructive/10'
+                                                        onClick={(e) => { e.stopPropagation(); handleDelete(category) }}
                                                     >
                                                         <Trash2 className='mr-2 h-4 w-4' />
                                                         删除
@@ -423,10 +444,10 @@ export function ServiceCategories() {
                     <DialogHeader>
                         <DialogTitle className='flex items-center gap-2'>
                             <Layers className='h-5 w-5' />
-                            {editingCategory ? '编辑分类' : '新建分类'}
+                            {currentRow ? '编辑分类' : '新建分类'}
                         </DialogTitle>
                         <DialogDescription>
-                            {editingCategory
+                            {currentRow
                                 ? '修改服务分类的基本信息'
                                 : '创建一个新的服务分类'}
                         </DialogDescription>
@@ -500,7 +521,7 @@ export function ServiceCategories() {
                             </div>
                             {/* 当前颜色预览 */}
                             <div className='mt-2 flex items-center gap-2'>
-                                <div 
+                                <div
                                     className='h-6 w-6 rounded border'
                                     style={{ background: formData.color }}
                                 />
@@ -539,7 +560,7 @@ export function ServiceCategories() {
                                     checked={formData.isPinned}
                                     onCheckedChange={(checked) => {
                                         // 检查是否可以置顶
-                                        if (checked && !editingCategory?.isPinned && pinnedCount >= 2) {
+                                        if (checked && !currentRow?.isPinned && pinnedCount >= 2) {
                                             toast.error('最多只能置顶 2 个分类')
                                             return
                                         }
@@ -568,7 +589,7 @@ export function ServiceCategories() {
                                     }
                                 />
                             </div>
-                            {editingCategory && (
+                            {currentRow && (
                                 <div className='space-y-2'>
                                     <Label>状态</Label>
                                     <div className='flex items-center gap-2 pt-2'>
@@ -601,41 +622,41 @@ export function ServiceCategories() {
                             {(createMutation.isPending || updateMutation.isPending) && (
                                 <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                             )}
-                            {editingCategory ? '保存' : '创建'}
+                            {currentRow ? '保存' : '创建'}
                         </Button>
                     </div>
                 </DialogContent>
             </Dialog>
 
             {/* 删除确认对话框 */}
-            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>确认删除</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            确定要删除分类 "{deletingCategory?.name}" 吗？
-                            {(deletingCategory?.serviceCount || 0) > 0 && (
-                                <span className='text-destructive block mt-2'>
-                                    该分类下还有 {deletingCategory?.serviceCount} 个服务，无法删除！
-                                </span>
-                            )}
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>取消</AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={handleDelete}
-                            disabled={deleteMutation.isPending || (deletingCategory?.serviceCount || 0) > 0}
-                            className='bg-destructive hover:bg-destructive/90'
-                        >
-                            {deleteMutation.isPending && (
-                                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                            )}
-                            删除
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+            <ConfirmDialog
+                open={deleteDialogOpen}
+                onOpenChange={setDeleteDialogOpen}
+                handleConfirm={handleConfirmDelete}
+                isLoading={deleteMutation.isPending}
+                disabled={(currentRow?.serviceCount || 0) > 0}
+                title='删除分类'
+                desc={
+                    <>
+                        确定要删除分类「{currentRow?.name}」吗？
+                        {(currentRow?.serviceCount || 0) > 0 && (
+                            <span className='text-destructive mt-2 block'>
+                                该分类下还有 {currentRow?.serviceCount} 个服务，无法删除！
+                            </span>
+                        )}
+                    </>
+                }
+                confirmText='删除'
+                destructive
+            />
+
+            {/* 详情抽屉 */}
+            <ServiceCategoriesDetailSheet
+                open={detailSheetOpen}
+                onOpenChange={setDetailSheetOpen}
+                category={currentRow}
+                onEdit={handleEdit}
+            />
         </>
     )
 }

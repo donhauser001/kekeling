@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import {
   type ColumnFiltersState,
+  type PaginationState,
   type SortingState,
   type VisibilityState,
   flexRender,
@@ -13,6 +14,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import { cn } from '@/lib/utils'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   Table,
   TableBody,
@@ -21,12 +23,18 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { DataTableToolbar } from '@/components/data-table'
+import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
 import { type ReferralRule } from '@/lib/api'
 import { getReferralRulesColumns } from './referral-rules-columns'
 
 interface ReferralRulesTableProps {
   data: ReferralRule[]
+  total: number
+  page: number
+  pageSize: number
+  onPageChange: (page: number) => void
+  onPageSizeChange: (pageSize: number) => void
+  onView: (rule: ReferralRule) => void
   onEdit: (rule: ReferralRule) => void
   onDelete: (rule: ReferralRule) => void
   isLoading?: boolean
@@ -34,6 +42,12 @@ interface ReferralRulesTableProps {
 
 export function ReferralRulesTable({
   data,
+  total,
+  page,
+  pageSize,
+  onPageChange,
+  onPageSizeChange,
+  onView,
   onEdit,
   onDelete,
   isLoading,
@@ -43,22 +57,39 @@ export function ReferralRulesTable({
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [sorting, setSorting] = useState<SortingState>([])
 
-  const columns = getReferralRulesColumns({ onEdit, onDelete })
+  const columns = getReferralRulesColumns({ onView, onEdit, onDelete })
+
+  const pagination: PaginationState = {
+    pageIndex: page - 1,
+    pageSize,
+  }
 
   const table = useReactTable({
     data,
     columns,
+    pageCount: Math.ceil(total / pageSize),
     state: {
       sorting,
+      pagination,
       rowSelection,
       columnFilters,
       columnVisibility,
     },
+    manualPagination: true,
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
+    onPaginationChange: (updater) => {
+      const newPagination = typeof updater === 'function' ? updater(pagination) : updater
+      if (newPagination.pageIndex !== pagination.pageIndex) {
+        onPageChange(newPagination.pageIndex + 1)
+      }
+      if (newPagination.pageSize !== pagination.pageSize) {
+        onPageSizeChange(newPagination.pageSize)
+      }
+    },
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -68,7 +99,7 @@ export function ReferralRulesTable({
   })
 
   return (
-    <div className='flex flex-col gap-4'>
+    <div className='flex flex-1 flex-col gap-4'>
       <DataTableToolbar
         table={table}
         searchPlaceholder='搜索规则...'
@@ -119,14 +150,15 @@ export function ReferralRulesTable({
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className='h-24 text-center'
-                >
-                  加载中...
-                </TableCell>
-              </TableRow>
+              Array.from({ length: 10 }).map((_, i) => (
+                <TableRow key={i}>
+                  {columns.map((_, j) => (
+                    <TableCell key={j}>
+                      <Skeleton className='h-4 w-full' />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
             ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
@@ -163,6 +195,7 @@ export function ReferralRulesTable({
           </TableBody>
         </Table>
       </div>
+      <DataTablePagination table={table} className='mt-auto' />
     </div>
   )
 }

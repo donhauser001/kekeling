@@ -13,6 +13,7 @@ import {
 } from '@tanstack/react-table'
 import { cn } from '@/lib/utils'
 import { type NavigateFn, useTableUrlState } from '@/hooks/use-table-url-state'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   Table,
   TableBody,
@@ -31,9 +32,11 @@ type DataTableProps = {
   data: Order[]
   search: Record<string, unknown>
   navigate: NavigateFn
+  isLoading?: boolean
+  onView?: (order: Order) => void
 }
 
-export function OrdersTable({ data, search, navigate }: DataTableProps) {
+export function OrdersTable({ data, search, navigate, isLoading, onView }: DataTableProps) {
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
     serviceCategory: false, // 默认隐藏分类列，因为已经在服务列显示
@@ -130,9 +133,9 @@ export function OrdersTable({ data, search, navigate }: DataTableProps) {
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
                     </TableHead>
                   )
                 })}
@@ -140,12 +143,23 @@ export function OrdersTable({ data, search, navigate }: DataTableProps) {
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
+            {isLoading ? (
+              Array.from({ length: 10 }).map((_, i) => (
+                <TableRow key={i}>
+                  {columns.map((_, j) => (
+                    <TableCell key={j}>
+                      <Skeleton className='h-4 w-full' />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && 'selected'}
-                  className='group/row'
+                  className='group/row cursor-pointer'
+                  onClick={() => onView?.(row.original)}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell

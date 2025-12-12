@@ -15,6 +15,7 @@ import { ConfirmDialog } from '@/components/confirm-dialog'
 import { pointApi, type PointRule } from '@/lib/api'
 import { PointsTable } from './components/points-table'
 import { PointsActionDialog } from './components/points-action-dialog'
+import { PointsDetailSheet } from './components/points-detail-sheet'
 
 const topNav = [
   { title: '积分规则', url: '/marketing/points' },
@@ -29,6 +30,7 @@ export function Points() {
   // 弹窗状态
   const [actionDialogOpen, setActionDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [detailSheetOpen, setDetailSheetOpen] = useState(false)
   const [currentRow, setCurrentRow] = useState<PointRule | null>(null)
 
   const queryClient = useQueryClient()
@@ -54,6 +56,11 @@ export function Points() {
   const handleCreate = () => {
     setCurrentRow(null)
     setActionDialogOpen(true)
+  }
+
+  const handleView = (rule: PointRule) => {
+    setCurrentRow(rule)
+    setDetailSheetOpen(true)
   }
 
   const handleEdit = (rule: PointRule) => {
@@ -104,6 +111,7 @@ export function Points() {
           pageSize={pageSize}
           onPageChange={setPage}
           onPageSizeChange={setPageSize}
+          onView={handleView}
           onEdit={handleEdit}
           onDelete={handleDelete}
           isLoading={isLoading}
@@ -133,6 +141,14 @@ export function Points() {
         desc={`确定要删除规则「${currentRow?.name}」吗？此操作无法撤销。`}
         confirmText='删除'
         destructive
+      />
+
+      {/* 详情抽屉 */}
+      <PointsDetailSheet
+        open={detailSheetOpen}
+        onOpenChange={setDetailSheetOpen}
+        rule={currentRow}
+        onEdit={handleEdit}
       />
     </>
   )

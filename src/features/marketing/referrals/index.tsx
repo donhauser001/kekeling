@@ -17,6 +17,7 @@ import { referralApi, type ReferralRule } from '@/lib/api'
 import { ReferralRulesTable } from './components/referral-rules-table'
 import { ReferralRecordsTable } from './components/referral-records-table'
 import { ReferralRulesActionDialog } from './components/referral-rules-action-dialog'
+import { ReferralRulesDetailSheet } from './components/referral-rules-detail-sheet'
 
 export function Referrals() {
   const [activeTab, setActiveTab] = useState('rules')
@@ -32,6 +33,7 @@ export function Referrals() {
   // 弹窗状态
   const [actionDialogOpen, setActionDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [detailSheetOpen, setDetailSheetOpen] = useState(false)
   const [currentRow, setCurrentRow] = useState<ReferralRule | null>(null)
 
   const queryClient = useQueryClient()
@@ -64,6 +66,11 @@ export function Referrals() {
   const handleCreate = () => {
     setCurrentRow(null)
     setActionDialogOpen(true)
+  }
+
+  const handleView = (rule: ReferralRule) => {
+    setCurrentRow(rule)
+    setDetailSheetOpen(true)
   }
 
   const handleEdit = (rule: ReferralRule) => {
@@ -123,6 +130,7 @@ export function Referrals() {
               pageSize={rulesPageSize}
               onPageChange={setRulesPage}
               onPageSizeChange={setRulesPageSize}
+              onView={handleView}
               onEdit={handleEdit}
               onDelete={handleDelete}
               isLoading={rulesLoading}
@@ -166,6 +174,14 @@ export function Referrals() {
         desc={`确定要删除规则「${currentRow?.name}」吗？此操作无法撤销。`}
         confirmText='删除'
         destructive
+      />
+
+      {/* 详情抽屉 */}
+      <ReferralRulesDetailSheet
+        open={detailSheetOpen}
+        onOpenChange={setDetailSheetOpen}
+        rule={currentRow}
+        onEdit={handleEdit}
       />
     </>
   )

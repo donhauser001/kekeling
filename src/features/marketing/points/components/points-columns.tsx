@@ -1,6 +1,6 @@
 import { DotsHorizontalIcon } from '@radix-ui/react-icons'
 import { type ColumnDef } from '@tanstack/react-table'
-import { Pencil, Trash2 } from 'lucide-react'
+import { Eye, Pencil, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -22,11 +22,12 @@ const statusColors = new Map<string, string>([
 ])
 
 interface PointsColumnsProps {
+  onView: (rule: PointRule) => void
   onEdit: (rule: PointRule) => void
   onDelete: (rule: PointRule) => void
 }
 
-export function getPointsColumns({ onEdit, onDelete }: PointsColumnsProps): ColumnDef<PointRule>[] {
+export function getPointsColumns({ onView, onEdit, onDelete }: PointsColumnsProps): ColumnDef<PointRule>[] {
   return [
     {
       accessorKey: 'name',
@@ -99,7 +100,7 @@ export function getPointsColumns({ onEdit, onDelete }: PointsColumnsProps): Colu
         const rule = row.original
         return (
           <DropdownMenu modal={false}>
-            <DropdownMenuTrigger asChild>
+            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
               <Button
                 variant='ghost'
                 className='data-[state=open]:bg-muted flex h-8 w-8 p-0'
@@ -109,6 +110,12 @@ export function getPointsColumns({ onEdit, onDelete }: PointsColumnsProps): Colu
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align='end' className='w-[160px]'>
+              <DropdownMenuItem onClick={() => onView(rule)}>
+                查看详情
+                <DropdownMenuShortcut>
+                  <Eye size={16} />
+                </DropdownMenuShortcut>
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onEdit(rule)}>
                 编辑
                 <DropdownMenuShortcut>
@@ -118,7 +125,7 @@ export function getPointsColumns({ onEdit, onDelete }: PointsColumnsProps): Colu
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={() => onDelete(rule)}
-                className='text-red-500!'
+                className='text-destructive focus:text-destructive focus:bg-destructive/10'
               >
                 删除
                 <DropdownMenuShortcut>

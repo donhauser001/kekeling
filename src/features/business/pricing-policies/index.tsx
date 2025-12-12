@@ -13,6 +13,7 @@ import {
     Users,
     Percent,
     DollarSign,
+    Eye,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -41,6 +42,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
+import { Skeleton } from '@/components/ui/skeleton'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
@@ -49,6 +51,7 @@ import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { cn } from '@/lib/utils'
+import { PricingPoliciesDetailSheet } from './components'
 
 interface PricingPolicy {
     id: string
@@ -169,8 +172,11 @@ export function PricingPolicies() {
     const [policies, setPolicies] = useState<PricingPolicy[]>(initialPolicies)
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedType, setSelectedType] = useState<string | null>(null)
+    const [isLoading] = useState(false) // 模拟加载状态
 
     const [dialogOpen, setDialogOpen] = useState(false)
+    const [detailSheetOpen, setDetailSheetOpen] = useState(false)
+    const [currentRow, setCurrentRow] = useState<PricingPolicy | null>(null)
 
     const types = [...new Set(policies.map(p => p.type))]
 
@@ -180,6 +186,18 @@ export function PricingPolicies() {
         const matchesType = !selectedType || policy.type === selectedType
         return matchesSearch && matchesType
     })
+
+    // 查看详情
+    const handleView = (policy: PricingPolicy) => {
+        setCurrentRow(policy)
+        setDetailSheetOpen(true)
+    }
+
+    // 编辑
+    const handleEdit = (policy: PricingPolicy) => {
+        setCurrentRow(policy)
+        setDialogOpen(true)
+    }
 
     const handleToggleStatus = (policyId: string) => {
         setPolicies(policies.map(p =>
@@ -254,89 +272,138 @@ export function PricingPolicies() {
                     </div>
                 </div>
 
-                <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
-                    {filteredPolicies.map(policy => {
-                        const config = typeConfig[policy.type]
-                        const Icon = config?.icon || BadgePercent
-                        return (
-                            <Card key={policy.id} className={cn('group', policy.status !== 'active' && 'opacity-60')}>
+                {/* 加载状态 - 骨架屏 */}
+                {isLoading && (
+                    <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
+                        {Array.from({ length: 6 }).map((_, i) => (
+                            <Card key={i}>
                                 <CardHeader className='pb-3'>
                                     <div className='flex items-start justify-between'>
                                         <div className='flex items-center gap-3'>
-                                            <div className={cn('flex h-10 w-10 items-center justify-center rounded-lg', config?.color || 'bg-gray-500')}>
-                                                <Icon className='h-5 w-5 text-white' />
-                                            </div>
-                                            <div>
-                                                <CardTitle className='text-sm font-medium'>{policy.name}</CardTitle>
-                                                <div className='flex items-center gap-2 mt-1'>
-                                                    <Badge variant='outline' className='text-xs'>{config?.label}</Badge>
-                                                    <Badge variant={statusConfig[policy.status]?.variant} className='text-xs'>
-                                                        {statusConfig[policy.status]?.label}
-                                                    </Badge>
+                                            <Skeleton className='h-10 w-10 rounded-lg' />
+                                            <div className='space-y-2'>
+                                                <Skeleton className='h-4 w-24' />
+                                                <div className='flex gap-2'>
+                                                    <Skeleton className='h-5 w-16' />
+                                                    <Skeleton className='h-5 w-12' />
                                                 </div>
                                             </div>
                                         </div>
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant='ghost' size='icon' className='h-8 w-8 opacity-0 group-hover:opacity-100'>
-                                                    <MoreHorizontal className='h-4 w-4' />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align='end'>
-                                                <DropdownMenuItem>
-                                                    <Pencil className='mr-2 h-4 w-4' />
-                                                    编辑
-                                                </DropdownMenuItem>
-                                                {policy.status !== 'expired' && (
-                                                    <DropdownMenuItem onClick={() => handleToggleStatus(policy.id)}>
-                                                        {policy.status === 'active' ? (
-                                                            <>
-                                                                <ToggleLeft className='mr-2 h-4 w-4' />
-                                                                停用
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <ToggleRight className='mr-2 h-4 w-4' />
-                                                                启用
-                                                            </>
-                                                        )}
-                                                    </DropdownMenuItem>
-                                                )}
-                                                <DropdownMenuSeparator />
-                                                <DropdownMenuItem className='text-destructive'>
-                                                    <Trash2 className='mr-2 h-4 w-4' />
-                                                    删除
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
+                                        <Skeleton className='h-8 w-8 rounded' />
                                     </div>
                                 </CardHeader>
                                 <CardContent className='space-y-3'>
-                                    <CardDescription className='line-clamp-2 text-xs'>
-                                        {policy.description}
-                                    </CardDescription>
-
-                                    <div className='flex flex-wrap gap-1'>
-                                        {policy.conditions.map((condition, index) => (
-                                            <Badge key={index} variant='secondary' className='text-xs'>
-                                                {condition}
-                                            </Badge>
-                                        ))}
-                                    </div>
-
+                                    <Skeleton className='h-8 w-full' />
+                                    <Skeleton className='h-6 w-full' />
                                     <div className='border-t pt-2'>
-                                        <div className='text-muted-foreground flex items-center justify-between text-xs'>
-                                            <span>使用: {policy.usageCount.toLocaleString()} 次</span>
-                                            <span>{policy.startDate} ~ {policy.endDate}</span>
+                                        <div className='flex justify-between'>
+                                            <Skeleton className='h-4 w-20' />
+                                            <Skeleton className='h-4 w-32' />
                                         </div>
                                     </div>
                                 </CardContent>
                             </Card>
-                        )
-                    })}
-                </div>
+                        ))}
+                    </div>
+                )}
 
-                {filteredPolicies.length === 0 && (
+                {/* 卡片列表 */}
+                {!isLoading && (
+                    <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
+                        {filteredPolicies.map(policy => {
+                            const config = typeConfig[policy.type]
+                            const Icon = config?.icon || BadgePercent
+                            return (
+                                <Card
+                                    key={policy.id}
+                                    className={cn('group cursor-pointer', policy.status !== 'active' && 'opacity-60')}
+                                    onClick={() => handleView(policy)}
+                                >
+                                    <CardHeader className='pb-3'>
+                                        <div className='flex items-start justify-between'>
+                                            <div className='flex items-center gap-3'>
+                                                <div className={cn('flex h-10 w-10 items-center justify-center rounded-lg', config?.color || 'bg-gray-500')}>
+                                                    <Icon className='h-5 w-5 text-white' />
+                                                </div>
+                                                <div>
+                                                    <CardTitle className='text-sm font-medium'>{policy.name}</CardTitle>
+                                                    <div className='flex items-center gap-2 mt-1'>
+                                                        <Badge variant='outline' className='text-xs'>{config?.label}</Badge>
+                                                        <Badge variant={statusConfig[policy.status]?.variant} className='text-xs'>
+                                                            {statusConfig[policy.status]?.label}
+                                                        </Badge>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                                    <Button variant='ghost' size='icon' className='h-8 w-8 opacity-0 group-hover:opacity-100'>
+                                                        <MoreHorizontal className='h-4 w-4' />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align='end'>
+                                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleView(policy) }}>
+                                                        <Eye className='mr-2 h-4 w-4' />
+                                                        查看详情
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEdit(policy) }}>
+                                                        <Pencil className='mr-2 h-4 w-4' />
+                                                        编辑
+                                                    </DropdownMenuItem>
+                                                    {policy.status !== 'expired' && (
+                                                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleToggleStatus(policy.id) }}>
+                                                            {policy.status === 'active' ? (
+                                                                <>
+                                                                    <ToggleLeft className='mr-2 h-4 w-4' />
+                                                                    停用
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <ToggleRight className='mr-2 h-4 w-4' />
+                                                                    启用
+                                                                </>
+                                                            )}
+                                                        </DropdownMenuItem>
+                                                    )}
+                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuItem
+                                                        className='text-destructive focus:text-destructive focus:bg-destructive/10'
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    >
+                                                        <Trash2 className='mr-2 h-4 w-4' />
+                                                        删除
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </div>
+                                    </CardHeader>
+                                    <CardContent className='space-y-3'>
+                                        <CardDescription className='line-clamp-2 text-xs'>
+                                            {policy.description}
+                                        </CardDescription>
+
+                                        <div className='flex flex-wrap gap-1'>
+                                            {policy.conditions.map((condition, index) => (
+                                                <Badge key={index} variant='secondary' className='text-xs'>
+                                                    {condition}
+                                                </Badge>
+                                            ))}
+                                        </div>
+
+                                        <div className='border-t pt-2'>
+                                            <div className='text-muted-foreground flex items-center justify-between text-xs'>
+                                                <span>使用: {policy.usageCount.toLocaleString()} 次</span>
+                                                <span>{policy.startDate} ~ {policy.endDate}</span>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            )
+                        })}
+                    </div>
+                )}
+
+                {!isLoading && filteredPolicies.length === 0 && (
                     <div className='text-muted-foreground py-12 text-center'>
                         暂无匹配的政策
                     </div>
@@ -348,10 +415,10 @@ export function PricingPolicies() {
                     <DialogHeader>
                         <DialogTitle className='flex items-center gap-2'>
                             <BadgePercent className='h-5 w-5' />
-                            新建价格政策
+                            {currentRow ? '编辑价格政策' : '新建价格政策'}
                         </DialogTitle>
                         <DialogDescription>
-                            创建新的优惠政策
+                            {currentRow ? '修改优惠政策信息' : '创建新的优惠政策'}
                         </DialogDescription>
                     </DialogHeader>
 
@@ -407,12 +474,19 @@ export function PricingPolicies() {
                             取消
                         </Button>
                         <Button onClick={() => setDialogOpen(false)}>
-                            创建
+                            {currentRow ? '保存' : '创建'}
                         </Button>
                     </div>
                 </DialogContent>
             </Dialog>
+
+            {/* 详情抽屉 */}
+            <PricingPoliciesDetailSheet
+                open={detailSheetOpen}
+                onOpenChange={setDetailSheetOpen}
+                policy={currentRow}
+                onEdit={handleEdit}
+            />
         </>
     )
 }
-

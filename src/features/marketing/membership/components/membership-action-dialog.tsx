@@ -86,7 +86,7 @@ export function MembershipActionDialog({
         duration: currentRow.duration,
         bonusDays: currentRow.bonusDays || 0,
         description: currentRow.description || '',
-        benefits: currentRow.benefits?.join('\n') || '',
+        benefits: Array.isArray(currentRow.benefits) ? currentRow.benefits.join('\n') : '',
         status: currentRow.status || 'active',
       })
     } else if (open) {

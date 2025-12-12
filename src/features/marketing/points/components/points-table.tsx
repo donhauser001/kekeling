@@ -14,6 +14,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import { cn } from '@/lib/utils'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   Table,
   TableBody,
@@ -33,6 +34,7 @@ interface PointsTableProps {
   pageSize: number
   onPageChange: (page: number) => void
   onPageSizeChange: (pageSize: number) => void
+  onView: (rule: PointRule) => void
   onEdit: (rule: PointRule) => void
   onDelete: (rule: PointRule) => void
   isLoading?: boolean
@@ -45,6 +47,7 @@ export function PointsTable({
   pageSize,
   onPageChange,
   onPageSizeChange,
+  onView,
   onEdit,
   onDelete,
   isLoading,
@@ -54,7 +57,7 @@ export function PointsTable({
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [sorting, setSorting] = useState<SortingState>([])
 
-  const columns = getPointsColumns({ onEdit, onDelete })
+  const columns = getPointsColumns({ onView, onEdit, onDelete })
 
   const pagination: PaginationState = {
     pageIndex: page - 1,
@@ -139,14 +142,15 @@ export function PointsTable({
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className='h-24 text-center'
-                >
-                  加载中...
-                </TableCell>
-              </TableRow>
+              Array.from({ length: 10 }).map((_, i) => (
+                <TableRow key={i}>
+                  {columns.map((_, j) => (
+                    <TableCell key={j}>
+                      <Skeleton className='h-4 w-full' />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
             ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow

@@ -15,6 +15,7 @@ import { ConfirmDialog } from '@/components/confirm-dialog'
 import { campaignApi, type Campaign } from '@/lib/api'
 import { CampaignsTable } from './components/campaigns-table'
 import { CampaignsActionDialog } from './components/campaigns-action-dialog'
+import { CampaignsDetailSheet } from './components/campaigns-detail-sheet'
 
 export function Campaigns() {
   const [page, setPage] = useState(1)
@@ -23,6 +24,7 @@ export function Campaigns() {
   // 弹窗状态
   const [actionDialogOpen, setActionDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [detailSheetOpen, setDetailSheetOpen] = useState(false)
   const [currentRow, setCurrentRow] = useState<Campaign | null>(null)
 
   const queryClient = useQueryClient()
@@ -48,6 +50,11 @@ export function Campaigns() {
   const handleCreate = () => {
     setCurrentRow(null)
     setActionDialogOpen(true)
+  }
+
+  const handleView = (campaign: Campaign) => {
+    setCurrentRow(campaign)
+    setDetailSheetOpen(true)
   }
 
   const handleEdit = (campaign: Campaign) => {
@@ -98,6 +105,7 @@ export function Campaigns() {
           pageSize={pageSize}
           onPageChange={setPage}
           onPageSizeChange={setPageSize}
+          onView={handleView}
           onEdit={handleEdit}
           onDelete={handleDelete}
           isLoading={isLoading}
@@ -127,6 +135,14 @@ export function Campaigns() {
         desc={`确定要删除活动「${currentRow?.name}」吗？此操作无法撤销。`}
         confirmText='删除'
         destructive
+      />
+
+      {/* 详情抽屉 */}
+      <CampaignsDetailSheet
+        open={detailSheetOpen}
+        onOpenChange={setDetailSheetOpen}
+        campaign={currentRow}
+        onEdit={handleEdit}
       />
     </>
   )

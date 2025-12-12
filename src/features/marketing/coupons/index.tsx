@@ -15,6 +15,7 @@ import { ConfirmDialog } from '@/components/confirm-dialog'
 import { couponApi, type CouponTemplate } from '@/lib/api'
 import { CouponsTable } from './components/coupons-table'
 import { CouponsActionDialog } from './components/coupons-action-dialog'
+import { CouponsDetailSheet } from './components/coupons-detail-sheet'
 
 const topNav = [
   { title: '优惠券模板', url: '/marketing/coupons' },
@@ -29,6 +30,7 @@ export function Coupons() {
   // 弹窗状态
   const [actionDialogOpen, setActionDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [detailSheetOpen, setDetailSheetOpen] = useState(false)
   const [currentRow, setCurrentRow] = useState<CouponTemplate | null>(null)
 
   const queryClient = useQueryClient()
@@ -54,6 +56,11 @@ export function Coupons() {
   const handleCreate = () => {
     setCurrentRow(null)
     setActionDialogOpen(true)
+  }
+
+  const handleView = (template: CouponTemplate) => {
+    setCurrentRow(template)
+    setDetailSheetOpen(true)
   }
 
   const handleEdit = (template: CouponTemplate) => {
@@ -104,6 +111,7 @@ export function Coupons() {
           pageSize={pageSize}
           onPageChange={setPage}
           onPageSizeChange={setPageSize}
+          onView={handleView}
           onEdit={handleEdit}
           onDelete={handleDelete}
           isLoading={isLoading}
@@ -133,6 +141,14 @@ export function Coupons() {
         desc={`确定要删除模板「${currentRow?.name}」吗？此操作无法撤销。`}
         confirmText='删除'
         destructive
+      />
+
+      {/* 详情抽屉 */}
+      <CouponsDetailSheet
+        open={detailSheetOpen}
+        onOpenChange={setDetailSheetOpen}
+        template={currentRow}
+        onEdit={handleEdit}
       />
     </>
   )

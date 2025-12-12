@@ -28,7 +28,7 @@ export function DataTableRowActions<TData>({
   return (
     <>
       <DropdownMenu modal={false}>
-        <DropdownMenuTrigger asChild>
+        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
           <Button
             variant='ghost'
             className='data-[state=open]:bg-muted flex h-8 w-8 p-0'
@@ -38,26 +38,29 @@ export function DataTableRowActions<TData>({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align='end' className='w-[160px]'>
-          <DropdownMenuItem>
+          <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
             <Eye className='mr-2 h-4 w-4' />
             查看详情
           </DropdownMenuItem>
-          <DropdownMenuItem>
+          <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
             <Pencil className='mr-2 h-4 w-4' />
             编辑订单
           </DropdownMenuItem>
           {canAssign && (
-            <DropdownMenuItem onClick={() => setAssignDialogOpen(true)}>
+            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setAssignDialogOpen(true) }}>
               <UserPlus className='mr-2 h-4 w-4' />
               分配人员
             </DropdownMenuItem>
           )}
-          <DropdownMenuItem>
+          <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
             <Phone className='mr-2 h-4 w-4' />
             联系客户
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem className='text-destructive'>
+          <DropdownMenuItem
+            className='text-destructive focus:text-destructive focus:bg-destructive/10'
+            onClick={(e) => e.stopPropagation()}
+          >
             <Trash2 className='mr-2 h-4 w-4' />
             取消订单
           </DropdownMenuItem>

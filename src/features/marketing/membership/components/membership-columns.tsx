@@ -1,6 +1,6 @@
 import { DotsHorizontalIcon } from '@radix-ui/react-icons'
 import { type ColumnDef } from '@tanstack/react-table'
-import { Pencil, Trash2 } from 'lucide-react'
+import { Eye, Pencil, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -22,11 +22,12 @@ const statusColors = new Map<string, string>([
 ])
 
 interface MembershipColumnsProps {
+  onView: (level: MembershipLevel) => void
   onEdit: (level: MembershipLevel) => void
   onDelete: (level: MembershipLevel) => void
 }
 
-export function getMembershipColumns({ onEdit, onDelete }: MembershipColumnsProps): ColumnDef<MembershipLevel>[] {
+export function getMembershipColumns({ onView, onEdit, onDelete }: MembershipColumnsProps): ColumnDef<MembershipLevel>[] {
   return [
     {
       accessorKey: 'name',
@@ -52,18 +53,18 @@ export function getMembershipColumns({ onEdit, onDelete }: MembershipColumnsProp
     {
       accessorKey: 'discount',
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title='折扣' />
+        <DataTableColumnHeader column={column} title='折扣' className='text-right' />
       ),
-      cell: ({ row }) => <span>{row.getValue('discount')}%</span>,
-      meta: { title: '折扣' },
+      cell: ({ row }) => <div className='text-right'>{row.getValue('discount')}%</div>,
+      meta: { title: '折扣', className: 'text-right' },
     },
     {
       accessorKey: 'price',
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title='价格' />
+        <DataTableColumnHeader column={column} title='价格' className='text-right' />
       ),
-      cell: ({ row }) => <span>¥{row.getValue('price')}</span>,
-      meta: { title: '价格' },
+      cell: ({ row }) => <div className='text-right font-mono'>¥{row.getValue('price')}</div>,
+      meta: { title: '价格', className: 'text-right' },
     },
     {
       accessorKey: 'duration',
@@ -100,7 +101,7 @@ export function getMembershipColumns({ onEdit, onDelete }: MembershipColumnsProp
         const level = row.original
         return (
           <DropdownMenu modal={false}>
-            <DropdownMenuTrigger asChild>
+            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
               <Button
                 variant='ghost'
                 className='data-[state=open]:bg-muted flex h-8 w-8 p-0'
@@ -110,6 +111,12 @@ export function getMembershipColumns({ onEdit, onDelete }: MembershipColumnsProp
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align='end' className='w-[160px]'>
+              <DropdownMenuItem onClick={() => onView(level)}>
+                查看详情
+                <DropdownMenuShortcut>
+                  <Eye size={16} />
+                </DropdownMenuShortcut>
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onEdit(level)}>
                 编辑
                 <DropdownMenuShortcut>
@@ -119,7 +126,7 @@ export function getMembershipColumns({ onEdit, onDelete }: MembershipColumnsProp
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={() => onDelete(level)}
-                className='text-red-500!'
+                className='text-destructive focus:text-destructive focus:bg-destructive/10'
               >
                 删除
                 <DropdownMenuShortcut>

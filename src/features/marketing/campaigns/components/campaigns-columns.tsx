@@ -1,6 +1,6 @@
 import { DotsHorizontalIcon } from '@radix-ui/react-icons'
 import { type ColumnDef } from '@tanstack/react-table'
-import { Pencil, Trash2 } from 'lucide-react'
+import { Eye, Pencil, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -39,11 +39,12 @@ const campaignStatusLabels: Record<string, string> = {
 }
 
 interface CampaignsColumnsProps {
+  onView: (campaign: Campaign) => void
   onEdit: (campaign: Campaign) => void
   onDelete: (campaign: Campaign) => void
 }
 
-export function getCampaignsColumns({ onEdit, onDelete }: CampaignsColumnsProps): ColumnDef<Campaign>[] {
+export function getCampaignsColumns({ onView, onEdit, onDelete }: CampaignsColumnsProps): ColumnDef<Campaign>[] {
   return [
     {
       accessorKey: 'name',
@@ -141,7 +142,7 @@ export function getCampaignsColumns({ onEdit, onDelete }: CampaignsColumnsProps)
         const campaign = row.original
         return (
           <DropdownMenu modal={false}>
-            <DropdownMenuTrigger asChild>
+            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
               <Button
                 variant='ghost'
                 className='data-[state=open]:bg-muted flex h-8 w-8 p-0'
@@ -151,6 +152,12 @@ export function getCampaignsColumns({ onEdit, onDelete }: CampaignsColumnsProps)
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align='end' className='w-[160px]'>
+              <DropdownMenuItem onClick={() => onView(campaign)}>
+                查看详情
+                <DropdownMenuShortcut>
+                  <Eye size={16} />
+                </DropdownMenuShortcut>
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onEdit(campaign)}>
                 编辑
                 <DropdownMenuShortcut>
@@ -160,7 +167,7 @@ export function getCampaignsColumns({ onEdit, onDelete }: CampaignsColumnsProps)
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={() => onDelete(campaign)}
-                className='text-red-500!'
+                className='text-destructive focus:text-destructive focus:bg-destructive/10'
               >
                 删除
                 <DropdownMenuShortcut>

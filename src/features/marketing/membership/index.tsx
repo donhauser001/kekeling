@@ -15,6 +15,7 @@ import { ConfirmDialog } from '@/components/confirm-dialog'
 import { membershipApi, type MembershipLevel } from '@/lib/api'
 import { MembershipTable } from './components/membership-table'
 import { MembershipActionDialog } from './components/membership-action-dialog'
+import { MembershipDetailSheet } from './components/membership-detail-sheet'
 
 const topNav = [
   { title: '会员等级', url: '/marketing/membership' },
@@ -29,6 +30,7 @@ export function Membership() {
   // 弹窗状态
   const [actionDialogOpen, setActionDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [detailSheetOpen, setDetailSheetOpen] = useState(false)
   const [currentRow, setCurrentRow] = useState<MembershipLevel | null>(null)
 
   const queryClient = useQueryClient()
@@ -54,6 +56,11 @@ export function Membership() {
   const handleCreate = () => {
     setCurrentRow(null)
     setActionDialogOpen(true)
+  }
+
+  const handleView = (level: MembershipLevel) => {
+    setCurrentRow(level)
+    setDetailSheetOpen(true)
   }
 
   const handleEdit = (level: MembershipLevel) => {
@@ -104,6 +111,7 @@ export function Membership() {
           pageSize={pageSize}
           onPageChange={setPage}
           onPageSizeChange={setPageSize}
+          onView={handleView}
           onEdit={handleEdit}
           onDelete={handleDelete}
           isLoading={isLoading}
@@ -133,6 +141,14 @@ export function Membership() {
         desc={`确定要删除等级「${currentRow?.name}」吗？此操作无法撤销。`}
         confirmText='删除'
         destructive
+      />
+
+      {/* 详情抽屉 */}
+      <MembershipDetailSheet
+        open={detailSheetOpen}
+        onOpenChange={setDetailSheetOpen}
+        level={currentRow}
+        onEdit={handleEdit}
       />
     </>
   )

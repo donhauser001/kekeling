@@ -45,7 +45,10 @@ export function WorkflowCard({
     onDelete,
 }: WorkflowCardProps) {
     return (
-        <Card className={cn('group', workflow.status === 'inactive' && 'opacity-60')}>
+        <Card
+            className={cn('group cursor-pointer', workflow.status === 'inactive' && 'opacity-60')}
+            onClick={() => onView(workflow)}
+        >
             <CardHeader className='pb-3'>
                 <div className='flex items-start justify-between'>
                     <div className='flex items-center gap-3'>
@@ -63,21 +66,21 @@ export function WorkflowCard({
                         </div>
                     </div>
                     <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
+                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                             <Button variant='ghost' size='icon' className='h-8 w-8 opacity-0 group-hover:opacity-100'>
                                 <MoreHorizontal className='h-4 w-4' />
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align='end'>
-                            <DropdownMenuItem onClick={() => onView(workflow)}>
+                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onView(workflow) }}>
                                 <Eye className='mr-2 h-4 w-4' />
-                                查看
+                                查看详情
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => onEdit(workflow)}>
+                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(workflow) }}>
                                 <Pencil className='mr-2 h-4 w-4' />
                                 编辑
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => onToggleStatus(workflow)}>
+                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onToggleStatus(workflow) }}>
                                 {workflow.status === 'active' ? (
                                     <>
                                         <Pause className='mr-2 h-4 w-4' />
@@ -91,7 +94,10 @@ export function WorkflowCard({
                                 )}
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem className='text-destructive' onClick={() => onDelete(workflow)}>
+                            <DropdownMenuItem
+                                className='text-destructive focus:text-destructive focus:bg-destructive/10'
+                                onClick={(e) => { e.stopPropagation(); onDelete(workflow) }}
+                            >
                                 <Trash2 className='mr-2 h-4 w-4' />
                                 删除
                             </DropdownMenuItem>

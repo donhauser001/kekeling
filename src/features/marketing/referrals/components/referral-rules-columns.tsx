@@ -1,6 +1,6 @@
 import { DotsHorizontalIcon } from '@radix-ui/react-icons'
 import { type ColumnDef } from '@tanstack/react-table'
-import { Pencil, Trash2 } from 'lucide-react'
+import { Eye, Pencil, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -22,11 +22,12 @@ const statusColors = new Map<string, string>([
 ])
 
 interface ReferralRulesColumnsProps {
+  onView: (rule: ReferralRule) => void
   onEdit: (rule: ReferralRule) => void
   onDelete: (rule: ReferralRule) => void
 }
 
-export function getReferralRulesColumns({ onEdit, onDelete }: ReferralRulesColumnsProps): ColumnDef<ReferralRule>[] {
+export function getReferralRulesColumns({ onView, onEdit, onDelete }: ReferralRulesColumnsProps): ColumnDef<ReferralRule>[] {
   return [
     {
       accessorKey: 'name',
@@ -120,7 +121,7 @@ export function getReferralRulesColumns({ onEdit, onDelete }: ReferralRulesColum
         const rule = row.original
         return (
           <DropdownMenu modal={false}>
-            <DropdownMenuTrigger asChild>
+            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
               <Button
                 variant='ghost'
                 className='data-[state=open]:bg-muted flex h-8 w-8 p-0'
@@ -130,6 +131,12 @@ export function getReferralRulesColumns({ onEdit, onDelete }: ReferralRulesColum
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align='end' className='w-[160px]'>
+              <DropdownMenuItem onClick={() => onView(rule)}>
+                查看详情
+                <DropdownMenuShortcut>
+                  <Eye size={16} />
+                </DropdownMenuShortcut>
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onEdit(rule)}>
                 编辑
                 <DropdownMenuShortcut>
@@ -139,7 +146,7 @@ export function getReferralRulesColumns({ onEdit, onDelete }: ReferralRulesColum
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={() => onDelete(rule)}
-                className='text-red-500!'
+                className='text-destructive focus:text-destructive focus:bg-destructive/10'
               >
                 删除
                 <DropdownMenuShortcut>
