@@ -87,7 +87,7 @@ export function Services() {
     // 状态
     const [viewMode, setViewMode] = useState<ViewMode>(initialViewMode)
     const [page, setPage] = useState(1)
-    const [pageSize, setPageSize] = useState(12)
+    const [pageSize, setPageSize] = useState(10)
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
     const [globalFilter, setGlobalFilter] = useState('')
 
@@ -231,6 +231,7 @@ export function Services() {
             pagination: { pageIndex: page - 1, pageSize },
         },
         pageCount: Math.ceil(total / pageSize),
+        rowCount: total,
         onColumnFiltersChange: setColumnFilters,
         onGlobalFilterChange: setGlobalFilter,
         onPaginationChange: (updater) => {
@@ -438,7 +439,7 @@ export function Services() {
                         table={table}
                         searchPlaceholder='搜索服务名称...'
                         showViewOptions={false}
-                        filters={[
+                        filters={viewMode === 'list' ? [
                             {
                                 columnId: 'categoryId',
                                 title: '分类',
@@ -449,21 +450,19 @@ export function Services() {
                                 title: '状态',
                                 options: statusOptions,
                             },
-                        ]}
+                        ] : []}
                     />
-                    <div className='ms-auto flex items-center gap-2'>
-                        <DataTableViewOptions table={table} />
-                        <Tabs value={viewMode} onValueChange={v => setViewMode(v as ViewMode)}>
-                            <TabsList className='h-9'>
-                                <TabsTrigger value='grid' className='px-2.5' aria-label='网格视图'>
-                                    <LayoutGrid className='h-4 w-4' />
-                                </TabsTrigger>
-                                <TabsTrigger value='list' className='px-2.5' aria-label='列表视图'>
-                                    <List className='h-4 w-4' />
-                                </TabsTrigger>
-                            </TabsList>
-                        </Tabs>
-                    </div>
+                    {viewMode === 'list' && <DataTableViewOptions table={table} />}
+                    <Tabs value={viewMode} onValueChange={v => setViewMode(v as ViewMode)} className={viewMode === 'grid' ? 'ml-auto' : ''}>
+                        <TabsList className='h-9'>
+                            <TabsTrigger value='grid' className='px-2.5' aria-label='网格视图'>
+                                <LayoutGrid className='h-4 w-4' />
+                            </TabsTrigger>
+                            <TabsTrigger value='list' className='px-2.5' aria-label='列表视图'>
+                                <List className='h-4 w-4' />
+                            </TabsTrigger>
+                        </TabsList>
+                    </Tabs>
                 </div>
 
                 {/* 加载状态 - 骨架屏 */}

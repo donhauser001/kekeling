@@ -1,25 +1,26 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
+import { useSearch, useNavigate } from '@tanstack/react-router'
+import {
+    useReactTable,
+    getCoreRowModel,
+    type ColumnFiltersState,
+} from '@tanstack/react-table'
 import {
     Hospital,
     Plus,
     MoreHorizontal,
     Pencil,
     Trash2,
-    Search as SearchIcon,
-    X,
     MapPin,
     Building2,
     Loader2,
     Stethoscope,
-    Check,
+    LayoutGrid,
+    List,
+    Eye,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
     useHospitals,
@@ -35,6 +36,7 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuSeparator,
+    DropdownMenuShortcut,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import {
@@ -47,18 +49,28 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { ConfirmDialog } from '@/components/confirm-dialog'
 import { ConfigDrawer } from '@/components/config-drawer'
+import {
+    DataTablePagination,
+    DataTableToolbar,
+    DataTableViewOptions,
+} from '@/components/data-table'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { MessageButton } from '@/components/message-button'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
-import { SimplePagination } from '@/components/simple-pagination'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { cn } from '@/lib/utils'
+
+// 导入组件
+import { getHospitalsColumns } from './components/hospitals-columns'
+import { HospitalsTable } from './components/hospitals-table'
+import { HospitalsDetailSheet } from './components/hospitals-detail-sheet'
 
 // 等级颜色映射
 const levelColors: Record<string, string> = {
@@ -137,40 +149,59 @@ const categoryColors: Record<string, string> = {
 }
 
 export function Hospitals() {
-    const [searchQuery, setSearchQuery] = useState('')
-    const [selectedLevel, setSelectedLevel] = useState<string | null>(null)
+    const navigate = useNavigate()
+    const search = useSearch({ strict: false }) as Record<string, unknown>
+
+    // 视图模式
+    const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+
+    // 分页状态
     const [page, setPage] = useState(1)
-    const [pageSize, setPageSize] = useState(12)
+    const [pageSize, setPageSize] = useState(10)
+
+    // 筛选状态
+    const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+    const [globalFilter, setGlobalFilter] = useState('')
+
+    // 从 URL 同步视图模式
+    useEffect(() => {
+        const view = search.view as string | undefined
+        if (view === 'list' || view === 'grid') {
+            setViewMode(view)
+        }
+    }, [search.view])
+
+    // 切换视图时更新 URL
+    const handleViewModeChange = (mode: string) => {
+        setViewMode(mode as 'grid' | 'list')
+        navigate({
+            search: (prev: Record<string, unknown>) => ({ ...prev, view: mode }),
+            replace: true,
+        })
+    }
+
+    // 从筛选状态提取搜索关键词和级别
+    const keyword = useMemo(() => {
+        const filter = columnFilters.find((f) => f.id === 'name')
+        return (filter?.value as string) || globalFilter || ''
+    }, [columnFilters, globalFilter])
+
+    const selectedLevel = useMemo(() => {
+        const filter = columnFilters.find((f) => f.id === 'level')
+        const values = filter?.value as string[] | undefined
+        return values?.[0] || undefined
+    }, [columnFilters])
 
     // 从后端获取医院数据
-    const { data: hospitalsData, isLoading, error, refetch } = useHospitals({
-        keyword: searchQuery || undefined,
-        level: selectedLevel || undefined,
+    const { data: hospitalsData, isLoading, error } = useHospitals({
+        keyword: keyword || undefined,
+        level: selectedLevel,
         page,
         pageSize,
     })
 
     const hospitals = hospitalsData?.data ?? []
     const total = hospitalsData?.total ?? 0
-    const totalPages = Math.ceil(total / pageSize)
-
-    // 翻页时重置到第一页
-    const handlePageSizeChange = (newPageSize: number) => {
-        setPageSize(newPageSize)
-        setPage(1)
-    }
-
-    // 搜索时重置到第一页
-    const handleSearchChange = (query: string) => {
-        setSearchQuery(query)
-        setPage(1)
-    }
-
-    // 筛选时重置到第一页
-    const handleLevelChange = (level: string | null) => {
-        setSelectedLevel(level)
-        setPage(1)
-    }
 
     // 获取科室库数据
     const { data: departmentTemplates } = useDepartmentTemplates()
@@ -181,6 +212,14 @@ export function Hospitals() {
     const [editingHospitalId, setEditingHospitalId] = useState<string | null>(null)
     const [formData, setFormData] = useState<HospitalFormData>(defaultFormData)
     const [formErrors, setFormErrors] = useState<Record<string, string>>({})
+
+    // 详情抽屉状态
+    const [detailOpen, setDetailOpen] = useState(false)
+    const [selectedHospital, setSelectedHospital] = useState<HospitalType | null>(null)
+
+    // 删除确认对话框
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+    const [deletingHospital, setDeletingHospital] = useState<HospitalType | null>(null)
 
     // 获取编辑中的医院详情
     const { data: editingHospital } = useHospital(editingHospitalId || '')
@@ -208,7 +247,6 @@ export function Hospitals() {
         }
     }, [editingHospital, dialogMode])
 
-
     // 打开新建对话框
     const openCreateDialog = () => {
         setDialogMode('create')
@@ -224,6 +262,30 @@ export function Hospitals() {
         setEditingHospitalId(hospital.id)
         setFormErrors({})
         setDialogOpen(true)
+    }
+
+    // 查看详情
+    const handleView = (hospital: HospitalType) => {
+        setSelectedHospital(hospital)
+        setDetailOpen(true)
+    }
+
+    // 打开删除确认
+    const handleDeleteConfirm = (hospital: HospitalType) => {
+        setDeletingHospital(hospital)
+        setDeleteDialogOpen(true)
+    }
+
+    // 执行删除
+    const handleDelete = async () => {
+        if (!deletingHospital) return
+        try {
+            await deleteMutation.mutateAsync(deletingHospital.id)
+            setDeleteDialogOpen(false)
+            setDeletingHospital(null)
+        } catch (err) {
+            console.error('删除失败:', err)
+        }
     }
 
     // 表单验证
@@ -259,16 +321,6 @@ export function Hospitals() {
         }
     }
 
-    // 删除医院
-    const handleDelete = async (hospitalId: string) => {
-        if (!confirm('确定要删除此医院吗？')) return
-        try {
-            await deleteMutation.mutateAsync(hospitalId)
-        } catch (err) {
-            console.error('删除失败:', err)
-        }
-    }
-
     // 从地址提取城市
     const getCityFromAddress = (address: string) => {
         const cities = ['北京', '上海', '广州', '深圳', '成都', '杭州', '南京', '武汉', '西安', '重庆', '天津']
@@ -289,24 +341,198 @@ export function Hospitals() {
     }
 
     // 获取所有二级科室（用于选择）
-    const allDepartments: DepartmentTemplate[] = []
-    ;(departmentTemplates || []).forEach(parent => {
-        if (parent.children && parent.children.length > 0) {
-            parent.children.forEach(child => {
-                allDepartments.push({
-                    ...child,
-                    category: parent.category,
-                })
+    const allDepartments: DepartmentTemplate[] = useMemo(() => {
+        const result: DepartmentTemplate[] = []
+            ; (departmentTemplates || []).forEach(parent => {
+                if (parent.children && parent.children.length > 0) {
+                    parent.children.forEach(child => {
+                        result.push({
+                            ...child,
+                            category: parent.category,
+                        })
+                    })
+                }
             })
-        }
-    })
+        return result
+    }, [departmentTemplates])
 
     // 按分类分组科室
-    const groupedDepartments = ['内科', '外科', '妇儿', '五官', '医技', '其他'].map(category => ({
-        category,
-        color: categoryColors[category],
-        departments: allDepartments.filter(d => d.category === category),
-    })).filter(g => g.departments.length > 0)
+    const groupedDepartments = useMemo(() => {
+        return ['内科', '外科', '妇儿', '五官', '医技', '其他'].map(category => ({
+            category,
+            color: categoryColors[category],
+            departments: allDepartments.filter(d => d.category === category),
+        })).filter(g => g.departments.length > 0)
+    }, [allDepartments])
+
+    // 列定义
+    const columns = useMemo(
+        () =>
+            getHospitalsColumns({
+                onView: handleView,
+                onEdit: openEditDialog,
+                onDelete: handleDeleteConfirm,
+            }),
+        []
+    )
+
+    // useReactTable 配置
+    const table = useReactTable({
+        data: hospitals,
+        columns,
+        pageCount: Math.ceil(total / pageSize),
+        rowCount: total,
+        state: {
+            pagination: { pageIndex: page - 1, pageSize },
+            columnFilters,
+            globalFilter,
+        },
+        onPaginationChange: (updater) => {
+            const newState = typeof updater === 'function'
+                ? updater({ pageIndex: page - 1, pageSize })
+                : updater
+            setPage(newState.pageIndex + 1)
+            setPageSize(newState.pageSize)
+        },
+        onColumnFiltersChange: setColumnFilters,
+        onGlobalFilterChange: setGlobalFilter,
+        getCoreRowModel: getCoreRowModel(),
+        manualPagination: true,
+        manualFiltering: true,
+    })
+
+    // 渲染卡片骨架
+    const renderGridSkeleton = () => (
+        <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
+            {Array.from({ length: 6 }).map((_, i) => (
+                <Card key={i}>
+                    <CardHeader className='pb-3'>
+                        <div className='flex items-center gap-3'>
+                            <Skeleton className='h-12 w-12 rounded-lg' />
+                            <div className='space-y-2'>
+                                <Skeleton className='h-4 w-32' />
+                                <Skeleton className='h-3 w-20' />
+                            </div>
+                        </div>
+                    </CardHeader>
+                    <CardContent className='space-y-3'>
+                        <Skeleton className='h-4 w-full' />
+                        <Skeleton className='h-4 w-24' />
+                    </CardContent>
+                </Card>
+            ))}
+        </div>
+    )
+
+    // 渲染卡片视图
+    const renderGridView = () => (
+        <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
+            {hospitals.map(hospital => {
+                const city = getCityFromAddress(hospital.address)
+                const deptCount = hospital.departments?.length || 0
+                return (
+                    <Card
+                        key={hospital.id}
+                        className='group hover:shadow-md transition-shadow cursor-pointer'
+                        onClick={() => handleView(hospital)}
+                    >
+                        <CardHeader className='pb-3'>
+                            <div className='flex items-start justify-between'>
+                                <div className='flex items-center gap-3'>
+                                    <div className={cn('flex h-12 w-12 items-center justify-center rounded-lg', levelColors[hospital.level] || 'bg-gray-500')}>
+                                        <Building2 className='h-6 w-6 text-white' />
+                                    </div>
+                                    <div className='flex-1 min-w-0'>
+                                        <CardTitle className='flex items-center gap-2 text-base'>
+                                            <span className='truncate'>{hospital.name}</span>
+                                        </CardTitle>
+                                        {hospital.shortName && (
+                                            <p className='text-muted-foreground text-xs'>简称：{hospital.shortName}</p>
+                                        )}
+                                        <div className='mt-1 flex flex-wrap items-center gap-1'>
+                                            <Badge variant='outline' className='text-xs'>
+                                                {levelLabels[hospital.level] || hospital.level}
+                                            </Badge>
+                                            <Badge variant='secondary' className='text-xs'>
+                                                {typeLabels[hospital.type] || hospital.type}
+                                            </Badge>
+                                        </div>
+                                    </div>
+                                </div>
+                                <DropdownMenu modal={false}>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button
+                                            variant='ghost'
+                                            size='icon'
+                                            className='h-8 w-8 opacity-0 group-hover:opacity-100'
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            <MoreHorizontal className='h-4 w-4' />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align='end' className='w-[160px]'>
+                                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleView(hospital) }}>
+                                            查看详情
+                                            <DropdownMenuShortcut>
+                                                <Eye className='h-4 w-4' />
+                                            </DropdownMenuShortcut>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openEditDialog(hospital) }}>
+                                            编辑
+                                            <DropdownMenuShortcut>
+                                                <Pencil className='h-4 w-4' />
+                                            </DropdownMenuShortcut>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem
+                                            className='text-destructive focus:text-destructive focus:bg-destructive/10'
+                                            onClick={(e) => { e.stopPropagation(); handleDeleteConfirm(hospital) }}
+                                        >
+                                            删除
+                                            <DropdownMenuShortcut>
+                                                <Trash2 className='h-4 w-4' />
+                                            </DropdownMenuShortcut>
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
+                        </CardHeader>
+                        <CardContent className='space-y-3'>
+                            {hospital.levelDetail && (
+                                <p className='text-primary text-xs font-medium'>
+                                    {hospital.levelDetail}
+                                </p>
+                            )}
+                            {hospital.specialties && hospital.specialties.length > 0 && (
+                                <div className='flex flex-wrap gap-1'>
+                                    {hospital.specialties.slice(0, 4).map(s => (
+                                        <Badge key={s} variant='outline' className='text-xs'>
+                                            {s}
+                                        </Badge>
+                                    ))}
+                                    {hospital.specialties.length > 4 && (
+                                        <Badge variant='outline' className='text-xs'>
+                                            +{hospital.specialties.length - 4}
+                                        </Badge>
+                                    )}
+                                </div>
+                            )}
+                            <div className='text-muted-foreground flex items-center gap-2 text-sm'>
+                                <MapPin className='h-4 w-4 shrink-0' />
+                                <span className='line-clamp-1'>{city} · {hospital.address}</span>
+                            </div>
+                            {deptCount > 0 && (
+                                <div className='text-muted-foreground flex items-center gap-2 text-sm'>
+                                    <Stethoscope className='h-4 w-4' />
+                                    <span>已关联 {deptCount} 个科室</span>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                )
+            })}
+        </div>
+    )
 
     return (
         <>
@@ -320,8 +546,9 @@ export function Hospitals() {
                 </div>
             </Header>
 
-            <Main>
-                <div className='mb-6 flex items-center justify-between'>
+            <Main className='flex flex-1 flex-col gap-4 sm:gap-6'>
+                {/* 标题区域 */}
+                <div className='flex items-center justify-between'>
                     <div>
                         <h1 className='text-2xl font-bold tracking-tight'>医院库</h1>
                         <p className='text-muted-foreground'>管理合作医院信息</p>
@@ -332,193 +559,84 @@ export function Hospitals() {
                     </Button>
                 </div>
 
-                {/* 搜索和筛选 */}
-                <div className='mb-6 flex flex-wrap items-center gap-4'>
-                    <div className='relative flex-1 min-w-[200px] max-w-md'>
-                        <SearchIcon className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
-                        <Input
-                            placeholder='搜索医院名称、简称或专科...'
-                            value={searchQuery}
-                            onChange={(e) => handleSearchChange(e.target.value)}
-                            className='pl-9'
-                        />
-                        {searchQuery && (
-                            <button
-                                className='text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2'
-                                onClick={() => handleSearchChange('')}
-                            >
-                                <X className='h-4 w-4' />
-                            </button>
-                        )}
-                    </div>
+                {/* 工具栏区域 */}
+                <div className='flex flex-wrap items-center gap-4'>
+                    <DataTableToolbar
+                        table={table}
+                        searchPlaceholder='搜索医院名称...'
+                        searchKey='name'
+                        filters={viewMode === 'list' ? [
+                            {
+                                columnId: 'level',
+                                title: '级别',
+                                options: levelOptions.map((l) => ({ label: l.label, value: l.value })),
+                            },
+                            {
+                                columnId: 'type',
+                                title: '类型',
+                                options: typeOptions.map((t) => ({ label: t.label, value: t.value })),
+                            },
+                        ] : []}
+                        showViewOptions={false}
+                    />
 
-                    <div className='flex flex-wrap gap-2'>
-                        <Badge
-                            variant={selectedLevel === null ? 'default' : 'outline'}
-                            className='cursor-pointer'
-                            onClick={() => handleLevelChange(null)}
-                        >
-                            全部级别
-                        </Badge>
-                        {levelOptions.map(level => (
-                            <Badge
-                                key={level.value}
-                                variant={selectedLevel === level.value ? 'default' : 'outline'}
-                                className='cursor-pointer gap-1.5'
-                                onClick={() => handleLevelChange(level.value)}
-                            >
-                                <span className={cn('h-2 w-2 rounded-full', levelColors[level.value])} />
-                                {level.label}
-                            </Badge>
-                        ))}
-                    </div>
+                    {viewMode === 'list' && <DataTableViewOptions table={table} />}
 
-                    <div className='text-muted-foreground text-sm'>
-                        共 {total} 家医院
-                    </div>
+                    {/* 视图切换 */}
+                    <Tabs value={viewMode} onValueChange={handleViewModeChange} className={viewMode === 'grid' ? 'ml-auto' : ''}>
+                        <TabsList className='h-9'>
+                            <TabsTrigger value='grid' className='px-3'>
+                                <LayoutGrid className='h-4 w-4' />
+                            </TabsTrigger>
+                            <TabsTrigger value='list' className='px-3'>
+                                <List className='h-4 w-4' />
+                            </TabsTrigger>
+                        </TabsList>
+                    </Tabs>
                 </div>
 
-                {/* 加载状态 */}
-                {isLoading && (
-                    <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
-                        {[...Array(6)].map((_, i) => (
-                            <Card key={i}>
-                                <CardHeader className='pb-3'>
-                                    <div className='flex items-center gap-3'>
-                                        <Skeleton className='h-12 w-12 rounded-lg' />
-                                        <div className='space-y-2'>
-                                            <Skeleton className='h-4 w-32' />
-                                            <Skeleton className='h-3 w-20' />
-                                        </div>
-                                    </div>
-                                </CardHeader>
-                                <CardContent className='space-y-3'>
-                                    <Skeleton className='h-4 w-full' />
-                                    <Skeleton className='h-4 w-24' />
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </div>
-                )}
-
-                {/* 错误状态 */}
-                {error && (
+                {/* 内容区域 */}
+                {isLoading ? (
+                    viewMode === 'grid' ? renderGridSkeleton() : <HospitalsTable table={table} isLoading />
+                ) : error ? (
                     <div className='text-destructive py-12 text-center'>
                         加载失败: {error.message}
                     </div>
-                )}
-
-                {/* 医院列表 */}
-                {!isLoading && !error && (
-                    <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
-                        {hospitals.map(hospital => {
-                            const city = getCityFromAddress(hospital.address)
-                            const deptCount = hospital.departments?.length || 0
-                            return (
-                                <Card key={hospital.id} className='group'>
-                                    <CardHeader className='pb-3'>
-                                        <div className='flex items-start justify-between'>
-                                            <div className='flex items-center gap-3'>
-                                                <div className={cn('flex h-12 w-12 items-center justify-center rounded-lg', levelColors[hospital.level] || 'bg-gray-500')}>
-                                                    <Building2 className='h-6 w-6 text-white' />
-                                                </div>
-                                                <div className='flex-1 min-w-0'>
-                                                    <CardTitle className='flex items-center gap-2 text-base'>
-                                                        <span className='truncate'>{hospital.name}</span>
-                                                    </CardTitle>
-                                                    {hospital.shortName && (
-                                                        <p className='text-muted-foreground text-xs'>简称：{hospital.shortName}</p>
-                                                    )}
-                                                    <div className='mt-1 flex flex-wrap items-center gap-1'>
-                                                        <Badge variant='outline' className='text-xs'>
-                                                            {levelLabels[hospital.level] || hospital.level}
-                                                        </Badge>
-                                                        <Badge variant='secondary' className='text-xs'>
-                                                            {typeLabels[hospital.type] || hospital.type}
-                                                        </Badge>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant='ghost' size='icon' className='h-8 w-8 opacity-0 group-hover:opacity-100'>
-                                                        <MoreHorizontal className='h-4 w-4' />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align='end'>
-                                                    <DropdownMenuItem onClick={() => openEditDialog(hospital)}>
-                                                        <Pencil className='mr-2 h-4 w-4' />
-                                                        编辑
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuSeparator />
-                                                    <DropdownMenuItem
-                                                        className='text-destructive'
-                                                        onClick={() => handleDelete(hospital.id)}
-                                                    >
-                                                        <Trash2 className='mr-2 h-4 w-4' />
-                                                        删除
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </div>
-                                    </CardHeader>
-                                    <CardContent className='space-y-3'>
-                                        {hospital.levelDetail && (
-                                            <p className='text-primary text-xs font-medium'>
-                                                {hospital.levelDetail}
-                                            </p>
-                                        )}
-                                        {hospital.specialties && hospital.specialties.length > 0 && (
-                                            <div className='flex flex-wrap gap-1'>
-                                                {hospital.specialties.slice(0, 4).map(s => (
-                                                    <Badge key={s} variant='outline' className='text-xs'>
-                                                        {s}
-                                                    </Badge>
-                                                ))}
-                                                {hospital.specialties.length > 4 && (
-                                                    <Badge variant='outline' className='text-xs'>
-                                                        +{hospital.specialties.length - 4}
-                                                    </Badge>
-                                                )}
-                                            </div>
-                                        )}
-                                        <div className='text-muted-foreground flex items-center gap-2 text-sm'>
-                                            <MapPin className='h-4 w-4 shrink-0' />
-                                            <span className='line-clamp-1'>{city} · {hospital.address}</span>
-                                        </div>
-                                        {deptCount > 0 && (
-                                            <div className='text-muted-foreground flex items-center gap-2 text-sm'>
-                                                <Stethoscope className='h-4 w-4' />
-                                                <span>已关联 {deptCount} 个科室</span>
-                                            </div>
-                                        )}
-                                    </CardContent>
-                                </Card>
-                            )
-                        })}
-                    </div>
-                )}
-
-                {!isLoading && !error && hospitals.length === 0 && (
+                ) : hospitals.length === 0 ? (
                     <div className='text-muted-foreground py-12 text-center'>
                         暂无匹配的医院
                     </div>
+                ) : viewMode === 'grid' ? (
+                    renderGridView()
+                ) : (
+                    <HospitalsTable table={table} onRowClick={handleView} />
                 )}
 
-                {/* 分页 */}
-                {!isLoading && !error && total > 0 && (
-                    <SimplePagination
-                        currentPage={page}
-                        totalPages={totalPages}
-                        pageSize={pageSize}
-                        totalItems={total}
-                        onPageChange={setPage}
-                        onPageSizeChange={handlePageSizeChange}
-                        pageSizeOptions={[12, 24, 36, 48]}
-                        className='mt-4'
-                    />
+                {/* 分页（仅列表视图显示） */}
+                {viewMode === 'list' && (
+                    <DataTablePagination table={table} className='mt-auto' />
                 )}
             </Main>
+
+            {/* 详情抽屉 */}
+            <HospitalsDetailSheet
+                hospital={selectedHospital}
+                open={detailOpen}
+                onOpenChange={setDetailOpen}
+            />
+
+            {/* 删除确认对话框 */}
+            <ConfirmDialog
+                open={deleteDialogOpen}
+                onOpenChange={setDeleteDialogOpen}
+                title='确认删除'
+                description={`确定要删除医院「${deletingHospital?.name}」吗？此操作不可撤销。`}
+                confirmText='删除'
+                cancelText='取消'
+                onConfirm={handleDelete}
+                isLoading={deleteMutation.isPending}
+                variant='destructive'
+            />
 
             {/* 新建/编辑对话框 */}
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

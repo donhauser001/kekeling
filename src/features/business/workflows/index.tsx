@@ -1,19 +1,26 @@
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
+import { useNavigate, useSearch } from '@tanstack/react-router'
+import {
+    useReactTable,
+    getCoreRowModel,
+    getFilteredRowModel,
+    type ColumnFiltersState,
+} from '@tanstack/react-table'
 import {
     Plus,
-    Search as SearchIcon,
-    X,
+    GitBranch,
+    LayoutGrid,
+    List,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
 import {
     Card,
     CardContent,
     CardHeader,
 } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
@@ -21,7 +28,7 @@ import { MessageButton } from '@/components/message-button'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
-import { cn } from '@/lib/utils'
+import { DataTableToolbar, DataTablePagination, DataTableViewOptions } from '@/components/data-table'
 import {
     useWorkflows,
     useCreateWorkflow,
@@ -31,19 +38,44 @@ import {
 } from '@/hooks/use-api'
 import type { Workflow } from '@/lib/api'
 import type { WorkflowFormData } from './types'
-import { categoryColors, categoryOptions, defaultFormData } from './constants'
+import { categoryOptions, defaultFormData } from './constants'
 import {
     WorkflowCard,
     WorkflowFormDialog,
     WorkflowDetailDialog,
     DeleteDialog,
+    getWorkflowsColumns,
+    WorkflowsTable,
 } from './components'
 
+// 状态选项
+const statusOptions = [
+    { value: 'active', label: '已启用' },
+    { value: 'inactive', label: '已停用' },
+    { value: 'draft', label: '草稿' },
+]
+
+// 分类筛选选项
+const categoryFilterOptions = categoryOptions.map(cat => ({
+    value: cat,
+    label: cat,
+}))
+
+type ViewMode = 'grid' | 'list'
+
 export function Workflows() {
-    // 筛选状态
-    const [searchQuery, setSearchQuery] = useState('')
-    const [selectedCategory, setSelectedCategory] = useState<string>('')
-    const [page] = useState(1)
+    const navigate = useNavigate()
+    const searchParams = useSearch({ strict: false }) as { view?: string }
+
+    // 从 URL 获取初始视图模式
+    const initialViewMode = (searchParams.view === 'list' ? 'list' : 'grid') as ViewMode
+
+    // 状态
+    const [viewMode, setViewMode] = useState<ViewMode>(initialViewMode)
+    const [page, setPage] = useState(1)
+    const [pageSize, setPageSize] = useState(10)
+    const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+    const [globalFilter, setGlobalFilter] = useState('')
 
     // 对话框状态
     const [dialogOpen, setDialogOpen] = useState(false)
@@ -54,12 +86,31 @@ export function Workflows() {
     const [viewingWorkflow, setViewingWorkflow] = useState<Workflow | null>(null)
     const [formData, setFormData] = useState<WorkflowFormData>(defaultFormData)
 
+    // 同步视图模式到 URL
+    useEffect(() => {
+        const currentView = searchParams.view
+        if (viewMode !== (currentView === 'list' ? 'list' : 'grid')) {
+            navigate({
+                search: (prev: Record<string, unknown>) => ({
+                    ...prev,
+                    view: viewMode === 'list' ? 'list' : undefined,
+                }),
+                replace: true,
+            })
+        }
+    }, [viewMode, navigate, searchParams.view])
+
+    // 从列筛选中提取 API 参数
+    const categoryFilter = columnFilters.find(f => f.id === 'category')?.value as string[] | undefined
+    const statusFilter = columnFilters.find(f => f.id === 'status')?.value as string[] | undefined
+
     // API hooks
-    const { data, isLoading, error } = useWorkflows({
-        category: selectedCategory || undefined,
-        keyword: searchQuery || undefined,
+    const { data, isLoading } = useWorkflows({
+        category: categoryFilter?.length === 1 ? categoryFilter[0] : undefined,
+        keyword: globalFilter || undefined,
+        status: statusFilter?.length === 1 ? statusFilter[0] : undefined,
         page,
-        pageSize: 12,
+        pageSize,
     })
     const createMutation = useCreateWorkflow()
     const updateMutation = useUpdateWorkflow()
@@ -67,6 +118,7 @@ export function Workflows() {
     const deleteMutation = useDeleteWorkflow()
 
     const workflows = data?.data || []
+    const total = data?.total || 0
 
     // 打开创建对话框
     const openCreateDialog = () => {
@@ -185,6 +237,79 @@ export function Workflows() {
         }
     }
 
+    // 列定义
+    const columns = useMemo(
+        () =>
+            getWorkflowsColumns({
+                onView: openDetailDialog,
+                onEdit: openEditDialog,
+                onToggleStatus: handleToggleStatus,
+                onDelete: openDeleteDialog,
+            }),
+        []
+    )
+
+    // 表格实例
+    const table = useReactTable({
+        data: workflows,
+        columns,
+        state: {
+            columnFilters,
+            globalFilter,
+            pagination: { pageIndex: page - 1, pageSize },
+        },
+        pageCount: Math.ceil(total / pageSize),
+        rowCount: total,
+        onColumnFiltersChange: setColumnFilters,
+        onGlobalFilterChange: setGlobalFilter,
+        onPaginationChange: (updater) => {
+            const newState = typeof updater === 'function'
+                ? updater({ pageIndex: page - 1, pageSize })
+                : updater
+            setPage(newState.pageIndex + 1)
+            setPageSize(newState.pageSize)
+        },
+        getCoreRowModel: getCoreRowModel(),
+        getFilteredRowModel: getFilteredRowModel(),
+        manualPagination: true,
+        manualFiltering: true,
+    })
+
+    // 卡片骨架屏
+    const renderGridSkeleton = () => (
+        <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
+            {Array.from({ length: 6 }).map((_, i) => (
+                <Card key={i}>
+                    <CardHeader className='pb-3'>
+                        <div className='flex items-start justify-between'>
+                            <div className='flex items-center gap-3'>
+                                <Skeleton className='h-10 w-10 rounded-lg' />
+                                <div className='space-y-2'>
+                                    <Skeleton className='h-4 w-24' />
+                                    <div className='flex gap-2'>
+                                        <Skeleton className='h-5 w-16' />
+                                        <Skeleton className='h-5 w-12' />
+                                    </div>
+                                </div>
+                            </div>
+                            <Skeleton className='h-8 w-8 rounded' />
+                        </div>
+                    </CardHeader>
+                    <CardContent className='space-y-3'>
+                        <Skeleton className='h-8 w-full' />
+                        <Skeleton className='h-6 w-full' />
+                        <div className='border-t pt-2'>
+                            <div className='flex justify-between'>
+                                <Skeleton className='h-4 w-20' />
+                                <Skeleton className='h-4 w-16' />
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            ))}
+        </div>
+    )
+
     return (
         <>
             <Header>
@@ -197,8 +322,8 @@ export function Workflows() {
                 </div>
             </Header>
 
-            <Main>
-                <div className='mb-6 flex items-center justify-between'>
+            <Main className='flex flex-1 flex-col gap-4 sm:gap-6'>
+                <div className='flex flex-wrap items-end justify-between gap-2'>
                     <div>
                         <h1 className='text-2xl font-bold tracking-tight'>流程管理</h1>
                         <p className='text-muted-foreground'>创建和管理各种业务流程</p>
@@ -209,103 +334,88 @@ export function Workflows() {
                     </Button>
                 </div>
 
-                {/* 筛选栏 */}
-                <div className='mb-6 flex flex-wrap items-center gap-4'>
-                    <div className='relative flex-1 min-w-[200px] max-w-md'>
-                        <SearchIcon className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
-                        <Input
-                            placeholder='搜索流程名称或描述...'
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className='pl-9'
-                        />
-                        {searchQuery && (
-                            <button
-                                className='text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2'
-                                onClick={() => setSearchQuery('')}
-                            >
-                                <X className='h-4 w-4' />
-                            </button>
-                        )}
-                    </div>
-
-                    <div className='flex flex-wrap gap-2'>
-                        <Badge
-                            variant={selectedCategory === '' ? 'default' : 'outline'}
-                            className='cursor-pointer'
-                            onClick={() => setSelectedCategory('')}
-                        >
-                            全部
-                        </Badge>
-                        {categoryOptions.map(cat => (
-                            <Badge
-                                key={cat}
-                                variant={selectedCategory === cat ? 'default' : 'outline'}
-                                className='cursor-pointer gap-1.5'
-                                onClick={() => setSelectedCategory(cat)}
-                            >
-                                <span className={cn('h-2 w-2 rounded-full', categoryColors[cat])} />
-                                {cat}
-                            </Badge>
-                        ))}
-                    </div>
+                {/* 工具栏 */}
+                <div className='flex flex-wrap items-center gap-4'>
+                    <DataTableToolbar
+                        table={table}
+                        searchPlaceholder='搜索流程名称或描述...'
+                        showViewOptions={false}
+                        filters={viewMode === 'list' ? [
+                            {
+                                columnId: 'category',
+                                title: '分类',
+                                options: categoryFilterOptions,
+                            },
+                            {
+                                columnId: 'status',
+                                title: '状态',
+                                options: statusOptions,
+                            },
+                        ] : []}
+                    />
+                    {viewMode === 'list' && <DataTableViewOptions table={table} />}
+                    <Tabs value={viewMode} onValueChange={v => setViewMode(v as ViewMode)} className={viewMode === 'grid' ? 'ml-auto' : ''}>
+                        <TabsList className='h-9'>
+                            <TabsTrigger value='grid' className='px-2.5' aria-label='网格视图'>
+                                <LayoutGrid className='h-4 w-4' />
+                            </TabsTrigger>
+                            <TabsTrigger value='list' className='px-2.5' aria-label='列表视图'>
+                                <List className='h-4 w-4' />
+                            </TabsTrigger>
+                        </TabsList>
+                    </Tabs>
                 </div>
 
                 {/* 加载状态 - 骨架屏 */}
-                {isLoading && (
-                    <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
-                        {Array.from({ length: 6 }).map((_, i) => (
-                            <Card key={i}>
-                                <CardHeader className='pb-3'>
-                                    <div className='flex items-start justify-between'>
-                                        <div className='flex items-center gap-3'>
-                                            <Skeleton className='h-10 w-10 rounded-lg' />
-                                            <div className='space-y-2'>
-                                                <Skeleton className='h-4 w-24' />
-                                                <div className='flex gap-2'>
-                                                    <Skeleton className='h-5 w-16' />
-                                                    <Skeleton className='h-5 w-12' />
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <Skeleton className='h-8 w-8 rounded' />
-                                    </div>
-                                </CardHeader>
-                                <CardContent className='space-y-3'>
-                                    <Skeleton className='h-8 w-full' />
-                                    <Skeleton className='h-6 w-full' />
-                                    <div className='border-t pt-2'>
-                                        <div className='flex justify-between'>
-                                            <Skeleton className='h-4 w-20' />
-                                            <Skeleton className='h-4 w-16' />
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        ))}
+                {isLoading && viewMode === 'grid' && renderGridSkeleton()}
+
+                {isLoading && viewMode === 'list' && (
+                    <WorkflowsTable
+                        table={table}
+                        isLoading={true}
+                        onRowClick={openDetailDialog}
+                    />
+                )}
+
+                {/* 空状态 */}
+                {!isLoading && workflows.length === 0 && (
+                    <div className='flex h-64 flex-col items-center justify-center gap-4'>
+                        <GitBranch className='h-12 w-12 text-muted-foreground' />
+                        <p className='text-muted-foreground'>暂无匹配的流程</p>
+                        <Button onClick={openCreateDialog}>
+                            <Plus className='mr-2 h-4 w-4' />
+                            创建第一个流程
+                        </Button>
                     </div>
                 )}
 
-                {/* 流程列表 */}
-                {!isLoading && !error && (
-                    <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
-                        {workflows.map(workflow => (
-                            <WorkflowCard
-                                key={workflow.id}
-                                workflow={workflow}
-                                onView={openDetailDialog}
-                                onEdit={openEditDialog}
-                                onToggleStatus={handleToggleStatus}
-                                onDelete={openDeleteDialog}
+                {/* 内容区 */}
+                {!isLoading && workflows.length > 0 && (
+                    <>
+                        {viewMode === 'grid' ? (
+                            <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
+                                {workflows.map(workflow => (
+                                    <WorkflowCard
+                                        key={workflow.id}
+                                        workflow={workflow}
+                                        onView={openDetailDialog}
+                                        onEdit={openEditDialog}
+                                        onToggleStatus={handleToggleStatus}
+                                        onDelete={openDeleteDialog}
+                                    />
+                                ))}
+                            </div>
+                        ) : (
+                            <WorkflowsTable
+                                table={table}
+                                isLoading={false}
+                                onRowClick={openDetailDialog}
                             />
-                        ))}
-                    </div>
-                )}
+                        )}
 
-                {!isLoading && !error && workflows.length === 0 && (
-                    <div className='text-muted-foreground py-12 text-center'>
-                        暂无匹配的流程
-                    </div>
+                        {/* 分页 */}
+                        <DataTablePagination table={table} className='mt-auto' />
+                    </>
                 )}
             </Main>
 

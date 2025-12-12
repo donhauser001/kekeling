@@ -1,28 +1,30 @@
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
+import { useSearch, useNavigate } from '@tanstack/react-router'
+import {
+    useReactTable,
+    getCoreRowModel,
+    type ColumnFiltersState,
+} from '@tanstack/react-table'
 import {
     LayoutList,
     Plus,
     MoreHorizontal,
     Pencil,
     Trash2,
-    Search as SearchIcon,
-    X,
     Stethoscope,
     Loader2,
+    LayoutGrid,
+    List,
+    Eye,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuSeparator,
+    DropdownMenuShortcut,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import {
@@ -37,7 +39,14 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { ConfirmDialog } from '@/components/confirm-dialog'
 import { ConfigDrawer } from '@/components/config-drawer'
+import {
+    DataTablePagination,
+    DataTableToolbar,
+    DataTableViewOptions,
+} from '@/components/data-table'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { MessageButton } from '@/components/message-button'
@@ -47,12 +56,16 @@ import { ThemeSwitch } from '@/components/theme-switch'
 import { cn } from '@/lib/utils'
 import {
     useDepartmentTemplates,
-    useDepartmentCategories,
     useCreateDepartmentTemplate,
     useUpdateDepartmentTemplate,
     useDeleteDepartmentTemplate,
 } from '@/hooks/use-api'
 import type { DepartmentTemplate } from '@/lib/api'
+
+// 导入组件
+import { getDepartmentsColumns } from './components/departments-columns'
+import { DepartmentsTable } from './components/departments-table'
+import { DepartmentsDetailSheet } from './components/departments-detail-sheet'
 
 const categoryColors: Record<string, string> = {
     '内科': 'bg-blue-500',
@@ -102,15 +115,92 @@ const colorOptions = [
 const categoryOptions = ['内科', '外科', '妇儿', '五官', '医技', '其他']
 
 export function Departments() {
-    const [searchQuery, setSearchQuery] = useState('')
-    const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+    const navigate = useNavigate()
+    const search = useSearch({ strict: false }) as Record<string, unknown>
+
+    // 视图模式
+    const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+
+    // 分页状态
+    const [page, setPage] = useState(1)
+    const [pageSize, setPageSize] = useState(10)
+
+    // 筛选状态
+    const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+    const [globalFilter, setGlobalFilter] = useState('')
+
+    // 从 URL 同步视图模式
+    useEffect(() => {
+        const view = search.view as string | undefined
+        if (view === 'list' || view === 'grid') {
+            setViewMode(view)
+        }
+    }, [search.view])
+
+    // 切换视图时更新 URL
+    const handleViewModeChange = (mode: string) => {
+        setViewMode(mode as 'grid' | 'list')
+        navigate({
+            search: (prev: Record<string, unknown>) => ({ ...prev, view: mode }),
+            replace: true,
+        })
+    }
+
+    // 从筛选状态提取搜索关键词和分类
+    const keyword = useMemo(() => {
+        const filter = columnFilters.find((f) => f.id === 'name')
+        return (filter?.value as string) || globalFilter || ''
+    }, [columnFilters, globalFilter])
+
+    const selectedCategory = useMemo(() => {
+        const filter = columnFilters.find((f) => f.id === 'category')
+        const values = filter?.value as string[] | undefined
+        return values?.[0] || undefined
+    }, [columnFilters])
 
     // 从后端获取数据
     const { data: templates, isLoading, error } = useDepartmentTemplates({
-        category: selectedCategory || undefined,
-        keyword: searchQuery || undefined,
+        category: selectedCategory,
+        keyword: keyword || undefined,
     })
-    const { data: categories } = useDepartmentCategories()
+
+    // 提取所有具体科室（二级科室），按分类分组
+    const allDepartments: DepartmentTemplate[] = useMemo(() => {
+        const result: DepartmentTemplate[] = []
+            ; (templates || []).forEach(parent => {
+                if (parent.children && parent.children.length > 0) {
+                    parent.children.forEach(child => {
+                        result.push({
+                            ...child,
+                            category: parent.category,
+                        })
+                    })
+                }
+            })
+        return result
+    }, [templates])
+
+    // 计算总数（用于分页）
+    const total = allDepartments.length
+
+    // 分页后的数据
+    const paginatedDepartments = useMemo(() => {
+        const start = (page - 1) * pageSize
+        return allDepartments.slice(start, start + pageSize)
+    }, [allDepartments, page, pageSize])
+
+    // 按分类分组（用于卡片视图）
+    const groupedDepartments = useMemo(() => {
+        return categoryOptions.map(category => {
+            const depts = allDepartments.filter(d => d.category === category)
+            return {
+                category,
+                color: categoryColors[category] || 'bg-gray-500',
+                departments: depts,
+                totalCount: depts.length,
+            }
+        }).filter(g => g.departments.length > 0)
+    }, [allDepartments])
 
     // 表单对话框状态
     const [dialogOpen, setDialogOpen] = useState(false)
@@ -119,35 +209,18 @@ export function Departments() {
     const [formData, setFormData] = useState<DepartmentFormData>(defaultFormData)
     const [formErrors, setFormErrors] = useState<Record<string, string>>({})
 
+    // 详情抽屉状态
+    const [detailOpen, setDetailOpen] = useState(false)
+    const [selectedDepartment, setSelectedDepartment] = useState<DepartmentTemplate | null>(null)
+
+    // 删除确认对话框
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+    const [deletingDepartment, setDeletingDepartment] = useState<DepartmentTemplate | null>(null)
+
     // Mutations
     const createMutation = useCreateDepartmentTemplate()
     const updateMutation = useUpdateDepartmentTemplate()
     const deleteMutation = useDeleteDepartmentTemplate()
-
-    // 提取所有具体科室（二级科室），按分类分组
-    const allDepartments: DepartmentTemplate[] = []
-    ;(templates || []).forEach(parent => {
-        // 添加子科室
-        if (parent.children && parent.children.length > 0) {
-            parent.children.forEach(child => {
-                allDepartments.push({
-                    ...child,
-                    category: parent.category, // 确保子科室也有分类
-                })
-            })
-        }
-    })
-
-    // 按分类分组
-    const groupedDepartments = categoryOptions.map(category => {
-        const depts = allDepartments.filter(d => d.category === category)
-        return {
-            category,
-            color: categoryColors[category] || 'bg-gray-500',
-            departments: depts,
-            totalCount: depts.length,
-        }
-    }).filter(g => g.departments.length > 0)
 
     // 打开新建对话框
     const openCreateDialog = (parentCategory?: string) => {
@@ -174,6 +247,30 @@ export function Departments() {
         })
         setFormErrors({})
         setDialogOpen(true)
+    }
+
+    // 查看详情
+    const handleView = (dept: DepartmentTemplate) => {
+        setSelectedDepartment(dept)
+        setDetailOpen(true)
+    }
+
+    // 打开删除确认
+    const handleDeleteConfirm = (dept: DepartmentTemplate) => {
+        setDeletingDepartment(dept)
+        setDeleteDialogOpen(true)
+    }
+
+    // 执行删除
+    const handleDelete = async () => {
+        if (!deletingDepartment) return
+        try {
+            await deleteMutation.mutateAsync(deletingDepartment.id)
+            setDeleteDialogOpen(false)
+            setDeletingDepartment(null)
+        } catch (err) {
+            console.error('删除失败:', err)
+        }
     }
 
     // 表单验证
@@ -210,15 +307,179 @@ export function Departments() {
         }
     }
 
-    // 删除科室
-    const handleDelete = async (deptId: string) => {
-        if (!confirm('确定要删除此科室吗？如果有子科室也会一并删除。')) return
-        try {
-            await deleteMutation.mutateAsync(deptId)
-        } catch (err) {
-            console.error('删除失败:', err)
-        }
-    }
+    // 列定义
+    const columns = useMemo(
+        () =>
+            getDepartmentsColumns({
+                onView: handleView,
+                onEdit: openEditDialog,
+                onDelete: handleDeleteConfirm,
+            }),
+        []
+    )
+
+    // useReactTable 配置
+    const table = useReactTable({
+        data: paginatedDepartments,
+        columns,
+        pageCount: Math.ceil(total / pageSize),
+        rowCount: total,
+        state: {
+            pagination: { pageIndex: page - 1, pageSize },
+            columnFilters,
+            globalFilter,
+        },
+        onPaginationChange: (updater) => {
+            const newState = typeof updater === 'function'
+                ? updater({ pageIndex: page - 1, pageSize })
+                : updater
+            setPage(newState.pageIndex + 1)
+            setPageSize(newState.pageSize)
+        },
+        onColumnFiltersChange: setColumnFilters,
+        onGlobalFilterChange: setGlobalFilter,
+        getCoreRowModel: getCoreRowModel(),
+        manualPagination: true,
+        manualFiltering: true,
+    })
+
+    // 渲染卡片骨架
+    const renderGridSkeleton = () => (
+        <div className='space-y-6'>
+            {[1, 2, 3].map(i => (
+                <div key={i}>
+                    <Skeleton className='mb-3 h-6 w-32' />
+                    <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'>
+                        {[1, 2, 3, 4].map(j => (
+                            <Card key={j}>
+                                <CardHeader className='pb-2'>
+                                    <div className='flex items-center gap-2'>
+                                        <Skeleton className='h-8 w-8 rounded-md' />
+                                        <Skeleton className='h-4 w-24' />
+                                    </div>
+                                </CardHeader>
+                                <CardContent className='pt-0'>
+                                    <Skeleton className='mb-2 h-3 w-full' />
+                                    <Skeleton className='h-5 w-20' />
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                </div>
+            ))}
+        </div>
+    )
+
+    // 渲染卡片视图
+    const renderGridView = () => (
+        <div className='space-y-6'>
+            {groupedDepartments.map(group => (
+                <div key={group.category}>
+                    <div className='mb-3 flex items-center gap-2'>
+                        <span className={cn('h-3 w-3 rounded-full', group.color)} />
+                        <h3 className='font-semibold'>{group.category}</h3>
+                        <Badge variant='secondary' className='text-xs'>
+                            {group.totalCount} 个科室
+                        </Badge>
+                        <Button
+                            variant='ghost'
+                            size='sm'
+                            className='ml-2 h-6 px-2 text-xs'
+                            onClick={() => openCreateDialog(group.category)}
+                        >
+                            <Plus className='mr-1 h-3 w-3' />
+                            添加
+                        </Button>
+                    </div>
+                    <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'>
+                        {group.departments.map(dept => (
+                            <Card
+                                key={dept.id}
+                                className='group hover:shadow-md transition-shadow cursor-pointer'
+                                onClick={() => handleView(dept)}
+                            >
+                                <CardHeader className='pb-2'>
+                                    <div className='flex items-start justify-between'>
+                                        <div className='flex items-center gap-3'>
+                                            <div className={cn('flex h-10 w-10 items-center justify-center rounded-lg', dept.color || 'bg-blue-500')}>
+                                                <Stethoscope className='h-5 w-5 text-white' />
+                                            </div>
+                                            <div>
+                                                <CardTitle className='text-base font-medium'>{dept.name}</CardTitle>
+                                                {dept.description && (
+                                                    <CardDescription className='line-clamp-1 text-xs'>
+                                                        {dept.description}
+                                                    </CardDescription>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <DropdownMenu modal={false}>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button
+                                                    variant='ghost'
+                                                    size='icon'
+                                                    className='h-7 w-7 opacity-0 group-hover:opacity-100'
+                                                    onClick={(e) => e.stopPropagation()}
+                                                >
+                                                    <MoreHorizontal className='h-4 w-4' />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align='end' className='w-[160px]'>
+                                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleView(dept) }}>
+                                                    查看详情
+                                                    <DropdownMenuShortcut>
+                                                        <Eye className='h-4 w-4' />
+                                                    </DropdownMenuShortcut>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openEditDialog(dept) }}>
+                                                    编辑
+                                                    <DropdownMenuShortcut>
+                                                        <Pencil className='h-4 w-4' />
+                                                    </DropdownMenuShortcut>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem
+                                                    className='text-destructive focus:text-destructive focus:bg-destructive/10'
+                                                    onClick={(e) => { e.stopPropagation(); handleDeleteConfirm(dept) }}
+                                                >
+                                                    删除
+                                                    <DropdownMenuShortcut>
+                                                        <Trash2 className='h-4 w-4' />
+                                                    </DropdownMenuShortcut>
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </div>
+                                </CardHeader>
+                                {dept.diseases && dept.diseases.length > 0 && (
+                                    <CardContent className='pt-0'>
+                                        <div className='flex flex-wrap gap-1'>
+                                            {dept.diseases.slice(0, 4).map(d => (
+                                                <Badge key={d} variant='secondary' className='text-xs font-normal'>
+                                                    {d}
+                                                </Badge>
+                                            ))}
+                                            {dept.diseases.length > 4 && (
+                                                <Badge variant='outline' className='text-xs'>
+                                                    +{dept.diseases.length - 4}
+                                                </Badge>
+                                            )}
+                                        </div>
+                                    </CardContent>
+                                )}
+                            </Card>
+                        ))}
+                    </div>
+                </div>
+            ))}
+
+            {groupedDepartments.length === 0 && (
+                <div className='text-muted-foreground py-12 text-center'>
+                    暂无科室数据
+                </div>
+            )}
+        </div>
+    )
 
     return (
         <>
@@ -232,8 +493,9 @@ export function Departments() {
                 </div>
             </Header>
 
-            <Main>
-                <div className='mb-6 flex items-center justify-between'>
+            <Main className='flex flex-1 flex-col gap-4 sm:gap-6'>
+                {/* 标题区域 */}
+                <div className='flex items-center justify-between'>
                     <div>
                         <h1 className='text-2xl font-bold tracking-tight'>科室库</h1>
                         <p className='text-muted-foreground'>管理科室类目字典，可关联到医院</p>
@@ -244,176 +506,75 @@ export function Departments() {
                     </Button>
                 </div>
 
-                {/* 搜索和筛选 */}
-                <div className='mb-6 flex flex-wrap items-center gap-4'>
-                    <div className='relative flex-1 min-w-[200px] max-w-md'>
-                        <SearchIcon className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
-                        <Input
-                            placeholder='搜索科室名称...'
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className='pl-9'
-                        />
-                        {searchQuery && (
-                            <button
-                                className='text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2'
-                                onClick={() => setSearchQuery('')}
-                            >
-                                <X className='h-4 w-4' />
-                            </button>
-                        )}
-                    </div>
+                {/* 工具栏区域 */}
+                <div className='flex flex-wrap items-center gap-4'>
+                    <DataTableToolbar
+                        table={table}
+                        searchPlaceholder='搜索科室名称...'
+                        searchKey='name'
+                        filters={viewMode === 'list' ? [
+                            {
+                                columnId: 'category',
+                                title: '分类',
+                                options: categoryOptions.map((c) => ({ label: c, value: c })),
+                            },
+                        ] : []}
+                        showViewOptions={false}
+                    />
 
-                    <div className='flex flex-wrap gap-2'>
-                        <Badge
-                            variant={selectedCategory === null ? 'default' : 'outline'}
-                            className='cursor-pointer'
-                            onClick={() => setSelectedCategory(null)}
-                        >
-                            全部
-                        </Badge>
-                        {(categories || categoryOptions.map(c => ({ name: c, count: 0 }))).map(cat => (
-                            <Badge
-                                key={cat.name}
-                                variant={selectedCategory === cat.name ? 'default' : 'outline'}
-                                className='cursor-pointer gap-1.5'
-                                onClick={() => setSelectedCategory(cat.name)}
-                            >
-                                <span className={cn('h-2 w-2 rounded-full', categoryColors[cat.name])} />
-                                {cat.name}
-                                {cat.count > 0 && <span className='text-xs opacity-60'>({cat.count})</span>}
-                            </Badge>
-                        ))}
-                    </div>
+                    {viewMode === 'list' && <DataTableViewOptions table={table} />}
+
+                    {/* 视图切换 */}
+                    <Tabs value={viewMode} onValueChange={handleViewModeChange} className={viewMode === 'grid' ? 'ml-auto' : ''}>
+                        <TabsList className='h-9'>
+                            <TabsTrigger value='grid' className='px-3'>
+                                <LayoutGrid className='h-4 w-4' />
+                            </TabsTrigger>
+                            <TabsTrigger value='list' className='px-3'>
+                                <List className='h-4 w-4' />
+                            </TabsTrigger>
+                        </TabsList>
+                    </Tabs>
                 </div>
 
-                {/* 加载状态 */}
-                {isLoading && (
-                    <div className='space-y-6'>
-                        {[1, 2, 3].map(i => (
-                            <div key={i}>
-                                <Skeleton className='mb-3 h-6 w-32' />
-                                <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'>
-                                    {[1, 2, 3, 4].map(j => (
-                                        <Card key={j}>
-                                            <CardHeader className='pb-2'>
-                                                <div className='flex items-center gap-2'>
-                                                    <Skeleton className='h-8 w-8 rounded-md' />
-                                                    <Skeleton className='h-4 w-24' />
-                                                </div>
-                                            </CardHeader>
-                                            <CardContent className='pt-0'>
-                                                <Skeleton className='mb-2 h-3 w-full' />
-                                                <Skeleton className='h-5 w-20' />
-                                            </CardContent>
-                                        </Card>
-                                    ))}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-
-                {/* 错误状态 */}
-                {error && (
+                {/* 内容区域 */}
+                {isLoading ? (
+                    viewMode === 'grid' ? renderGridSkeleton() : <DepartmentsTable table={table} isLoading />
+                ) : error ? (
                     <div className='text-destructive py-12 text-center'>
                         加载失败: {error.message}
                     </div>
+                ) : viewMode === 'grid' ? (
+                    renderGridView()
+                ) : (
+                    <DepartmentsTable table={table} onRowClick={handleView} />
                 )}
 
-                {/* 科室列表 - 按分类分组 */}
-                {!isLoading && !error && (
-                    <div className='space-y-6'>
-                        {groupedDepartments.map(group => (
-                            <div key={group.category}>
-                                <div className='mb-3 flex items-center gap-2'>
-                                    <span className={cn('h-3 w-3 rounded-full', group.color)} />
-                                    <h3 className='font-semibold'>{group.category}</h3>
-                                    <Badge variant='secondary' className='text-xs'>
-                                        {group.totalCount} 个科室
-                                    </Badge>
-                                    <Button
-                                        variant='ghost'
-                                        size='sm'
-                                        className='ml-2 h-6 px-2 text-xs'
-                                        onClick={() => openCreateDialog(group.category)}
-                                    >
-                                        <Plus className='mr-1 h-3 w-3' />
-                                        添加
-                                    </Button>
-                                </div>
-                                <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'>
-                                    {group.departments.map(dept => (
-                                        <Card key={dept.id} className='group hover:shadow-md transition-shadow'>
-                                            <CardHeader className='pb-2'>
-                                                <div className='flex items-start justify-between'>
-                                                    <div className='flex items-center gap-3'>
-                                                        <div className={cn('flex h-10 w-10 items-center justify-center rounded-lg', dept.color || 'bg-blue-500')}>
-                                                            <Stethoscope className='h-5 w-5 text-white' />
-                                                        </div>
-                                                        <div>
-                                                            <CardTitle className='text-base font-medium'>{dept.name}</CardTitle>
-                                                            {dept.description && (
-                                                                <CardDescription className='line-clamp-1 text-xs'>
-                                                                    {dept.description}
-                                                                </CardDescription>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                    <DropdownMenu>
-                                                        <DropdownMenuTrigger asChild>
-                                                            <Button variant='ghost' size='icon' className='h-7 w-7 opacity-0 group-hover:opacity-100'>
-                                                                <MoreHorizontal className='h-4 w-4' />
-                                                            </Button>
-                                                        </DropdownMenuTrigger>
-                                                        <DropdownMenuContent align='end'>
-                                                            <DropdownMenuItem onClick={() => openEditDialog(dept)}>
-                                                                <Pencil className='mr-2 h-4 w-4' />
-                                                                编辑
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuSeparator />
-                                                            <DropdownMenuItem
-                                                                className='text-destructive'
-                                                                onClick={() => handleDelete(dept.id)}
-                                                            >
-                                                                <Trash2 className='mr-2 h-4 w-4' />
-                                                                删除
-                                                            </DropdownMenuItem>
-                                                        </DropdownMenuContent>
-                                                    </DropdownMenu>
-                                                </div>
-                                            </CardHeader>
-                                            {/* 常见疾病标签 */}
-                                            {dept.diseases && dept.diseases.length > 0 && (
-                                                <CardContent className='pt-0'>
-                                                    <div className='flex flex-wrap gap-1'>
-                                                        {dept.diseases.slice(0, 4).map(d => (
-                                                            <Badge key={d} variant='secondary' className='text-xs font-normal'>
-                                                                {d}
-                                                            </Badge>
-                                                        ))}
-                                                        {dept.diseases.length > 4 && (
-                                                            <Badge variant='outline' className='text-xs'>
-                                                                +{dept.diseases.length - 4}
-                                                            </Badge>
-                                                        )}
-                                                    </div>
-                                                </CardContent>
-                                            )}
-                                        </Card>
-                                    ))}
-                                </div>
-                            </div>
-                        ))}
-
-                        {groupedDepartments.length === 0 && (
-                            <div className='text-muted-foreground py-12 text-center'>
-                                暂无科室数据
-                            </div>
-                        )}
-                    </div>
+                {/* 分页（仅列表视图显示） */}
+                {viewMode === 'list' && (
+                    <DataTablePagination table={table} className='mt-auto' />
                 )}
             </Main>
+
+            {/* 详情抽屉 */}
+            <DepartmentsDetailSheet
+                department={selectedDepartment}
+                open={detailOpen}
+                onOpenChange={setDetailOpen}
+            />
+
+            {/* 删除确认对话框 */}
+            <ConfirmDialog
+                open={deleteDialogOpen}
+                onOpenChange={setDeleteDialogOpen}
+                title='确认删除'
+                description={`确定要删除科室「${deletingDepartment?.name}」吗？如果有子科室也会一并删除。`}
+                confirmText='删除'
+                cancelText='取消'
+                onConfirm={handleDelete}
+                isLoading={deleteMutation.isPending}
+                variant='destructive'
+            />
 
             {/* 新建/编辑对话框 */}
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -500,7 +661,7 @@ export function Departments() {
                         <Button variant='outline' onClick={() => setDialogOpen(false)}>
                             取消
                         </Button>
-                        <Button 
+                        <Button
                             onClick={handleSave}
                             disabled={createMutation.isPending || updateMutation.isPending}
                         >

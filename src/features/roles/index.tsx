@@ -1,4 +1,13 @@
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
+import { useSearch, useNavigate } from '@tanstack/react-router'
+import {
+    useReactTable,
+    getCoreRowModel,
+    getFilteredRowModel,
+    getPaginationRowModel,
+    getSortedRowModel,
+    type ColumnFiltersState,
+} from '@tanstack/react-table'
 import {
     Tags,
     Plus,
@@ -13,6 +22,9 @@ import {
     UserCheck,
     Zap,
     Gift,
+    LayoutGrid,
+    List,
+    Eye,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -27,6 +39,7 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuSeparator,
+    DropdownMenuShortcut,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import {
@@ -42,6 +55,13 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { ConfirmDialog } from '@/components/confirm-dialog'
+import {
+    DataTablePagination,
+    DataTableToolbar,
+    DataTableViewOptions,
+} from '@/components/data-table'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
@@ -50,6 +70,11 @@ import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { cn } from '@/lib/utils'
+
+// 导入组件
+import { getRolesColumns } from './components/roles-columns'
+import { RolesTable } from './components/roles-table'
+import { RolesDetailSheet } from './components/roles-detail-sheet'
 
 interface UserCategory {
     id: string
@@ -250,8 +275,42 @@ const getIconComponent = (iconName: string) => {
 }
 
 export function Roles() {
+    const navigate = useNavigate()
+    const search = useSearch({ strict: false }) as Record<string, unknown>
+
     const [categories, setCategories] = useState<UserCategory[]>(initialCategories)
-    const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+
+    // 视图模式
+    const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+
+    // 筛选状态
+    const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+    const [globalFilter, setGlobalFilter] = useState('')
+
+    // 从 URL 同步视图模式
+    useEffect(() => {
+        const view = search.view as string | undefined
+        if (view === 'list' || view === 'grid') {
+            setViewMode(view)
+        }
+    }, [search.view])
+
+    // 切换视图时更新 URL
+    const handleViewModeChange = (mode: string) => {
+        setViewMode(mode as 'grid' | 'list')
+        navigate({
+            search: (prev: Record<string, unknown>) => ({ ...prev, view: mode }),
+            replace: true,
+        })
+    }
+
+    // 详情抽屉状态
+    const [detailOpen, setDetailOpen] = useState(false)
+    const [selectedCategory, setSelectedCategory] = useState<UserCategory | null>(null)
+
+    // 删除确认对话框
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+    const [deletingCategory, setDeletingCategory] = useState<UserCategory | null>(null)
 
     // 分类表单对话框状态
     const [categoryDialogOpen, setCategoryDialogOpen] = useState(false)
@@ -259,6 +318,12 @@ export function Roles() {
     const [editingCategory, setEditingCategory] = useState<UserCategory | null>(null)
     const [formData, setFormData] = useState<CategoryFormData>(defaultFormData)
     const [formErrors, setFormErrors] = useState<Record<string, string>>({})
+
+    // 查看详情
+    const handleView = (category: UserCategory) => {
+        setSelectedCategory(category)
+        setDetailOpen(true)
+    }
 
     // 打开新建分类对话框
     const openCreateDialog = () => {
@@ -284,6 +349,21 @@ export function Roles() {
         })
         setFormErrors({})
         setCategoryDialogOpen(true)
+    }
+
+    // 打开删除确认
+    const handleDeleteConfirm = (category: UserCategory) => {
+        if (category.isSystem) return
+        setDeletingCategory(category)
+        setDeleteDialogOpen(true)
+    }
+
+    // 执行删除
+    const handleDelete = () => {
+        if (!deletingCategory) return
+        setCategories(categories.filter(c => c.id !== deletingCategory.id))
+        setDeleteDialogOpen(false)
+        setDeletingCategory(null)
     }
 
     // 表单验证
@@ -372,6 +452,132 @@ export function Roles() {
         return key
     }
 
+    // 列定义
+    const columns = useMemo(
+        () => getRolesColumns({
+            onView: handleView,
+            onEdit: openEditDialog,
+            onDelete: handleDeleteConfirm,
+            getBenefitName,
+        }),
+        []
+    )
+
+    // useReactTable 配置（客户端分页）
+    const table = useReactTable({
+        data: categories,
+        columns,
+        state: {
+            columnFilters,
+            globalFilter,
+        },
+        onColumnFiltersChange: setColumnFilters,
+        onGlobalFilterChange: setGlobalFilter,
+        getCoreRowModel: getCoreRowModel(),
+        getFilteredRowModel: getFilteredRowModel(),
+        getSortedRowModel: getSortedRowModel(),
+        getPaginationRowModel: getPaginationRowModel(),
+    })
+
+    // 渲染卡片视图
+    const renderGridView = () => (
+        <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
+            {categories.map((category) => {
+                const IconComponent = getIconComponent(category.icon)
+                return (
+                    <Card
+                        key={category.id}
+                        className='cursor-pointer transition-all hover:shadow-md'
+                        onClick={() => handleView(category)}
+                    >
+                        <CardHeader className='pb-3'>
+                            <div className='flex items-start justify-between'>
+                                <div className='flex items-center gap-3'>
+                                    <div
+                                        className={cn(
+                                            'flex h-10 w-10 items-center justify-center rounded-lg',
+                                            category.color
+                                        )}
+                                    >
+                                        <IconComponent className='h-5 w-5 text-white' />
+                                    </div>
+                                    <div>
+                                        <CardTitle className='flex items-center gap-2 text-base'>
+                                            {category.name}
+                                            {category.isSystem && (
+                                                <Badge variant='secondary' className='text-xs'>
+                                                    系统
+                                                </Badge>
+                                            )}
+                                        </CardTitle>
+                                        <div className='text-muted-foreground flex items-center gap-1 text-sm'>
+                                            <Users className='h-3.5 w-3.5' />
+                                            {category.userCount.toLocaleString()} 人
+                                        </div>
+                                    </div>
+                                </div>
+                                <DropdownMenu modal={false}>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button
+                                            variant='ghost'
+                                            size='icon'
+                                            className='h-8 w-8'
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            <MoreHorizontal className='h-4 w-4' />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align='end' className='w-[160px]'>
+                                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleView(category) }}>
+                                            查看详情
+                                            <DropdownMenuShortcut>
+                                                <Eye className='h-4 w-4' />
+                                            </DropdownMenuShortcut>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openEditDialog(category) }}>
+                                            编辑
+                                            <DropdownMenuShortcut>
+                                                <Pencil className='h-4 w-4' />
+                                            </DropdownMenuShortcut>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem
+                                            className='text-destructive focus:text-destructive focus:bg-destructive/10'
+                                            disabled={category.isSystem}
+                                            onClick={(e) => { e.stopPropagation(); handleDeleteConfirm(category) }}
+                                        >
+                                            删除
+                                            <DropdownMenuShortcut>
+                                                <Trash2 className='h-4 w-4' />
+                                            </DropdownMenuShortcut>
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            <CardDescription className='mb-3 line-clamp-2'>
+                                {category.description}
+                            </CardDescription>
+                            <div className='flex flex-wrap gap-1'>
+                                {category.benefits.slice(0, 3).map((benefit) => (
+                                    <Badge key={benefit} variant='outline' className='text-xs'>
+                                        {benefit === 'all' ? '全部权益' : getBenefitName(benefit)}
+                                    </Badge>
+                                ))}
+                                {category.benefits.length > 3 && (
+                                    <Badge variant='outline' className='text-xs'>
+                                        +{category.benefits.length - 3}
+                                    </Badge>
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
+                )
+            })}
+        </div>
+    )
+
     return (
         <>
             <Header>
@@ -384,8 +590,9 @@ export function Roles() {
                 </div>
             </Header>
 
-            <Main>
-                <div className='mb-6 flex items-center justify-between'>
+            <Main className='flex flex-1 flex-col gap-4 sm:gap-6'>
+                {/* 标题区域 */}
+                <div className='flex items-center justify-between'>
                     <div>
                         <h1 className='text-2xl font-bold tracking-tight'>用户分类</h1>
                         <p className='text-muted-foreground'>管理用户分类和分配权益</p>
@@ -396,127 +603,73 @@ export function Roles() {
                     </Button>
                 </div>
 
-                <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
-                    {categories.map((category) => {
-                        const IconComponent = getIconComponent(category.icon)
-                        return (
-                            <Card
-                                key={category.id}
-                                className={`cursor-pointer transition-all hover:shadow-md ${selectedCategory === category.id ? 'ring-primary ring-2' : ''
-                                    }`}
-                                onClick={() => setSelectedCategory(category.id)}
-                            >
-                                <CardHeader className='pb-3'>
-                                    <div className='flex items-start justify-between'>
-                                        <div className='flex items-center gap-3'>
-                                            <div
-                                                className={`flex h-10 w-10 items-center justify-center rounded-lg ${category.color}`}
-                                            >
-                                                <IconComponent className='h-5 w-5 text-white' />
-                                            </div>
-                                            <div>
-                                                <CardTitle className='flex items-center gap-2 text-base'>
-                                                    {category.name}
-                                                    {category.isSystem && (
-                                                        <Badge variant='secondary' className='text-xs'>
-                                                            系统
-                                                        </Badge>
-                                                    )}
-                                                </CardTitle>
-                                                <div className='text-muted-foreground flex items-center gap-1 text-sm'>
-                                                    <Users className='h-3.5 w-3.5' />
-                                                    {category.userCount.toLocaleString()} 人
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button
-                                                    variant='ghost'
-                                                    size='icon'
-                                                    className='h-8 w-8'
-                                                    onClick={(e) => e.stopPropagation()}
-                                                >
-                                                    <MoreHorizontal className='h-4 w-4' />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align='end'>
-                                                <DropdownMenuItem
-                                                    onClick={(e) => {
-                                                        e.stopPropagation()
-                                                        openEditDialog(category)
-                                                    }}
-                                                >
-                                                    <Pencil className='mr-2 h-4 w-4' />
-                                                    编辑分类
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem>
-                                                    <Users className='mr-2 h-4 w-4' />
-                                                    查看用户
-                                                </DropdownMenuItem>
-                                                <DropdownMenuSeparator />
-                                                <DropdownMenuItem
-                                                    className='text-destructive'
-                                                    disabled={category.isSystem}
-                                                >
-                                                    <Trash2 className='mr-2 h-4 w-4' />
-                                                    删除分类
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </div>
-                                </CardHeader>
-                                <CardContent>
-                                    <CardDescription className='mb-3 line-clamp-2'>
-                                        {category.description}
-                                    </CardDescription>
-                                    <div className='flex flex-wrap gap-1'>
-                                        {category.benefits.slice(0, 3).map((benefit) => (
-                                            <Badge key={benefit} variant='outline' className='text-xs'>
-                                                {benefit === 'all' ? '全部权益' : getBenefitName(benefit)}
-                                            </Badge>
-                                        ))}
-                                        {category.benefits.length > 3 && (
-                                            <Badge variant='outline' className='text-xs'>
-                                                +{category.benefits.length - 3}
-                                            </Badge>
-                                        )}
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        )
-                    })}
+                {/* 工具栏区域 */}
+                <div className='flex flex-wrap items-center gap-4'>
+                    <DataTableToolbar
+                        table={table}
+                        searchPlaceholder='搜索分类...'
+                        searchKey='name'
+                        filters={viewMode === 'list' ? [
+                            {
+                                columnId: 'isSystem',
+                                title: '类型',
+                                options: [
+                                    { label: '系统分类', value: 'system' },
+                                    { label: '自定义', value: 'custom' },
+                                ],
+                            },
+                        ] : []}
+                        showViewOptions={false}
+                    />
+
+                    {viewMode === 'list' && <DataTableViewOptions table={table} />}
+
+                    {/* 视图切换 */}
+                    <Tabs value={viewMode} onValueChange={handleViewModeChange} className={viewMode === 'grid' ? 'ml-auto' : ''}>
+                        <TabsList className='h-9'>
+                            <TabsTrigger value='grid' className='px-3'>
+                                <LayoutGrid className='h-4 w-4' />
+                            </TabsTrigger>
+                            <TabsTrigger value='list' className='px-3'>
+                                <List className='h-4 w-4' />
+                            </TabsTrigger>
+                        </TabsList>
+                    </Tabs>
                 </div>
 
-                {selectedCategory && (
-                    <div className='mt-6'>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className='text-base'>
-                                    权益详情 - {categories.find((r) => r.id === selectedCategory)?.name}
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className='grid gap-2 sm:grid-cols-2 lg:grid-cols-3'>
-                                    {categories
-                                        .find((r) => r.id === selectedCategory)
-                                        ?.benefits.map((benefit) => (
-                                            <div
-                                                key={benefit}
-                                                className='bg-muted/50 flex items-center gap-2 rounded-md px-3 py-2'
-                                            >
-                                                <Check className='text-primary h-4 w-4' />
-                                                <span className='text-sm'>
-                                                    {benefit === 'all' ? '全部权益' : getBenefitName(benefit)}
-                                                </span>
-                                            </div>
-                                        ))}
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
+                {/* 内容区域 */}
+                {viewMode === 'grid' ? (
+                    renderGridView()
+                ) : (
+                    <RolesTable table={table} onRowClick={handleView} />
+                )}
+
+                {/* 分页（仅列表视图显示） */}
+                {viewMode === 'list' && (
+                    <DataTablePagination table={table} className='mt-auto' />
                 )}
             </Main>
+
+            {/* 详情抽屉 */}
+            <RolesDetailSheet
+                category={selectedCategory}
+                benefitGroups={benefitGroups}
+                open={detailOpen}
+                onOpenChange={setDetailOpen}
+                getBenefitName={getBenefitName}
+            />
+
+            {/* 删除确认对话框 */}
+            <ConfirmDialog
+                open={deleteDialogOpen}
+                onOpenChange={setDeleteDialogOpen}
+                title='确认删除'
+                description={`确定要删除分类「${deletingCategory?.name}」吗？此操作不可撤销。`}
+                confirmText='删除'
+                cancelText='取消'
+                onConfirm={handleDelete}
+                variant='destructive'
+            />
 
             {/* 新建/编辑分类对话框 */}
             <Dialog open={categoryDialogOpen} onOpenChange={setCategoryDialogOpen}>

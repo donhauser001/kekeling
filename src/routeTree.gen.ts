@@ -34,7 +34,6 @@ import { Route as AuthenticatedServicesIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedServiceGuaranteesIndexRouteImport } from './routes/_authenticated/service-guarantees/index'
 import { Route as AuthenticatedServiceCategoriesIndexRouteImport } from './routes/_authenticated/service-categories/index'
 import { Route as AuthenticatedRolesIndexRouteImport } from './routes/_authenticated/roles/index'
-import { Route as AuthenticatedPricingPoliciesIndexRouteImport } from './routes/_authenticated/pricing-policies/index'
 import { Route as AuthenticatedPositionsIndexRouteImport } from './routes/_authenticated/positions/index'
 import { Route as AuthenticatedOrdersIndexRouteImport } from './routes/_authenticated/orders/index'
 import { Route as AuthenticatedOrderSettingsIndexRouteImport } from './routes/_authenticated/order-settings/index'
@@ -205,12 +204,6 @@ const AuthenticatedRolesIndexRoute = AuthenticatedRolesIndexRouteImport.update({
   path: '/roles/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedPricingPoliciesIndexRoute =
-  AuthenticatedPricingPoliciesIndexRouteImport.update({
-    id: '/pricing-policies/',
-    path: '/pricing-policies/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedPositionsIndexRoute =
   AuthenticatedPositionsIndexRouteImport.update({
     id: '/positions/',
@@ -492,7 +485,6 @@ export interface FileRoutesByFullPath {
   '/order-settings': typeof AuthenticatedOrderSettingsIndexRoute
   '/orders': typeof AuthenticatedOrdersIndexRoute
   '/positions': typeof AuthenticatedPositionsIndexRoute
-  '/pricing-policies': typeof AuthenticatedPricingPoliciesIndexRoute
   '/roles': typeof AuthenticatedRolesIndexRoute
   '/service-categories': typeof AuthenticatedServiceCategoriesIndexRoute
   '/service-guarantees': typeof AuthenticatedServiceGuaranteesIndexRoute
@@ -556,7 +548,6 @@ export interface FileRoutesByTo {
   '/order-settings': typeof AuthenticatedOrderSettingsIndexRoute
   '/orders': typeof AuthenticatedOrdersIndexRoute
   '/positions': typeof AuthenticatedPositionsIndexRoute
-  '/pricing-policies': typeof AuthenticatedPricingPoliciesIndexRoute
   '/roles': typeof AuthenticatedRolesIndexRoute
   '/service-categories': typeof AuthenticatedServiceCategoriesIndexRoute
   '/service-guarantees': typeof AuthenticatedServiceGuaranteesIndexRoute
@@ -625,7 +616,6 @@ export interface FileRoutesById {
   '/_authenticated/order-settings/': typeof AuthenticatedOrderSettingsIndexRoute
   '/_authenticated/orders/': typeof AuthenticatedOrdersIndexRoute
   '/_authenticated/positions/': typeof AuthenticatedPositionsIndexRoute
-  '/_authenticated/pricing-policies/': typeof AuthenticatedPricingPoliciesIndexRoute
   '/_authenticated/roles/': typeof AuthenticatedRolesIndexRoute
   '/_authenticated/service-categories/': typeof AuthenticatedServiceCategoriesIndexRoute
   '/_authenticated/service-guarantees/': typeof AuthenticatedServiceGuaranteesIndexRoute
@@ -692,7 +682,6 @@ export interface FileRouteTypes {
     | '/order-settings'
     | '/orders'
     | '/positions'
-    | '/pricing-policies'
     | '/roles'
     | '/service-categories'
     | '/service-guarantees'
@@ -756,7 +745,6 @@ export interface FileRouteTypes {
     | '/order-settings'
     | '/orders'
     | '/positions'
-    | '/pricing-policies'
     | '/roles'
     | '/service-categories'
     | '/service-guarantees'
@@ -824,7 +812,6 @@ export interface FileRouteTypes {
     | '/_authenticated/order-settings/'
     | '/_authenticated/orders/'
     | '/_authenticated/positions/'
-    | '/_authenticated/pricing-policies/'
     | '/_authenticated/roles/'
     | '/_authenticated/service-categories/'
     | '/_authenticated/service-guarantees/'
@@ -1034,13 +1021,6 @@ declare module '@tanstack/react-router' {
       path: '/roles'
       fullPath: '/roles'
       preLoaderRoute: typeof AuthenticatedRolesIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/pricing-policies/': {
-      id: '/_authenticated/pricing-policies/'
-      path: '/pricing-policies'
-      fullPath: '/pricing-policies'
-      preLoaderRoute: typeof AuthenticatedPricingPoliciesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/positions/': {
@@ -1378,7 +1358,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedOrderSettingsIndexRoute: typeof AuthenticatedOrderSettingsIndexRoute
   AuthenticatedOrdersIndexRoute: typeof AuthenticatedOrdersIndexRoute
   AuthenticatedPositionsIndexRoute: typeof AuthenticatedPositionsIndexRoute
-  AuthenticatedPricingPoliciesIndexRoute: typeof AuthenticatedPricingPoliciesIndexRoute
   AuthenticatedRolesIndexRoute: typeof AuthenticatedRolesIndexRoute
   AuthenticatedServiceCategoriesIndexRoute: typeof AuthenticatedServiceCategoriesIndexRoute
   AuthenticatedServiceGuaranteesIndexRoute: typeof AuthenticatedServiceGuaranteesIndexRoute
@@ -1428,8 +1407,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedOrderSettingsIndexRoute: AuthenticatedOrderSettingsIndexRoute,
   AuthenticatedOrdersIndexRoute: AuthenticatedOrdersIndexRoute,
   AuthenticatedPositionsIndexRoute: AuthenticatedPositionsIndexRoute,
-  AuthenticatedPricingPoliciesIndexRoute:
-    AuthenticatedPricingPoliciesIndexRoute,
   AuthenticatedRolesIndexRoute: AuthenticatedRolesIndexRoute,
   AuthenticatedServiceCategoriesIndexRoute:
     AuthenticatedServiceCategoriesIndexRoute,
