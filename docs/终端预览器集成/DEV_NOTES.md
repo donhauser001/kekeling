@@ -1,28 +1,40 @@
 # TerminalPreview 改造开发笔记
 
-> **文档版本**: v2.0  
+> **文档版本**: v3.0  
 > **创建日期**: 2024-12-12  
 > **最后更新**: 2024-12-12  
 > **适用范围**: `src/components/terminal-preview/**`  
-> **文档性质**: 📋 **唯一进度真源**
+> **文档性质**: 📋 **唯一进度真源**（PR/Commit/需求卡片的 Step 唯一指代）
 
 ---
 
 ## 📊 当前进度总览
 
-| 模块 | 状态 | 说明 |
-|------|------|------|
-| **基础设施** | ✅ 完成 | Step 0-5: 类型系统 + 双通道请求 + viewerRole 推导 + DebugPanel |
-| **营销中心 Batch A-D** | ✅ 完成 | 9 个页面 + 9 个 API + 数据覆盖机制 |
-| **陪诊员前台页面** | ✅ 完成 | escort-list + escort-detail |
-| **工作台骨架** | ✅ 完成 | workbench + orders-pool + order-detail + earnings + withdraw |
-| **分销中心** | ⏳ 待开发 | 下一阶段主战场（规划文档 v1.0 已就绪） |
+| 模块 | 状态 | Step 范围 | 说明 |
+|------|------|-----------|------|
+| **基础设施** | ✅ 完成 | Step 0-5 | 类型系统 + 双通道请求 + viewerRole 推导 + DebugPanel |
+| **营销中心** | ✅ 完成 | Step 6-7 | 9 个页面 + 9 个 API + 路由参数机制 |
+| **陪诊员公开页** | ✅ 完成 | Step 8 | escort-list + escort-detail |
+| **双会话模型** | ✅ 完成 | Step 9 | session + verify + viewerRole 校验闭环 |
+| **工作台** | ✅ 完成 | Step 10 | API + 页面批次（5 页面 + 7 API） |
+| **分销中心** | ⏳ 待开发 | Step 11 | 类型 + API + 页面批次 A/B/C |
+
+### Step 编号体系（单线制，禁止跳号或多套并存）
+
+```
+Step 0-5   基础设施（类型 + 请求 + viewerRole + DebugPanel + 路由样板）
+Step 6-7   营销中心（批次 A-D，9 页面）
+Step 8     陪诊员公开页（escort-list/detail）
+Step 9     双会话模型（session + verify + 登录/退出流程）
+Step 10    工作台（API + 页面批次）
+Step 11    分销中心（11.1 类型 → 11.2 API → 11.3-11.5 页面批次）
+```
 
 ### 下一阶段主战场
 
 | 优先级 | 任务 | 说明 |
 |--------|------|------|
-| **P0** | 分销中心终端页面 | 整体待开发，包含：团队管理、分润记录、邀请关系等 |
+| **P0** | Step 11: 分销中心终端页面 | 整体待开发，包含：团队管理、分润记录、邀请关系等 |
 | **P1** | 工作台业务页完善 | settings 等待扩展 |
 | **P1** | 管理后台预览器集成 | 积分/邀请/活动/陪诊员管理页面集成侧栏预览 |
 
@@ -35,6 +47,14 @@
 - `viewerRole` / `userSession` / `escortSession` 等字段仅用于后台预览调试
 - 真实终端的视角切换由 token validate 结果推导，不允许手动写入
 - 禁止将本组件的视角切换逻辑搬到真实终端，否则会导致越权风险
+
+### 🔐 分销中心/工作台安全护栏（硬约束）
+
+| 约束 | 说明 |
+|------|------|
+| **通道强制** | 分销中心/工作台所有 API **必须** `escortRequest`，即使后端暂时没验 token 也必须按私域通道走 |
+| **禁止变通** | 禁止为了"方便预览"改成 `userRequest`，预览器的便利不能牺牲权限边界 |
+| **Token 校验** | 真实 token 必须经过 `verifyEscortToken()` 校验，mock token 仅用于开发态 |
 
 ---
 
@@ -229,7 +249,7 @@ interface CouponsResponse {
 
 ---
 
-### Step 6: 批量接入页面
+### Step 6: 营销中心批次 A-B ✅
 
 **目标**: 按模块逐批接入，每批最多 2 个页面
 
@@ -292,6 +312,8 @@ interface PointsRecordsResponse {
 ```
 
 ---
+
+### Step 7: 营销中心批次 C-D ✅
 
 #### 批次 C: referrals + campaigns ✅
 
@@ -380,9 +402,9 @@ interface AvailableCoupon {
 
 ---
 
-### Step 10: 陪诊员公开页批次 A ✅
+### Step 8: 陪诊员公开页 ✅
 
-#### 批次 E: escort-list + escort-detail ✅
+#### escort-list + escort-detail ✅
 
 **验收点**:
 - [x] 新增 `components/pages/escort/EscortListPage.tsx` (陪诊员卡片: 头像、等级、服务次数、好评率、状态)
@@ -421,9 +443,11 @@ interface EscortDetail extends EscortListItem {
 
 ---
 
-### Step 11: 陪诊员工作台最小闭环 ✅
+### Step 9: 双会话模型 + escortToken 校验闭环 ✅
 
-#### 批次 F: workbench ✅
+> 本 Step 整合了原 Step 11-12 + Step 2/7-5/7 的内容，建立完整的双会话模型。
+
+#### 9.1 工作台最小闭环 ✅
 
 **验收点**:
 - [x] 新增 `components/pages/workbench/WorkbenchPage.tsx`
@@ -469,7 +493,7 @@ interface WorkbenchStats {
 
 ---
 
-### Step 12: 双会话（Dual-Session）模型 ✅
+#### 9.2 双会话（Dual-Session）模型 ✅
 
 **目标**: 建立统一的会话状态层，支持同时存在 userToken 与 escortToken。
 
@@ -523,7 +547,7 @@ function deriveViewerRole(escortToken, isValidated) {
 
 ---
 
-### Step 2/7: 请求分流增强 + verifyEscortToken ✅
+#### 9.3 请求分流增强 + verifyEscortToken ✅
 
 **目标**: 确保双通道请求机制完整，并增加 escort token 验证占位。
 
@@ -559,7 +583,7 @@ escortRequest<T>(endpoint, options?)
 
 ---
 
-### Step 3/7: escortToken 有效性判定接入 viewerRole ✅
+#### 9.4 escortToken 有效性判定接入 viewerRole ✅
 
 **目标**: viewerRole=escort 当且仅当 escortToken 存在且后端验证有效。
 
@@ -610,7 +634,7 @@ return 'user'
 
 ---
 
-### Step 4/7: "我的页"陪诊员入口 + 二次登录流程 ✅
+#### 9.5 "我的页"陪诊员入口 + 二次登录流程 ✅
 
 **目标**: 普通用户可点击入口触发二次登录，登录成功后写入 escortToken 并切换视角。
 
@@ -670,7 +694,7 @@ interface ProfilePageProps {
 
 ---
 
-### Step 5/7: 退出陪诊员功能 ✅
+#### 9.6 退出陪诊员功能 ✅
 
 **目标**: 在 escort 视角下提供退出入口，退出后回到 user 视角且不影响 user 登录态。
 
@@ -709,7 +733,11 @@ const handleExitEscortMode = useCallback(() => {
 
 ---
 
-### Step 6/7: 工作台 API（escortRequest 通道） ✅
+### Step 10: 工作台（API + 页面批次） ✅
+
+> 本 Step 整合了原 Step 6/7-7/7 + 工作台页面相关内容。
+
+#### 10.1 工作台 API（escortRequest 通道） ✅
 
 **目标**: 新增工作台相关 API，全部走 escortRequest 通道，具备 mock 降级。
 
@@ -770,7 +798,7 @@ interface WithdrawInfo {
 
 ---
 
-### Step 7/7 批次 A: 工作台页面（workbench + orders-pool） ✅
+#### 10.2 工作台页面（workbench + orders-pool） ✅
 
 **目标**: 接入工作台总览和订单池页面。
 
@@ -800,7 +828,7 @@ workbench-orders-pool → 点击返回 → workbench
 
 ---
 
-### 工作台 API Mock Token 规则增强 ✅
+#### 10.3 工作台 API Mock Token 规则增强 ✅
 
 **目标**: 所有 escortRequest 通道的 API 遵守 mock token 规则。
 
@@ -889,7 +917,7 @@ interface WithdrawInfo {
 
 ---
 
-### getEarningsStats API ✅
+#### 10.4 getEarningsStats API ✅
 
 **接口**: `GET /escort-app/earnings/stats`
 **通道**: escortRequest（⚠️ 必须 escortToken，禁止 userRequest）
@@ -913,7 +941,7 @@ const { data, isLoading, isError } = useQuery({
 
 ---
 
-### 工作台收入明细页面 ✅
+#### 10.5 工作台收入明细页面 ✅
 
 **页面**: `workbench-earnings`
 
@@ -975,7 +1003,7 @@ const MOCK_RECORDS = [
 
 ---
 
-### 工作台提现页面 ✅
+#### 10.6 工作台提现页面 ✅
 
 **页面**: `workbench-withdraw`
 
@@ -1060,7 +1088,7 @@ const MOCK_RECORDS = [
 
 ---
 
-### 工作台订单详情页面 ✅
+#### 10.7 工作台订单详情页面 ✅
 
 **页面**: `workbench-order-detail`
 **文件**: `components/pages/workbench/OrderDetailPage.tsx`
@@ -1127,11 +1155,76 @@ escortSession={{ token: 'mock-escort-token', escortId: 'mock-id' }}
 // mock token 开头为 'mock-'，会自动走静态数据
 ```
 
+### PermissionPrompt 组件约束（强制复用）
+
+**规则**: 分销中心/工作台所有私域页，非 escort 视角 **必须** 返回同一个 `<PermissionPrompt />`，**不允许每个页面自己写 Alert 或 Card**。
+
+```typescript
+// PermissionPrompt Props（固定接口，禁止随意扩展）
+interface PermissionPromptProps {
+  title: string              // 必填：提示标题
+  description?: string       // 选填：提示描述
+  onLogin?: () => void       // 选填：点击登录回调
+  showDebugInject?: boolean  // 选填：开发环境显示"注入 token"按钮
+}
+```
+
+**使用示例**:
+```typescript
+// ✅ 正确：使用统一组件
+if (!isEscort) {
+  return (
+    <PermissionPrompt
+      title="需要陪诊员身份"
+      description="请先登录陪诊员账号"
+      onLogin={() => setShowLoginDialog(true)}
+      showDebugInject={process.env.NODE_ENV === 'development'}
+    />
+  )
+}
+
+// ❌ 禁止：每页自定义权限提示
+if (!isEscort) {
+  return (
+    <Card className="m-4 p-4">
+      <AlertCircle />
+      <p>您没有权限访问此页面</p>
+    </Card>
+  )
+}
+```
+
+**组件位置**: `src/components/terminal-preview/components/PermissionPrompt.tsx`（待创建）
+
 ---
 
-## 下一阶段：分销中心终端页面
+## Step 11: 分销中心终端页面 ⏳
 
 > 整体待开发，遵循 Workbench 相同模式
+
+### 🔐 分销中心安全护栏（硬约束）
+
+| 约束 | 说明 |
+|------|------|
+| **通道强制** | 分销中心所有 API **必须** `escortRequest`，即使后端暂时没验 token 也必须按私域通道走 |
+| **禁止变通** | 禁止为了"方便预览"改成 `userRequest`，预览器的便利不能牺牲权限边界 |
+| **组件复用** | 非 escort 视角必须使用统一的 `<PermissionPrompt />` 组件，禁止每页自定义 |
+
+### ⚡ 分销中心开工流水线（禁止跳步）
+
+```
+Step 11.1 types.ts + PreviewPage keys   ← 先锁编译，确保 page key 唯一
+    ↓
+Step 11.2 previewApi 五个方法            ← 先跑通 mock + escortRequest
+    ↓
+Step 11.3 distribution + distribution-members  ← 先跑通权限壳 + 两页骨架
+    ↓
+Step 11.4 distribution-records + distribution-invite
+    ↓
+Step 11.5 distribution-promotion
+```
+
+⚠️ **禁止跳步开发页面，必须先补 types + api，否则会出现"页面写完了才发现 PreviewPage 没加 key"**
 
 ---
 
@@ -1163,6 +1256,32 @@ escortSession={{ token: 'mock-escort-token', escortId: 'mock-id' }}
 | `getDistributionInviteCode()` | `/escort-app/distribution/invite-code` | escortRequest |
 | `getDistributionPromotion()` | `/escort-app/distribution/promotion` | escortRequest |
 
+#### 🚫 禁止出现的 API 路径
+
+| 禁止路径 | 原因 |
+|----------|------|
+| `/escort/distribution/*` | 缺少 `-app` 后缀，与现有命名规范不一致 |
+| `/escort-app/team/*` | 避免与 `team` controller 混淆 |
+| `/escort-app/distribution/team-members` | 冗余，使用 `members` 即可 |
+
+⚠️ **API 禁止使用 `team` 前缀**，所有分销相关接口必须使用 `distribution` 前缀。
+
+#### 路由参数规范（预留）
+
+**约定**: 分销中心本阶段不做 detail 页，但 **保留 params 能力**。
+
+**params key 命名约定**:
+```typescript
+// 推荐 params 命名（预留，后续扩展时直接使用）
+'distribution-records': { 
+  range?: '7d' | '30d' | 'all',    // 时间范围筛选
+  status?: 'pending' | 'settled'   // 状态筛选
+}
+'distribution-members': { 
+  relation?: 'direct' | 'indirect' // 关系类型筛选
+}
+```
+
 #### 权限规则
 
 | 规则 | 说明 |
@@ -1173,14 +1292,23 @@ escortSession={{ token: 'mock-escort-token', escortId: 'mock-id' }}
 
 ---
 
-### Step 13: 分销中心类型定义
+### Step 11.1: 分销中心类型定义
 
 **目标**: 建立分销中心数据类型
 
 **验收点**:
-- [ ] `types.ts` 增加分销中心相关类型
-- [ ] PreviewPage 增加 5 个 page key
-- [ ] TypeScript 编译通过
+- [x] `types.ts` 增加分销中心相关类型
+- [x] PreviewPage 增加 5 个 page key
+- [x] TypeScript 编译通过
+
+#### 字段规范（提前定死，避免前后端歧义）
+
+| 字段 | 规范 | 说明 |
+|------|------|------|
+| `phone` | `138****8888` 格式（11 位手机号脱敏） | 前 3 位 + `****` + 后 4 位 |
+| `promotionProgress` | `number \| undefined`，范围 `0-100` | `undefined` = 后端没算或不适用，`0` = 适用但完全没进度 |
+
+⚠️ **禁止把 `promotionProgress: 0` 当成 falsy 显示成 "–"，0 表示适用但完全没进度**
 
 **新增类型**:
 ```typescript
@@ -1194,7 +1322,7 @@ interface DistributionStats {
   pendingDistribution: number  // 待结算
   currentLevel: string         // 当前等级
   nextLevel?: string           // 下一等级
-  promotionProgress?: number   // 晋升进度 0-100
+  promotionProgress?: number   // 晋升进度 0-100（undefined=不适用，0=适用但没进度）
 }
 
 // 团队成员
@@ -1202,7 +1330,7 @@ interface DistributionMember {
   id: string
   name: string
   avatar?: string
-  phone: string               // 脱敏
+  phone: string               // 脱敏格式: 138****8888
   level: string
   relation: 'direct' | 'indirect'
   joinedAt: string
@@ -1256,19 +1384,19 @@ interface DistributionPromotion {
 
 ---
 
-### Step 14: 分销中心 API（escortRequest 通道）
+### Step 11.2: 分销中心 API（escortRequest 通道）
 
 **目标**: 新增分销中心 API，全部走 escortRequest + mock 降级
 
 **验收点**:
-- [ ] `getDistributionStats()` - 分销统计
-- [ ] `getDistributionMembers()` - 成员列表
-- [ ] `getDistributionRecords()` - 分润记录
-- [ ] `getDistributionInviteCode()` - 邀请信息
-- [ ] `getDistributionPromotion()` - 晋升信息
-- [ ] mock token 直接返回 mock 数据
-- [ ] 404/500 降级到 mock 数据
-- [ ] TypeScript 编译通过
+- [x] `getDistributionStats()` - 分销统计
+- [x] `getDistributionMembers()` - 成员列表
+- [x] `getDistributionRecords()` - 分润记录
+- [x] `getDistributionInviteCode()` - 邀请信息
+- [x] `getDistributionPromotion()` - 晋升信息
+- [x] mock token 直接返回 mock 数据
+- [x] 404/500 降级到 mock 数据
+- [x] TypeScript 编译通过
 
 **API 实现模式**（与工作台一致）:
 ```typescript
@@ -1300,25 +1428,25 @@ getDistributionStats: async () => {
 
 ---
 
-### Step 15: 分销中心页面批次 A（distribution + distribution-members）
+### Step 11.3: 分销中心页面批次 A（distribution + distribution-members）
 
 **目标**: 接入分销中心入口页和成员列表
 
 **验收点**:
-- [ ] 新增 `DistributionPage.tsx`（入口页）
-- [ ] 新增 `DistributionMembersPage.tsx`（成员列表）
-- [ ] renderPageContent() 增加 case 'distribution' / 'distribution-members'
-- [ ] 仅 viewerRole=escort 时允许进入
-- [ ] 非 escort 显示 🔒 提示 + "去登录"入口
-- [ ] loading / error / mock 降级齐全
-- [ ] TypeScript 编译通过
+- [x] 新增 `DistributionPage.tsx`（入口页）
+- [x] 新增 `DistributionMembersPage.tsx`（成员列表）
+- [x] renderPageContent() 增加 case 'distribution' / 'distribution-members'
+- [x] 仅 viewerRole=escort 时允许进入
+- [x] 非 escort 显示 🔒 提示 + "去登录"入口（使用统一 `<PermissionPrompt />`）
+- [x] loading / error / mock 降级齐全
+- [x] TypeScript 编译通过
 
 **权限校验（硬约束）**:
 ```typescript
 // DistributionPage.tsx
 const { isEscort } = useViewerRole(...)
 
-// 非 escort 显示权限提示
+// 非 escort 必须使用统一的 PermissionPrompt 组件
 if (!isEscort) {
   return (
     <PermissionPrompt
@@ -1340,24 +1468,26 @@ const { data, isLoading } = useQuery({
 
 ---
 
-### Step 16: 分销中心页面批次 B（distribution-records + distribution-invite）
+### Step 11.4: 分销中心页面批次 B（distribution-records + distribution-invite）
 
 **验收点**:
-- [ ] 新增 `DistributionRecordsPage.tsx`
-- [ ] 新增 `DistributionInvitePage.tsx`
-- [ ] renderPageContent() 增加 case
-- [ ] enabled: isEscort
-- [ ] TypeScript 编译通过
+- [x] 新增 `DistributionRecordsPage.tsx`
+- [x] 新增 `DistributionInvitePage.tsx`
+- [x] renderPageContent() 增加 case
+- [x] 非 escort 显示统一 `<PermissionPrompt />`
+- [x] enabled: isEscort
+- [x] TypeScript 编译通过
 
 ---
 
-### Step 17: 分销中心页面批次 C（distribution-promotion）
+### Step 11.5: 分销中心页面批次 C（distribution-promotion）
 
 **验收点**:
-- [ ] 新增 `DistributionPromotionPage.tsx`
-- [ ] renderPageContent() 增加 case
-- [ ] enabled: isEscort
-- [ ] TypeScript 编译通过
+- [x] 新增 `DistributionPromotionPage.tsx`
+- [x] renderPageContent() 增加 case
+- [x] 非 escort 显示统一 `<PermissionPrompt />`
+- [x] enabled: isEscort
+- [x] TypeScript 编译通过
 
 ---
 

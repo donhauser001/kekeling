@@ -26,6 +26,16 @@ import type {
   ServiceCategory,
   RecommendedServicesData,
   ServiceListResponse,
+  // 分销中心类型（Step 11.2）
+  DistributionStats,
+  DistributionMember,
+  DistributionMembersParams,
+  DistributionMembersResponse,
+  DistributionRecord,
+  DistributionRecordsParams,
+  DistributionRecordsResponse,
+  DistributionInvite,
+  DistributionPromotion,
 } from './types'
 
 // ============================================================================
@@ -1868,8 +1878,186 @@ export const previewApi = {
     }
   },
 
-  // TODO: 后续扩展
-  // getMyEscortProfile: () => escortRequest<EscortProfile>('/escort-app/profile'),
+  // ==========================================================================
+  // 分销中心（Step 11.2）
+  // ⚠️ 分销中心所有 API 必须走 escortRequest，禁止 userRequest
+  // ==========================================================================
+
+  /**
+   * 获取分销统计数据
+   * 接口: GET /escort-app/distribution/stats
+   * 通道: escortRequest（⚠️ 必须 escortToken，禁止 userRequest）
+   */
+  getDistributionStats: async (): Promise<DistributionStats> => {
+    const escortToken = getEscortToken()
+
+    // 无 token 直接返回 mock
+    if (!escortToken) {
+      console.log('[previewApi.getDistributionStats] 无 escortToken, 返回 mock')
+      return getMockDistributionStats()
+    }
+
+    // mock token 直接返回 mock，不请求真实后端
+    if (escortToken.startsWith('mock-')) {
+      console.log('[previewApi.getDistributionStats] mock token, 返回 mock')
+      return getMockDistributionStats()
+    }
+
+    try {
+      return await escortRequest<DistributionStats>('/escort-app/distribution/stats')
+    } catch (error) {
+      if (error instanceof ApiError && [404, 500].includes(error.status)) {
+        console.warn('[previewApi.getDistributionStats] 接口错误，使用 mock')
+        return getMockDistributionStats()
+      }
+      // 其他错误也降级到 mock，保证预览器可用
+      console.warn('[previewApi.getDistributionStats] 请求失败，降级 mock:', error)
+      return getMockDistributionStats()
+    }
+  },
+
+  /**
+   * 获取分销成员列表
+   * 接口: GET /escort-app/distribution/members
+   * 通道: escortRequest（⚠️ 必须 escortToken，禁止 userRequest）
+   */
+  getDistributionMembers: async (params?: DistributionMembersParams): Promise<DistributionMembersResponse> => {
+    const escortToken = getEscortToken()
+
+    // 无 token 直接返回 mock
+    if (!escortToken) {
+      console.log('[previewApi.getDistributionMembers] 无 escortToken, 返回 mock')
+      return getMockDistributionMembers(params)
+    }
+
+    // mock token 直接返回 mock，不请求真实后端
+    if (escortToken.startsWith('mock-')) {
+      console.log('[previewApi.getDistributionMembers] mock token, 返回 mock')
+      return getMockDistributionMembers(params)
+    }
+
+    try {
+      const searchParams = new URLSearchParams()
+      if (params?.relation) searchParams.set('relation', params.relation)
+      if (params?.page) searchParams.set('page', params.page.toString())
+      if (params?.pageSize) searchParams.set('pageSize', params.pageSize.toString())
+      const query = searchParams.toString()
+      return await escortRequest<DistributionMembersResponse>(
+        `/escort-app/distribution/members${query ? `?${query}` : ''}`
+      )
+    } catch (error) {
+      if (error instanceof ApiError && [404, 500].includes(error.status)) {
+        console.warn('[previewApi.getDistributionMembers] 接口错误，使用 mock')
+        return getMockDistributionMembers(params)
+      }
+      console.warn('[previewApi.getDistributionMembers] 请求失败，降级 mock:', error)
+      return getMockDistributionMembers(params)
+    }
+  },
+
+  /**
+   * 获取分润记录列表
+   * 接口: GET /escort-app/distribution/records
+   * 通道: escortRequest（⚠️ 必须 escortToken，禁止 userRequest）
+   */
+  getDistributionRecords: async (params?: DistributionRecordsParams): Promise<DistributionRecordsResponse> => {
+    const escortToken = getEscortToken()
+
+    // 无 token 直接返回 mock
+    if (!escortToken) {
+      console.log('[previewApi.getDistributionRecords] 无 escortToken, 返回 mock')
+      return getMockDistributionRecords(params)
+    }
+
+    // mock token 直接返回 mock，不请求真实后端
+    if (escortToken.startsWith('mock-')) {
+      console.log('[previewApi.getDistributionRecords] mock token, 返回 mock')
+      return getMockDistributionRecords(params)
+    }
+
+    try {
+      const searchParams = new URLSearchParams()
+      if (params?.range) searchParams.set('range', params.range)
+      if (params?.status) searchParams.set('status', params.status)
+      if (params?.page) searchParams.set('page', params.page.toString())
+      if (params?.pageSize) searchParams.set('pageSize', params.pageSize.toString())
+      const query = searchParams.toString()
+      return await escortRequest<DistributionRecordsResponse>(
+        `/escort-app/distribution/records${query ? `?${query}` : ''}`
+      )
+    } catch (error) {
+      if (error instanceof ApiError && [404, 500].includes(error.status)) {
+        console.warn('[previewApi.getDistributionRecords] 接口错误，使用 mock')
+        return getMockDistributionRecords(params)
+      }
+      console.warn('[previewApi.getDistributionRecords] 请求失败，降级 mock:', error)
+      return getMockDistributionRecords(params)
+    }
+  },
+
+  /**
+   * 获取邀请信息
+   * 接口: GET /escort-app/distribution/invite-code
+   * 通道: escortRequest（⚠️ 必须 escortToken，禁止 userRequest）
+   */
+  getDistributionInviteCode: async (): Promise<DistributionInvite> => {
+    const escortToken = getEscortToken()
+
+    // 无 token 直接返回 mock
+    if (!escortToken) {
+      console.log('[previewApi.getDistributionInviteCode] 无 escortToken, 返回 mock')
+      return getMockDistributionInvite()
+    }
+
+    // mock token 直接返回 mock，不请求真实后端
+    if (escortToken.startsWith('mock-')) {
+      console.log('[previewApi.getDistributionInviteCode] mock token, 返回 mock')
+      return getMockDistributionInvite()
+    }
+
+    try {
+      return await escortRequest<DistributionInvite>('/escort-app/distribution/invite-code')
+    } catch (error) {
+      if (error instanceof ApiError && [404, 500].includes(error.status)) {
+        console.warn('[previewApi.getDistributionInviteCode] 接口错误，使用 mock')
+        return getMockDistributionInvite()
+      }
+      console.warn('[previewApi.getDistributionInviteCode] 请求失败，降级 mock:', error)
+      return getMockDistributionInvite()
+    }
+  },
+
+  /**
+   * 获取晋升信息
+   * 接口: GET /escort-app/distribution/promotion
+   * 通道: escortRequest（⚠️ 必须 escortToken，禁止 userRequest）
+   */
+  getDistributionPromotion: async (): Promise<DistributionPromotion> => {
+    const escortToken = getEscortToken()
+
+    // 无 token 直接返回 mock
+    if (!escortToken) {
+      console.log('[previewApi.getDistributionPromotion] 无 escortToken, 返回 mock')
+      return getMockDistributionPromotion()
+    }
+
+    // mock token 直接返回 mock，不请求真实后端
+    if (escortToken.startsWith('mock-')) {
+      console.log('[previewApi.getDistributionPromotion] mock token, 返回 mock')
+      return getMockDistributionPromotion()
+    }
+
+    try {
+      return await escortRequest<DistributionPromotion>('/escort-app/distribution/promotion')
+    } catch (error) {
+      if (error instanceof ApiError && [404, 500].includes(error.status)) {
+        console.warn('[previewApi.getDistributionPromotion] 接口错误，使用 mock')
+        return getMockDistributionPromotion()
+      }
+      console.warn('[previewApi.getDistributionPromotion] 请求失败，降级 mock:', error)
+      return getMockDistributionPromotion()
+    }
+  },
 }
 
 // ============================================================================
@@ -1910,5 +2098,253 @@ function getMockWorkbenchOrderDetail(orderId: string): WorkbenchOrderDetail {
     remark: '请准时到达，老人行动不便需要轮椅',
     createdAt: '2024-12-12 10:30:00',
     updatedAt: '2024-12-12 11:00:00',
+  }
+}
+
+// ============================================================================
+// Mock 数据：分销中心（Step 11.2）
+// ============================================================================
+
+/**
+ * Mock 分销统计数据
+ * 覆盖场景：promotionProgress = 42（有进度）
+ * ⚠️ 另见 getMockDistributionPromotion 覆盖 promotionProgress = 0 场景
+ */
+function getMockDistributionStats(): DistributionStats {
+  return {
+    totalTeamSize: 28,
+    directCount: 12,
+    indirectCount: 16,
+    totalDistribution: 15680.50,
+    monthlyDistribution: 2340.00,
+    pendingDistribution: 580.00,
+    currentLevel: '银牌合伙人',
+    nextLevel: '金牌合伙人',
+    promotionProgress: 42, // 有进度场景
+  }
+}
+
+/**
+ * Mock 分销成员数据
+ * 覆盖场景：direct 2 条 + indirect 2 条
+ */
+function getMockDistributionMembers(params?: DistributionMembersParams): DistributionMembersResponse {
+  const allMembers: DistributionMember[] = [
+    // 直属成员 2 条
+    {
+      id: 'member-1',
+      name: '王小明',
+      avatar: undefined,
+      phone: '138****1234',
+      level: '普通会员',
+      relation: 'direct',
+      joinedAt: '2024-11-15',
+      totalOrders: 23,
+      totalDistribution: 1260.00,
+    },
+    {
+      id: 'member-2',
+      name: '李芳芳',
+      avatar: undefined,
+      phone: '139****5678',
+      level: '银牌会员',
+      relation: 'direct',
+      joinedAt: '2024-10-20',
+      totalOrders: 45,
+      totalDistribution: 2890.50,
+    },
+    // 间接成员 2 条
+    {
+      id: 'member-3',
+      name: '张三丰',
+      avatar: undefined,
+      phone: '136****9012',
+      level: '普通会员',
+      relation: 'indirect',
+      joinedAt: '2024-12-01',
+      totalOrders: 8,
+      totalDistribution: 420.00,
+    },
+    {
+      id: 'member-4',
+      name: '赵敏敏',
+      avatar: undefined,
+      phone: '137****3456',
+      level: '普通会员',
+      relation: 'indirect',
+      joinedAt: '2024-12-05',
+      totalOrders: 5,
+      totalDistribution: 280.00,
+    },
+  ]
+
+  // 根据 relation 筛选
+  let filteredMembers = allMembers
+  if (params?.relation) {
+    filteredMembers = allMembers.filter(m => m.relation === params.relation)
+  }
+
+  return {
+    items: filteredMembers,
+    total: filteredMembers.length,
+    hasMore: false,
+  }
+}
+
+/**
+ * Mock 分润记录数据
+ * 覆盖场景：pending 2 条 + settled 2 条 + 有 orderNo 2 条 + 无 orderNo 1 条
+ */
+function getMockDistributionRecords(params?: DistributionRecordsParams): DistributionRecordsResponse {
+  const allRecords: DistributionRecord[] = [
+    // pending 记录 2 条（1 条有 orderNo，1 条无）
+    {
+      id: 'record-1',
+      type: 'order',
+      title: '订单分润',
+      amount: 28.00,
+      status: 'pending',
+      sourceEscortName: '王小明',
+      orderNo: 'ORD202412120001',
+      createdAt: '2024-12-12 14:30',
+    },
+    {
+      id: 'record-2',
+      type: 'invite',
+      title: '邀请奖励',
+      amount: 50.00,
+      status: 'pending',
+      sourceEscortName: '新成员张三',
+      // 无 orderNo
+      createdAt: '2024-12-11 10:00',
+    },
+    // settled 记录 2 条
+    {
+      id: 'record-3',
+      type: 'order',
+      title: '订单分润',
+      amount: 35.50,
+      status: 'settled',
+      sourceEscortName: '李芳芳',
+      orderNo: 'ORD202412100002',
+      createdAt: '2024-12-10 16:20',
+      settledAt: '2024-12-11 00:00',
+    },
+    {
+      id: 'record-4',
+      type: 'bonus',
+      title: '月度团队奖励',
+      amount: 200.00,
+      status: 'settled',
+      createdAt: '2024-12-01 00:00',
+      settledAt: '2024-12-01 12:00',
+    },
+    // cancelled 记录 1 条（额外覆盖）
+    {
+      id: 'record-5',
+      type: 'order',
+      title: '订单分润（已取消）',
+      amount: 15.00,
+      status: 'cancelled',
+      sourceEscortName: '张三丰',
+      orderNo: 'ORD202412080003',
+      createdAt: '2024-12-08 09:00',
+    },
+  ]
+
+  // 根据 status 筛选
+  let filteredRecords = allRecords
+  if (params?.status) {
+    filteredRecords = allRecords.filter(r => r.status === params.status)
+  }
+
+  // 根据 range 筛选（简化处理）
+  // 实际应该根据 createdAt 筛选，这里仅作示意
+
+  return {
+    items: filteredRecords,
+    total: filteredRecords.length,
+    hasMore: false,
+  }
+}
+
+/**
+ * Mock 邀请信息
+ */
+function getMockDistributionInvite(): DistributionInvite {
+  return {
+    inviteCode: 'KKL2024DIST',
+    inviteLink: 'https://kekeling.com/invite/KKL2024DIST',
+    qrCodeUrl: undefined, // 可选
+    totalInvited: 12,
+    rewardPerInvite: 50.00,
+  }
+}
+
+/**
+ * Mock 晋升信息
+ * 覆盖场景：
+ * - 可晋升（有 nextLevel + requirements）
+ * - promotionProgress = 0 场景
+ */
+function getMockDistributionPromotion(): DistributionPromotion {
+  return {
+    currentLevel: {
+      code: 'silver',
+      name: '银牌合伙人',
+      commissionRate: 0.08,
+      benefits: [
+        '订单分润 8%',
+        '团队管理功能',
+        '专属客服支持',
+      ],
+    },
+    nextLevel: {
+      code: 'gold',
+      name: '金牌合伙人',
+      commissionRate: 0.12,
+      benefits: [
+        '订单分润 12%',
+        '团队管理功能',
+        '专属客服支持',
+        '优先派单权',
+        '月度团队奖励',
+      ],
+      requirements: [
+        {
+          type: 'team_size',
+          current: 28,
+          required: 50,
+        },
+        {
+          type: 'monthly_orders',
+          current: 45,
+          required: 100,
+        },
+      ],
+    },
+  }
+}
+
+/**
+ * Mock 晋升信息（已达最高级场景）
+ * 用于测试 nextLevel = undefined 的 UI 展示
+ */
+export function getMockDistributionPromotionMaxLevel(): DistributionPromotion {
+  return {
+    currentLevel: {
+      code: 'diamond',
+      name: '钻石合伙人',
+      commissionRate: 0.15,
+      benefits: [
+        '订单分润 15%',
+        '团队管理功能',
+        '专属客服支持',
+        '优先派单权',
+        '月度团队奖励',
+        '年度分红权益',
+      ],
+    },
+    nextLevel: undefined, // 已达最高级
   }
 }

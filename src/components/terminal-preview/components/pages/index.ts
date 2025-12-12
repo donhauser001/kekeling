@@ -25,3 +25,12 @@ export { EscortListPage, EscortDetailPage } from './escort'
 
 // 工作台页面（Step 11 + Step 7/7 新增）
 export { WorkbenchPage, OrdersPoolPage, EarningsPage, WorkbenchEarningsPage, WithdrawPage, WorkbenchWithdrawPage, OrderDetailPage } from './workbench'
+
+// 分销中心页面（Step 11.3-11.5 新增）
+export {
+  DistributionPage,
+  DistributionMembersPage,
+  DistributionRecordsPage,
+  DistributionInvitePage,
+  DistributionPromotionPage,
+} from './distribution'
