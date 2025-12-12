@@ -1,6 +1,11 @@
 import { Injectable, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Decimal } from '@prisma/client/runtime/library';
+import {
+  DistributionStrategyFactory,
+  DistributionStrategyType,
+  DistributionRateConfig,
+} from './strategies';
 
 // 分润计算结果（金额单位：分）
 export interface DistributionResult {
@@ -53,7 +58,10 @@ export interface L1PromotionConfig {
 export class DistributionService {
   private readonly logger = new Logger(DistributionService.name);
 
-  constructor(private prisma: PrismaService) { }
+  constructor(
+    private prisma: PrismaService,
+    private strategyFactory: DistributionStrategyFactory,
+  ) { }
 
   /**
    * 生成邀请码
@@ -409,25 +417,30 @@ export class DistributionService {
         continue;
       }
 
-      // 根据层级确定分润比例
-      let rate: number;
+      // 使用策略模式计算分润比例
       const relationLevel = i + 1; // 1=直接上级, 2=二级, 3=三级
 
-      switch (ancestor.distributionLevel) {
-        case 1: // 城市合伙人
-          rate = config.l1CommissionRate;
-          break;
-        case 2: // 团队长
-          rate = config.l2CommissionRate;
-          break;
-        case 3: // 普通陪诊员（只能获得直推奖励，不参与持续分润）
-          rate = relationLevel === 1 ? config.l3CommissionRate : 0;
-          break;
-        default:
-          rate = 0;
-      }
+      // 获取分润策略（从配置读取，默认为 standard）
+      const strategyType = (config as any).strategyType || DistributionStrategyType.STANDARD;
+      const strategy = this.strategyFactory.getStrategy(strategyType);
 
-      if (rate > 0) {
+      // 构建费率配置
+      const rateConfig: DistributionRateConfig = {
+        l1CommissionRate: config.l1CommissionRate,
+        l2CommissionRate: config.l2CommissionRate,
+        l3CommissionRate: config.l3CommissionRate,
+      };
+
+      // 使用策略计算费率
+      const rateResult = strategy.calculateRate({
+        orderAmountCents,
+        beneficiaryLevel: ancestor.distributionLevel,
+        relationLevel,
+        config: rateConfig,
+      });
+
+      if (rateResult.shouldDistribute && rateResult.rate > 0) {
+        const rate = rateResult.rate;
         // ⚠️ 核心计算：使用整数分计算，避免浮点精度问题
         // amountCents = orderAmountCents * rate / 100
         // 先乘后除，使用 Math.round 四舍五入到分
