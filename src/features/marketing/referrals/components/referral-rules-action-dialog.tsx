@@ -31,6 +31,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { SelectDropdown } from '@/components/select-dropdown'
 import { referralApi, type ReferralRule } from '@/lib/api'
+import { TerminalPreview } from '@/components/terminal-preview'
 
 const formSchema = z.object({
   name: z.string().min(1, '请输入规则名称'),
@@ -168,7 +169,7 @@ export function ReferralRulesActionDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChangeWrapper}>
-        <DialogContent className='sm:max-w-lg'>
+        <DialogContent className='sm:max-w-[900px]'>
           <DialogHeader className='text-start'>
             <DialogTitle>{isEdit ? '编辑邀请规则' : '新建邀请规则'}</DialogTitle>
             <DialogDescription>
@@ -176,187 +177,201 @@ export function ReferralRulesActionDialog({
             </DialogDescription>
           </DialogHeader>
 
-          <div className='max-h-[60vh] min-h-[300px] overflow-y-auto py-1 px-1'>
-            <Form {...form}>
-              <form id='referral-rules-form' onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>
-                <FormField
-                  control={form.control}
-                  name='name'
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>规则名称 *</FormLabel>
-                      <FormControl>
-                        <Input placeholder='如：新用户注册奖励' {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className='grid grid-cols-2 items-start gap-4'>
+          <div className='flex gap-6'>
+            {/* 左侧：表单 */}
+            <div className='flex-1 max-h-[60vh] min-h-[300px] overflow-y-auto py-1 px-1'>
+              <Form {...form}>
+                <form id='referral-rules-form' onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>
                   <FormField
                     control={form.control}
-                    name='type'
+                    name='name'
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>触发类型 *</FormLabel>
-                        <SelectDropdown
-                          defaultValue={field.value}
-                          onValueChange={field.onChange}
-                          placeholder='请选择类型'
-                          items={[
-                            { label: '注册', value: 'register' },
-                            { label: '首单', value: 'first_order' },
-                            { label: '累计消费', value: 'total_spent' },
-                          ]}
-                        />
+                        <FormLabel>规则名称 *</FormLabel>
+                        <FormControl>
+                          <Input placeholder='如：新用户注册奖励' {...field} />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  <FormField
-                    control={form.control}
-                    name='rewardType'
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>被邀请人奖励类型 *</FormLabel>
-                        <SelectDropdown
-                          defaultValue={field.value}
-                          onValueChange={field.onChange}
-                          placeholder='请选择奖励类型'
-                          items={[
-                            { label: '积分', value: 'points' },
-                            { label: '优惠券', value: 'coupon' },
-                            { label: '现金', value: 'cash' },
-                          ]}
-                        />
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
 
-                <div className='grid grid-cols-2 items-start gap-4'>
+                  <div className='grid grid-cols-2 items-start gap-4'>
+                    <FormField
+                      control={form.control}
+                      name='type'
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>触发类型 *</FormLabel>
+                          <SelectDropdown
+                            defaultValue={field.value}
+                            onValueChange={field.onChange}
+                            placeholder='请选择类型'
+                            items={[
+                              { label: '注册', value: 'register' },
+                              { label: '首单', value: 'first_order' },
+                              { label: '累计消费', value: 'total_spent' },
+                            ]}
+                          />
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name='rewardType'
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>被邀请人奖励类型 *</FormLabel>
+                          <SelectDropdown
+                            defaultValue={field.value}
+                            onValueChange={field.onChange}
+                            placeholder='请选择奖励类型'
+                            items={[
+                              { label: '积分', value: 'points' },
+                              { label: '优惠券', value: 'coupon' },
+                              { label: '现金', value: 'cash' },
+                            ]}
+                          />
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className='grid grid-cols-2 items-start gap-4'>
+                    <FormField
+                      control={form.control}
+                      name='rewardValue'
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>被邀请人奖励值 *</FormLabel>
+                          <FormControl>
+                            <Input type='number' {...field} />
+                          </FormControl>
+                          <FormDescription>积分/金额数值</FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name='inviterRewardType'
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>邀请人奖励类型</FormLabel>
+                          <SelectDropdown
+                            defaultValue={field.value}
+                            onValueChange={field.onChange}
+                            placeholder='请选择奖励类型'
+                            items={[
+                              { label: '积分', value: 'points' },
+                              { label: '优惠券', value: 'coupon' },
+                              { label: '现金', value: 'cash' },
+                            ]}
+                          />
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
                   <FormField
                     control={form.control}
-                    name='rewardValue'
+                    name='inviterReward'
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>被邀请人奖励值 *</FormLabel>
+                        <FormLabel>邀请人奖励值</FormLabel>
                         <FormControl>
                           <Input type='number' {...field} />
                         </FormControl>
-                        <FormDescription>积分/金额数值</FormDescription>
+                        <FormDescription>邀请成功后邀请人获得的奖励</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+
+                  <div className='grid grid-cols-2 items-start gap-4'>
+                    <FormField
+                      control={form.control}
+                      name='validDays'
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>有效天数</FormLabel>
+                          <FormControl>
+                            <Input
+                              type='number'
+                              placeholder='留空不限制'
+                              value={field.value ?? ''}
+                              onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name='maxInvites'
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>最大邀请数</FormLabel>
+                          <FormControl>
+                            <Input
+                              type='number'
+                              placeholder='留空不限制'
+                              value={field.value ?? ''}
+                              onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
                   <FormField
                     control={form.control}
-                    name='inviterRewardType'
+                    name='isActive'
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>邀请人奖励类型</FormLabel>
-                        <SelectDropdown
-                          defaultValue={field.value}
-                          onValueChange={field.onChange}
-                          placeholder='请选择奖励类型'
-                          items={[
-                            { label: '积分', value: 'points' },
-                            { label: '优惠券', value: 'coupon' },
-                            { label: '现金', value: 'cash' },
-                          ]}
-                        />
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name='inviterReward'
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>邀请人奖励值</FormLabel>
-                      <FormControl>
-                        <Input type='number' {...field} />
-                      </FormControl>
-                      <FormDescription>邀请成功后邀请人获得的奖励</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className='grid grid-cols-2 items-start gap-4'>
-                  <FormField
-                    control={form.control}
-                    name='validDays'
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>有效天数</FormLabel>
+                      <FormItem className='flex flex-row items-center justify-between rounded-lg border p-3'>
+                        <div className='space-y-0.5'>
+                          <FormLabel>启用规则</FormLabel>
+                        </div>
                         <FormControl>
-                          <Input
-                            type='number'
-                            placeholder='留空不限制'
-                            value={field.value ?? ''}
-                            onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
-                          />
+                          <Switch checked={field.value} onCheckedChange={field.onChange} />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name='description'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>描述</FormLabel>
+                        <FormControl>
+                          <Textarea placeholder='可选' className='resize-none' {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  <FormField
-                    control={form.control}
-                    name='maxInvites'
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>最大邀请数</FormLabel>
-                        <FormControl>
-                          <Input
-                            type='number'
-                            placeholder='留空不限制'
-                            value={field.value ?? ''}
-                            onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                </form>
+              </Form>
+            </div>
 
-                <FormField
-                  control={form.control}
-                  name='isActive'
-                  render={({ field }) => (
-                    <FormItem className='flex flex-row items-center justify-between rounded-lg border p-3'>
-                      <div className='space-y-0.5'>
-                        <FormLabel>启用规则</FormLabel>
-                      </div>
-                      <FormControl>
-                        <Switch checked={field.value} onCheckedChange={field.onChange} />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name='description'
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>描述</FormLabel>
-                      <FormControl>
-                        <Textarea placeholder='可选' className='resize-none' {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </form>
-            </Form>
+            {/* 右侧：预览器 */}
+            <div className='w-[375px] flex-shrink-0'>
+              <div className='text-sm text-muted-foreground mb-2'>终端预览</div>
+              <TerminalPreview
+                page='referrals'
+                height={500}
+                showFrame={false}
+                autoLoad={false}
+              />
+            </div>
           </div>
 
           <DialogFooter>
