@@ -4,6 +4,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { DistributionService } from './distribution.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { NotFoundException } from '@nestjs/common';
+import { PaginationDto } from '../../common/dto/pagination.dto';
 
 @ApiTags('陪诊员-分销')
 @Controller('escort/distribution')
@@ -34,14 +35,10 @@ export class DistributionController {
 
   @Get('records')
   @ApiOperation({ summary: '获取分润记录' })
-  async getDistributionRecords(
-    @Request() req,
-    @Query('page') page?: number,
-    @Query('pageSize') pageSize?: number,
-  ) {
+  async getDistributionRecords(@Request() req, @Query() query: PaginationDto) {
     const escort = await this.getEscortByUserId(req.user.sub);
-    const p = page ? Number(page) : 1;
-    const ps = pageSize ? Number(pageSize) : 20;
+    const p = query.page ?? 1;
+    const ps = query.pageSize ?? 20;
 
     const where = { beneficiaryId: escort.id };
 

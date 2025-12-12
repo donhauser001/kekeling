@@ -1,18 +1,41 @@
 import { Injectable, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Decimal } from '@prisma/client/runtime/library';
+import {
+  DistributionStrategyFactory,
+  DistributionStrategyType,
+  DistributionRateConfig,
+} from './strategies';
 
-// 分润计算结果
+// 分润计算结果（金额单位：分）
 export interface DistributionResult {
   records: Array<{
     beneficiaryId: string;
     beneficiaryLevel: number;
     relationLevel: number;
-    rate: number;
-    amount: number;
+    rate: number;        // 费率（百分比，如 10 表示 10%）
+    amountCents: number; // 分润金额（分）
     type: string;
   }>;
-  totalDistribution: number;
+  totalDistributionCents: number; // 总分润（分）
+}
+
+/**
+ * 金额工具函数
+ * 统一在 I/O 边界进行元<->分转换
+ */
+export function yuanToCents(yuan: number): number {
+  // 先乘 100，再四舍五入，避免浮点精度问题
+  return Math.round(yuan * 100);
+}
+
+export function centsToYuan(cents: number): number {
+  return cents / 100;
+}
+
+export function centsToDecimalString(cents: number): string {
+  // 转换为保留两位小数的字符串，用于写入 Decimal(12,2) 字段
+  return (cents / 100).toFixed(2);
 }
 
 // 晋升配置类型
@@ -35,10 +58,21 @@ export interface L1PromotionConfig {
 export class DistributionService {
   private readonly logger = new Logger(DistributionService.name);
 
-  constructor(private prisma: PrismaService) { }
+  constructor(
+    private prisma: PrismaService,
+    private strategyFactory: DistributionStrategyFactory,
+  ) { }
 
   /**
    * 生成邀请码
+   */
+  /**
+   * 生成邀请码
+   *
+   * ⚠️ 优化策略：基于 ID 哈希 + 随机后缀，大幅降低碰撞概率
+   * - 前 4 位：基于 escortId 的确定性哈希（保证同一用户生成的码有关联性）
+   * - 后 2 位：随机字符（增加唯一性）
+   * - 最大重试：20 次（原 10 次）
    */
   async generateInviteCode(escortId: string): Promise<string> {
     const escort = await this.prisma.escort.findUnique({
@@ -53,21 +87,31 @@ export class DistributionService {
       return escort.inviteCode;
     }
 
-    // 生成唯一邀请码（6位字母数字）
+    const MAX_ATTEMPTS = 20;
     let code: string;
     let attempts = 0;
 
+    // 基于 ID 生成前缀（确定性）
+    const prefix = this.hashToCode(escortId, 4);
+
     do {
-      code = this.generateRandomCode(6);
+      // 前缀 + 随机后缀
+      const suffix = this.generateRandomCode(2);
+      code = prefix + suffix;
+
       const existing = await this.prisma.escort.findUnique({
         where: { inviteCode: code },
       });
       if (!existing) break;
-      attempts++;
-    } while (attempts < 10);
 
-    if (attempts >= 10) {
-      throw new BadRequestException('生成邀请码失败，请重试');
+      attempts++;
+      this.logger.warn(`邀请码碰撞 (attempt ${attempts}): ${code}`);
+    } while (attempts < MAX_ATTEMPTS);
+
+    if (attempts >= MAX_ATTEMPTS) {
+      // 极端情况：使用全随机 8 位码
+      code = this.generateRandomCode(8);
+      this.logger.warn(`邀请码生成退化为全随机 8 位: ${code}`);
     }
 
     await this.prisma.escort.update({
@@ -79,10 +123,34 @@ export class DistributionService {
   }
 
   /**
-   * 生成随机邀请码
+   * 将字符串哈希为指定长度的邀请码字符
+   */
+  private hashToCode(input: string, length: number): string {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let hash = 0;
+
+    for (let i = 0; i < input.length; i++) {
+      const char = input.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // 转为 32 位整数
+    }
+
+    // 将哈希值映射到字符
+    let result = '';
+    let absHash = Math.abs(hash);
+    for (let i = 0; i < length; i++) {
+      result += chars[absHash % chars.length];
+      absHash = Math.floor(absHash / chars.length);
+    }
+
+    return result;
+  }
+
+  /**
+   * 生成随机邀请码字符
    */
   private generateRandomCode(length: number): string {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 去除易混淆字符
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 去除易混淆字符 0OI1L
     let result = '';
     for (let i = 0; i < length; i++) {
       result += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -129,7 +197,7 @@ export class DistributionService {
     // 只保留最近3层
     const trimmedPath = ancestorPath.slice(-3);
 
-    // 5. 建立关系
+    // 5. 建立关系（强一致性事务 - 仅包含核心绑定逻辑）
     await this.prisma.$transaction(async (tx) => {
       // 更新被邀请人
       await tx.escort.update({
@@ -151,10 +219,64 @@ export class DistributionService {
           activatedAt: new Date(),
         },
       });
-
-      // 更新上级团队统计
-      await this.updateTeamStats(tx, inviter.id);
     });
+
+    // 6. 异步更新团队统计（最终一致性，不阻塞主链路）
+    this.scheduleTeamStatsUpdate(inviter.id);
+  }
+
+  /**
+   * 异步调度团队统计更新（带重试）
+   * 不阻塞主流程，失败时自动重试
+   */
+  private scheduleTeamStatsUpdate(escortId: string): void {
+    setImmediate(() => {
+      this.updateTeamStatsWithRetry(escortId).catch((err) => {
+        this.logger.error(`团队统计更新最终失败: ${escortId}`, err.stack);
+      });
+    });
+  }
+
+  /**
+   * 带指数退避重试的团队统计更新
+   * @param maxRetries 最大重试次数（默认 3）
+   */
+  private async updateTeamStatsWithRetry(
+    escortId: string,
+    maxRetries = 3,
+  ): Promise<void> {
+    let lastError: Error | null = null;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        await this.prisma.$transaction(async (tx) => {
+          await this.updateTeamStats(tx, escortId);
+        });
+        this.logger.log(`团队统计更新成功: ${escortId} (attempt ${attempt})`);
+        return;
+      } catch (error) {
+        lastError = error as Error;
+        this.logger.warn(
+          `团队统计更新失败 (attempt ${attempt}/${maxRetries}): ${escortId}`,
+          error.message,
+        );
+
+        if (attempt < maxRetries) {
+          // 指数退避：1s, 2s, 4s
+          const delayMs = Math.pow(2, attempt - 1) * 1000;
+          await this.delay(delayMs);
+        }
+      }
+    }
+
+    throw lastError;
+  }
+
+  /**
+   * 延迟工具函数
+   */
+  private delay(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**
@@ -196,26 +318,37 @@ export class DistributionService {
     }
   }
 
+  // 递归保护常量
+  private static readonly MAX_DEPTH = 3;
+
   /**
-   * 更新总团队数（递归）
+   * 更新总团队数（带深度限制的递归向上更新）
+   * @param depth 当前深度（从 1 开始，向上递归）
    */
-  private async updateTotalTeamSize(tx: any, escortId: string): Promise<void> {
+  private async updateTotalTeamSize(
+    tx: any,
+    escortId: string,
+    depth = 1,
+  ): Promise<void> {
+    // 深度保护：超过 3 层停止向上更新
+    if (depth > DistributionService.MAX_DEPTH) {
+      this.logger.warn(`updateTotalTeamSize 达到最大深度 ${DistributionService.MAX_DEPTH}，停止`);
+      return;
+    }
+
     const directCount = await tx.escort.count({
       where: { parentId: escortId },
     });
 
-    // 计算所有下级的数量
+    // 批量获取子节点的 totalTeamSize，避免 N+1
     const children = await tx.escort.findMany({
       where: { parentId: escortId },
-      select: { id: true },
+      select: { id: true, totalTeamSize: true },
     });
 
     let totalCount = directCount;
     for (const child of children) {
-      const childEscort = await tx.escort.findUnique({
-        where: { id: child.id },
-      });
-      totalCount += childEscort.totalTeamSize || 0;
+      totalCount += child.totalTeamSize || 0;
     }
 
     await tx.escort.update({
@@ -229,17 +362,24 @@ export class DistributionService {
     });
 
     if (escort.parentId) {
-      await this.updateTotalTeamSize(tx, escort.parentId);
+      await this.updateTotalTeamSize(tx, escort.parentId, depth + 1);
     }
   }
 
   /**
    * 计算订单分润
+   *
+   * ⚠️ 重要：所有金额计算使用整数（分）进行，避免浮点精度问题
+   *
+   * @param orderId 订单ID
+   * @param escortId 陪诊员ID
+   * @param orderAmountCents 订单金额（单位：分）
+   * @returns 分润结果（金额单位：分）
    */
   async calculateDistribution(
     orderId: string,
     escortId: string,
-    orderAmount: number,
+    orderAmountCents: number,
   ): Promise<DistributionResult> {
     const config = await this.prisma.distributionConfig.findFirst({
       where: { status: 'active' },
@@ -247,7 +387,7 @@ export class DistributionService {
 
     if (!config) {
       this.logger.warn('未找到激活的分润配置，跳过分润计算');
-      return { records: [], totalDistribution: 0 };
+      return { records: [], totalDistributionCents: 0 };
     }
 
     const escort = await this.prisma.escort.findUnique({
@@ -259,7 +399,7 @@ export class DistributionService {
     }
 
     const records: DistributionResult['records'] = [];
-    let totalDistribution = 0;
+    let totalDistributionCents = 0;
 
     // 获取上级链路
     const ancestors = escort.ancestorPath
@@ -277,47 +417,62 @@ export class DistributionService {
         continue;
       }
 
-      // 根据层级确定分润比例
-      let rate: number;
+      // 使用策略模式计算分润比例
       const relationLevel = i + 1; // 1=直接上级, 2=二级, 3=三级
 
-      switch (ancestor.distributionLevel) {
-        case 1: // 城市合伙人
-          rate = config.l1CommissionRate;
-          break;
-        case 2: // 团队长
-          rate = config.l2CommissionRate;
-          break;
-        case 3: // 普通陪诊员（只能获得直推奖励，不参与持续分润）
-          rate = relationLevel === 1 ? config.l3CommissionRate : 0;
-          break;
-        default:
-          rate = 0;
-      }
+      // 获取分润策略（从配置读取，默认为 standard）
+      const strategyType = (config as any).strategyType || DistributionStrategyType.STANDARD;
+      const strategy = this.strategyFactory.getStrategy(strategyType);
 
-      if (rate > 0) {
-        const amount = Math.round(orderAmount * rate) / 100;
+      // 构建费率配置
+      const rateConfig: DistributionRateConfig = {
+        l1CommissionRate: config.l1CommissionRate,
+        l2CommissionRate: config.l2CommissionRate,
+        l3CommissionRate: config.l3CommissionRate,
+      };
+
+      // 使用策略计算费率
+      const rateResult = strategy.calculateRate({
+        orderAmountCents,
+        beneficiaryLevel: ancestor.distributionLevel,
+        relationLevel,
+        config: rateConfig,
+      });
+
+      if (rateResult.shouldDistribute && rateResult.rate > 0) {
+        const rate = rateResult.rate;
+        // ⚠️ 核心计算：使用整数分计算，避免浮点精度问题
+        // amountCents = orderAmountCents * rate / 100
+        // 先乘后除，使用 Math.round 四舍五入到分
+        const amountCents = Math.round(orderAmountCents * rate / 100);
         records.push({
           beneficiaryId: ancestorId,
           beneficiaryLevel: ancestor.distributionLevel,
           relationLevel,
           rate,
-          amount,
+          amountCents,
           type: 'order',
         });
-        totalDistribution += amount;
+        totalDistributionCents += amountCents;
       }
     }
 
-    return { records, totalDistribution };
+    return { records, totalDistributionCents };
   }
 
   /**
    * 创建分润记录
+   *
+   * ⚠️ 重要：金额参数使用分，写入数据库时转换为元（Decimal）
+   *
+   * @param orderId 订单ID
+   * @param orderAmountCents 订单金额（分）
+   * @param sourceEscortId 源陪诊员ID
+   * @param distributionResult 分润计算结果（金额为分）
    */
   async createDistributionRecords(
     orderId: string,
-    orderAmount: number,
+    orderAmountCents: number,
     sourceEscortId: string,
     distributionResult: DistributionResult,
   ): Promise<void> {
@@ -326,13 +481,15 @@ export class DistributionService {
         await tx.distributionRecord.create({
           data: {
             orderId,
-            orderAmount: new Decimal(orderAmount),
+            // 分 -> 元（Decimal 字符串）
+            orderAmount: new Decimal(centsToDecimalString(orderAmountCents)),
             beneficiaryId: record.beneficiaryId,
             beneficiaryLevel: record.beneficiaryLevel,
             sourceEscortId,
             relationLevel: record.relationLevel,
             rate: record.rate,
-            amount: new Decimal(record.amount),
+            // 分 -> 元（Decimal 字符串）
+            amount: new Decimal(centsToDecimalString(record.amountCents)),
             type: record.type,
             status: 'pending', // 待结算（订单完成后7天）
           },
