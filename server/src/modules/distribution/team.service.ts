@@ -217,22 +217,42 @@ export class TeamService {
     };
   }
 
+  // 递归保护常量
+  private static readonly MAX_DEPTH = 3;
+  private static readonly MAX_NODES = 5000;
+
   /**
-   * 获取所有团队成员ID（递归）
+   * 获取所有团队成员ID（带深度限制）
+   * @param depth 当前深度（从 1 开始）
+   * @param nodeCount 已访问节点计数器
    */
-  private async getAllTeamMemberIds(escortId: string): Promise<string[]> {
-    const directChildren = await this.prisma.escort.findMany({
+  private async getAllTeamMemberIds(
+    escortId: string,
+    depth = 1,
+    nodeCount = { value: 0 },
+  ): Promise<string[]> {
+    if (depth > TeamService.MAX_DEPTH) {
+      this.logger.warn(`达到最大深度 ${TeamService.MAX_DEPTH}，停止`);
+      return [];
+    }
+    if (nodeCount.value >= TeamService.MAX_NODES) {
+      this.logger.warn(`达到最大节点数 ${TeamService.MAX_NODES}，停止`);
+      return [];
+    }
+
+    const children = await this.prisma.escort.findMany({
       where: { parentId: escortId },
       select: { id: true },
     });
 
-    const allIds: string[] = directChildren.map((c) => c.id);
-
-    for (const child of directChildren) {
-      const childIds = await this.getAllTeamMemberIds(child.id);
+    const allIds: string[] = [];
+    for (const child of children) {
+      if (nodeCount.value >= TeamService.MAX_NODES) break;
+      nodeCount.value++;
+      allIds.push(child.id);
+      const childIds = await this.getAllTeamMemberIds(child.id, depth + 1, nodeCount);
       allIds.push(...childIds);
     }
-
     return allIds;
   }
 }

@@ -214,26 +214,37 @@ export class DistributionService {
     }
   }
 
+  // 递归保护常量
+  private static readonly MAX_DEPTH = 3;
+
   /**
-   * 更新总团队数（递归）
+   * 更新总团队数（带深度限制的递归向上更新）
+   * @param depth 当前深度（从 1 开始，向上递归）
    */
-  private async updateTotalTeamSize(tx: any, escortId: string): Promise<void> {
+  private async updateTotalTeamSize(
+    tx: any,
+    escortId: string,
+    depth = 1,
+  ): Promise<void> {
+    // 深度保护：超过 3 层停止向上更新
+    if (depth > DistributionService.MAX_DEPTH) {
+      this.logger.warn(`updateTotalTeamSize 达到最大深度 ${DistributionService.MAX_DEPTH}，停止`);
+      return;
+    }
+
     const directCount = await tx.escort.count({
       where: { parentId: escortId },
     });
 
-    // 计算所有下级的数量
+    // 批量获取子节点的 totalTeamSize，避免 N+1
     const children = await tx.escort.findMany({
       where: { parentId: escortId },
-      select: { id: true },
+      select: { id: true, totalTeamSize: true },
     });
 
     let totalCount = directCount;
     for (const child of children) {
-      const childEscort = await tx.escort.findUnique({
-        where: { id: child.id },
-      });
-      totalCount += childEscort.totalTeamSize || 0;
+      totalCount += child.totalTeamSize || 0;
     }
 
     await tx.escort.update({
@@ -247,7 +258,7 @@ export class DistributionService {
     });
 
     if (escort.parentId) {
-      await this.updateTotalTeamSize(tx, escort.parentId);
+      await this.updateTotalTeamSize(tx, escort.parentId, depth + 1);
     }
   }
 
