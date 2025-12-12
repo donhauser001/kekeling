@@ -270,12 +270,12 @@ function WorkbenchContent({
           <QuickEntry
             icon="💰"
             label="收入明细"
-            onClick={() => onNavigate?.('income')}
+            onClick={() => onNavigate?.('workbench-earnings')}
           />
           <QuickEntry
-            icon="👤"
-            label="个人资料"
-            onClick={() => onNavigate?.('escort-profile')}
+            icon="💳"
+            label="提现"
+            onClick={() => onNavigate?.('workbench-withdraw')}
           />
         </div>
       </div>
