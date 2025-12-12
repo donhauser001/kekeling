@@ -878,9 +878,67 @@ model Withdrawal {
   updatedAt    DateTime  @updatedAt @map("updated_at")
 
   wallet       EscortWallet @relation(fields: [walletId], references: [id])
+  logs         WithdrawLog[]
 
   @@index([walletId, status])
   @@map("withdrawals")
+}
+
+// 提现操作日志
+// @see docs/资金安全提现体系/02-API接口契约.md
+model WithdrawLog {
+  id           String    @id @default(uuid())
+  withdrawId   String    @map("withdraw_id")
+  
+  // 操作信息
+  action       String    // create(提交申请), approve(审核通过), reject(驳回), payout(发起打款), complete(打款成功), fail(打款失败)
+  operator     String    // system, admin
+  operatorId   String?   @map("operator_id")   // 操作人ID
+  operatorName String?   @map("operator_name") // 操作人名称（脱敏）
+  
+  // 操作详情
+  message      String?   // 操作备注/失败原因
+  oldStatus    String?   @map("old_status")    // 变更前状态
+  newStatus    String?   @map("new_status")    // 变更后状态
+  
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  withdrawal   Withdrawal @relation(fields: [withdrawId], references: [id], onDelete: Cascade)
+
+  @@index([withdrawId, createdAt])
+  @@map("withdraw_logs")
+}
+
+// 管理员审计日志（资金域专用）
+// @see docs/资金安全提现体系/02-API接口契约.md
+model AdminAuditLog {
+  id           String    @id @default(uuid())
+  
+  // 操作人
+  adminId      String?   @map("admin_id")
+  adminName    String?   @map("admin_name")
+  
+  // 操作类型
+  module       String    // withdraw, refund, settlement
+  action       String    // export, review, payout, etc.
+  
+  // 操作对象
+  targetId     String?   @map("target_id")
+  targetType   String?   @map("target_type")
+  
+  // 操作详情
+  detail       String?   // JSON: 操作详情
+  filters      String?   // JSON: 导出时的筛选条件
+  
+  // 来源信息
+  ip           String?
+  userAgent    String?   @map("user_agent")
+  
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  @@index([module, action, createdAt])
+  @@index([adminId, createdAt])
+  @@map("admin_audit_logs")
 }
 
 // 钱包负债记录 (用于退款扣回)

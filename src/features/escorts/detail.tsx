@@ -58,6 +58,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { useDistributionLevels } from '@/features/distribution/hooks/use-distribution-levels'
+import { WithdrawRecordList } from '@/features/escort-withdraw-records/components'
 
 // 等级配置
 const levelConfig: Record<string, { label: string; color: string }> = {
@@ -396,6 +397,10 @@ export function EscortDetail() {
             <TabsTrigger value="settlement" className="gap-2">
               <Wallet className="h-4 w-4" />
               结算信息
+            </TabsTrigger>
+            <TabsTrigger value="withdrawals" className="gap-2">
+              <Receipt className="h-4 w-4" />
+              提现记录
             </TabsTrigger>
           </TabsList>
 
@@ -1082,6 +1087,17 @@ export function EscortDetail() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* 提现记录 Tab */}
+          <TabsContent value="withdrawals" className="space-y-4">
+            <WithdrawRecordList
+              escortId={escortId}
+              hideEscortColumn={true}
+              enableExport={true}
+              compact={true}
+              defaultPageSize={10}
+            />
           </TabsContent>
         </Tabs>
       </Main>

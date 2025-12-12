@@ -69,7 +69,6 @@ import { cn, normalizeLevel } from '@/lib/utils'
 // 导入新组件
 import { getEscortsColumns } from './components/escorts-columns-new'
 import { EscortsTableNew } from './components/escorts-table-new'
-import { EscortsDetailSheet } from './components/escorts-detail-sheet'
 import { EscortFormDialog } from './components/escort-form-dialog'
 import { EscortReviewDialog } from './components/escort-review-dialog'
 import { BindEscortDialog } from './components/bind-escort-dialog'
@@ -168,10 +167,6 @@ export function Escorts() {
     const [reviewingEscort, setReviewingEscort] = useState<Escort | null>(null)
     const [bindingEscort, setBindingEscort] = useState<Escort | null>(null)
 
-    // 详情抽屉状态
-    const [detailOpen, setDetailOpen] = useState(false)
-    const [selectedEscort, setSelectedEscort] = useState<Escort | null>(null)
-
     // API hooks
     const { data, isLoading, error } = useEscorts({
         keyword: keyword || undefined,
@@ -189,10 +184,9 @@ export function Escorts() {
     const escorts = data?.data || []
     const total = data?.total || 0
 
-    // 查看详情
+    // 查看详情 - 直接跳转到详情页
     const handleView = (escort: Escort) => {
-        setSelectedEscort(escort)
-        setDetailOpen(true)
+        navigate({ to: '/escorts/$escortId', params: { escortId: escort.id } })
     }
 
     // 打开创建对话框
@@ -629,13 +623,6 @@ export function Escorts() {
                 {/* 分页 */}
                 <DataTablePagination table={table} className='mt-auto' />
             </Main>
-
-            {/* 详情抽屉 */}
-            <EscortsDetailSheet
-                escort={selectedEscort}
-                open={detailOpen}
-                onOpenChange={setDetailOpen}
-            />
 
             {/* 删除确认对话框 */}
             <ConfirmDialog

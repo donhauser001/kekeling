@@ -30,3 +30,6 @@ export type { WorkbenchWithdrawPageProps } from './WorkbenchWithdrawPage'
 export { OrderDetailPage } from './OrderDetailPage'
 export type { OrderDetailPageProps } from './OrderDetailPage'
 
+// 工作台设置（Step 13）
+export { WorkbenchSettingsPage } from './WorkbenchSettingsPage'
+export type { WorkbenchSettingsPageProps } from './WorkbenchSettingsPage'

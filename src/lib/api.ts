@@ -2645,11 +2645,43 @@ export interface AdminEscortWithdrawRecordQuery {
   pageSize?: number
   status?: AdminWithdrawStatus
   method?: AdminWithdrawMethod
-  keyword?: string                // escortId / 手机号 / 提现单号
+  escortId?: string               // 陪诊员 ID（精确匹配）
+  keyword?: string                // 手机号 / 提现单号
   startAt?: string                // 申请时间起
   endAt?: string                  // 申请时间止
   minAmount?: number
   maxAmount?: number
+}
+
+// P2 新增类型：审核请求
+export interface AdminWithdrawReviewRequest {
+  action: 'approve' | 'reject'
+  rejectReason?: string // reject 时必填
+}
+
+// P2 新增类型：打款请求
+export interface AdminWithdrawPayoutRequest {
+  payoutMethod: 'manual' | 'channel'
+  operatorConfirmText: 'CONFIRM' // 必须完全匹配
+  transactionNo?: string // 手动打款时填写
+}
+
+// P2 新增类型：操作日志
+export interface AdminWithdrawLog {
+  id: string
+  action: 'create' | 'approve' | 'reject' | 'payout' | 'complete' | 'fail'
+  operator: 'system' | 'admin'
+  operatorName?: string // 脱敏展示
+  message?: string
+  createdAt: string
+}
+
+// P2 新增类型：详情扩展（含日志）
+export interface AdminEscortWithdrawDetail extends AdminEscortWithdrawRecord {
+  transactionNo?: string // 第三方交易号
+  channel?: 'alipay' | 'wechat' | 'bank'
+  channelResponse?: string // 原始回执（脱敏）
+  logs: AdminWithdrawLog[]
 }
 
 export const adminEscortWithdrawApi = {
@@ -2662,6 +2694,94 @@ export const adminEscortWithdrawApi = {
   // 获取单条提现记录详情
   getById: (id: string) =>
     request<AdminEscortWithdrawRecord>(`/admin/escorts/withdraw-records/${id}`),
+
+  /**
+   * 获取提现记录详情（含操作日志）- P2 扩展
+   */
+  getDetailWithLogs: (id: string) =>
+    request<AdminEscortWithdrawDetail>(`/admin/escorts/withdraw-records/${id}/detail`),
+
+  /**
+   * 获取提现操作日志 - P2
+   */
+  getLogs: (id: string) =>
+    request<AdminWithdrawLog[]>(`/admin/escorts/withdraw-records/${id}/logs`),
+
+  /**
+   * 导出提现记录（走后端 API）
+   * 
+   * @see docs/资金安全提现体系/03-任务卡拆解.md - CARD ADMIN-WD-03
+   * 
+   * - 导出走后端 API，禁止前端拼 CSV
+   * - 使用 fetch 下载文件流
+   * - 导出当前筛选条件下的数据
+   * - 导出行为写入审计日志（后端处理）
+   */
+  export: async (
+    query: Omit<AdminEscortWithdrawRecordQuery, 'page' | 'pageSize'>,
+    format: 'csv' | 'xlsx' = 'csv'
+  ): Promise<Blob> => {
+    const params = new URLSearchParams()
+
+    // 添加筛选参数
+    if (query.status) params.append('status', query.status)
+    if (query.method) params.append('method', query.method)
+    if (query.escortId) params.append('escortId', query.escortId)
+    if (query.keyword) params.append('keyword', query.keyword)
+    if (query.startAt) params.append('startAt', query.startAt)
+    if (query.endAt) params.append('endAt', query.endAt)
+    if (query.minAmount) params.append('minAmount', String(query.minAmount))
+    if (query.maxAmount) params.append('maxAmount', String(query.maxAmount))
+    params.append('format', format)
+
+    const token = getToken()
+    const response = await fetch(
+      `${API_BASE_URL}/admin/escorts/withdraw-records/export?${params}`,
+      {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : '',
+        },
+      }
+    )
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: '导出失败' }))
+      throw new Error(error.message || `导出失败: HTTP ${response.status}`)
+    }
+
+    return response.blob()
+  },
+
+  /**
+   * P2: 审核提现（通过/驳回）
+   * 
+   * @see docs/资金安全提现体系/03-任务卡拆解.md - BE-WD-P2-02
+   * 
+   * - 前置状态：仅 status === 'pending' 可操作
+   * - 驳回原因：reject 必须填写 rejectReason
+   * - 副作用：写 withdraw_logs + admin_audit_log
+   */
+  review: (id: string, data: AdminWithdrawReviewRequest) =>
+    request<AdminEscortWithdrawRecord>(`/admin/escorts/withdraw-records/${id}/review`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  /**
+   * P2: 打款（高危）
+   * 
+   * @see docs/资金安全提现体系/03-任务卡拆解.md - BE-WD-P2-03
+   * 
+   * - 前置状态：仅 status === 'approved'
+   * - 二次确认：operatorConfirmText 必须是 'CONFIRM'
+   * - 事务：状态变更 + Ledger 在同一事务内完成
+   * - 幂等：transactionNo 唯一约束，防重复打款
+   */
+  payout: (id: string, data: AdminWithdrawPayoutRequest) =>
+    request<AdminEscortWithdrawRecord>(`/admin/escorts/withdraw-records/${id}/payout`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
 }
 
 // ============================================
