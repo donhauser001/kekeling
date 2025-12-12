@@ -22,3 +22,6 @@ export {
 
 // 陪诊员页面（Step 10 新增）
 export { EscortListPage, EscortDetailPage } from './escort'
+
+// 工作台页面（Step 11 新增）
+export { WorkbenchPage } from './workbench'

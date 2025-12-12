@@ -399,7 +399,55 @@ interface EscortDetail extends EscortListItem {
 
 ---
 
-#### 批次 F: workbench（待接入，需 escortRequest）
+### Step 11: 陪诊员工作台最小闭环 ✅
+
+#### 批次 F: workbench ✅
+
+**验收点**:
+- [x] 新增 `components/pages/workbench/WorkbenchPage.tsx`
+- [x] `previewApi.getWorkbenchStats()`（走 escortRequest）
+- [x] 非 escort 视角时显示权限提示，不发请求
+- [x] DebugPanel 注入 mock escortToken 后可预览
+- [x] TypeScript 编译通过
+
+**权限校验机制**:
+```typescript
+// WorkbenchPage.tsx
+const isEscort = effectiveViewerRole === 'escort'
+
+// useQuery 只在 escort 视角发请求
+const { data, isLoading } = useQuery({
+  queryKey: ['preview', 'workbench', 'stats'],
+  queryFn: () => previewApi.getWorkbenchStats(),
+  enabled: isEscort, // ⚠️ 关键：非 escort 不发请求
+})
+
+// 非 escort 视角显示提示
+if (!isEscort) {
+  return <权限提示组件 />
+}
+```
+
+**API 新增（escortRequest）**:
+```typescript
+// GET /escort-app/workbench/stats
+previewApi.getWorkbenchStats(): Promise<WorkbenchStats>
+interface WorkbenchStats {
+  pendingOrders: number    // 待接单
+  ongoingOrders: number    // 进行中
+  completedOrders: number  // 已完成
+  todayIncome: number      // 今日收入
+  monthIncome: number      // 本月收入
+  withdrawable: number     // 可提现
+  isOnline: boolean        // 在线状态
+}
+```
+
+⚠️ **这是第一个走 escortRequest 的页面！**
+
+---
+
+#### 批次 G: order-pool + income（待接入，需 escortRequest）
 
 ---
 

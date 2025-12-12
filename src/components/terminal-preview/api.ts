@@ -757,6 +757,40 @@ function getMockEscortDetail(id: string): EscortDetail {
   return { id, name: '陪诊员', serviceCount: 0, rating: 0, status: 'offline', bio: '暂无简介', experience: 0, serviceAreas: [] }
 }
 
+// ==========================================================================
+// 工作台类型（陪诊员端，需 escortToken）
+// ==========================================================================
+
+/** 工作台统计数据 */
+export interface WorkbenchStats {
+  /** 待接单数 */
+  pendingOrders: number
+  /** 进行中订单数 */
+  ongoingOrders: number
+  /** 已完成订单数 */
+  completedOrders: number
+  /** 今日收入 */
+  todayIncome: number
+  /** 本月收入 */
+  monthIncome: number
+  /** 可提现金额 */
+  withdrawable: number
+  /** 是否在线 */
+  isOnline: boolean
+}
+
+function getMockWorkbenchStats(): WorkbenchStats {
+  return {
+    pendingOrders: 3,
+    ongoingOrders: 1,
+    completedOrders: 12,
+    todayIncome: 580.0,
+    monthIncome: 8650.0,
+    withdrawable: 6200.0,
+    isOnline: true,
+  }
+}
+
 /**
  * Mock 优惠券数据
  * 用于接口不存在时的降级显示
@@ -1039,8 +1073,24 @@ export const previewApi = {
   // ⚠️ 以下接口必须走 escortRequest，禁止走 userRequest
   // ==========================================================================
 
-  // TODO: 工作台（Step 6 接入）
-  // getWorkbenchStats: () => escortRequest<WorkbenchStats>('/escort-app/workbench/stats'),
+  /**
+   * 获取工作台统计数据
+   * 接口: GET /escort-app/workbench/stats
+   * 通道: escortRequest（⚠️ 必须 escortToken）
+   */
+  getWorkbenchStats: async (): Promise<WorkbenchStats> => {
+    try {
+      return await escortRequest<WorkbenchStats>('/escort-app/workbench/stats')
+    } catch (error) {
+      if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
+        console.warn('[previewApi.getWorkbenchStats] 使用 mock 数据')
+        return getMockWorkbenchStats()
+      }
+      throw error
+    }
+  },
+
+  // TODO: 订单池（后续接入）
   // getOrderPool: () => escortRequest<OrderPoolResponse>('/escort-app/orders/pool'),
   // getWorkbenchOrderDetail: (id: string) => escortRequest<WorkbenchOrderDetail>(`/escort-app/orders/${id}`),
   // getEarningsStats: () => escortRequest<EarningsStats>('/escort-app/earnings/stats'),

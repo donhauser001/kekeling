@@ -60,6 +60,7 @@ import {
   CouponsAvailablePage,
   EscortListPage,
   EscortDetailPage,
+  WorkbenchPage,
 } from './components/pages'
 
 export function TerminalPreview({
@@ -461,6 +462,17 @@ export function TerminalPreview({
             isDarkMode={isDarkMode}
             escortId={pageParams.id}
             onBack={() => setCurrentPage('escort-list')}
+          />
+        )
+
+      // Step 11: 陪诊员工作台（需要 escortToken）
+      case 'workbench':
+        return (
+          <WorkbenchPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            effectiveViewerRole={effectiveViewerRole}
+            onNavigate={(page, params) => navigateToPage(page, params)}
           />
         )
 
