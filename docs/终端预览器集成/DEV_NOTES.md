@@ -1504,9 +1504,10 @@ const { data, isLoading } = useQuery({
 
 ---
 
-## Step 12: 管理后台预览器集成 ⏳
+## Step 12: 管理后台预览器集成 ✅
 
 > P1 优先级，在管理后台各模块页面集成侧栏终端预览器
+> **完成时间**: 2024-12-13
 
 ### 12.1 已完成的集成
 
@@ -1606,9 +1607,10 @@ import { TerminalPreview } from '@/components/terminal-preview'
 
 ---
 
-## Step 13: 工作台扩展 ⏳
+## Step 13: 工作台扩展 ✅
 
 > P2 优先级，扩展工作台功能页面
+> **完成时间**: 2024-12-13
 
 ### CARD 13.1-A: 工作台设置页面 ✅
 
@@ -1640,12 +1642,36 @@ import { TerminalPreview } from '@/components/terminal-preview'
 ## Step 14: 优化与测试 ⏳
 
 > P2 优先级，完善系统质量
+> **当前状态**: 功能正确性已闭环，进入质量固化阶段
+
+---
 
 ### CARD 14.1-A: Mock 数据完善
 
+**目标**: 建立可维护的 Mock 数据体系，覆盖所有边界场景
+
+**范围**:
+- Mock 数据文件: `src/components/terminal-preview/mocks/*.ts`（待创建）
+- 当前散落位置: `api.ts` 内各 `getMock*()` 函数
+
 **验收点**:
-- [ ] 所有页面 mock 数据覆盖关键分支（空态、满态、边界值）
+- [ ] Mock 数据抽取到独立模块 `mocks/` 目录
+- [ ] 每个页面至少覆盖 4 种状态：
+  - 空态 (items: [], total: 0)
+  - 满态 (items 超过分页阈值)
+  - 错误态 (API 返回 500)
+  - 边界值 (见下方清单)
 - [ ] mock 数据格式与真实 API 返回一致
+- [ ] 提供 `getMockEmpty*()` / `getMockFull*()` 辅助函数
+
+**边界值覆盖清单**（硬约束）:
+| 字段类型 | 边界值 | 说明 |
+|---------|--------|------|
+| `promotionProgress` | `0` 与 `undefined` | 0 = 适用但没进度，undefined = 不适用 |
+| `列表 items` | `[]` + `total: 0` | 空态显示 |
+| `金额字段` | `0` / `0.01` / `100000+` | 零值、小数、大数 |
+| `手机号脱敏` | `138****8888` | 前3+后4 |
+| `时间字段` | 跨年、今天、昨天、N天后 | 时间格式兼容性 |
 
 **预估工时**: 4h
 
@@ -1653,10 +1679,36 @@ import { TerminalPreview } from '@/components/terminal-preview'
 
 ### CARD 14.1-B: 性能优化
 
+**目标**: 预览器加载流畅，不阻塞管理后台首屏
+
+**范围**:
+- 页面组件懒加载
+- React Query 缓存策略统一
+- Skeleton/Loading 状态统一
+
 **验收点**:
-- [ ] 页面组件懒加载（React.lazy）
-- [ ] API 请求缓存策略优化
-- [ ] 页面切换流畅（无明显卡顿）
+- [ ] 页面组件使用 `React.lazy()` + `Suspense` 懒加载
+- [ ] 首屏渲染"先壳后页"（先显示 PhoneFrame，页面内容异步加载）
+- [ ] 切页无抖动（统一 Skeleton 高度）
+- [ ] React Query 缓存策略固化：
+
+**React Query 缓存规范**:
+| 数据类型 | staleTime | gcTime | 说明 |
+|---------|-----------|--------|------|
+| 配置类 | 5min | 30min | themeSettings, homeSettings |
+| 列表类 | 1min | 10min | escorts, campaigns, coupons |
+| 详情类 | 30s | 5min | 单个 escort/campaign 详情 |
+| 工作台统计 | 10s | 1min | 频繁变化的数据 |
+
+**queryKey 命名规范**（已在用，固化为规范）:
+```typescript
+// 格式: ['preview', 模块, 功能, ...params]
+['preview', 'workbench', 'stats']
+['preview', 'workbench', 'settings']
+['preview', 'distribution', 'stats']
+['preview', 'distribution', 'members', { relation: 'direct' }]
+['preview', 'marketing', 'campaigns', campaignId]
+```
 
 **预估工时**: 4h
 
@@ -1664,13 +1716,134 @@ import { TerminalPreview } from '@/components/terminal-preview'
 
 ### CARD 14.1-C: 全面测试
 
+**目标**: 建立可重复执行的回归测试清单
+
+**范围**:
+- 页面渲染测试
+- 视角切换测试
+- 权限边界测试
+- 护栏检查脚本
+
 **验收点**:
 - [ ] 所有页面正常渲染（加载态、数据态、空态、错误态）
-- [ ] 视角切换功能正常
-- [ ] 权限边界测试通过
+- [ ] 视角切换功能正常（user ↔ escort）
+- [ ] 权限边界测试通过（非 escort 不发 escort 请求）
 - [ ] 无 TypeScript 错误
+- [ ] 护栏检查脚本 CI 可执行
+
+**手工回归脚本**（最低成本验收）:
+
+#### 1. Page Key 全量切换测试
+
+```bash
+# 验证所有 page key 可切换，无崩溃
+# 预期: 27 个 page key 全部可渲染
+```
+
+| page key | 视角要求 | 预期行为 |
+|----------|---------|---------|
+| home | any | 正常渲染 |
+| services | any | 正常渲染 |
+| cases | any | 正常渲染 |
+| profile | any | 正常渲染 |
+| membership | user | 正常渲染 |
+| membership-plans | user | 正常渲染 |
+| coupons | user | 正常渲染 |
+| coupons-available | user | 正常渲染 |
+| points | user | 正常渲染 |
+| points-records | user | 正常渲染 |
+| referrals | user | 正常渲染 |
+| campaigns | user | 正常渲染 |
+| campaigns-detail | user | 正常渲染（无 id 显示提示）|
+| escort-list | any | 正常渲染 |
+| escort-detail | any | 正常渲染（无 id 显示提示）|
+| workbench | escort | 非 escort 显示 🔒 |
+| workbench-orders-pool | escort | 非 escort 显示 🔒 |
+| workbench-order-detail | escort | 非 escort 显示 🔒 |
+| workbench-earnings | escort | 非 escort 显示 🔒 |
+| workbench-withdraw | escort | 非 escort 显示 🔒 |
+| workbench-settings | escort | 非 escort 显示 🔒 |
+| distribution | escort | 非 escort 显示 🔒 |
+| distribution-members | escort | 非 escort 显示 🔒 |
+| distribution-records | escort | 非 escort 显示 🔒 |
+| distribution-invite | escort | 非 escort 显示 🔒 |
+| distribution-promotion | escort | 非 escort 显示 🔒 |
+
+#### 2. 视角切换测试
+
+```bash
+# 测试流程:
+# 1. 初始状态: user 视角（无 escortToken）
+# 2. DebugPanel 注入 mock escortToken
+# 3. 验证: effectiveViewerRole = escort
+# 4. 工作台/分销页面可访问
+# 5. 清除 escortToken
+# 6. 验证: effectiveViewerRole = user
+# 7. 工作台/分销页面显示 🔒
+```
+
+#### 3. Token 状态矩阵测试
+
+| Token 状态 | 预期 viewerRole | 预期请求行为 |
+|-----------|----------------|-------------|
+| 无 token | user | 营销页面发 userRequest |
+| mock-xxx | escort | 直接返回 mock 数据，不请求后端 |
+| 真实 token（有效） | escort | 发 escortRequest |
+| 真实 token（401） | user（清除 token） | 回落 user 视角 |
+
+#### 4. 护栏检查脚本（CI 可执行）
+
+```bash
+#!/bin/bash
+# scripts/check-preview-guardrails.sh
+
+echo "🔒 检查分销中心护栏..."
+
+# 1. 分销中心页面必须使用 PermissionPrompt
+DIST_FILES=$(find src/components/terminal-preview/components/pages/distribution -name "*.tsx")
+for file in $DIST_FILES; do
+  if ! grep -q "PermissionPrompt" "$file"; then
+    echo "❌ $file 缺少 PermissionPrompt"
+    exit 1
+  fi
+  if ! grep -q "enabled: isEscort" "$file"; then
+    echo "❌ $file 缺少 enabled: isEscort"
+    exit 1
+  fi
+done
+
+# 2. 分销 API 必须使用 escortRequest
+if grep -n "userRequest.*distribution" src/components/terminal-preview/api.ts; then
+  echo "❌ 分销 API 不允许使用 userRequest"
+  exit 1
+fi
+
+# 3. 工作台页面必须使用 PermissionPrompt
+WORKBENCH_FILES=$(find src/components/terminal-preview/components/pages/workbench -name "*.tsx")
+for file in $WORKBENCH_FILES; do
+  if ! grep -q "effectiveViewerRole" "$file"; then
+    echo "⚠️ $file 可能缺少视角检查"
+  fi
+done
+
+echo "✅ 护栏检查通过"
+```
 
 **预估工时**: 8h
+
+---
+
+### 14.2 完成标准
+
+Step 14 整体完成标准：
+
+| 检查项 | 验收方式 |
+|--------|---------|
+| Mock 数据独立模块 | `ls src/components/terminal-preview/mocks/` |
+| 懒加载生效 | DevTools Network 观察按需加载 |
+| 护栏脚本可执行 | `bash scripts/check-preview-guardrails.sh` |
+| 全页面可渲染 | 手工遍历 27 个 page key |
+| 无 TS 错误 | `pnpm tsc --noEmit` |
 
 ---
 
