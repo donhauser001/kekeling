@@ -328,6 +328,17 @@ export interface ServiceGuarantee {
 }
 
 // 服务详情类型（与后端一致）
+// 自定义字段类型
+export interface CustomField {
+  id: string
+  label: string
+  type: 'text' | 'textarea' | 'select' | 'checkbox' | 'radio' | 'datetime' | 'image'
+  required: boolean
+  options?: string[]  // select/checkbox/radio 的选项
+  placeholder?: string
+  maxImages?: number  // 图片类型时，最大上传数量
+}
+
 export interface ServiceDetail {
   id: string
   name: string
@@ -368,6 +379,20 @@ export interface ServiceDetail {
     name: string
     icon?: string
   }
+  // 业务配置字段
+  needPatient?: boolean           // 需要填写就诊人
+  needHospital?: boolean          // 需要选择医院
+  needDepartment?: boolean        // 需要选择科室
+  needDoctor?: boolean            // 需要选择医生
+  needAppointment?: boolean       // 需要预约时间
+  needIdCard?: boolean            // 需要身份证
+  needGender?: boolean            // 需要性别
+  needEmergencyContact?: boolean  // 需要紧急联系人
+  needMedicalRecord?: boolean     // 需要上传病历
+  allowPostOrder?: boolean        // 允许先下单后填写信息
+  customFields?: CustomField[]    // 自定义字段
+  fieldOrder?: string[]           // 字段排序
+  builtinFieldsRequired?: Record<string, boolean>  // 内置字段必填配置
 }
 
 // ============================================================================

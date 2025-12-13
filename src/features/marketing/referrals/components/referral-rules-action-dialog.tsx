@@ -383,7 +383,6 @@ export function ReferralRulesActionDialog({
 
             {/* 右侧：预览器 - Step 14.13 FIX-P3-02: 实时预览 */}
             <div className='w-[375px] flex-shrink-0'>
-              <div className='text-sm text-muted-foreground mb-2'>终端预览</div>
               <TerminalPreview
                 page='referrals'
                 height={600}

@@ -322,7 +322,6 @@ export function EscortsActionDialog({
 
           {/* 右侧：预览器 */}
           <div className='w-[375px] flex-shrink-0'>
-            <div className='text-sm text-muted-foreground mb-2'>终端预览</div>
             <TerminalPreview
               page={isEdit ? 'escort-detail' : 'escort-list'}
               height={500}

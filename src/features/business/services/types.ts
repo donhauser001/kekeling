@@ -21,9 +21,11 @@ export interface ServiceFormData {
     needIdCard: boolean
     needGender: boolean
     needEmergencyContact: boolean
+    needMedicalRecord: boolean
     allowPostOrder: boolean
     customFields: CustomField[]
     fieldOrder: string[]
+    builtinFieldsRequired: Record<string, boolean>
     minQuantity: string
     maxQuantity: string
     tags: string

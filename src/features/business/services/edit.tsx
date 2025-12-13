@@ -124,9 +124,11 @@ export function ServiceEdit() {
                 needIdCard: service.needIdCard,
                 needGender: service.needGender,
                 needEmergencyContact: service.needEmergencyContact,
+                needMedicalRecord: service.needMedicalRecord,
                 allowPostOrder: service.allowPostOrder,
                 customFields: service.customFields || [],
                 fieldOrder: service.fieldOrder?.length ? service.fieldOrder : [...DEFAULT_FIELD_ORDER],
+                builtinFieldsRequired: service.builtinFieldsRequired || DEFAULT_FORM_DATA.builtinFieldsRequired,
                 minQuantity: service.minQuantity.toString(),
                 maxQuantity: service.maxQuantity.toString(),
                 tags: service.tags?.join('、') || '',
@@ -195,9 +197,11 @@ export function ServiceEdit() {
             needIdCard: formData.needIdCard,
             needGender: formData.needGender,
             needEmergencyContact: formData.needEmergencyContact,
+            needMedicalRecord: formData.needMedicalRecord,
             allowPostOrder: formData.allowPostOrder,
             customFields: formData.customFields.length ? formData.customFields : undefined,
             fieldOrder: formData.fieldOrder,
+            builtinFieldsRequired: formData.builtinFieldsRequired,
             minQuantity: parseInt(formData.minQuantity) || 1,
             maxQuantity: parseInt(formData.maxQuantity) || 99,
             tags: tags.length ? tags : undefined,
@@ -432,7 +436,6 @@ export function ServiceEdit() {
                     {/* 右侧：终端预览器（仅大屏显示） */}
                     <div className='hidden 2xl:block w-[375px] shrink-0'>
                         <div className='sticky top-6'>
-                            <div className='text-sm text-muted-foreground mb-2'>终端预览</div>
                             <TerminalPreview
                                 page='services'
                                 height={680}

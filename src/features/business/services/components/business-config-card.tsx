@@ -14,7 +14,7 @@ import {
     sortableKeyboardCoordinates,
     verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
-import { Plus, Settings, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Settings, MoreHorizontal, Pencil, Trash2, Circle, CircleCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
@@ -26,6 +26,13 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card'
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import type { CustomField } from '@/lib/api'
 import type { ServiceFormData } from '../types'
 import { BUILTIN_FIELDS, CUSTOM_FIELD_TYPES } from '../constants'
@@ -65,25 +72,7 @@ export function BusinessConfigCard({
         })
     )
 
-    // 处理拖拽结束
-    const handleDragEnd = (event: DragEndEvent) => {
-        const { active, over } = event
-        if (over && active.id !== over.id) {
-            const oldIndex = formData.fieldOrder.indexOf(active.id as string)
-            const newIndex = formData.fieldOrder.indexOf(over.id as string)
-            onFormChange({
-                ...formData,
-                fieldOrder: arrayMove(formData.fieldOrder, oldIndex, newIndex),
-            })
-        }
-    }
-
-    // 切换内置字段开关
-    const toggleBuiltinField = (key: keyof ServiceFormData, value: boolean) => {
-        onFormChange({ ...formData, [key]: value })
-    }
-
-    // 获取排序后的所有字段
+    // 获取排序后的所有字段（包含可能缺失的新字段）
     const getSortedFields = () => {
         const allFieldIds = [
             ...BUILTIN_FIELDS.map(f => f.id),
@@ -94,6 +83,27 @@ export function BusinessConfigCard({
         const missingIds = allFieldIds.filter(id => !sortedIds.includes(id))
 
         return [...sortedIds, ...missingIds]
+    }
+
+    // 处理拖拽结束
+    const handleDragEnd = (event: DragEndEvent) => {
+        const { active, over } = event
+        if (over && active.id !== over.id) {
+            const currentFields = getSortedFields()
+            const oldIndex = currentFields.indexOf(active.id as string)
+            const newIndex = currentFields.indexOf(over.id as string)
+            if (oldIndex !== -1 && newIndex !== -1) {
+                onFormChange({
+                    ...formData,
+                    fieldOrder: arrayMove(currentFields, oldIndex, newIndex),
+                })
+            }
+        }
+    }
+
+    // 切换内置字段开关
+    const toggleBuiltinField = (key: keyof ServiceFormData, value: boolean) => {
+        onFormChange({ ...formData, [key]: value })
     }
 
     return (
@@ -133,18 +143,42 @@ export function BusinessConfigCard({
                             // 内置字段
                             const builtinField = BUILTIN_FIELDS.find(f => f.id === fieldId)
                             if (builtinField) {
+                                const isEnabled = formData[builtinField.key] as boolean
+                                const isRequired = formData.builtinFieldsRequired?.[builtinField.key] ?? true
                                 return (
                                     <SortableFieldItem key={fieldId} id={fieldId}>
                                         <div className='flex items-center justify-between'>
                                             <Label className='cursor-pointer font-normal'>
                                                 {builtinField.label}
                                             </Label>
-                                            <Switch
-                                                checked={formData[builtinField.key] as boolean}
-                                                onCheckedChange={v =>
-                                                    toggleBuiltinField(builtinField.key, v)
-                                                }
-                                            />
+                                            <div className='flex items-center gap-2'>
+                                                {isEnabled && (
+                                                    <button
+                                                        type='button'
+                                                        className={`text-xs px-1.5 py-0.5 rounded transition-colors ${isRequired
+                                                            ? 'bg-destructive/10 text-destructive hover:bg-destructive/20'
+                                                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                                            }`}
+                                                        onClick={() => {
+                                                            onFormChange({
+                                                                ...formData,
+                                                                builtinFieldsRequired: {
+                                                                    ...formData.builtinFieldsRequired,
+                                                                    [builtinField.key]: !isRequired,
+                                                                },
+                                                            })
+                                                        }}
+                                                    >
+                                                        {isRequired ? '必填' : '选填'}
+                                                    </button>
+                                                )}
+                                                <Switch
+                                                    checked={isEnabled}
+                                                    onCheckedChange={v =>
+                                                        toggleBuiltinField(builtinField.key, v)
+                                                    }
+                                                />
+                                            </div>
                                         </div>
                                     </SortableFieldItem>
                                 )
@@ -155,38 +189,65 @@ export function BusinessConfigCard({
                             if (customField) {
                                 return (
                                     <SortableFieldItem key={fieldId} id={fieldId}>
-                                        <div className='flex items-center justify-between'>
-                                            <div className='flex items-center gap-2'>
-                                                <span className='text-muted-foreground'>
-                                                    {getFieldTypeIcon(customField.type)}
-                                                </span>
-                                                <span className='text-sm'>{customField.label}</span>
+                                        <div className='flex items-center justify-between gap-2'>
+                                            <div className='flex items-center gap-1.5 min-w-0 flex-1'>
+                                                <span className='text-sm truncate'>{customField.label}</span>
                                                 {customField.required && (
-                                                    <span className='text-destructive text-xs'>*</span>
+                                                    <span className='text-destructive text-xs shrink-0'>*</span>
                                                 )}
+                                            </div>
+                                            <div className='flex items-center gap-1.5 shrink-0'>
                                                 <Badge variant='secondary' className='text-xs'>
                                                     {CUSTOM_FIELD_TYPES.find(t => t.value === customField.type)?.label}
                                                 </Badge>
-                                            </div>
-                                            <div className='flex items-center gap-1'>
-                                                <Button
-                                                    type='button'
-                                                    variant='ghost'
-                                                    size='icon'
-                                                    className='h-7 w-7'
-                                                    onClick={() => onEditCustomField(customField)}
-                                                >
-                                                    <Pencil className='h-3 w-3' />
-                                                </Button>
-                                                <Button
-                                                    type='button'
-                                                    variant='ghost'
-                                                    size='icon'
-                                                    className='h-7 w-7 text-destructive hover:text-destructive'
-                                                    onClick={() => onDeleteCustomField(customField.id)}
-                                                >
-                                                    <Trash2 className='h-3 w-3' />
-                                                </Button>
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button
+                                                            type='button'
+                                                            variant='ghost'
+                                                            size='icon'
+                                                            className='h-6 w-6'
+                                                        >
+                                                            <MoreHorizontal className='h-3.5 w-3.5' />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align='end'>
+                                                        <DropdownMenuItem
+                                                            onClick={() => {
+                                                                const updatedFields = formData.customFields.map(f =>
+                                                                    f.id === customField.id
+                                                                        ? { ...f, required: !f.required }
+                                                                        : f
+                                                                )
+                                                                onFormChange({ ...formData, customFields: updatedFields })
+                                                            }}
+                                                        >
+                                                            {customField.required ? (
+                                                                <>
+                                                                    <Circle className='h-3.5 w-3.5 mr-2' />
+                                                                    设为选填
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <CircleCheck className='h-3.5 w-3.5 mr-2' />
+                                                                    设为必填
+                                                                </>
+                                                            )}
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => onEditCustomField(customField)}>
+                                                            <Pencil className='h-3.5 w-3.5 mr-2' />
+                                                            编辑
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuItem
+                                                            className='text-destructive focus:text-destructive'
+                                                            onClick={() => onDeleteCustomField(customField.id)}
+                                                        >
+                                                            <Trash2 className='h-3.5 w-3.5 mr-2' />
+                                                            删除
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
                                             </div>
                                         </div>
                                     </SortableFieldItem>

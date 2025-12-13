@@ -5,6 +5,7 @@ import {
     CheckSquare,
     CircleDot,
     CalendarClock,
+    ImagePlus,
 } from 'lucide-react'
 import type { ServiceFormData } from './types'
 
@@ -28,12 +29,13 @@ export const BUILTIN_FIELDS = [
     { id: 'needIdCard', label: '需要身份证', key: 'needIdCard' as const },
     { id: 'needGender', label: '需要性别', key: 'needGender' as const },
     { id: 'needEmergencyContact', label: '需要紧急联系人', key: 'needEmergencyContact' as const },
+    { id: 'needMedicalRecord', label: '需要选择病历', key: 'needMedicalRecord' as const },
 ] as const
 
 // 默认字段排序
 export const DEFAULT_FIELD_ORDER = BUILTIN_FIELDS.map(f => f.id)
 
-// 自定义字段类型选项（增加时间选择器）
+// 自定义字段类型选项（增加时间选择器和图片上传）
 export const CUSTOM_FIELD_TYPES = [
     { value: 'text', label: '文本框', icon: Type },
     { value: 'textarea', label: '段落文本', icon: AlignJustify },
@@ -41,6 +43,7 @@ export const CUSTOM_FIELD_TYPES = [
     { value: 'checkbox', label: '多选框', icon: CheckSquare },
     { value: 'radio', label: '单选框', icon: CircleDot },
     { value: 'datetime', label: '时间选择器', icon: CalendarClock },
+    { value: 'image', label: '图片上传', icon: ImagePlus },  // 用于处方、病历等图片
 ] as const
 
 // 默认表单数据
@@ -64,9 +67,21 @@ export const DEFAULT_FORM_DATA: ServiceFormData = {
     needIdCard: false,
     needGender: false,
     needEmergencyContact: false,
+    needMedicalRecord: false,
     allowPostOrder: false,
     customFields: [],
     fieldOrder: [...DEFAULT_FIELD_ORDER],
+    builtinFieldsRequired: {
+        needPatient: true,
+        needHospital: true,
+        needDepartment: true,
+        needDoctor: true,
+        needAppointment: true,
+        needIdCard: true,
+        needGender: true,
+        needEmergencyContact: true,
+        needMedicalRecord: true,
+    },
     minQuantity: '1',
     maxQuantity: '99',
     tags: '',

@@ -6,6 +6,7 @@ import {
   IsBoolean,
   IsArray,
   IsNumber,
+  IsObject,
   MinLength,
   MaxLength,
   Min,
@@ -172,6 +173,11 @@ export class CreateServiceDto {
   @IsBoolean()
   needEmergencyContact?: boolean;
 
+  @ApiPropertyOptional({ description: '是否需要选择病历', default: false })
+  @IsOptional()
+  @IsBoolean()
+  needMedicalRecord?: boolean;
+
   @ApiPropertyOptional({ description: '是否允许先下单后填写信息', default: false })
   @IsOptional()
   @IsBoolean()
@@ -182,11 +188,12 @@ export class CreateServiceDto {
   @IsArray()
   customFields?: {
     id: string;
-    type: 'text' | 'textarea' | 'select' | 'checkbox' | 'radio' | 'datetime';
+    type: 'text' | 'textarea' | 'select' | 'checkbox' | 'radio' | 'datetime' | 'image';
     label: string;
     placeholder?: string;
     required: boolean;
     options?: string[];
+    maxImages?: number;
   }[];
 
   @ApiPropertyOptional({ description: '字段排序' })
@@ -194,6 +201,11 @@ export class CreateServiceDto {
   @IsArray()
   @IsString({ each: true })
   fieldOrder?: string[];
+
+  @ApiPropertyOptional({ description: '内置字段必填配置', example: { needPatient: true, needHospital: false } })
+  @IsOptional()
+  @IsObject()
+  builtinFieldsRequired?: Record<string, boolean>;
 
   @ApiPropertyOptional({ description: '标签数组' })
   @IsOptional()
@@ -372,6 +384,11 @@ export class UpdateServiceDto {
   @IsBoolean()
   needEmergencyContact?: boolean;
 
+  @ApiPropertyOptional({ description: '是否需要选择病历' })
+  @IsOptional()
+  @IsBoolean()
+  needMedicalRecord?: boolean;
+
   @ApiPropertyOptional({ description: '是否允许先下单后填写信息' })
   @IsOptional()
   @IsBoolean()
@@ -382,10 +399,11 @@ export class UpdateServiceDto {
   @IsArray()
   customFields?: {
     id: string;
-    type: 'text' | 'textarea' | 'select' | 'checkbox' | 'radio' | 'datetime';
+    type: 'text' | 'textarea' | 'select' | 'checkbox' | 'radio' | 'datetime' | 'image';
     label: string;
     placeholder?: string;
     required: boolean;
+    maxImages?: number;
     options?: string[];
   }[];
 
@@ -394,6 +412,11 @@ export class UpdateServiceDto {
   @IsArray()
   @IsString({ each: true })
   fieldOrder?: string[];
+
+  @ApiPropertyOptional({ description: '内置字段必填配置' })
+  @IsOptional()
+  @IsObject()
+  builtinFieldsRequired?: Record<string, boolean>;
 
   @ApiPropertyOptional({ description: '标签数组' })
   @IsOptional()

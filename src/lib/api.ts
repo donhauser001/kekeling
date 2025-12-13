@@ -1386,11 +1386,12 @@ export interface ServiceNoteItem {
 // 自定义字段配置
 export interface CustomField {
   id: string
-  type: 'text' | 'textarea' | 'select' | 'checkbox' | 'radio' | 'datetime'
+  type: 'text' | 'textarea' | 'select' | 'checkbox' | 'radio' | 'datetime' | 'image'
   label: string
   placeholder?: string
   required: boolean
   options?: string[]
+  maxImages?: number  // 图片类型时，最大上传数量
 }
 
 // 服务保障（独立模块）
@@ -1458,9 +1459,11 @@ export interface Service {
   needIdCard: boolean           // 需要身份证
   needGender: boolean           // 需要性别
   needEmergencyContact: boolean // 需要紧急联系人
+  needMedicalRecord: boolean    // 需要上传病历
   allowPostOrder: boolean       // 允许先下单后填写信息
   customFields: CustomField[] | null  // 自定义字段配置
   fieldOrder: string[] | null         // 字段排序
+  builtinFieldsRequired: Record<string, boolean> | null  // 内置字段必填配置
   orderCount: number
   rating: number
   tags: string[]
@@ -1509,9 +1512,11 @@ export interface CreateServiceData {
   needIdCard?: boolean           // 需要身份证
   needGender?: boolean           // 需要性别
   needEmergencyContact?: boolean // 需要紧急联系人
+  needMedicalRecord?: boolean    // 需要上传病历
   allowPostOrder?: boolean       // 允许先下单后填写信息
   customFields?: CustomField[]   // 自定义字段配置
   fieldOrder?: string[]          // 字段排序
+  builtinFieldsRequired?: Record<string, boolean>  // 内置字段必填配置
   tags?: string[]
   sort?: number
   status?: string

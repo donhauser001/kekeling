@@ -86,6 +86,8 @@ import {
   // 就诊人管理
   PatientsPage,
   PatientEditPage,
+  // 下单页
+  CreateOrderPage,
   // 分销中心页面（Step 11.3-11.5）
   DistributionPage,
   DistributionMembersPage,
@@ -525,6 +527,11 @@ export function TerminalPreview({
           isDarkMode={isDarkMode}
           onBack={handleBackFromDetail}
           onServiceClick={handleServiceClick}
+          onNavigate={(page, params) => {
+            // 离开服务详情页时清除选中状态
+            setSelectedServiceId(null)
+            navigateToPage(page, params)
+          }}
         />
       )
     }
@@ -746,6 +753,24 @@ export function TerminalPreview({
             onBack={() => navigateToPage('workbench')}
             onNavigate={(page, params) => navigateToPage(page, params)}
             onLogin={() => setShowEscortLoginDialog(true)}
+          />
+        )
+
+      // 下单页
+      case 'create-order':
+        return (
+          <CreateOrderPage
+            serviceId={pageParams?.serviceId || ''}
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            onBack={() => {
+              // 返回服务详情页
+              if (pageParams?.serviceId) {
+                setSelectedServiceId(pageParams.serviceId)
+              }
+              navigateToPage('services')
+            }}
+            onNavigate={(page, params) => navigateToPage(page, params)}
           />
         )
 

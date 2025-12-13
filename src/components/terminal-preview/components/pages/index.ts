@@ -43,6 +43,10 @@ export const PatientEditPage = lazy(() =>
   import('./PatientEditPage').then(m => ({ default: m.PatientEditPage }))
 )
 
+export const CreateOrderPage = lazy(() =>
+  import('./CreateOrderPage').then(m => ({ default: m.CreateOrderPage }))
+)
+
 // ============================================================================
 // 营销中心页面（9 个）
 // ============================================================================

@@ -55,6 +55,8 @@ export type PreviewPage =
   | 'referrals'
   | 'campaigns'
   | 'campaigns-detail'
+  // 下单
+  | 'create-order'
   // 用户订单
   | 'user-orders'
   | 'user-order-detail'
@@ -100,6 +102,8 @@ export const VALID_PAGE_KEYS: readonly PreviewPage[] = [
   'referrals',
   'campaigns',
   'campaigns-detail',
+  // 下单
+  'create-order',
   // 用户订单
   'user-orders',
   'user-order-detail',
@@ -165,6 +169,9 @@ export const PAGE_METADATA: Record<PreviewPage, PageMetadata> = {
   'referrals': { entryAllowed: true, description: '邀请有礼' },
   'campaigns': { entryAllowed: true, description: '活动列表' },
   'campaigns-detail': { entryAllowed: false, requiredParams: ['id'], description: '活动详情' },
+
+  // 下单
+  'create-order': { entryAllowed: false, requiredParams: ['serviceId'], description: '创建订单' },
 
   // 用户订单
   'user-orders': { entryAllowed: false, description: '用户订单' },
@@ -232,6 +239,13 @@ export interface PreviewPageParamsMap {
   'referrals': Record<string, never>
   'campaigns': Record<string, never>
   'campaigns-detail': { id: string }
+
+  // 下单
+  'create-order': { serviceId: string }
+
+  // 用户订单
+  'user-orders': Record<string, never>
+  'user-order-detail': { id: string }
 
   // 陪诊员公开页
   'escort-list': Record<string, never>

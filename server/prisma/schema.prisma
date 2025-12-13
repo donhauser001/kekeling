@@ -131,7 +131,9 @@ model Service {
   needIdCard       Boolean   @default(false) @map("need_id_card")       // 需要身份证
   needGender       Boolean   @default(false) @map("need_gender")        // 需要性别
   needEmergencyContact Boolean @default(false) @map("need_emergency_contact") // 需要紧急联系人
+  needMedicalRecord Boolean  @default(false) @map("need_medical_record") // 需要选择病历
   allowPostOrder   Boolean   @default(false) @map("allow_post_order")  // 允许先下单后填写信息
+  builtinFieldsRequired Json? @map("builtin_fields_required") // 内置字段必填配置 { fieldKey: boolean }
   customFields     Json?     @map("custom_fields")   // 自定义字段配置 [{ id, type, label, placeholder, required, options }]
   fieldOrder       Json?     @map("field_order")     // 字段排序 ['needPatient', 'custom_xxx', ...]
   

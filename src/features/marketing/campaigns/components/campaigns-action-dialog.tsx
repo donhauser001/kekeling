@@ -591,7 +591,6 @@ export function CampaignsActionDialog({
 
             {/* 右侧：预览器 */}
             <div className='w-[375px] flex-shrink-0'>
-              <div className='text-sm text-muted-foreground mb-2'>终端预览</div>
               <TerminalPreview
                 page='campaigns'
                 height={600}

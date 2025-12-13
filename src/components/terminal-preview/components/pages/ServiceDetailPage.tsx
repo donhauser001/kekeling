@@ -37,6 +37,7 @@ interface ServiceDetailPageProps {
   isDarkMode?: boolean
   onBack?: () => void
   onServiceClick?: (serviceId: string) => void
+  onNavigate?: (page: string, params?: Record<string, string>) => void
 }
 
 // 选项卡类型
@@ -48,6 +49,7 @@ export function ServiceDetailPage({
   isDarkMode = false,
   onBack,
   onServiceClick,
+  onNavigate,
 }: ServiceDetailPageProps) {
   const [isFavorite, setIsFavorite] = useState(false)
   const [activeImageIndex, setActiveImageIndex] = useState(0)
@@ -724,17 +726,16 @@ export function ServiceDetailPage({
             <h3 className='text-sm font-semibold mb-3' style={{ color: textPrimary }}>
               服务保障
             </h3>
-            <div className='flex flex-wrap items-center gap-3'>
+            <div className='grid grid-cols-3 gap-2'>
               {guarantees.map((item) => (
                 <button
                   key={item.id}
-                  className='flex items-center gap-1.5 px-2 py-1 rounded-full transition-colors hover:bg-emerald-50 active:scale-95'
+                  className='flex flex-col items-center gap-1.5 py-2.5 rounded-lg transition-colors hover:bg-emerald-50 active:scale-95'
                   style={{ backgroundColor: isDarkMode ? '#1a3a2a' : '#ecfdf5' }}
                   onClick={() => handleGuaranteeClick(item)}
                 >
                   {getIcon(item.icon)}
-                  <span className='text-xs' style={{ color: '#10b981' }}>{item.name}</span>
-                  <ChevronRight className='h-3 w-3' style={{ color: '#10b981' }} />
+                  <span className='text-xs text-center' style={{ color: '#10b981' }}>{item.name}</span>
                 </button>
               ))}
             </div>
@@ -901,6 +902,7 @@ export function ServiceDetailPage({
         <button
           className='flex-1 py-2.5 rounded-full text-sm font-medium text-white transition-all hover:opacity-90 active:scale-[0.98]'
           style={{ backgroundColor: themeSettings.primaryColor }}
+          onClick={() => onNavigate?.('create-order', { serviceId })}
         >
           立即预约
         </button>
