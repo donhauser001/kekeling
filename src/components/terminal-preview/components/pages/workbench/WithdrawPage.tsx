@@ -11,6 +11,7 @@ import { useQuery } from '@tanstack/react-query'
 import { CreditCard, CheckCircle, AlertCircle } from 'lucide-react'
 import type { ThemeSettings, PreviewViewerRole } from '../../../types'
 import { previewApi, type WithdrawInfo } from '../../../api'
+import { PermissionPrompt } from '../../PermissionPrompt'
 
 // ============================================================================
 // 类型定义
@@ -22,6 +23,8 @@ export interface WithdrawPageProps {
   effectiveViewerRole: PreviewViewerRole
   onBack?: () => void
   onNavigate?: (page: string, params?: Record<string, string>) => void
+  /** 显示登录弹窗回调 */
+  onShowLoginDialog?: () => void
 }
 
 // ============================================================================
@@ -33,6 +36,7 @@ export function WithdrawPage({
   isDarkMode,
   effectiveViewerRole,
   onBack,
+  onShowLoginDialog,
 }: WithdrawPageProps) {
   const isEscort = effectiveViewerRole === 'escort'
 
@@ -52,7 +56,7 @@ export function WithdrawPage({
     enabled: isEscort,
   })
 
-  // 非 escort 视角：显示提示
+  // 非 escort 视角：显示统一的 PermissionPrompt
   if (!isEscort) {
     return (
       <div
@@ -77,14 +81,16 @@ export function WithdrawPage({
           </h1>
         </div>
 
-        <div className="flex-1 flex flex-col items-center justify-center px-4">
-          <div className="text-5xl mb-4">🔒</div>
-          <div className={`text-base font-medium text-center ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-            需要陪诊员身份
-          </div>
-          <div className={`text-sm text-center mt-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-            请先登录陪诊员账号后再进行提现操作。
-          </div>
+        {/* 权限提示 */}
+        <div className="flex-1">
+          <PermissionPrompt
+            title="需要陪诊员身份"
+            description="请先登录陪诊员账号后再进行提现操作"
+            onLogin={onShowLoginDialog}
+            showDebugInject={process.env.NODE_ENV === 'development'}
+            primaryColor={themeSettings.primaryColor}
+            isDarkMode={isDarkMode}
+          />
         </div>
       </div>
     )
@@ -190,9 +196,8 @@ export function WithdrawPage({
                   placeholder="0.00"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  className={`flex-1 text-3xl font-bold bg-transparent outline-none ${
-                    isDarkMode ? 'text-white placeholder-gray-600' : 'text-gray-900 placeholder-gray-300'
-                  }`}
+                  className={`flex-1 text-3xl font-bold bg-transparent outline-none ${isDarkMode ? 'text-white placeholder-gray-600' : 'text-gray-900 placeholder-gray-300'
+                    }`}
                 />
               </div>
               <button
@@ -257,11 +262,10 @@ export function WithdrawPage({
                     <div
                       key={card.id}
                       onClick={() => setSelectedCardId(card.id)}
-                      className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
-                        selectedCardId === card.id
+                      className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${selectedCardId === card.id
                           ? 'ring-2'
                           : ''
-                      }`}
+                        }`}
                       style={{
                         backgroundColor: isDarkMode ? '#3a3a3a' : '#f5f7fa',
                         ringColor: selectedCardId === card.id ? themeSettings.primaryColor : 'transparent',

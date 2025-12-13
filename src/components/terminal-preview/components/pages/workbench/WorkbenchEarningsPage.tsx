@@ -28,6 +28,7 @@ import {
 } from 'lucide-react'
 import type { ThemeSettings, PreviewViewerRole } from '../../../types'
 import { previewApi, type EarningsStats, type EarningsStatsRecord } from '../../../api'
+import { PermissionPrompt } from '../../PermissionPrompt'
 
 // ============================================================================
 // 类型定义
@@ -39,6 +40,8 @@ export interface WorkbenchEarningsPageProps {
     effectiveViewerRole: PreviewViewerRole
     onBack?: () => void
     onNavigate?: (page: string, params?: Record<string, string>) => void
+    /** 显示登录弹窗回调 */
+    onShowLoginDialog?: () => void
 }
 
 // ============================================================================
@@ -51,6 +54,7 @@ export function WorkbenchEarningsPage({
     effectiveViewerRole,
     onBack,
     onNavigate,
+    onShowLoginDialog,
 }: WorkbenchEarningsPageProps) {
     const isEscort = effectiveViewerRole === 'escort'
 
@@ -66,7 +70,7 @@ export function WorkbenchEarningsPage({
         enabled: isEscort, // 只有 escort 视角才发请求
     })
 
-    // 非 escort 视角：显示提示
+    // 非 escort 视角：显示统一的 PermissionPrompt
     if (!isEscort) {
         return (
             <div
@@ -76,14 +80,16 @@ export function WorkbenchEarningsPage({
                 }}
             >
                 <Header themeSettings={themeSettings} onBack={onBack} />
-                <div className="flex-1 flex flex-col items-center justify-center px-4">
-                    <div className="text-5xl mb-4">🔒</div>
-                    <div className={`text-base font-medium text-center ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                        需要陪诊员身份
-                    </div>
-                    <div className={`text-sm text-center mt-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                        请先登录陪诊员账号后再查看收入明细。
-                    </div>
+                {/* 权限提示 */}
+                <div className="flex-1">
+                    <PermissionPrompt
+                        title="需要陪诊员身份"
+                        description="请先登录陪诊员账号后再查看收入明细"
+                        onLogin={onShowLoginDialog}
+                        showDebugInject={process.env.NODE_ENV === 'development'}
+                        primaryColor={themeSettings.primaryColor}
+                        isDarkMode={isDarkMode}
+                    />
                 </div>
             </div>
         )

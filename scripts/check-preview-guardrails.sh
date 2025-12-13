@@ -11,6 +11,7 @@
 #   2. 分销中心页面必须有 enabled: isEscort 条件
 #   3. 分销 API 禁止使用 userRequest
 #   4. 工作台页面必须检查 effectiveViewerRole
+#   4.1 工作台页面必须使用 PermissionPrompt（强制）
 #   5. escortRequest 接口禁止出现在营销中心页面
 #
 # =============================================================================
@@ -134,6 +135,36 @@ if [ -d "$WORKBENCH_PAGES" ]; then
       ((WARNINGS++))
     else
       echo -e "${GREEN}✓ $filename - effectiveViewerRole${NC}"
+    fi
+  done
+else
+  echo -e "${YELLOW}⚠️ 工作台页面目录不存在: $WORKBENCH_PAGES${NC}"
+fi
+
+echo ""
+
+# -----------------------------------------------------------------------------
+# 检查 4.1: 工作台页面必须使用 PermissionPrompt（强制）
+# @see DEV_NOTES.md PermissionPrompt 组件约束
+# -----------------------------------------------------------------------------
+echo "📋 检查 4.1: 工作台页面 PermissionPrompt 使用（强制）..."
+
+if [ -d "$WORKBENCH_PAGES" ]; then
+  WORKBENCH_FILES=$(find "$WORKBENCH_PAGES" -name "*.tsx" -type f 2>/dev/null)
+  
+  for file in $WORKBENCH_FILES; do
+    filename=$(basename "$file")
+    # 跳过 index.ts 等导出文件
+    if [[ "$filename" == "index.ts" ]] || [[ "$filename" == "index.tsx" ]]; then
+      continue
+    fi
+    
+    # 检查是否使用了 PermissionPrompt 组件
+    if ! grep -q "PermissionPrompt" "$file" 2>/dev/null; then
+      echo -e "${RED}❌ $filename 缺少 PermissionPrompt 组件${NC}"
+      ((ERRORS++))
+    else
+      echo -e "${GREEN}✓ $filename - PermissionPrompt${NC}"
     fi
   done
 else

@@ -39,6 +39,13 @@ jobs:
       - name: Build the project
         run: pnpm build
 
+      # ============================================
+      # Step 14.2: 终端预览器护栏检查
+      # @see docs/终端预览器集成/DEV_NOTES.md
+      # ============================================
+      - name: Preview Guardrails Check
+        run: pnpm lint:preview-guard
+
   # ============================================
   # P2-16: Semgrep SAST 安全扫描
   # P2-17: 依赖漏洞扫描
