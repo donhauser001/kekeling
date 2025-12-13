@@ -163,7 +163,7 @@ export function TerminalPreview({
 
   // Step 4/7: 陪诊员登录成功处理
   const handleEscortLoginSuccess = useCallback((escortToken: string) => {
-    console.log('[TerminalPreview] 陪诊员登录成功，escortToken:', escortToken)
+    console.log('[TerminalPreview] 陪诊员登录成功，escortToken:', escortToken ? `${escortToken.slice(0, 6)}...${escortToken.slice(-4)}` : '无')
     setPreviewEscortToken(escortToken) // 持久化
     setLocalEscortToken(escortToken)   // 更新状态
     // useViewerRole 会自动触发验证并切换视角

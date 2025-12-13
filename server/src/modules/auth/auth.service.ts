@@ -1,3 +1,13 @@
+/**
+ * 认证服务
+ *
+ * ⚠️ 安全修复（P1-12）：
+ * - JWT 签发时加入会话版本号
+ * - 修改密码时使所有会话失效
+ *
+ * @see docs/终端预览器集成/安全审计报告-2024-12-13.md - P1-12
+ */
+
 import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -5,6 +15,7 @@ import axios from 'axios';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
+import { SessionService } from './session.service';
 import { WechatLoginDto } from './dto/wechat-login.dto';
 
 interface EscortBindResult {
@@ -23,6 +34,7 @@ export class AuthService {
     private jwtService: JwtService,
     private configService: ConfigService,
     private redis: RedisService,
+    private sessionService: SessionService,
   ) { }
 
   // 微信登录
@@ -86,10 +98,14 @@ export class AuthService {
         }
       }
 
-      // 生成 JWT Token
+      // 获取会话版本号（安全修复 P1-12）
+      const sessionVersion = await this.sessionService.getUserSessionVersion(user.id);
+
+      // 生成 JWT Token（包含会话版本号）
       const token = this.jwtService.sign({
         sub: user.id,
         openid: user.openid,
+        sv: sessionVersion, // session version
       });
 
       return {
@@ -274,12 +290,16 @@ export class AuthService {
       throw new UnauthorizedException('用户名或密码错误');
     }
 
-    // 生成 JWT Token
+    // 获取会话版本号（安全修复 P1-12）
+    const sessionVersion = await this.sessionService.getAdminSessionVersion(admin.id);
+
+    // 生成 JWT Token（包含会话版本号）
     const token = this.jwtService.sign({
       sub: admin.id,
       username: admin.username,
       role: admin.role,
       type: 'admin', // 标识这是管理员 token
+      sv: sessionVersion, // session version
     });
 
     return {

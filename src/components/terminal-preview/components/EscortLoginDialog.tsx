@@ -110,7 +110,7 @@ export function EscortLoginDialog({
 
       const mockEscortToken = `mock-escort-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 8)}`
 
-      console.log('[EscortLoginDialog] 登录成功（模拟），escortToken:', mockEscortToken)
+      console.log('[EscortLoginDialog] 登录成功（模拟），escortToken:', `${mockEscortToken.slice(0, 6)}...${mockEscortToken.slice(-4)}`)
 
       onLoginSuccess(mockEscortToken)
       onClose()

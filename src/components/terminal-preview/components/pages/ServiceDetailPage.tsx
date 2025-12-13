@@ -25,6 +25,7 @@ import {
   AlertCircle,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { SafeHTML } from '@/components/ui/safe-html'
 import type { ThemeSettings } from '../../types'
 import { previewApi } from '../../api'
 import { getResourceUrl } from '../../utils'
@@ -663,7 +664,7 @@ export function ServiceDetailPage({
                 margin: 12px 0 8px;
               }
             `}</style>
-            <div dangerouslySetInnerHTML={{ __html: service.content }} />
+            <SafeHTML html={service.content} />
           </div>
         ) : (
           <div

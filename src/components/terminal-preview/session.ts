@@ -6,11 +6,13 @@
  * - 真实终端的 viewerRole 只能由 escortToken 的 validate 结果推导
  * - 预览器模式下允许通过 Props 强制模拟视角
  *
- * Token 存储 Key：
- * - terminalPreview.userToken（预览器 localStorage）
- * - terminalPreview.escortToken（预览器 localStorage）
+ * ⚠️ 安全修复（P0-7）：
+ * - 真实 Token 存储在内存中，刷新后需重新登录
+ * - 仅 mock token 持久化到 localStorage（开发调试用）
+ * - 防止 XSS 攻击窃取 Token
  *
  * @see docs/终端预览器集成/02-双身份会话与视角切换规格.md
+ * @see docs/终端预览器集成/安全审计报告-2024-12-13.md - P0-7
  */
 
 import type { PreviewViewerRole, UserSession, EscortSession } from './types'
@@ -20,18 +22,29 @@ import type { PreviewViewerRole, UserSession, EscortSession } from './types'
 // ============================================================================
 
 /**
- * Token 存储 Key（localStorage）
+ * Token 存储 Key（仅用于 mock token 持久化）
  *
- * 命名规范：
- * - terminalPreview.xxx 用于预览器
- * - kekeling_xxx 用于真实终端 H5（TODO）
+ * ⚠️ 安全说明：
+ * - 真实 Token 存储在内存中，不使用 localStorage
+ * - 仅 mock token 持久化，用于开发调试时保持登录状态
  */
 export const TOKEN_KEYS = {
-  /** 预览器用户 Token */
-  PREVIEW_USER_TOKEN: 'terminalPreview.userToken',
-  /** 预览器陪诊员 Token */
-  PREVIEW_ESCORT_TOKEN: 'terminalPreview.escortToken',
+  /** 预览器用户 Mock Token（仅开发用） */
+  PREVIEW_USER_TOKEN: 'terminalPreview.mockUserToken',
+  /** 预览器陪诊员 Mock Token（仅开发用） */
+  PREVIEW_ESCORT_TOKEN: 'terminalPreview.mockEscortToken',
 } as const
+
+// ============================================================================
+// 内存态 Token 存储（安全修复）
+// ============================================================================
+
+/**
+ * 内存态 Token 存储
+ * 真实 Token 只存内存，刷新后丢失，需重新登录
+ */
+let memoryUserToken: string | null = null
+let memoryEscortToken: string | null = null
 
 // ============================================================================
 // 类型定义
@@ -64,55 +77,118 @@ export interface TokenValidationResult {
 }
 
 // ============================================================================
-// Token 持久化函数
+// Token 存储函数（安全修复：内存态 + mock 持久化）
 // ============================================================================
 
 /**
+ * 判断是否为 mock token
+ */
+function isMockToken(token: string | null): boolean {
+  return token?.startsWith('mock-') ?? false
+}
+
+/**
  * 获取预览器用户 Token
+ *
+ * 优先级：
+ * 1. 内存态 Token（真实 Token）
+ * 2. localStorage 中的 mock Token（开发用）
  */
 export function getPreviewUserToken(): string | null {
+  // 优先返回内存态 Token
+  if (memoryUserToken) {
+    return memoryUserToken
+  }
+
+  // 仅在开发环境读取 mock token
   if (typeof window === 'undefined') return null
-  return localStorage.getItem(TOKEN_KEYS.PREVIEW_USER_TOKEN)
+  const storedToken = localStorage.getItem(TOKEN_KEYS.PREVIEW_USER_TOKEN)
+  if (storedToken && isMockToken(storedToken)) {
+    return storedToken
+  }
+
+  return null
 }
 
 /**
  * 设置预览器用户 Token
+ *
+ * 安全策略：
+ * - mock token: 持久化到 localStorage（开发调试用）
+ * - 真实 token: 仅存内存，刷新后丢失
  */
 export function setPreviewUserToken(token: string): void {
-  if (typeof window === 'undefined') return
-  localStorage.setItem(TOKEN_KEYS.PREVIEW_USER_TOKEN, token)
+  if (isMockToken(token)) {
+    // mock token 持久化（开发用）
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(TOKEN_KEYS.PREVIEW_USER_TOKEN, token)
+    }
+  } else {
+    // 真实 token 仅存内存
+    memoryUserToken = token
+  }
 }
 
 /**
  * 清除预览器用户 Token
  */
 export function clearPreviewUserToken(): void {
-  if (typeof window === 'undefined') return
-  localStorage.removeItem(TOKEN_KEYS.PREVIEW_USER_TOKEN)
+  memoryUserToken = null
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem(TOKEN_KEYS.PREVIEW_USER_TOKEN)
+  }
 }
 
 /**
  * 获取预览器陪诊员 Token
+ *
+ * 优先级：
+ * 1. 内存态 Token（真实 Token）
+ * 2. localStorage 中的 mock Token（开发用）
  */
 export function getPreviewEscortToken(): string | null {
+  // 优先返回内存态 Token
+  if (memoryEscortToken) {
+    return memoryEscortToken
+  }
+
+  // 仅在开发环境读取 mock token
   if (typeof window === 'undefined') return null
-  return localStorage.getItem(TOKEN_KEYS.PREVIEW_ESCORT_TOKEN)
+  const storedToken = localStorage.getItem(TOKEN_KEYS.PREVIEW_ESCORT_TOKEN)
+  if (storedToken && isMockToken(storedToken)) {
+    return storedToken
+  }
+
+  return null
 }
 
 /**
  * 设置预览器陪诊员 Token
+ *
+ * 安全策略：
+ * - mock token: 持久化到 localStorage（开发调试用）
+ * - 真实 token: 仅存内存，刷新后丢失
  */
 export function setPreviewEscortToken(token: string): void {
-  if (typeof window === 'undefined') return
-  localStorage.setItem(TOKEN_KEYS.PREVIEW_ESCORT_TOKEN, token)
+  if (isMockToken(token)) {
+    // mock token 持久化（开发用）
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(TOKEN_KEYS.PREVIEW_ESCORT_TOKEN, token)
+    }
+  } else {
+    // 真实 token 仅存内存
+    memoryEscortToken = token
+  }
 }
 
 /**
  * 清除预览器陪诊员 Token
  */
 export function clearPreviewEscortToken(): void {
-  if (typeof window === 'undefined') return
-  localStorage.removeItem(TOKEN_KEYS.PREVIEW_ESCORT_TOKEN)
+  memoryEscortToken = null
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem(TOKEN_KEYS.PREVIEW_ESCORT_TOKEN)
+  }
 }
 
 /**
