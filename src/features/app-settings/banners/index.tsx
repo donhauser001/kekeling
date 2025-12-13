@@ -13,6 +13,7 @@ import {
   Power,
   PowerOff,
 } from 'lucide-react'
+import { TerminalPreview } from '@/components/terminal-preview'
 import { toast } from 'sonner'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
@@ -798,16 +799,29 @@ export default function BannersManagement() {
           </p>
         </div>
 
-        <div className='space-y-4'>
-          {areas.map(({ position, config }) => (
-            <BannerAreaSection
-              key={position}
-              position={position}
-              config={config}
-              onToggleEnabled={(enabled) => handleToggleEnabled(position, enabled)}
-              onUpdateSize={(width, height) => handleUpdateSize(position, width, height)}
+        {/* 双栏布局：左侧设置 + 右侧预览 */}
+        <div className='flex gap-6'>
+          {/* 左侧：轮播图设置 */}
+          <div className='flex-1 space-y-4'>
+            {areas.map(({ position, config }) => (
+              <BannerAreaSection
+                key={position}
+                position={position}
+                config={config}
+                onToggleEnabled={(enabled) => handleToggleEnabled(position, enabled)}
+                onUpdateSize={(width, height) => handleUpdateSize(position, width, height)}
+              />
+            ))}
+          </div>
+
+          {/* 右侧：终端预览器 */}
+          <div className='hidden xl:block sticky top-4 h-fit'>
+            <TerminalPreview
+              page='home'
+              containerWidth={375}
+              containerHeight={680}
             />
-          ))}
+          </div>
         </div>
       </Main>
     </>

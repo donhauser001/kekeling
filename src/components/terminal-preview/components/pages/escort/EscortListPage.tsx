@@ -85,13 +85,20 @@ export function EscortListPage({ themeSettings, isDarkMode, onNavigate }: Escort
           />
         )}
 
-        {/* 空态 */}
+        {/* 空态 - Step 14.21: 添加刷新按钮 */}
         {isEmpty && !isError && (
           <div className="flex flex-col items-center justify-center py-12">
             <div className="text-5xl mb-3">👩‍⚕️</div>
             <div className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>
               暂无可用陪诊员
             </div>
+            <button
+              onClick={() => refetch()}
+              className="mt-4 px-4 py-2 rounded-lg text-sm font-medium text-white"
+              style={{ backgroundColor: themeSettings.primaryColor }}
+            >
+              刷新查看
+            </button>
           </div>
         )}
 

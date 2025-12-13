@@ -1034,17 +1034,20 @@ export const previewApi = {
    * 获取我的优惠券
    * 接口: GET /marketing/coupons/my
    * 通道: userRequest
+   * Step 14.19 UI-B-3: 所有错误降级到 mock，保证预览器稳定性
    */
   getMyCoupons: async (): Promise<CouponsResponse> => {
     try {
       return await userRequest<CouponsResponse>('/marketing/coupons/my')
     } catch (error) {
-      // 接口不存在时返回 mock 数据（开发阶段）
+      // 404/500 降级到 mock 数据
       if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
-        console.warn('[previewApi.getMyCoupons] 使用 mock 数据')
+        console.warn('[previewApi.getMyCoupons] 接口错误，使用 mock 数据')
         return getMockCouponsData()
       }
-      throw error
+      // 其他错误也降级，保证预览器可用
+      console.warn('[previewApi.getMyCoupons] 请求失败，降级 mock:', error)
+      return getMockCouponsData()
     }
   },
 
@@ -1052,16 +1055,18 @@ export const previewApi = {
    * 获取我的会员信息
    * 接口: GET /marketing/membership/my
    * 通道: userRequest
+   * Step 14.19 UI-B-3: 所有错误降级到 mock，保证预览器稳定性
    */
   getMyMembership: async (): Promise<MembershipInfo | null> => {
     try {
       return await userRequest<MembershipInfo | null>('/marketing/membership/my')
     } catch (error) {
       if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
-        console.warn('[previewApi.getMyMembership] 使用 mock 数据')
+        console.warn('[previewApi.getMyMembership] 接口错误，使用 mock 数据')
         return getMockMembershipData()
       }
-      throw error
+      console.warn('[previewApi.getMyMembership] 请求失败，降级 mock:', error)
+      return getMockMembershipData()
     }
   },
 
@@ -1069,16 +1074,18 @@ export const previewApi = {
    * 获取会员套餐列表
    * 接口: GET /marketing/membership/plans
    * 通道: userRequest
+   * Step 14.19 UI-B-3: 所有错误降级到 mock，保证预览器稳定性
    */
   getMembershipPlans: async (): Promise<MembershipPlan[]> => {
     try {
       return await userRequest<MembershipPlan[]>('/marketing/membership/plans')
     } catch (error) {
       if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
-        console.warn('[previewApi.getMembershipPlans] 使用 mock 数据')
+        console.warn('[previewApi.getMembershipPlans] 接口错误，使用 mock 数据')
         return getMockMembershipPlans()
       }
-      throw error
+      console.warn('[previewApi.getMembershipPlans] 请求失败，降级 mock:', error)
+      return getMockMembershipPlans()
     }
   },
 
@@ -1086,16 +1093,18 @@ export const previewApi = {
    * 获取我的积分信息
    * 接口: GET /marketing/points/my
    * 通道: userRequest
+   * Step 14.19 UI-B-3: 所有错误降级到 mock，保证预览器稳定性
    */
   getMyPoints: async (): Promise<PointsInfo> => {
     try {
       return await userRequest<PointsInfo>('/marketing/points/my')
     } catch (error) {
       if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
-        console.warn('[previewApi.getMyPoints] 使用 mock 数据')
+        console.warn('[previewApi.getMyPoints] 接口错误，使用 mock 数据')
         return getMockPointsData()
       }
-      throw error
+      console.warn('[previewApi.getMyPoints] 请求失败，降级 mock:', error)
+      return getMockPointsData()
     }
   },
 
@@ -1103,6 +1112,7 @@ export const previewApi = {
    * 获取积分记录
    * 接口: GET /marketing/points/records
    * 通道: userRequest
+   * Step 14.19 UI-B-3: 所有错误降级到 mock，保证预览器稳定性
    */
   getPointsRecords: async (params?: { page?: number; pageSize?: number }): Promise<PointsRecordsResponse> => {
     try {
@@ -1113,10 +1123,11 @@ export const previewApi = {
       return await userRequest<PointsRecordsResponse>(`/marketing/points/records${query ? `?${query}` : ''}`)
     } catch (error) {
       if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
-        console.warn('[previewApi.getPointsRecords] 使用 mock 数据')
+        console.warn('[previewApi.getPointsRecords] 接口错误，使用 mock 数据')
         return getMockPointsRecords()
       }
-      throw error
+      console.warn('[previewApi.getPointsRecords] 请求失败，降级 mock:', error)
+      return getMockPointsRecords()
     }
   },
 
@@ -1124,16 +1135,18 @@ export const previewApi = {
    * 获取邀请信息
    * 接口: GET /marketing/referrals/info
    * 通道: userRequest
+   * Step 14.19 UI-B-3: 所有错误降级到 mock，保证预览器稳定性
    */
   getReferralInfo: async (): Promise<ReferralInfo> => {
     try {
       return await userRequest<ReferralInfo>('/marketing/referrals/info')
     } catch (error) {
       if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
-        console.warn('[previewApi.getReferralInfo] 使用 mock 数据')
+        console.warn('[previewApi.getReferralInfo] 接口错误，使用 mock 数据')
         return getMockReferralInfo()
       }
-      throw error
+      console.warn('[previewApi.getReferralInfo] 请求失败，降级 mock:', error)
+      return getMockReferralInfo()
     }
   },
 
@@ -1141,16 +1154,18 @@ export const previewApi = {
    * 获取活动列表
    * 接口: GET /marketing/campaigns
    * 通道: userRequest
+   * Step 14.19 UI-B-3: 所有错误降级到 mock，保证预览器稳定性
    */
   getCampaigns: async (): Promise<Campaign[]> => {
     try {
       return await userRequest<Campaign[]>('/marketing/campaigns')
     } catch (error) {
       if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
-        console.warn('[previewApi.getCampaigns] 使用 mock 数据')
+        console.warn('[previewApi.getCampaigns] 接口错误，使用 mock 数据')
         return getMockCampaigns()
       }
-      throw error
+      console.warn('[previewApi.getCampaigns] 请求失败，降级 mock:', error)
+      return getMockCampaigns()
     }
   },
 
@@ -1158,16 +1173,18 @@ export const previewApi = {
    * 获取活动详情
    * 接口: GET /marketing/campaigns/:id
    * 通道: userRequest
+   * Step 14.19 UI-B-3: 所有错误降级到 mock，保证预览器稳定性
    */
   getCampaignDetail: async (id: string): Promise<CampaignDetail> => {
     try {
       return await userRequest<CampaignDetail>(`/marketing/campaigns/${id}`)
     } catch (error) {
       if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
-        console.warn('[previewApi.getCampaignDetail] 使用 mock 数据, id:', id)
+        console.warn('[previewApi.getCampaignDetail] 接口错误，使用 mock 数据, id:', id)
         return getMockCampaignDetail(id)
       }
-      throw error
+      console.warn('[previewApi.getCampaignDetail] 请求失败，降级 mock:', error)
+      return getMockCampaignDetail(id)
     }
   },
 
@@ -1175,16 +1192,18 @@ export const previewApi = {
    * 获取可领取优惠券列表
    * 接口: GET /marketing/coupons/available
    * 通道: userRequest
+   * Step 14.19 UI-B-3: 所有错误降级到 mock，保证预览器稳定性
    */
   getAvailableCoupons: async (): Promise<AvailableCoupon[]> => {
     try {
       return await userRequest<AvailableCoupon[]>('/marketing/coupons/available')
     } catch (error) {
       if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
-        console.warn('[previewApi.getAvailableCoupons] 使用 mock 数据')
+        console.warn('[previewApi.getAvailableCoupons] 接口错误，使用 mock 数据')
         return getMockAvailableCoupons()
       }
-      throw error
+      console.warn('[previewApi.getAvailableCoupons] 请求失败，降级 mock:', error)
+      return getMockAvailableCoupons()
     }
   },
 
@@ -1192,16 +1211,18 @@ export const previewApi = {
    * 获取陪诊员列表（公开信息）
    * 接口: GET /escorts
    * 通道: userRequest（⚠️ 公开接口，不需要 escortToken）
+   * Step 14.19 UI-B-3: 所有错误降级到 mock，保证预览器稳定性
    */
   getEscorts: async (): Promise<EscortListItem[]> => {
     try {
       return await userRequest<EscortListItem[]>('/escorts')
     } catch (error) {
       if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
-        console.warn('[previewApi.getEscorts] 使用 mock 数据')
+        console.warn('[previewApi.getEscorts] 接口错误，使用 mock 数据')
         return getMockEscorts()
       }
-      throw error
+      console.warn('[previewApi.getEscorts] 请求失败，降级 mock:', error)
+      return getMockEscorts()
     }
   },
 
@@ -1209,16 +1230,18 @@ export const previewApi = {
    * 获取陪诊员详情（公开信息）
    * 接口: GET /escorts/:id
    * 通道: userRequest（⚠️ 公开接口，不需要 escortToken）
+   * Step 14.19 UI-B-3: 所有错误降级到 mock，保证预览器稳定性
    */
   getEscortDetail: async (id: string): Promise<EscortDetail> => {
     try {
       return await userRequest<EscortDetail>(`/escorts/${id}`)
     } catch (error) {
       if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
-        console.warn('[previewApi.getEscortDetail] 使用 mock 数据, id:', id)
+        console.warn('[previewApi.getEscortDetail] 接口错误，使用 mock 数据, id:', id)
         return getMockEscortDetail(id)
       }
-      throw error
+      console.warn('[previewApi.getEscortDetail] 请求失败，降级 mock:', error)
+      return getMockEscortDetail(id)
     }
   },
 
@@ -1281,6 +1304,7 @@ export const previewApi = {
    * 通道: escortRequest（⚠️ 必须 escortToken）
    *
    * Mock Token 规则：token 以 'mock-' 开头时直接返回 mock 数据
+   * Step 14.19 UI-B-3: 所有错误降级到 mock，保证预览器稳定性
    */
   getWorkbenchStats: async (): Promise<WorkbenchStats> => {
     const escortToken = getEscortToken()
@@ -1295,10 +1319,11 @@ export const previewApi = {
       return await escortRequest<WorkbenchStats>('/escort-app/workbench/stats')
     } catch (error) {
       if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
-        console.warn('[previewApi.getWorkbenchStats] 使用 mock 数据')
+        console.warn('[previewApi.getWorkbenchStats] 接口错误，使用 mock 数据')
         return getMockWorkbenchStats()
       }
-      throw error
+      console.warn('[previewApi.getWorkbenchStats] 请求失败，降级 mock:', error)
+      return getMockWorkbenchStats()
     }
   },
 
@@ -1308,6 +1333,7 @@ export const previewApi = {
    * 通道: escortRequest（⚠️ 必须 escortToken）
    *
    * Mock Token 规则：token 以 'mock-' 开头时直接返回 mock 数据
+   * Step 14.19 UI-B-3: 所有错误降级到 mock，保证预览器稳定性
    */
   getWorkbenchSummary: async (): Promise<WorkbenchSummary> => {
     const escortToken = getEscortToken()
@@ -1322,10 +1348,11 @@ export const previewApi = {
       return await escortRequest<WorkbenchSummary>('/escort-app/workbench/summary')
     } catch (error) {
       if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
-        console.warn('[previewApi.getWorkbenchSummary] 使用 mock 数据')
+        console.warn('[previewApi.getWorkbenchSummary] 接口错误，使用 mock 数据')
         return getMockWorkbenchSummary()
       }
-      throw error
+      console.warn('[previewApi.getWorkbenchSummary] 请求失败，降级 mock:', error)
+      return getMockWorkbenchSummary()
     }
   },
 
@@ -1335,6 +1362,7 @@ export const previewApi = {
    * 通道: escortRequest（⚠️ 必须 escortToken）
    *
    * Mock Token 规则：token 以 'mock-' 开头时直接返回 mock 数据
+   * Step 14.19 UI-B-3: 所有错误降级到 mock，保证预览器稳定性
    */
   getWorkbenchOrdersPool: async (): Promise<OrdersPoolResponse> => {
     const escortToken = getEscortToken()
@@ -1349,10 +1377,11 @@ export const previewApi = {
       return await escortRequest<OrdersPoolResponse>('/escort-app/orders/pool')
     } catch (error) {
       if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
-        console.warn('[previewApi.getWorkbenchOrdersPool] 使用 mock 数据')
+        console.warn('[previewApi.getWorkbenchOrdersPool] 接口错误，使用 mock 数据')
         return getMockOrdersPool()
       }
-      throw error
+      console.warn('[previewApi.getWorkbenchOrdersPool] 请求失败，降级 mock:', error)
+      return getMockOrdersPool()
     }
   },
 
@@ -1405,6 +1434,7 @@ export const previewApi = {
    * 通道: escortRequest（⚠️ 必须 escortToken）
    *
    * Mock Token 规则：token 以 'mock-' 开头时直接返回 mock 数据
+   * Step 14.19 UI-B-3: 所有错误降级到 mock，保证预览器稳定性
    */
   getWorkbenchEarnings: async (): Promise<EarningsResponse> => {
     const escortToken = getEscortToken()
@@ -1419,10 +1449,11 @@ export const previewApi = {
       return await escortRequest<EarningsResponse>('/escort-app/earnings')
     } catch (error) {
       if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
-        console.warn('[previewApi.getWorkbenchEarnings] 使用 mock 数据')
+        console.warn('[previewApi.getWorkbenchEarnings] 接口错误，使用 mock 数据')
         return getMockEarnings()
       }
-      throw error
+      console.warn('[previewApi.getWorkbenchEarnings] 请求失败，降级 mock:', error)
+      return getMockEarnings()
     }
   },
 
@@ -1469,6 +1500,7 @@ export const previewApi = {
    * 通道: escortRequest（⚠️ 必须 escortToken）
    *
    * Mock Token 规则：token 以 'mock-' 开头时直接返回 mock 数据
+   * Step 14.19 UI-B-3: 所有错误降级到 mock，保证预览器稳定性
    */
   getWorkbenchWithdrawInfo: async (): Promise<WithdrawInfo> => {
     const escortToken = getEscortToken()
@@ -1483,10 +1515,11 @@ export const previewApi = {
       return await escortRequest<WithdrawInfo>('/escort-app/withdraw/info')
     } catch (error) {
       if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
-        console.warn('[previewApi.getWorkbenchWithdrawInfo] 使用 mock 数据')
+        console.warn('[previewApi.getWorkbenchWithdrawInfo] 接口错误，使用 mock 数据')
         return getMockWithdrawInfo()
       }
-      throw error
+      console.warn('[previewApi.getWorkbenchWithdrawInfo] 请求失败，降级 mock:', error)
+      return getMockWithdrawInfo()
     }
   },
 
@@ -1531,6 +1564,7 @@ export const previewApi = {
    * 获取工作台订单详情
    * 接口: GET /escort-app/orders/:id
    * 通道: escortRequest（⚠️ 必须 escortToken）
+   * Step 14.19 UI-B-3: 所有错误降级到 mock，保证预览器稳定性
    */
   getWorkbenchOrderDetail: async (orderId: string): Promise<WorkbenchOrderDetail> => {
     const currentEscortToken = getEscortToken()
@@ -1542,10 +1576,11 @@ export const previewApi = {
       return await escortRequest<WorkbenchOrderDetail>(`/escort-app/orders/${orderId}`)
     } catch (error) {
       if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
-        console.warn('[previewApi.getWorkbenchOrderDetail] 使用 mock 数据')
+        console.warn('[previewApi.getWorkbenchOrderDetail] 接口错误，使用 mock 数据')
         return getMockWorkbenchOrderDetail(orderId)
       }
-      throw error
+      console.warn('[previewApi.getWorkbenchOrderDetail] 请求失败，降级 mock:', error)
+      return getMockWorkbenchOrderDetail(orderId)
     }
   },
 

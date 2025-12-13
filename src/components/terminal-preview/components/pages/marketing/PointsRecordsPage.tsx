@@ -23,13 +23,15 @@ export interface PointsRecordsPageProps {
   themeSettings: ThemeSettings
   isDarkMode: boolean
   onBack?: () => void
+  /** 导航回调（用于空态引导按钮） */
+  onNavigate?: (page: string) => void
 }
 
 // ============================================================================
 // 组件实现
 // ============================================================================
 
-export function PointsRecordsPage({ themeSettings, isDarkMode, onBack }: PointsRecordsPageProps) {
+export function PointsRecordsPage({ themeSettings, isDarkMode, onBack, onNavigate }: PointsRecordsPageProps) {
   // 获取积分记录
   const {
     data: recordsData,
@@ -86,13 +88,22 @@ export function PointsRecordsPage({ themeSettings, isDarkMode, onBack }: PointsR
           />
         )}
 
-        {/* 空态 */}
+        {/* 空态 - Step 14.21: 添加引导按钮 */}
         {isEmpty && !isError && (
           <div className="flex flex-col items-center justify-center py-12">
             <div className="text-5xl mb-3">📋</div>
             <div className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>
               暂无积分记录
             </div>
+            {onNavigate && (
+              <button
+                onClick={() => onNavigate('points')}
+                className="mt-4 px-4 py-2 rounded-lg text-sm font-medium text-white"
+                style={{ backgroundColor: themeSettings.primaryColor }}
+              >
+                去赚积分
+              </button>
+            )}
           </div>
         )}
 

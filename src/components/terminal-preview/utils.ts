@@ -233,6 +233,67 @@ export function getTertiaryTextColor(isDarkMode: boolean): string {
 }
 
 // ============================================================================
+// 暗色模式边框/分割线优化函数（Step 14.20 Batch 2）
+// ============================================================================
+
+/**
+ * 获取边框的 CSS 类名
+ * 暗色模式下使用更亮的边框以提升可见性
+ *
+ * @param isDarkMode - 是否暗色模式
+ * @returns Tailwind CSS 类名
+ *
+ * @example
+ * <div className={`border ${getBorderClass(isDarkMode)}`}>...</div>
+ */
+export function getBorderClass(isDarkMode: boolean): string {
+  return isDarkMode ? 'border-gray-600' : 'border-gray-200'
+}
+
+/**
+ * 获取边框的内联样式颜色值
+ * 用于需要 style={{ borderColor: xxx }} 的场景
+ *
+ * @param isDarkMode - 是否暗色模式
+ * @returns 颜色值字符串
+ */
+export function getBorderColor(isDarkMode: boolean): string {
+  return isDarkMode ? '#4b5563' : '#e5e7eb' // gray-600 vs gray-200
+}
+
+/**
+ * 获取分割线的内联样式颜色值
+ * 略深于边框，用于明确分隔内容区域
+ *
+ * @param isDarkMode - 是否暗色模式
+ * @returns 颜色值字符串
+ */
+export function getDividerColor(isDarkMode: boolean): string {
+  return isDarkMode ? '#4b5563' : '#e5e7eb' // gray-600 vs gray-200
+}
+
+/**
+ * 获取禁用态按钮的背景颜色
+ * 暗色模式下使用更亮的颜色以提升可见性
+ *
+ * @param isDarkMode - 是否暗色模式
+ * @returns 颜色值字符串
+ */
+export function getDisabledButtonBgColor(isDarkMode: boolean): string {
+  return isDarkMode ? '#4b5563' : '#e5e7eb' // gray-600 vs gray-200
+}
+
+/**
+ * 获取禁用态按钮的文字颜色
+ *
+ * @param isDarkMode - 是否暗色模式
+ * @returns 颜色值字符串
+ */
+export function getDisabledButtonTextColor(isDarkMode: boolean): string {
+  return isDarkMode ? '#9ca3af' : '#9ca3af' // gray-400
+}
+
+// ============================================================================
 // 资源 URL 处理函数
 // ============================================================================
 

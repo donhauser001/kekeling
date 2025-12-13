@@ -374,14 +374,21 @@ function WithdrawContent({
         </div>
       )}
 
-      {/* 提现按钮 */}
+      {/* 提现按钮 - Step 14.20 Batch 2: 禁用态对比度优化 */}
       <button
         disabled={!canWithdraw}
         onClick={() => {
           console.log('[WorkbenchWithdrawPage] 提现:', { amount: inputAmount, accountId: selectedAccountId })
         }}
-        className="w-full py-3.5 rounded-full text-white font-semibold disabled:opacity-50 transition-all shadow-lg disabled:shadow-none"
-        style={{ backgroundColor: themeSettings.primaryColor }}
+        className="w-full py-3.5 rounded-full font-semibold transition-all shadow-lg disabled:shadow-none"
+        style={{
+          backgroundColor: canWithdraw
+            ? themeSettings.primaryColor
+            : (isDarkMode ? '#4b5563' : '#e5e7eb'),
+          color: canWithdraw
+            ? '#ffffff'
+            : (isDarkMode ? '#9ca3af' : '#6b7280'),
+        }}
       >
         {disabledReason || '确认提现'}
       </button>

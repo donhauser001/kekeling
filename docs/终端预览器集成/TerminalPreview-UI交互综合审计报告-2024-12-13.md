@@ -3,9 +3,9 @@
 > **审计日期**: 2024-12-13  
 > **修复日期**: 2024-12-13  
 > **审计员**: 前端 UI 交互审计员  
-> **文档版本**: v1.11（A11y 基础支持 + 暗色对比度优化已修复）  
+> **文档版本**: v1.17（管理后台集成扩展：轮播图 + 分销设置）  
 > **审计范围**: 全局终端预览器（管理后台终端行为模拟器）
-> **修复状态**: ✅ UI-A 导航路由已修复，✅ UI-B 骨架屏/重试按钮/动效过渡/滚动恢复已修复，✅ UI-C 一致性已修复，✅ UI-D P0/P1/P3 已修复，✅ 8.5 异常数据防护已修复，✅ 8.3 A11y 基础支持已修复，✅ 8.4 暗色对比度已优化
+> **修复状态**: ✅ UI-A 导航路由已修复，✅ UI-B 骨架屏/重试按钮/动效过渡/滚动恢复/API降级机制已修复，✅ UI-C 一致性已修复，✅ UI-D P0/P1/P3 已修复，✅ 8.5 异常数据防护已修复，✅ 8.3 A11y 完整支持已修复，✅ 8.4 暗色对比度/边框/禁用态已优化
 
 ---
 
@@ -207,14 +207,18 @@ handlePageChange(page)        // ✅ 内部调用 navigateToPage
 // - 支持订单状态筛选（全部/待服务/进行中/已完成/已取消）
 ```
 
-#### ⚠️ 问题 UI-A-4: PreviewPageParamsMap 类型覆盖不完整 【P3】
+#### ✅ 问题 UI-A-4: PreviewPageParamsMap 类型覆盖不完整 【P3】【已修复】
 
 ```typescript
-// 当前类型定义仅覆盖分销中心
+// ✅ 修复后：已完整覆盖所有需要参数的页面
 export interface PreviewPageParamsMap {
-  'distribution': Record<string, never>
+  // ... TabBar、营销中心等无参数页面
+  'campaigns-detail': { id: string }
+  'escort-detail': { id: string }
+  'workbench-order-detail': { id: string }
+  'my-orders': { status?: 'all' | 'pending' | 'ongoing' | 'completed' | 'cancelled' }
   'distribution-members': { relation?: 'direct' | 'indirect' }
-  // ... 未覆盖 campaigns-detail、escort-detail 等
+  'distribution-records': { range?: '7d' | '30d' | 'all'; status?: 'pending' | 'settled' }
 }
 ```
 
@@ -245,55 +249,42 @@ export interface PreviewPageParamsMap {
 
 | 模块 | 页面数 | Loading | Error | Empty | Boundary |
 |------|--------|---------|-------|-------|----------|
-| 营销中心 | 9 | ⚠️ 无骨架 | ⚠️ 无重试 | ✅ | ✅ |
-| 陪诊员 | 2 | ⚠️ 无骨架 | ⚠️ 无重试 | ✅ | ✅ |
-| 工作台 | 7 | ⚠️ 无骨架 | ⚠️ 无重试 | ✅ | ✅ |
-| 分销中心 | 5 | ⚠️ 无骨架 | ✅ 有重试 | ✅ | ✅ |
+| 营销中心 | 9 | ✅ **v1.5 骨架屏** | ✅ **v1.5 重试** | ✅ | ✅ |
+| 陪诊员 | 2 | ✅ **v1.5 骨架屏** | ✅ **v1.5 重试** | ✅ | ✅ |
+| 工作台 | 7 | ✅ **v1.5 骨架屏** | ✅ **v1.5 重试** | ✅ | ✅ |
+| 分销中心 | 5 | ✅ **v1.5 骨架屏** | ✅ 有重试 | ✅ | ✅ |
 | 基础页面 | 5 | ✅ | - | ✅ | ✅ |
 
 ### 3.3 发现的问题
 
-#### ⚠️ 问题 UI-B-1: 列表/详情页无骨架屏 【P2】
+#### ✅ 问题 UI-B-1: 列表/详情页无骨架屏 【P2】【已修复 v1.5】
 
 ```tsx
-// ❌ 当前实现 - 简单文字提示
-{isLoading && (
-  <div className="flex items-center justify-center py-12">
-    <div className="text-gray-400 text-sm">加载中...</div>
-  </div>
-)}
-
-// ✅ 推荐实现 - 骨架屏
+// ✅ 修复后实现 - 统一骨架屏组件
 {isLoading && <ListSkeleton count={5} isDarkMode={isDarkMode} />}
 ```
 
-**影响**: 加载时内容区空白，视觉跳跃
+**v1.5 修复内容**: 17 个页面统一使用 ListSkeleton 组件
 
-#### ⚠️ 问题 UI-B-2: 营销/陪诊/工作台无重试按钮 【P2】
+#### ✅ 问题 UI-B-2: 营销/陪诊/工作台无重试按钮 【P2】【已修复 v1.5】
 
 ```tsx
-// ❌ 无重试按钮（14 个页面）
+// ✅ 修复后实现 - 统一重试组件
 {isError && (
-  <div className="flex flex-col items-center justify-center py-12">
-    <div className="text-4xl mb-2">😔</div>
-    <div className="text-gray-400 text-sm">加载失败，请稍后重试</div>
-  </div>
-)}
-
-// ✅ 有重试按钮（分销中心）
-{isError && (
-  <ErrorRetry onRetry={() => refetch()} />
+  <ErrorRetry onRetry={() => refetch()} isDarkMode={isDarkMode} />
 )}
 ```
 
-**影响**: 用户需刷新页面才能重试
+**v1.5 修复内容**: 17 个页面统一使用 ErrorRetry 组件
 
-#### ⚠️ 问题 UI-B-3: 无自动降级 mock 机制 【P2】
+#### ✅ 问题 UI-B-3: 无自动降级 mock 机制 【P2】【已修复 2024-12-13】
 
-| 场景 | 当前实现 | 预期行为 |
+| 场景 | ~~当前实现~~ | 修复后行为 |
 |------|---------|---------|
-| API 返回 4xx/5xx | 显示错误 UI | 自动降级到 mock 数据 |
-| 网络超时 | 显示错误 UI | 自动降级到 mock 数据 |
+| API 返回 4xx/5xx | ~~显示错误 UI~~ | ✅ 自动降级到 mock 数据 |
+| 网络超时 | ~~显示错误 UI~~ | ✅ 自动降级到 mock 数据 |
+
+**v1.14 修复内容**: 所有 previewApi 方法（营销中心、陪诊员、工作台）在任何异常情况下都会降级到 mock 数据，确保预览器稳定性。
 
 ### 3.4 按模块详细汇总
 
@@ -301,26 +292,26 @@ export interface PreviewPageParamsMap {
 
 | 页面 | Loading | Error | Empty | Boundary | 关键用例 |
 |------|---------|-------|-------|----------|---------|
-| CouponsPage | ⚠️ 无骨架 | ⚠️ 无重试 | ✅ | ✅ | 优惠券金额 ¥10 / 满100可用 |
-| PointsRecordsPage | ⚠️ 无骨架 | ⚠️ 无重试 | ✅ | ✅ | 积分 +100 / -50 显示 |
-| CampaignsPage | ⚠️ 无骨架 | ⚠️ 无重试 | ✅ | ✅ | 活动状态：进行中/已结束 |
-| MembershipPage | ⚠️ 无骨架 | ⚠️ 无重试 | ✅ | ✅ | 会员等级/到期时间 |
+| CouponsPage | ✅ 骨架屏 | ✅ 重试 | ✅ | ✅ | 优惠券金额 ¥10 / 满100可用 |
+| PointsRecordsPage | ✅ 骨架屏 | ✅ 重试 | ✅ | ✅ | 积分 +100 / -50 显示 |
+| CampaignsPage | ✅ 骨架屏 | ✅ 重试 | ✅ | ✅ | 活动状态：进行中/已结束 |
+| MembershipPage | ✅ 骨架屏 | ✅ 重试 | ✅ | ✅ | 会员等级/到期时间 |
 
 #### 工作台（7 页面）
 
 | 页面 | Loading | Error | Empty | Boundary | 关键用例 |
 |------|---------|-------|-------|----------|---------|
-| WorkbenchPage | ⚠️ 无骨架 | ⚠️ 无重试 | - | ✅ | 今日收入 ¥680.00 |
-| OrdersPoolPage | ⚠️ 无骨架 | ⚠️ 无重试 | ✅ | ✅ | 空态 + 实时推送提示 |
-| WorkbenchEarningsPage | ⚠️ 无骨架 | ⚠️ 无重试 | ✅ | ✅ | 大金额千分位格式化 |
+| WorkbenchPage | ✅ 骨架屏 | ✅ 重试 | - | ✅ | 今日收入 ¥680.00 |
+| OrdersPoolPage | ✅ 骨架屏 | ✅ 重试 | ✅ | ✅ | 空态 + 实时推送提示 |
+| WorkbenchEarningsPage | ✅ 骨架屏 | ✅ 重试 | ✅ | ✅ | 大金额千分位格式化 |
 
 #### 分销中心（5 页面）
 
 | 页面 | Loading | Error | Empty | Boundary | 关键用例 |
 |------|---------|-------|-------|----------|---------|
-| DistributionPage | ⚠️ 无骨架 | ✅ 有重试 | - | ✅ | 晋升进度 0% 正确显示 |
-| DistributionMembersPage | ⚠️ 无骨架 | ✅ 有重试 | ✅ | ✅ | 动态空态文案 |
-| DistributionRecordsPage | ⚠️ 无骨架 | ✅ 有重试 | ✅ | ✅ | 金额 +¥ 显示 |
+| DistributionPage | ✅ 骨架屏 | ✅ 有重试 | - | ✅ | 晋升进度 0% 正确显示 |
+| DistributionMembersPage | ✅ 骨架屏 | ✅ 有重试 | ✅ | ✅ | 动态空态文案 |
+| DistributionRecordsPage | ✅ 骨架屏 | ✅ 有重试 | ✅ | ✅ | 金额 +¥ 显示 |
 
 #### 基础页面（5 页面）
 
@@ -337,13 +328,13 @@ export interface PreviewPageParamsMap {
 | 模块 | 页面 | 空态图标 | 空态文案 | 引导按钮 | 状态 |
 |------|------|---------|---------|---------|------|
 | 营销中心 | CouponsPage | 🎫 | 暂无优惠券 | ✅ 去领取 | ✅ |
-| 营销中心 | PointsRecordsPage | 📋 | 暂无积分记录 | ❌ | ✅ |
-| 营销中心 | CampaignsPage | 🎉 | 暂无活动 | ❌ | ✅ |
-| 陪诊员 | EscortListPage | 👩‍⚕️ | 暂无可用陪诊员 | ❌ | ✅ |
-| 工作台 | OrdersPoolPage | 📋 | 暂无可接订单 + 实时推送提示 | ❌ | ✅ |
-| 工作台 | WorkbenchEarningsPage | 📊 | 暂无收支记录 | ❌ | ✅ |
-| 分销中心 | DistributionMembersPage | 👥 | 暂无{直属/间接}成员（动态） | ❌ | ✅ |
-| 分销中心 | DistributionRecordsPage | 📋 | 暂无分润记录 | ❌ | ✅ |
+| 营销中心 | PointsRecordsPage | 📋 | 暂无积分记录 | ✅ **去赚积分**（v1.16） | ✅ |
+| 营销中心 | CampaignsPage | 🎉 | 暂无活动 | ✅ **刷新查看**（v1.16） | ✅ |
+| 陪诊员 | EscortListPage | 👩‍⚕️ | 暂无可用陪诊员 | ✅ **刷新查看**（v1.16） | ✅ |
+| 工作台 | OrdersPoolPage | 📋 | 暂无可接订单 + 实时推送提示 | ✅ 已有提示 | ✅ |
+| 工作台 | WorkbenchEarningsPage | 📊 | 暂无收支记录 | ✅ **去接单**（v1.16） | ✅ |
+| 分销中心 | DistributionMembersPage | 👥 | 暂无{直属/间接}成员（动态） | ✅ **去邀请**（v1.16） | ✅ |
+| 分销中心 | DistributionRecordsPage | 📋 | 暂无分润记录 | ✅ **查看分润规则**（v1.16） | ✅ |
 
 ### 3.6 通过的检查项
 
@@ -563,14 +554,14 @@ export interface PreviewPageParamsMap {
 
 ### 5.4 未集成页面建议
 
-| 优先级 | 页面 | 建议预览页 | 理由 |
-|--------|------|-----------|------|
-| **P0** | 服务详情编辑 | `services` | 核心业务页面 |
-| **P1** | 轮播图管理 | `home` | 首页重要元素 |
-| **P1** | 分销规则设置 | `distribution` | 需验证展示效果 |
-| **P1** | 陪诊员详情编辑 | `escort-detail` | 需实时预览陪诊员信息 |
-| P2 | 工作台设置 | `workbench-settings` | 配置项较少 |
-| P2 | 服务分类管理 | `services` | 可通过服务页预览 |
+| 优先级 | 页面 | 建议预览页 | 理由 | 状态 |
+|--------|------|-----------|------|------|
+| **P0** | 服务详情编辑 | `services` | 核心业务页面 | ✅ 已集成 |
+| **P1** | 轮播图管理 | `home` | 首页重要元素 | ✅ **v1.17 已集成** |
+| **P1** | 分销规则设置 | `distribution` | 需验证展示效果 | ✅ **v1.17 已集成** |
+| **P1** | 陪诊员详情编辑 | `escort-detail` | 需实时预览陪诊员信息 | ✅ 弹窗已集成 |
+| P2 | 工作台设置 | `workbench-settings` | 配置项较少 | 待集成 |
+| P2 | 服务分类管理 | `services` | 可通过服务页预览 | 待集成 |
 
 ### 不建议集成的页面
 
@@ -877,9 +868,9 @@ const handlePageChange = useCallback((page) => {
 
 ---
 
-### 8.3 键盘 / 可访问性交互（A11y-lite）【P3】✅ 基础已修复
+### 8.3 键盘 / 可访问性交互（A11y-lite）【P3】✅ 完整已修复
 
-**审计状态**: ✅ 已完成 | **通过率**: ~~0%~~ → **80%**（v1.11 已修复基础）
+**审计状态**: ✅ 已完成 | **通过率**: ~~0%~~ → **100%**（v1.14 已全部修复）
 
 **审计结果**:
 
@@ -888,7 +879,7 @@ const handlePageChange = useCallback((page) => {
 | 弹窗 | Esc 关闭 | A | ✅ **v1.11 已修复** |
 | 按钮/链接 | Tab 聚焦顺序 | A | ✅ **v1.11 TabBarNav 已添加** |
 | PermissionPrompt | 主操作键盘可触发 | A | ✅ **v1.11 已添加 aria 属性** |
-| 表单 | Enter 提交 | AA | ❌ **未实现** |
+| 表单 | Enter 提交 | AA | ✅ **v1.14 已修复** |
 | 焦点 | 聚焦态可见 | AA | ✅ **v1.11 focus:ring 已添加** |
 
 **代码证据**:
@@ -904,25 +895,28 @@ grep -r "Escape|escape" → 仅匹配 isEscort 变量名
 # 无 Esc 关闭功能，无焦点陷阱
 ```
 
-**发现的问题（基础已修复，高级待 v2.0）**:
+**发现的问题（全部已修复）**:
 
 | # | 问题 | 优先级 | 工时 | 修复状态 |
 |---|------|--------|------|----------|
 | 1 | 弹窗无 Esc 关闭 | P3 | 30min | ✅ v1.11 |
 | 2 | 无 aria-* 属性 | P3 | 2h | ✅ v1.11（基础） |
 | 3 | 无 tabIndex 管理 | P3 | 1h | ✅ v1.11 |
-| 4 | 表单无 Enter 提交 | P3 | 1h | ⏳ v2.0 |
+| 4 | 表单无 Enter 提交 | P3 | 30min | ✅ v1.14 |
 
 **v1.11 修复内容**:
 - `EscortLoginDialog.tsx`: 添加 Esc 键关闭支持
 - `PermissionPrompt.tsx`: 添加 `role="alert"` + `aria-live` + `aria-label`
 - `TabBarNav.tsx`: 添加 `role="tablist"` + `role="tab"` + `tabIndex` + `aria-selected` + `onKeyDown`
 
+**v1.14 修复内容**:
+- `EscortLoginDialog.tsx`: 使用 form 标签包裹表单，支持 Enter 键提交登录
+
 ---
 
 ### 8.4 暗色模式极端对比检查【P3】✅ 已优化
 
-**审计状态**: ✅ 已完成 | **风险等级**: ~~⚠️ 中等~~ → **✅ 低**（v1.11 已优化）
+**审计状态**: ✅ 已完成 | **风险等级**: ~~⚠️ 中等~~ → **✅ 低**（v1.15 完全优化）
 
 **审计结果**:
 
@@ -932,8 +926,8 @@ grep -r "Escape|escape" → 仅匹配 isEscort 变量名
 | Skeleton | 对比度是否足够 | ✅ **v1.11 优化** | `bg-gray-600` on `#1a1a1a` ≈ 2.5:1 |
 | 锁态文案 | 是否有灰阶吞没 | ✅ **v1.11 优化** | `text-gray-300` on `#1a1a1a` ≈ 4:1 |
 | 次要文案 | 对比度是否足够 | ✅ **v1.11 优化** | `text-gray-300` on `#1a1a1a` ≈ 4:1 |
-| 边框/分割线 | 暗色下是否可见 | ⚠️ **边界** | `border-gray-700` 勉强可见 |
-| 禁用态按钮 | 对比度是否足够 | ⚠️ **风险** | disabled + 暗色叠加 |
+| 边框/分割线 | 暗色下是否可见 | ✅ **v1.15 优化** | `border-gray-600` 清晰可见 |
+| 禁用态按钮 | 对比度是否足够 | ✅ **v1.15 优化** | `bg-gray-600 text-gray-400` 清晰可见 |
 
 **代码证据**:
 
@@ -1070,8 +1064,8 @@ const config = statusConfig[record.status] ?? statusConfig.default
 | 注入 token | 操作反馈是否清晰 | ✅ **通过** | 按钮立即切换 + 视角标签变化 |
 | 清除 token | 操作反馈是否清晰 | ✅ **通过** | 按钮立即切换 + 视角回落 |
 | 当前 viewerRole | 是否明确展示 | ✅ **通过** | 颜色区分 + 图标区分（🔐/👤） |
-| 操作误触 | 是否会影响非预期状态 | ⚠️ **风险** | 清除无确认弹窗 |
-| 折叠/展开 | 状态是否持久化 | ❌ **未实现** | `useState(true)` 每次重新渲染展开 |
+| 操作误触 | 是否会影响非预期状态 | ✅ **已修复** | `window.confirm` 确认弹窗（Step 14.13） |
+| 折叠/展开 | 状态是否持久化 | ✅ **已修复** | localStorage 持久化（Step 14.12） |
 | 生产环境 | 是否自动隐藏 | ✅ **通过** | `shouldShowDebugPanel()` 正确判断 |
 | 验证中状态 | 是否有反馈 | ✅ **通过** | "验证中..." 文字 + `animate-pulse` |
 
@@ -1094,15 +1088,24 @@ export function shouldShowDebugPanel(): boolean {
   return false
 }
 
-// ❌ 折叠状态不持久化
-const [isExpanded, setIsExpanded] = useState(true)  // 应该读取 localStorage
+// ✅ 折叠状态已持久化（Step 14.12 修复）
+const [isExpanded, setIsExpanded] = useState(() => {
+  if (typeof localStorage === 'undefined') return true
+  return localStorage.getItem('debugPanel.expanded') !== 'false'
+})
+
+// ✅ 清除 token 已添加确认（Step 14.13 修复）
+const handleClearToken = useCallback(() => {
+  const confirmed = window.confirm('确定要退出陪诊员视角吗？')
+  if (confirmed) onClearEscortToken()
+}, [onClearEscortToken])
 ```
 
 **发现的问题**:
 
 | # | 问题 | 优先级 | 工时 | 修复状态 |
 |---|------|--------|------|----------|
-| 1 | 清除 token 无确认 | P3 | 15min | ⚠️ 待修复 |
+| 1 | 清除 token 无确认 | P3 | 15min | ✅ **已修复**（Step 14.13 FIX-P3-03） |
 | 2 | 折叠/展开状态不持久化 | P3 | 15min | ✅ **已修复** |
 
 **修复代码（已实现）**:
@@ -1201,19 +1204,19 @@ src/features/
 ├── app-settings/
 │   ├── brand/index.tsx         ✅ 完整集成（品牌设置）
 │   ├── homepage/index.tsx      ✅ 完整集成（首页管理）
-│   └── banners/index.tsx       ❌ 未集成（轮播图管理）
+│   └── banners/index.tsx       ✅ **v1.17 集成**（轮播图管理 → home 页面）
 ├── marketing/
-│   ├── membership/             ⚠️ 部分集成（会员等级）
-│   ├── coupons/                ⚠️ 部分集成（优惠券）
-│   ├── points/                 ❌ 静态预览（积分规则）
-│   ├── campaigns/              ❌ 静态预览（活动管理）
-│   └── referrals/              ❌ 静态预览（邀请奖励）
+│   ├── membership/             ✅ 弹窗集成（会员等级）
+│   ├── coupons/                ✅ 弹窗集成（优惠券）
+│   ├── points/                 ✅ 弹窗集成（积分规则）
+│   ├── campaigns/              ✅ 弹窗集成（活动管理）
+│   └── referrals/              ✅ 弹窗集成（邀请奖励）
 ├── escorts/
-│   └── escorts-action-dialog   ❌ 静态预览（陪诊员）
+│   └── escorts-action-dialog   ✅ 弹窗集成（陪诊员）
 ├── business/
-│   └── services/edit.tsx       ❌ 未集成（服务编辑）
+│   └── services/edit.tsx       ✅ 完整集成（服务编辑）
 └── distribution/
-    └── index.tsx               ❌ 未集成（分销设置）
+    └── settings.tsx            ✅ **v1.17 集成**（分销设置 → distribution 页面）
 ```
 
 ### 附录 C：TerminalPreview Props 速查
@@ -1552,7 +1555,8 @@ export function StandardListPage({ themeSettings, isDarkMode }: Props) {
 6. ~~**v1.9 迭代**: P3 技术债务清理 Batch 1~~ ✅ 已完成
 7. ~~**v1.11 迭代**: A11y 基础支持 + 暗色对比度优化~~ ✅ 已完成
 8. ~~**v1.12 迭代**: 暗色对比度批量优化 Batch 1~~ ✅ 已完成
-9. **v2.0 长期**: A11y 表单 Enter 提交、暗色模式剩余页面优化
+9. ~~**v1.14 迭代**: A11y Enter 提交 + API 降级机制~~ ✅ 已完成
+10. **v2.0 长期**: 暗色模式边界情况优化（边框/禁用态）
 
 **v1.12 修复记录（2024-12-13 暗色对比度批量优化 Batch 1）**:
 - ✅ **DARK-04**: 营销中心暗色对比度优化（`MembershipPage`, `CouponsPage`, `ReferralsPage`）
@@ -1589,3 +1593,37 @@ export function StandardListPage({ themeSettings, isDarkMode }: Props) {
 
 **已优化页面总数**: 13（v1.11-v1.12）+ 10（v1.13）= **23 个页面**
 
+**v1.14 修复记录（2024-12-13 A11y Enter 提交 + API 降级机制）**:
+- ✅ **A11y-04**: EscortLoginDialog 表单 Enter 键提交支持（使用 form 标签 + onSubmit）
+- ✅ **UI-B-3**: API 统一错误降级机制（营销中心 11 个 + 陪诊员 2 个 + 工作台 7 个 API）
+
+**具体修改文件（2 个）**:
+- `components/EscortLoginDialog.tsx`: 使用 form 标签包裹表单，添加 handleSubmit 处理
+- `api.ts`: 所有 previewApi 方法添加"其他错误也降级到 mock"的逻辑（Step 14.19 UI-B-3）
+
+**修复方式**:
+- A11y-04: 将表单 div 改为 form 标签，添加 onSubmit 事件处理，登录按钮设为 type="submit"
+- UI-B-3: 在 catch 块中，除了 404/500 降级外，其他错误也降级到 mock，确保预览器稳定性
+
+**修复范围（20 个 API）**:
+- 营销中心: `getMyCoupons`, `getMyMembership`, `getMembershipPlans`, `getMyPoints`, `getPointsRecords`, `getReferralInfo`, `getCampaigns`, `getCampaignDetail`, `getAvailableCoupons`
+- 陪诊员: `getEscorts`, `getEscortDetail`
+- 工作台: `getWorkbenchStats`, `getWorkbenchSummary`, `getWorkbenchOrdersPool`, `getWorkbenchEarnings`, `getWorkbenchWithdrawInfo`, `getWorkbenchOrderDetail`
+
+**v1.15 修复记录（2024-12-13 暗色模式边界优化）**:
+- ✅ **DARK-10**: 边框/分割线暗色可见性优化（`border-gray-700` → `border-gray-600`）
+- ✅ **DARK-11**: 禁用态按钮暗色对比度优化（专用禁用态颜色替代透明度）
+
+**具体修改文件（6 个）**:
+- `utils.ts`: 新增 `getBorderClass()`, `getBorderColor()`, `getDividerColor()`, `getDisabledButtonBgColor()`, `getDisabledButtonTextColor()` 工具函数
+- `ListSkeleton.tsx`: 分割线颜色 `#3a3a3a` → `#4b5563`
+- `EscortLoginDialog.tsx`: 边框颜色 + 登录按钮禁用态优化
+- `DebugPanel.tsx`: 边框颜色 `border-gray-700` → `border-gray-600`
+- `PageLoadingSkeleton.tsx`: 边框颜色 `border-gray-700` → `border-gray-600`
+- `WorkbenchWithdrawPage.tsx`: 提现按钮禁用态颜色优化
+
+**修复方式**:
+- 边框/分割线: 将暗色模式下的 `#3a3a3a`/`border-gray-700` 统一改为 `#4b5563`/`border-gray-600`
+- 禁用态按钮: 使用 `isDarkMode ? '#4b5563' : '#e5e7eb'` 背景色 + `isDarkMode ? '#9ca3af' : '#6b7280'` 文字色，替代 `disabled:opacity-50`
+
+**已优化组件/页面**: 6 个核心组件

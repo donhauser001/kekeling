@@ -215,13 +215,22 @@ export function DistributionRecordsPage({
           </div>
         )}
 
-        {/* 空态 */}
+        {/* 空态 - Step 14.21: 添加查看规则按钮 */}
         {!isLoading && !isError && recordsData && recordsData.items.length === 0 && (
           <div className="flex flex-col items-center justify-center py-12">
             <div className="text-4xl mb-2">📋</div>
             <div className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>
               暂无分润记录
             </div>
+            {onNavigate && (
+              <button
+                onClick={() => onNavigate('distribution-promotion')}
+                className="mt-4 px-4 py-2 rounded-lg text-sm font-medium text-white"
+                style={{ backgroundColor: themeSettings.primaryColor }}
+              >
+                查看分润规则
+              </button>
+            )}
           </div>
         )}
 

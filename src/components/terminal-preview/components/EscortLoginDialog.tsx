@@ -136,13 +136,22 @@ export function EscortLoginDialog({
     }
   }, [phone, code, onLoginSuccess, onClose])
 
+  // Step 14.19 A11y-04: 表单提交处理（支持 Enter 键提交）
+  const handleSubmit = useCallback((e: React.FormEvent) => {
+    e.preventDefault()
+    if (!isLoading && phone && code) {
+      handleLogin()
+    }
+  }, [isLoading, phone, code, handleLogin])
+
   if (!open) return null
 
   const bgColor = isDarkMode ? '#1a1a1a' : '#ffffff'
   const textPrimary = isDarkMode ? '#f3f4f6' : '#111827'
   const textSecondary = isDarkMode ? '#9ca3af' : '#6b7280'
   const inputBg = isDarkMode ? '#2a2a2a' : '#f5f7fa'
-  const borderColor = isDarkMode ? '#3a3a3a' : '#e5e7eb'
+  // Step 14.20 Batch 2: 使用更亮的暗色边框提升可见性
+  const borderColor = isDarkMode ? '#4b5563' : '#e5e7eb' // gray-600 vs gray-200
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -170,8 +179,8 @@ export function EscortLoginDialog({
           </button>
         </div>
 
-        {/* 表单 */}
-        <div className="px-5 py-6 space-y-4">
+        {/* 表单 - Step 14.19 A11y-04: 使用 form 标签支持 Enter 键提交 */}
+        <form className="px-5 py-6 space-y-4" onSubmit={handleSubmit}>
           {/* 提示文字 */}
           <p className="text-sm" style={{ color: textSecondary }}>
             请使用陪诊员账号登录，登录后可进入工作台接单
@@ -232,12 +241,19 @@ export function EscortLoginDialog({
             <p className="text-sm text-red-500">{error}</p>
           )}
 
-          {/* 登录按钮 */}
+          {/* 登录按钮 - Step 14.20 Batch 2: 禁用态对比度优化 */}
           <button
-            onClick={handleLogin}
+            type="submit"
             disabled={isLoading || !phone || !code}
-            className="w-full py-3 rounded-lg text-white font-medium flex items-center justify-center gap-2 disabled:opacity-50 transition-opacity"
-            style={{ backgroundColor: themeSettings.primaryColor }}
+            className="w-full py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-opacity"
+            style={{
+              backgroundColor: (isLoading || !phone || !code)
+                ? (isDarkMode ? '#4b5563' : '#e5e7eb')
+                : themeSettings.primaryColor,
+              color: (isLoading || !phone || !code)
+                ? (isDarkMode ? '#9ca3af' : '#6b7280')
+                : '#ffffff',
+            }}
           >
             {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
             {isLoading ? '登录中...' : '登录'}
@@ -247,7 +263,7 @@ export function EscortLoginDialog({
           <p className="text-xs text-center" style={{ color: textSecondary }}>
             登录即表示同意《陪诊员服务协议》
           </p>
-        </div>
+        </form>
       </div>
     </div>
   )

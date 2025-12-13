@@ -52,6 +52,10 @@
 | **异常数据防护增强** | ✅ 完成 | Step 14.14 | 数据校验工具 + API transform + 枚举降级（6 文件） |
 | **A11y 基础支持** | ✅ 完成 | Step 14.15 | Esc 关闭 + aria 属性 + 键盘导航（3 组件） |
 | **暗色对比度优化** | ✅ 完成 | Step 14.16 | 颜色工具函数 + 骨架屏优化（5 核心页面） |
+| **A11y + 系统健壮性** | ✅ 完成 | Step 14.19 | Enter 提交 + API 降级机制（20 API） |
+| **暗色模式边界优化** | ✅ 完成 | Step 14.20 | 边框/分割线 + 禁用态按钮对比度优化（6 组件） |
+| **空态引导 + 文档同步** | ✅ 完成 | Step 14.21 | 空态引导按钮（6 页面）+ 审计报告状态同步 |
+| **管理后台集成扩展** | ✅ 完成 | Step 14.22 | 轮播图管理 + 分销设置页面预览器集成 |
 | **真实端接入准备** | 📋 占位 | Step 15 | 未来真实终端接入的约束清单 |
 
 ### Step 编号体系（单线制，禁止跳号或多套并存）
@@ -75,6 +79,10 @@ Step 14.13 P3 技术债务清理 Batch 1（my-orders 页面 + 邀请实时预览
 Step 14.14 异常数据防护增强（数据校验工具 + API transform + 枚举降级）✅
 Step 14.15 A11y 基础支持（Esc 关闭 + aria 属性 + 键盘导航）✅
 Step 14.16 暗色对比度优化（颜色工具函数 + 骨架屏优化）✅
+Step 14.19 A11y + 系统健壮性（Enter 提交 + API 降级机制）✅
+Step 14.20 暗色模式边界优化（边框/分割线 + 禁用态按钮对比度）✅
+Step 14.21 空态引导 + 文档同步（空态按钮 + 审计报告状态同步）✅
+Step 14.22 管理后台集成扩展（轮播图管理 + 分销设置页面预览器）✅
 Step 15    真实终端接入准备（占位，未来实现）📋
 ```
 
@@ -1391,6 +1399,51 @@ escortSession={{ token: 'mock-escort-token', escortId: 'mock-id' }}
 // mock token 开头为 'mock-'，会自动走静态数据
 ```
 
+### API 降级机制（Step 14.19 UI-B-3）
+
+> **新增日期**: 2024-12-13  
+> **来源**: TerminalPreview-UI交互综合审计报告 UI-B-3
+
+**规则**: 所有 previewApi 方法在任何异常情况下都必须降级到 mock 数据，确保预览器稳定性。
+
+**标准实现模式**:
+
+```typescript
+// ✅ 正确：所有错误都降级
+getMyCoupons: async (): Promise<CouponsResponse> => {
+  try {
+    return await userRequest<CouponsResponse>('/marketing/coupons/my')
+  } catch (error) {
+    // 404/500 降级到 mock 数据
+    if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
+      console.warn('[previewApi.getMyCoupons] 接口错误，使用 mock 数据')
+      return getMockCouponsData()
+    }
+    // 其他错误也降级，保证预览器可用
+    console.warn('[previewApi.getMyCoupons] 请求失败，降级 mock:', error)
+    return getMockCouponsData()
+  }
+}
+
+// ❌ 错误：其他错误会抛出，导致预览器崩溃
+getMyCoupons: async (): Promise<CouponsResponse> => {
+  try {
+    return await userRequest<CouponsResponse>('/marketing/coupons/my')
+  } catch (error) {
+    if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
+      return getMockCouponsData()
+    }
+    throw error  // ❌ 会导致预览器崩溃
+  }
+}
+```
+
+**已覆盖的 API（20 个）**:
+- 营销中心: `getMyCoupons`, `getMyMembership`, `getMembershipPlans`, `getMyPoints`, `getPointsRecords`, `getReferralInfo`, `getCampaigns`, `getCampaignDetail`, `getAvailableCoupons`
+- 陪诊员: `getEscorts`, `getEscortDetail`
+- 工作台: `getWorkbenchStats`, `getWorkbenchSummary`, `getWorkbenchOrdersPool`, `getWorkbenchEarnings`, `getWorkbenchWithdrawInfo`, `getWorkbenchOrderDetail`
+- 分销中心: 所有 API 已有完整降级
+
 ### PermissionPrompt 组件约束（强制复用）
 
 **规则**: 分销中心/工作台所有私域页，非 escort 视角 **必须** 返回同一个 `<PermissionPrompt />`，**不允许每个页面自己写 Alert 或 Card**。
@@ -1798,6 +1851,27 @@ useEffect(() => {
 ```
 
 **已实现组件**: `TabBarNav.tsx`
+
+**表单 Enter 提交（Step 14.19）**:
+
+```tsx
+// 所有表单必须支持 Enter 键提交
+<form onSubmit={handleSubmit}>
+  <input type="tel" placeholder="请输入手机号" />
+  <input type="password" placeholder="请输入验证码" />
+  <button type="submit">登录</button>
+</form>
+
+// handleSubmit 处理函数
+const handleSubmit = useCallback((e: React.FormEvent) => {
+  e.preventDefault()
+  if (!isLoading && phone && code) {
+    handleLogin()
+  }
+}, [isLoading, phone, code, handleLogin])
+```
+
+**已实现组件**: `EscortLoginDialog.tsx`
 
 ---
 
@@ -3410,6 +3484,93 @@ interface DistributionStats {
 **修复方式**: 导入 `getSecondaryTextClass()`/`getTertiaryTextClass()` 替换硬编码颜色类
 
 **已优化页面总数**: 13（Batch 1）+ 10（Batch 2）= **23 个页面**
+
+### Step 14.20 暗色模式边界优化（1h）✅
+
+**任务**: 优化暗色模式下边框/分割线和禁用态按钮的可见性
+
+| 子任务 | 内容 | 状态 |
+|--------|------|------|
+| A.1 | 新增边框/禁用态颜色工具函数（utils.ts） | ✅ |
+| A.2 | 边框/分割线颜色优化（`#3a3a3a`/`border-gray-700` → `#4b5563`/`border-gray-600`） | ✅ |
+| A.3 | 禁用态按钮对比度优化（使用专用颜色替代 `disabled:opacity-50`） | ✅ |
+
+**新增工具函数（5 个）**:
+- `getBorderClass(isDarkMode)` - 边框 CSS 类名
+- `getBorderColor(isDarkMode)` - 边框内联颜色
+- `getDividerColor(isDarkMode)` - 分割线内联颜色
+- `getDisabledButtonBgColor(isDarkMode)` - 禁用按钮背景色
+- `getDisabledButtonTextColor(isDarkMode)` - 禁用按钮文字色
+
+**修改文件（6 个）**:
+- `utils.ts`: 新增 5 个颜色工具函数
+- `ListSkeleton.tsx`: 分割线颜色优化
+- `EscortLoginDialog.tsx`: 边框颜色 + 登录按钮禁用态
+- `DebugPanel.tsx`: 边框颜色优化
+- `PageLoadingSkeleton.tsx`: 边框颜色优化
+- `WorkbenchWithdrawPage.tsx`: 提现按钮禁用态
+
+**修复方式**:
+- 边框: `#3a3a3a` → `#4b5563`，`border-gray-700` → `border-gray-600`
+- 禁用态: 使用 `isDarkMode ? '#4b5563' : '#e5e7eb'` 背景 + `isDarkMode ? '#9ca3af' : '#6b7280'` 文字
+
+### Step 14.21 空态引导 + 文档同步（30min）✅
+
+**任务**: 为空态页面添加引导按钮 + 同步审计报告修复状态
+
+| 子任务 | 内容 | 状态 |
+|--------|------|------|
+| A.1 | 更新 DebugPanel 修复状态（清除 token 确认） | ✅ |
+| A.2 | 更新状态机检查表（骨架屏/重试按钮已修复） | ✅ |
+| A.3 | 更新 UI-A-4 问题状态（类型已完整） | ✅ |
+| A.4 | 为 6 个空态页面添加引导按钮 | ✅ |
+
+**修改文件（6 个页面）**:
+- `PointsRecordsPage.tsx`: 添加"去赚积分"按钮
+- `CampaignsPage.tsx`: 添加"刷新查看"按钮
+- `EscortListPage.tsx`: 添加"刷新查看"按钮
+- `WorkbenchEarningsPage.tsx`: 添加"去接单"按钮
+- `DistributionMembersPage.tsx`: 添加"去邀请"按钮
+- `DistributionRecordsPage.tsx`: 添加"查看分润规则"按钮
+
+**文档更新**:
+- 审计报告 v1.15 → v1.16
+- 审计报告 3.2 节状态机表格更新
+- 审计报告 3.4 节页面状态表格更新
+- 审计报告 3.5 节空态引导按钮状态更新
+- 审计报告 8.6 节 DebugPanel 问题状态更新
+- 审计报告 UI-A-4 问题状态更新
+
+### Step 14.22 管理后台集成扩展（15min）✅
+
+**任务**: 为轮播图管理和分销设置页面添加终端预览器
+
+| 子任务 | 内容 | 状态 |
+|--------|------|------|
+| A.1 | 轮播图管理页面集成预览器（→ home 页面） | ✅ |
+| A.2 | 分销设置页面集成预览器（→ distribution 页面） | ✅ |
+
+**修改文件（2 个）**:
+- `features/app-settings/banners/index.tsx`: 添加双栏布局 + TerminalPreview（home 页面）
+- `features/distribution/settings.tsx`: 添加双栏布局 + TerminalPreview（distribution 页面）
+
+**集成模式**:
+```tsx
+// 双栏布局：左侧设置 + 右侧预览
+<div className='flex gap-6'>
+  <div className='flex-1'>
+    {/* 设置内容 */}
+  </div>
+  <div className='hidden xl:block sticky top-4 h-fit'>
+    <TerminalPreview page='home' containerWidth={375} containerHeight={680} />
+  </div>
+</div>
+```
+
+**文档更新**:
+- 审计报告 v1.16 → v1.17
+- 审计报告附录集成树状图更新
+- 审计报告 5.4 节未集成页面状态更新
 
 ---
 

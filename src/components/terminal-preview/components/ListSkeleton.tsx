@@ -112,11 +112,14 @@ interface RowSkeletonProps {
 }
 
 function RowSkeleton({ shimmerColor, isDarkMode, isLast }: RowSkeletonProps) {
+  // Step 14.20 Batch 2: 使用更亮的暗色边框提升可见性
+  const dividerColor = isDarkMode ? '#4b5563' : '#f3f4f6' // gray-600 vs gray-100
+
   return (
     <div
       className="flex items-center px-4 py-3.5"
       style={{
-        borderBottom: isLast ? 'none' : `1px solid ${isDarkMode ? '#3a3a3a' : '#f3f4f6'}`,
+        borderBottom: isLast ? 'none' : `1px solid ${dividerColor}`,
       }}
     >
       {/* 左侧图标/头像 */}

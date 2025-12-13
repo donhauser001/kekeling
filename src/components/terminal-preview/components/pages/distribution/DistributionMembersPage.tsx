@@ -183,13 +183,22 @@ export function DistributionMembersPage({
           </div>
         )}
 
-        {/* 空态 */}
+        {/* 空态 - Step 14.21: 添加邀请按钮 */}
         {!isLoading && !isError && membersData && membersData.items.length === 0 && (
           <div className="flex flex-col items-center justify-center py-12">
             <div className="text-4xl mb-2">👥</div>
             <div className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>
               暂无{relationFilter === 'direct' ? '直属' : relationFilter === 'indirect' ? '间接' : ''}成员
             </div>
+            {onNavigate && (
+              <button
+                onClick={() => onNavigate('distribution-invite')}
+                className="mt-4 px-4 py-2 rounded-lg text-sm font-medium text-white"
+                style={{ backgroundColor: themeSettings.primaryColor }}
+              >
+                去邀请
+              </button>
+            )}
           </div>
         )}
 

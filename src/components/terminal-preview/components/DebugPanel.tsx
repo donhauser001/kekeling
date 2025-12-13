@@ -144,9 +144,9 @@ export function DebugPanel({
         <span className="text-gray-500">{isExpanded ? '▼' : '▶'}</span>
       </div>
 
-      {/* 展开内容 */}
+      {/* 展开内容 - Step 14.20 Batch 2: 边框可见性优化 */}
       {isExpanded && (
-        <div className="px-2 pb-2 space-y-2 border-t border-gray-700">
+        <div className="px-2 pb-2 space-y-2 border-t border-gray-600">
           {/* 视角状态 */}
           <div className="flex items-center gap-2 pt-2">
             <span className="text-gray-400">视角:</span>
@@ -206,7 +206,7 @@ export function DebugPanel({
           </div>
 
           {/* 警告提示 */}
-          <div className="text-[10px] text-gray-500 border-t border-gray-700 pt-1">
+          <div className="text-[10px] text-gray-500 border-t border-gray-600 pt-1">
             ⚠️ 仅用于后台预览器调试，不可用于真实终端
           </div>
         </div>

@@ -105,7 +105,7 @@ export function CampaignsPage({ themeSettings, isDarkMode, onNavigate, campaigns
           />
         )}
 
-        {/* 空态 */}
+        {/* 空态 - Step 14.21: 添加引导文案 */}
         {isEmpty && !isError && (
           <div className="flex flex-col items-center justify-center py-12">
             <div className="text-5xl mb-3">🎉</div>
@@ -115,6 +115,16 @@ export function CampaignsPage({ themeSettings, isDarkMode, onNavigate, campaigns
             <div className={`text-xs mt-1 ${getTertiaryTextClass(isDarkMode)}`}>
               敬请期待更多精彩活动
             </div>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-4 px-4 py-2 rounded-lg text-sm font-medium"
+              style={{
+                backgroundColor: isDarkMode ? '#374151' : '#f3f4f6',
+                color: isDarkMode ? '#d1d5db' : '#4b5563',
+              }}
+            >
+              刷新查看
+            </button>
           </div>
         )}
 
