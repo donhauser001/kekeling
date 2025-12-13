@@ -138,6 +138,7 @@ export function CasesPage({ themeSettings, isDarkMode = false, bannerData: banne
             bannerData={bannerData}
             themeSettings={themeSettings}
             autoPlayInterval={3000}
+            className='pb-3'
           />
         </div>
       )}

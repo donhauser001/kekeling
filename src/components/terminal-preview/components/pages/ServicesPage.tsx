@@ -156,6 +156,7 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
             bannerData={bannerData}
             themeSettings={themeSettings}
             autoPlayInterval={3000}
+            className='pb-3'
           />
         </div>
       )}

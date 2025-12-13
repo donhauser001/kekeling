@@ -1585,6 +1585,19 @@ export const serviceApi = {
       body: JSON.stringify(data),
     }),
 
+  // 创建草稿服务（WordPress 风格自动草稿）
+  // 用于新建服务时自动获取 ID，便于图片上传等关联操作
+  createDraft: (categoryId: string) =>
+    request<Service>('/services', {
+      method: 'POST',
+      body: JSON.stringify({
+        name: '未命名服务',
+        categoryId,
+        price: 0,
+        status: 'draft',
+      }),
+    }),
+
   // 更新服务
   update: (id: string, data: UpdateServiceData) =>
     request<Service>(`/services/${id}`, {

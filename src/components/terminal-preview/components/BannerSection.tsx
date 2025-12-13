@@ -14,12 +14,15 @@ interface BannerSectionProps {
   themeSettings: ThemeSettings
   /** 自动播放间隔（毫秒），0 表示不自动播放 */
   autoPlayInterval?: number
+  /** 自定义类名（用于控制间距等） */
+  className?: string
 }
 
 export function BannerSection({
   bannerData,
   themeSettings,
   autoPlayInterval = 3000,
+  className,
 }: BannerSectionProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
@@ -117,7 +120,7 @@ export function BannerSection({
   // 空状态
   if (!bannerData?.enabled || itemCount === 0) {
     return (
-      <div className='relative z-10 px-3 pb-3'>
+      <div className={cn('relative z-10 px-3', className)}>
         <div
           className='flex h-20 items-center justify-center rounded-xl'
           style={{
@@ -137,7 +140,7 @@ export function BannerSection({
   const translateX = -currentIndex * 100 + (dragOffset / (containerRef.current?.offsetWidth || 375)) * 100
 
   return (
-    <div className='relative z-10 px-3 pb-3'>
+    <div className={cn('relative z-10 px-3', className)}>
       <div
         ref={containerRef}
         className='relative overflow-hidden rounded-xl cursor-grab active:cursor-grabbing'

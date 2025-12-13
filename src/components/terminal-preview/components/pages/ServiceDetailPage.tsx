@@ -389,17 +389,6 @@ export function ServiceDetailPage({
         </div>
       )}
 
-      {/* 服务详情页轮播图 */}
-      {bannerData?.enabled && bannerData.items && bannerData.items.length > 0 && (
-        <div className='mt-3'>
-          <BannerSection
-            bannerData={bannerData}
-            themeSettings={themeSettings}
-            autoPlayInterval={4000}
-          />
-        </div>
-      )}
-
       {/* 服务信息卡片 */}
       <div className='mx-3 -mt-6 relative z-10 rounded-xl p-4' style={{ backgroundColor: cardBg }}>
         {/* 分类标签 */}
@@ -636,6 +625,17 @@ export function ServiceDetailPage({
           )}
         </div>
       </div>
+
+      {/* 服务详情页轮播图 */}
+      {bannerData?.enabled && bannerData.items && bannerData.items.length > 0 && (
+        <div className='mt-3'>
+          <BannerSection
+            bannerData={bannerData}
+            themeSettings={themeSettings}
+            autoPlayInterval={4000}
+          />
+        </div>
+      )}
 
       {/* 服务内容（富文本区域） */}
       <div className='mx-3 mt-3 rounded-xl p-4' style={{ backgroundColor: cardBg }}>

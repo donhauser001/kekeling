@@ -71,13 +71,13 @@ export function UploadItem({
 
       {/* 错误状态 */}
       {error && !loading && (
-        <div className='absolute inset-0 bg-destructive/10 flex flex-col items-center justify-center gap-2 p-2'>
-          <AlertCircle className='h-5 w-5 text-destructive' />
-          <span className='text-xs text-destructive text-center line-clamp-2'>{error}</span>
+        <div className='absolute inset-0 bg-black/70 flex flex-col items-center justify-center gap-2 p-3'>
+          <AlertCircle className='h-6 w-6 text-destructive' />
+          <span className='text-xs text-white text-center font-medium leading-relaxed'>{error}</span>
           {onRetry && (
             <button
               onClick={onRetry}
-              className='flex items-center gap-1 text-xs text-primary hover:underline'
+              className='flex items-center gap-1 text-xs text-white/80 hover:text-white transition-colors'
             >
               <RotateCcw className='h-3 w-3' />
               重试

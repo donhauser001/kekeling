@@ -152,11 +152,13 @@ function BannerAreaSection({
   config,
   onToggleEnabled,
   onUpdateSize,
+  onFocus,
 }: {
   position: string
   config: BannerAreaConfig
   onToggleEnabled: (enabled: boolean) => void
   onUpdateSize: (width: number, height: number) => void
+  onFocus?: () => void
 }) {
   const queryClient = useQueryClient()
   const { auth } = useAuthStore()
@@ -338,8 +340,11 @@ function BannerAreaSection({
   }
 
   return (
-    <Card className={cn(!config.enabled && 'opacity-60')}>
-      <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
+    <Card className={cn(!config.enabled && 'opacity-60')} onClick={onFocus}>
+      <Collapsible open={isExpanded} onOpenChange={(open) => {
+        setIsExpanded(open)
+        if (open) onFocus?.()
+      }}>
         <CardHeader className='pb-3'>
           <div className='flex items-center justify-between'>
             <CollapsibleTrigger asChild>
@@ -708,8 +713,20 @@ function BannerAreaSection({
   )
 }
 
+// 轮播图区域对应的预览页面映射
+const AREA_TO_PAGE: Record<string, string> = {
+  'home': 'home',
+  'services': 'services',
+  'profile': 'profile',
+  'service-detail': 'services', // 服务详情页通过服务列表进入
+  'cases': 'cases',
+}
+
 export default function BannersManagement() {
   const queryClient = useQueryClient()
+
+  // 当前选中的区域（用于预览器页面切换）
+  const [activeArea, setActiveArea] = useState<string>('home')
 
   // 获取区域配置
   const { data: settings, isLoading, error } = useQuery({
@@ -821,16 +838,20 @@ export default function BannersManagement() {
                 config={config}
                 onToggleEnabled={(enabled) => handleToggleEnabled(position, enabled)}
                 onUpdateSize={(width, height) => handleUpdateSize(position, width, height)}
+                onFocus={() => setActiveArea(position)}
               />
             ))}
           </div>
 
           {/* 右侧：终端预览器 */}
           <div className='hidden xl:block sticky top-4 h-fit'>
+            <div className='text-sm text-muted-foreground mb-2'>
+              当前预览: {positionOptions.find(a => a.value === activeArea)?.label || activeArea}
+            </div>
             <TerminalPreview
-              page='home'
-              containerWidth={375}
-              containerHeight={680}
+              page={(AREA_TO_PAGE[activeArea] || 'home') as any}
+              height={680}
+              showFrame={true}
             />
           </div>
         </div>

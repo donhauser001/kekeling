@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from '@tanstack/react-router'
 import { Loader2, ArrowLeft, Save } from 'lucide-react'
 import { toast } from 'sonner'
@@ -7,11 +7,12 @@ import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { ThemeSwitch } from '@/components/theme-switch'
-import { TerminalPreview, type RecommendedServicesData } from '@/components/terminal-preview'
+import { TerminalPreview } from '@/components/terminal-preview'
 import {
     useService,
     useActiveServiceCategories,
     useCreateService,
+    useCreateServiceDraft,
     useUpdateService,
     useActiveWorkflows,
     useActiveServiceGuarantees,
@@ -42,6 +43,10 @@ export function ServiceEdit() {
 
     const [formData, setFormData] = useState<ServiceFormData>(DEFAULT_FORM_DATA)
 
+    // 草稿 ID（新建模式下自动创建草稿后获得）
+    const [draftId, setDraftId] = useState<string | null>(null)
+    const [isCreatingDraft, setIsCreatingDraft] = useState(false)
+
     // 自定义字段对话框状态
     const [customFieldDialogOpen, setCustomFieldDialogOpen] = useState(false)
     const [editingCustomField, setEditingCustomField] = useState<CustomField | null>(null)
@@ -54,13 +59,41 @@ export function ServiceEdit() {
     })
 
     // API hooks
+    // 只有编辑模式才加载服务数据，新建草稿模式不需要加载（草稿数据是默认值）
     const { data: service, isLoading: isLoadingService } = useService(isEdit ? id : undefined)
-    const { data: categories } = useActiveServiceCategories()
+    const { data: categories, isLoading: isLoadingCategories } = useActiveServiceCategories()
     const { data: activeWorkflows } = useActiveWorkflows()
     const { data: activeGuarantees } = useActiveServiceGuarantees()
     const { data: activeOperationGuides } = useActiveOperationGuides()
     const createMutation = useCreateService()
+    const createDraftMutation = useCreateServiceDraft()
     const updateMutation = useUpdateService()
+
+    // 实际的服务 ID（编辑模式用路由 ID，新建模式用草稿 ID）
+    const actualServiceId = isEdit ? id : draftId
+
+    // 新建模式：自动创建草稿（WordPress 风格）
+    useEffect(() => {
+        if (!isEdit && !draftId && !isCreatingDraft && categories?.length) {
+            setIsCreatingDraft(true)
+            const categoryId = categories[0]?.id
+            if (categoryId) {
+                createDraftMutation.mutateAsync(categoryId)
+                    .then((draft) => {
+                        setDraftId(draft.id)
+                        // 更新 URL 为草稿 ID，但不触发导航刷新
+                        window.history.replaceState(null, '', `/services/${draft.id}`)
+                    })
+                    .catch((err) => {
+                        console.error('创建草稿失败:', err)
+                        toast.error('创建草稿失败')
+                    })
+                    .finally(() => {
+                        setIsCreatingDraft(false)
+                    })
+            }
+        }
+    }, [isEdit, draftId, isCreatingDraft, categories, createDraftMutation])
 
     // 加载服务数据
     useEffect(() => {
@@ -178,10 +211,17 @@ export function ServiceEdit() {
         }
 
         try {
-            if (isEdit) {
-                await updateMutation.mutateAsync({ id, data: submitData })
+            if (isEdit || draftId) {
+                // 编辑模式或草稿模式：使用更新接口
+                const serviceId = isEdit ? id : draftId!
+                await updateMutation.mutateAsync({ id: serviceId, data: submitData })
                 toast.success('保存成功')
+                // 如果是草稿模式，保存后跳转到编辑页面（URL 已经是正确的了）
+                if (!isEdit && draftId) {
+                    navigate({ to: '/services/$id', params: { id: draftId } })
+                }
             } else {
+                // 没有草稿 ID 的情况（理论上不会发生，但保留作为后备）
                 const newService = await createMutation.mutateAsync(submitData)
                 toast.success('创建成功')
                 navigate({ to: '/services/$id', params: { id: newService.id } })
@@ -277,29 +317,10 @@ export function ServiceEdit() {
         }))
     }
 
-    const isPending = createMutation.isPending || updateMutation.isPending
+    const isPending = createMutation.isPending || updateMutation.isPending || isCreatingDraft
 
-    // 构建预览数据
-    const previewServiceData = useMemo<RecommendedServicesData>(() => ({
-        enabled: true,
-        tabs: [{
-            key: 'recommended' as const,
-            title: '推荐',
-            services: [{
-                id: id || 'preview-service',
-                name: formData.name || '新服务',
-                price: parseFloat(formData.price) || 0,
-                originalPrice: formData.originalPrice ? parseFloat(formData.originalPrice) : undefined,
-                unit: formData.unit,
-                coverImage: formData.coverImages[0] || undefined,
-                salesCount: 0,
-                description: formData.description || undefined,
-                tags: formData.tags ? formData.tags.split(/[,，、]/).filter(Boolean) : undefined,
-            }],
-        }],
-    }), [id, formData.name, formData.price, formData.originalPrice, formData.unit, formData.coverImages, formData.description, formData.tags])
-
-    if (isEdit && isLoadingService) {
+    // 显示加载状态：编辑模式加载服务数据 / 新建模式创建草稿 / 加载分类
+    if ((isEdit && isLoadingService) || isCreatingDraft || (!isEdit && !draftId && isLoadingCategories)) {
         return (
             <div className='flex h-screen items-center justify-center'>
                 <Loader2 className='h-8 w-8 animate-spin text-primary' />
@@ -416,8 +437,8 @@ export function ServiceEdit() {
                                 page='services'
                                 height={680}
                                 showFrame={true}
-                                autoLoad={false}
-                                recommendedServices={previewServiceData}
+                                autoLoad={true}
+                                initialServiceId={actualServiceId || undefined}
                             />
                         </div>
                     </div>

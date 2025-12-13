@@ -6,6 +6,7 @@
  * - 陪诊员视角：显示"进入工作台"
  */
 
+import { useQuery } from '@tanstack/react-query'
 import {
   User,
   Settings,
@@ -23,7 +24,9 @@ import {
   Briefcase,
   LogOut,
 } from 'lucide-react'
-import type { ThemeSettings, PreviewViewerRole } from '../../types'
+import type { ThemeSettings, PreviewViewerRole, BannerAreaData } from '../../types'
+import { previewApi } from '../../api'
+import { BannerSection } from '../BannerSection'
 
 interface ProfilePageProps {
   themeSettings: ThemeSettings
@@ -38,6 +41,8 @@ interface ProfilePageProps {
   onExitEscortMode?: () => void
   /** 导航到其他页面 */
   onNavigate?: (page: string, params?: Record<string, string>) => void
+  /** 轮播图数据覆盖（用于实时预览） */
+  bannerDataOverride?: BannerAreaData | null
 }
 
 // 订单入口
@@ -66,7 +71,17 @@ export function ProfilePage({
   onWorkbenchClick,
   onExitEscortMode,
   onNavigate,
+  bannerDataOverride,
 }: ProfilePageProps) {
+  // 获取个人中心轮播图数据
+  const { data: apiBannerData } = useQuery({
+    queryKey: ['preview', 'banners', 'profile'],
+    queryFn: () => previewApi.getBanners('profile'),
+  })
+
+  // 优先使用覆盖数据
+  const bannerData = bannerDataOverride !== undefined ? bannerDataOverride : apiBannerData
+
   // 深色模式颜色
   const bgColor = isDarkMode ? '#1a1a1a' : '#f5f7fa'
   const cardBg = isDarkMode ? '#2a2a2a' : '#ffffff'
@@ -168,6 +183,17 @@ export function ProfilePage({
           </div>
         </div>
       </div>
+
+      {/* 个人中心轮播图 */}
+      {bannerData && bannerData.enabled && bannerData.items?.length > 0 && (
+        <div className='mt-3'>
+          <BannerSection
+            bannerData={bannerData}
+            themeSettings={themeSettings}
+            autoPlayInterval={4000}
+          />
+        </div>
+      )}
 
       {/* 功能菜单 */}
       <div className='px-3 mt-3'>

@@ -38,6 +38,7 @@ interface UploadingItem {
   preview: string
   status: 'uploading' | 'error'
   error?: string
+  retryable?: boolean // 是否可重试（文件格式/大小问题不可重试）
 }
 
 export interface ImageUploadProps {
@@ -106,7 +107,7 @@ export function ImageUpload({
   const idCounter = useRef(0)
 
   // 上传 hook
-  const { uploadFile } = useUpload({
+  const { uploadFile, validateFile } = useUpload({
     folder,
     maxSize,
     accept,
@@ -135,18 +136,36 @@ export function ImageUpload({
 
       if (filesToUpload.length === 0) return
 
-      // 创建上传项
-      const newUploadingItems: UploadingItem[] = filesToUpload.map(file => ({
-        id: `upload-${++idCounter.current}`,
-        file,
-        preview: URL.createObjectURL(file),
-        status: 'uploading' as const,
-      }))
+      // 创建上传项（先验证文件）
+      const newUploadingItems: UploadingItem[] = filesToUpload.map(file => {
+        const validationError = validateFile(file)
+
+        if (validationError) {
+          // 文件验证失败，直接标记为错误状态
+          return {
+            id: `upload-${++idCounter.current}`,
+            file,
+            preview: URL.createObjectURL(file),
+            status: 'error' as const,
+            error: validationError,
+            retryable: false, // 文件本身有问题，不可重试
+          }
+        }
+
+        return {
+          id: `upload-${++idCounter.current}`,
+          file,
+          preview: URL.createObjectURL(file),
+          status: 'uploading' as const,
+        }
+      })
 
       setUploadingItems(prev => [...prev, ...newUploadingItems])
 
-      // 逐个上传
+      // 只上传验证通过的文件
       for (const item of newUploadingItems) {
+        if (item.status === 'error') continue // 跳过验证失败的
+
         const result = await uploadFile(item.file)
 
         if (result) {
@@ -157,18 +176,18 @@ export function ImageUpload({
           // 释放预览 URL
           URL.revokeObjectURL(item.preview)
         } else {
-          // 上传失败，标记错误
+          // 上传失败（网络错误等），可以重试
           setUploadingItems(prev =>
             prev.map(i =>
               i.id === item.id
-                ? { ...i, status: 'error' as const, error: '上传失败' }
+                ? { ...i, status: 'error' as const, error: '上传失败，请重试', retryable: true }
                 : i
             )
           )
         }
       }
     },
-    [disabled, multiple, maxCount, images, uploadFile, updateValue]
+    [disabled, multiple, maxCount, images, uploadFile, validateFile, updateValue]
   )
 
   // 移除图片
@@ -259,7 +278,7 @@ export function ImageUpload({
               loading={uploadingItems[0].status === 'uploading'}
               error={uploadingItems[0].error}
               onRemove={() => handleRemoveUploading(uploadingItems[0].id)}
-              onRetry={() => handleRetry(uploadingItems[0])}
+              onRetry={uploadingItems[0].retryable !== false ? () => handleRetry(uploadingItems[0]) : undefined}
               className='w-full h-full'
             />
           ) : (
@@ -324,7 +343,7 @@ export function ImageUpload({
               loading={item.status === 'uploading'}
               error={item.error}
               onRemove={() => handleRemoveUploading(item.id)}
-              onRetry={() => handleRetry(item)}
+              onRetry={item.retryable !== false ? () => handleRetry(item) : undefined}
               className='w-full h-full'
             />
           </div>

@@ -115,6 +115,8 @@ export function TerminalPreview({
   height = 680,
   showFrame = true,
   className,
+  // 服务详情预览
+  initialServiceId,
 }: TerminalPreviewProps) {
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<ServiceTabType>('recommended')
@@ -205,7 +207,14 @@ export function TerminalPreview({
   void escortContext
 
   const [currentPage, setCurrentPage] = useState(initialPage)
-  const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null)
+  const [selectedServiceId, setSelectedServiceId] = useState<string | null>(initialServiceId ?? null)
+
+  // 同步外部 initialServiceId 的变化（用于服务编辑页面）
+  useEffect(() => {
+    if (initialServiceId !== undefined) {
+      setSelectedServiceId(initialServiceId)
+    }
+  }, [initialServiceId])
 
   // Step 9: 路由参数状态（用于传递 id 等参数到详情页）
   const [pageParams, setPageParams] = useState<Record<string, string>>({})
@@ -460,6 +469,7 @@ export function TerminalPreview({
       <BannerSection
         bannerData={bannerData}
         themeSettings={themeSettings}
+        className='pb-3'
       />
 
       {/* 统计卡片 */}
