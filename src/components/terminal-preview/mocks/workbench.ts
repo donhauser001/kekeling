@@ -26,12 +26,30 @@ import type {
  */
 export function getMockWorkbenchStats(): WorkbenchStats {
   return {
-    todayOrders: 5,
-    todayEarnings: 680,
-    monthOrders: 45,
-    monthEarnings: 12800,
+    pendingOrders: 3,
+    ongoingOrders: 2,
+    completedOrders: 28,
+    todayIncome: 680,
+    monthIncome: 12800,
+    withdrawable: 8500,
+    onlineStatus: 'online',
+    // 近7天收入趋势
+    incomeTrend: [
+      { label: '12/7', amount: 320 },
+      { label: '12/8', amount: 580 },
+      { label: '12/9', amount: 420 },
+      { label: '12/10', amount: 750 },
+      { label: '12/11', amount: 620 },
+      { label: '12/12', amount: 890 },
+      { label: '今日', amount: 680 },
+    ],
+    // 陪诊员个人信息
+    escortName: '李护士',
+    escortAvatar: '',
+    escortPhone: '139****8888',
+    escortLevel: '金牌陪诊员',
     rating: 4.9,
-    completionRate: 98.5,
+    orderCount: 328,
   }
 }
 
@@ -267,18 +285,29 @@ export function getMockWorkbenchOrderDetail(orderId: string): WorkbenchOrderDeta
 export function getMockWorkbenchSettings(): WorkbenchSettings {
   return {
     isOnline: true,
-    acceptNewOrders: true,
-    serviceAreas: ['北京市朝阳区', '北京市海淀区', '北京市东城区'],
-    serviceTypes: ['outpatient', 'checkup', 'pharmacy'],
-    workingHours: {
-      start: '08:00',
-      end: '18:00',
+    autoAcceptOrders: true,
+    preferences: {
+      serviceTypes: ['门诊陪同', '检查陪同', '取药代办'],
+      serviceAreas: ['北京协和医院', '北京大学第一医院', '中日友好医院'],
+      departments: ['内科', '外科', '妇产科', '儿科'],
+      maxDistance: 10,
+      workingHours: {
+        start: '08:00',
+        end: '18:00',
+      },
     },
-    maxOrdersPerDay: 5,
-    notificationSettings: {
+    notifications: {
       newOrder: true,
-      orderUpdate: true,
-      systemNotice: true,
+      orderStatus: true,
+      system: true,
+      marketing: false,
+    },
+    profile: {
+      name: '李护士',
+      avatar: '',
+      phone: '139****8888',
+      level: '金牌陪诊员',
+      rating: 4.9,
     },
   }
 }

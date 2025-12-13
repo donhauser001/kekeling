@@ -577,6 +577,17 @@ export interface EscortDetail extends EscortListItem {
 // 工作台类型（陪诊员端，需 escortToken）
 // ==========================================================================
 
+/** 陪诊员接单状态 */
+export type EscortOnlineStatus = 'online' | 'busy' | 'rest' | 'offline'
+
+/** 收入趋势数据点 */
+export interface IncomeTrendItem {
+  /** 日期标签（如：周一、12/10） */
+  label: string
+  /** 收入金额 */
+  amount: number
+}
+
 /** 工作台统计数据 */
 export interface WorkbenchStats {
   /** 待接单数 */
@@ -591,8 +602,22 @@ export interface WorkbenchStats {
   monthIncome: number
   /** 可提现金额 */
   withdrawable: number
-  /** 是否在线 */
-  isOnline: boolean
+  /** 接单状态 */
+  onlineStatus: EscortOnlineStatus
+  /** 近7天收入趋势 */
+  incomeTrend?: IncomeTrendItem[]
+  /** 陪诊员姓名 */
+  escortName?: string
+  /** 陪诊员头像 */
+  escortAvatar?: string
+  /** 陪诊员手机号（脱敏） */
+  escortPhone?: string
+  /** 认证等级（如：金牌陪诊员） */
+  escortLevel?: string
+  /** 评分 */
+  rating?: number
+  /** 服务订单数 */
+  orderCount?: number
 }
 
 // getMockWorkbenchStats - 已迁移到 ./mocks/workbench.ts
@@ -782,8 +807,10 @@ export interface WorkbenchSettings {
   preferences: {
     /** 服务类型偏好 */
     serviceTypes: string[]
-    /** 服务区域偏好 */
+    /** 服务医院 */
     serviceAreas: string[]
+    /** 擅长科室 */
+    departments?: string[]
     /** 最大接单距离（km） */
     maxDistance?: number
     /** 工作时间段 */
@@ -1614,6 +1641,41 @@ export const previewApi = {
       // 其他错误也降级到 mock，保证预览器可用
       console.warn('[previewApi.getWorkbenchSettings] 请求失败，降级 mock:', error)
       return getMockWorkbenchSettings()
+    }
+  },
+
+  /**
+   * 更新工作台设置（接单状态/自动接单）
+   * 接口: PATCH /escort-app/workbench/settings
+   * 通道: escortRequest（⚠️ 必须 escortToken）
+   */
+  updateWorkbenchSettings: async (
+    updates: {
+      onlineStatus?: EscortOnlineStatus
+      autoAcceptOrders?: boolean
+    }
+  ): Promise<{ success: boolean }> => {
+    const currentEscortToken = getEscortToken()
+
+    // 无 token 或 mock token 时，模拟成功
+    if (!currentEscortToken || currentEscortToken.startsWith('mock-')) {
+      console.log('[previewApi.updateWorkbenchSettings] mock 模式，模拟更新成功')
+      return { success: true }
+    }
+
+    try {
+      return await escortRequest<{ success: boolean }>(
+        '/escort-app/workbench/settings',
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updates),
+        }
+      )
+    } catch (error) {
+      // 预览器模式，即使后端接口不存在也返回成功，保证 UI 可用
+      console.warn('[previewApi.updateWorkbenchSettings] 请求失败，模拟成功:', error)
+      return { success: true }
     }
   },
 

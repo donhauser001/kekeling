@@ -79,6 +79,7 @@ import {
   WorkbenchWithdrawPage,
   OrderDetailPage,
   WorkbenchSettingsPage,
+  ServiceTypesPage,
   MyOrdersPage,
   UserOrdersPage,
   UserOrderDetailPage,
@@ -711,6 +712,16 @@ export function TerminalPreview({
             effectiveViewerRole={effectiveViewerRole}
             onNavigate={(page, params) => navigateToPage(page, params)}
             onLogin={() => setShowEscortLoginDialog(true)}
+          />
+        )
+
+      // 服务项目选择
+      case 'workbench-service-types':
+        return (
+          <ServiceTypesPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            onNavigate={(page: string, params?: Record<string, string>) => navigateToPage(page, params)}
           />
         )
 

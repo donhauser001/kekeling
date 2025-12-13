@@ -71,6 +71,7 @@ export type PreviewPage =
   | 'workbench-earnings'
   | 'workbench-withdraw'
   | 'workbench-settings'
+  | 'workbench-service-types'
   | 'my-orders'
   // 分销中心（陪诊员视角）
   | 'distribution'
@@ -115,6 +116,7 @@ export const VALID_PAGE_KEYS: readonly PreviewPage[] = [
   'workbench-earnings',
   'workbench-withdraw',
   'workbench-settings',
+  'workbench-service-types',
   'my-orders',
   // 分销中心（陪诊员视角）
   'distribution',
@@ -183,6 +185,7 @@ export const PAGE_METADATA: Record<PreviewPage, PageMetadata> = {
   'workbench-earnings': { entryAllowed: false, description: '收入明细' },
   'workbench-withdraw': { entryAllowed: false, description: '提现' },
   'workbench-settings': { entryAllowed: false, description: '工作台设置' },
+  'workbench-service-types': { entryAllowed: false, description: '服务项目选择' },
   'my-orders': { entryAllowed: false, description: '我的订单' },
 
   // 分销中心（主入口允许，子页面不允许）
@@ -241,6 +244,7 @@ export interface PreviewPageParamsMap {
   'workbench-earnings': Record<string, never>
   'workbench-withdraw': Record<string, never>
   'workbench-settings': Record<string, never>
+  'workbench-service-types': Record<string, never>
   'my-orders': { status?: 'all' | 'pending' | 'ongoing' | 'completed' | 'cancelled' }
 
   // 就诊人管理

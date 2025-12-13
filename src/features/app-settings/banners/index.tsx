@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { TerminalPreview } from '@/components/terminal-preview'
 import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/auth-store'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import {
@@ -158,6 +159,7 @@ function BannerAreaSection({
   onUpdateSize: (width: number, height: number) => void
 }) {
   const queryClient = useQueryClient()
+  const { auth } = useAuthStore()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isExpanded, setIsExpanded] = useState(config.enabled)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -289,8 +291,17 @@ function BannerAreaSection({
       uploadFormData.append('file', file)
       uploadFormData.append('folder', 'banner')
 
+      // 调试：检查 token
+      if (!auth.accessToken) {
+        toast.error('未登录，请先登录')
+        return
+      }
+
       const response = await fetch('/api/upload', {
         method: 'POST',
+        headers: {
+          Authorization: `Bearer ${auth.accessToken}`,
+        },
         body: uploadFormData,
       })
 

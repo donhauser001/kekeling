@@ -131,6 +131,10 @@ export const WorkbenchSettingsPage = lazy(() =>
   import('./workbench').then(m => ({ default: m.WorkbenchSettingsPage }))
 )
 
+export const ServiceTypesPage = lazy(() =>
+  import('./workbench').then(m => ({ default: m.ServiceTypesPage }))
+)
+
 export const MyOrdersPage = lazy(() =>
   import('./workbench').then(m => ({ default: m.MyOrdersPage }))
 )

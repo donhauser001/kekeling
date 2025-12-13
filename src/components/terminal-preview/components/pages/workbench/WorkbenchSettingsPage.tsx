@@ -10,20 +10,22 @@
  * 在 effectiveViewerRole !== 'escort' 时应拒绝渲染并提示
  */
 
-import { useQuery } from '@tanstack/react-query'
+import { useState, useEffect } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   ArrowLeft,
   Bell,
   ChevronRight,
-  MapPin,
   Clock,
   User,
-  Power,
   Settings,
   Zap,
+  Loader2,
+  Building2,
+  Stethoscope,
 } from 'lucide-react'
 import type { ThemeSettings, PreviewViewerRole } from '../../../types'
-import { previewApi, type WorkbenchSettings } from '../../../api'
+import { previewApi } from '../../../api'
 import { PermissionPrompt } from '../../PermissionPrompt'
 import { getSecondaryTextClass, getTertiaryTextClass } from '../../../utils'
 
@@ -55,6 +57,7 @@ export function WorkbenchSettingsPage({
   onLogin,
 }: WorkbenchSettingsPageProps) {
   const isEscort = effectiveViewerRole === 'escort'
+  const queryClient = useQueryClient()
 
   // ⚠️ 非 escort 视角时不发请求，直接显示提示
   const {
@@ -67,6 +70,33 @@ export function WorkbenchSettingsPage({
     staleTime: 60 * 1000,
     enabled: isEscort, // 只有 escort 视角才发请求
   })
+
+  // 本地状态（乐观更新）
+  const [autoAccept, setAutoAccept] = useState(false)
+
+  // 同步服务器数据到本地状态
+  useEffect(() => {
+    if (settings) {
+      setAutoAccept(settings.autoAcceptOrders)
+    }
+  }, [settings])
+
+  // 更新设置的 mutation
+  const updateMutation = useMutation({
+    mutationFn: (updates: { autoAcceptOrders?: boolean }) =>
+      previewApi.updateWorkbenchSettings(updates),
+    onSuccess: () => {
+      // 刷新设置数据
+      queryClient.invalidateQueries({ queryKey: ['preview', 'workbench', 'settings'] })
+    },
+  })
+
+  // 切换自动接单
+  const handleToggleAutoAccept = () => {
+    const newValue = !autoAccept
+    setAutoAccept(newValue)
+    updateMutation.mutate({ autoAcceptOrders: newValue })
+  }
 
   // 非 escort 视角：显示权限提示
   if (!isEscort) {
@@ -263,12 +293,12 @@ export function WorkbenchSettingsPage({
           </div>
         </div>
 
-        {/* 接单状态 */}
+        {/* 接单设置 */}
         <div className="px-4 mt-4">
           <h2
             className={`text-sm font-medium mb-2 ${getSecondaryTextClass(isDarkMode)}`}
           >
-            接单状态
+            接单设置
           </h2>
           <div
             className="rounded-xl overflow-hidden"
@@ -276,19 +306,17 @@ export function WorkbenchSettingsPage({
               backgroundColor: isDarkMode ? '#2a2a2a' : '#fff',
             }}
           >
-            <SettingItem
-              icon={<Power className="w-5 h-5" />}
-              iconColor={settings.isOnline ? '#10b981' : '#ef4444'}
-              label="在线接单"
-              value={settings.isOnline ? '已开启' : '已关闭'}
-              isDarkMode={isDarkMode}
-            />
-            <SettingItem
+            <SwitchItem
               icon={<Zap className="w-5 h-5" />}
               iconColor="#8b5cf6"
               label="自动接单"
-              value={settings.autoAcceptOrders ? '已开启' : '已关闭'}
+              description="系统将自动接受符合条件的订单"
+              checked={autoAccept}
+              loading={updateMutation.isPending}
+              onChange={handleToggleAutoAccept}
               isDarkMode={isDarkMode}
+              primaryColor={themeSettings.primaryColor}
+              showBorder={false}
             />
           </div>
         </div>
@@ -309,26 +337,23 @@ export function WorkbenchSettingsPage({
             <SettingItem
               icon={<Settings className="w-5 h-5" />}
               iconColor="#3b82f6"
-              label="服务类型偏好"
-              value={`${settings.preferences.serviceTypes.length} 项`}
+              label="服务项目"
+              value={`已选 ${settings.preferences.serviceTypes.length} 项`}
               isDarkMode={isDarkMode}
+              onClick={() => onNavigate?.('workbench-service-types')}
             />
             <SettingItem
-              icon={<MapPin className="w-5 h-5" />}
+              icon={<Building2 className="w-5 h-5" />}
               iconColor="#f59e0b"
-              label="服务区域"
-              value={settings.preferences.serviceAreas.join('、')}
+              label="服务医院"
+              value={`已选 ${settings.preferences.serviceAreas.length} 家`}
               isDarkMode={isDarkMode}
             />
             <SettingItem
-              icon={<MapPin className="w-5 h-5" />}
-              iconColor="#6366f1"
-              label="最大接单距离"
-              value={
-                settings.preferences.maxDistance
-                  ? `${settings.preferences.maxDistance} km`
-                  : '不限'
-              }
+              icon={<Stethoscope className="w-5 h-5" />}
+              iconColor="#ec4899"
+              label="擅长科室"
+              value={`已选 ${settings.preferences.departments?.length || 0} 个`}
               isDarkMode={isDarkMode}
             />
             {settings.preferences.workingHours && (
@@ -338,6 +363,7 @@ export function WorkbenchSettingsPage({
                 label="工作时间"
                 value={`${settings.preferences.workingHours.start} - ${settings.preferences.workingHours.end}`}
                 isDarkMode={isDarkMode}
+                showBorder={false}
               />
             )}
           </div>
@@ -403,6 +429,7 @@ interface SettingItemProps {
   value: string
   isDarkMode: boolean
   showBorder?: boolean
+  onClick?: () => void
 }
 
 function SettingItem({
@@ -412,10 +439,13 @@ function SettingItem({
   value,
   isDarkMode,
   showBorder = true,
+  onClick,
 }: SettingItemProps) {
+  const Wrapper = onClick ? 'button' : 'div'
   return (
-    <div
-      className="flex items-center px-4 py-3"
+    <Wrapper
+      onClick={onClick}
+      className={`flex items-center px-4 py-3 w-full text-left ${onClick ? 'hover:bg-black/5 active:bg-black/10 transition-colors' : ''}`}
       style={{
         borderBottom: showBorder
           ? `1px solid ${isDarkMode ? '#3a3a3a' : '#f0f0f0'}`
@@ -441,7 +471,87 @@ function SettingItem({
       <ChevronRight
         className={`w-4 h-4 ml-1 ${getTertiaryTextClass(isDarkMode)}`}
       />
-    </div>
+    </Wrapper>
   )
 }
 
+// 开关设置项
+interface SwitchItemProps {
+  icon: React.ReactNode
+  iconColor: string
+  label: string
+  description?: string
+  checked: boolean
+  loading?: boolean
+  onChange: () => void
+  isDarkMode: boolean
+  primaryColor: string
+  showBorder?: boolean
+}
+
+function SwitchItem({
+  icon,
+  iconColor,
+  label,
+  description,
+  checked,
+  loading,
+  onChange,
+  isDarkMode,
+  primaryColor,
+  showBorder = true,
+}: SwitchItemProps) {
+  return (
+    <button
+      onClick={onChange}
+      disabled={loading}
+      className="flex items-center px-4 py-3 w-full text-left hover:bg-black/5 active:bg-black/10 transition-colors disabled:opacity-50"
+      style={{
+        borderBottom: showBorder
+          ? `1px solid ${isDarkMode ? '#3a3a3a' : '#f0f0f0'}`
+          : 'none',
+      }}
+    >
+      <div
+        className="w-8 h-8 rounded-lg flex items-center justify-center mr-3"
+        style={{ backgroundColor: `${iconColor}20` }}
+      >
+        <span style={{ color: iconColor }}>{icon}</span>
+      </div>
+      <div className="flex-1 min-w-0">
+        <div
+          className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}
+        >
+          {label}
+        </div>
+        {description && (
+          <div
+            className={`text-xs mt-0.5 ${getSecondaryTextClass(isDarkMode)}`}
+          >
+            {description}
+          </div>
+        )}
+      </div>
+      {/* Switch 开关 */}
+      <div className="ml-3 relative">
+        {loading ? (
+          <Loader2 className="w-5 h-5 animate-spin" style={{ color: primaryColor }} />
+        ) : (
+          <div
+            className="w-11 h-6 rounded-full p-0.5 transition-colors duration-200"
+            style={{
+              backgroundColor: checked ? primaryColor : isDarkMode ? '#4a4a4a' : '#d1d5db',
+            }}
+          >
+            <div
+              className="w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200"
+              style={{
+                transform: checked ? 'translateX(20px)' : 'translateX(0)',
+              }}
+            />
+          </div>
+        )}
+      </div>
+    </button>
+  )
+}

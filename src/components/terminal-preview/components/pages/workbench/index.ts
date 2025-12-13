@@ -34,6 +34,10 @@ export type { OrderDetailPageProps } from './OrderDetailPage'
 export { WorkbenchSettingsPage } from './WorkbenchSettingsPage'
 export type { WorkbenchSettingsPageProps } from './WorkbenchSettingsPage'
 
+// 服务项目选择
+export { ServiceTypesPage } from './ServiceTypesPage'
+export type { ServiceTypesPageProps } from './ServiceTypesPage'
+
 // 我的订单（Step 14.13 FIX-P3-01）
 export { MyOrdersPage } from './MyOrdersPage'
 export type { MyOrdersPageProps } from './MyOrdersPage'
