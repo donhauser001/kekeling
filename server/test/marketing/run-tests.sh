@@ -22,10 +22,10 @@ fi
 
 # 检查 API 服务
 echo "🔍 检查后端服务..."
-if curl -s http://localhost:3000/api/services?pageSize=1 > /dev/null 2>&1; then
+if curl -s http://localhost:3456/api/services?pageSize=1 > /dev/null 2>&1; then
     echo "✅ 后端服务运行正常"
 else
-    echo "⚠️  无法连接到后端服务 (http://localhost:3000/api)"
+    echo "⚠️  无法连接到后端服务 (http://localhost:3456/api)"
     echo "   请确保后端服务已启动"
     read -p "是否继续? (y/n) " -n 1 -r
     echo
@@ -44,7 +44,7 @@ echo ""
 echo "🧪 执行测试..."
 echo ""
 
-API_URL="${API_URL:-http://localhost:3000/api}"
+API_URL="${API_URL:-http://localhost:3456/api}"
 TEST_USER_TOKEN="${TEST_USER_TOKEN:-}"
 
 if [ -n "$TEST_USER_TOKEN" ]; then

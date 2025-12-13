@@ -124,7 +124,7 @@ wait_for_backend() {
     local attempt=0
     
     while [ $attempt -lt $max_attempts ]; do
-        if curl -s http://localhost:3000/api/home/stats > /dev/null 2>&1; then
+        if curl -s http://localhost:3456/api/home/stats > /dev/null 2>&1; then
             echo -e "${GREEN}   ✅ 后端服务已就绪${NC}"
             return 0
         fi
@@ -250,8 +250,8 @@ main() {
     echo -e "${GREEN}🎉 服务启动成功！${NC}"
     echo ""
     echo -e "   ${MAGENTA}🐘 数据库:${NC}      localhost:5432"
-    echo -e "   ${MAGENTA}🔧 后端 API:${NC}    http://localhost:3000"
-    echo -e "   ${MAGENTA}📖 API 文档:${NC}    http://localhost:3000/api-docs"
+    echo -e "   ${MAGENTA}🔧 后端 API:${NC}    http://localhost:3456"
+    echo -e "   ${MAGENTA}📖 API 文档:${NC}    http://localhost:3456/api-docs"
     echo -e "   ${MAGENTA}🗄️  Adminer:${NC}     http://localhost:8080"
     $WITH_ADMIN && echo -e "   ${MAGENTA}🖥️  管理后台:${NC}   http://localhost:5173"
     $WITH_H5 && echo -e "   ${MAGENTA}📱 小程序 H5:${NC}   http://localhost:10086"

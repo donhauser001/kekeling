@@ -45,7 +45,7 @@ echo ""
 check_backend() {
     echo -e "${YELLOW}🔍 检查后端服务...${NC}"
     
-    if curl -s http://localhost:3000/api/home/stats > /dev/null 2>&1; then
+    if curl -s http://localhost:3456/api/home/stats > /dev/null 2>&1; then
         echo -e "${GREEN}   ✅ 后端服务已运行${NC}"
         return 0
     fi
@@ -67,7 +67,7 @@ check_backend() {
         local attempt=0
         
         while [ $attempt -lt $max_attempts ]; do
-            if curl -s http://localhost:3000/api/home/stats > /dev/null 2>&1; then
+            if curl -s http://localhost:3456/api/home/stats > /dev/null 2>&1; then
                 echo -e "${GREEN}   ✅ 后端服务已就绪${NC}"
                 return 0
             fi
@@ -119,9 +119,9 @@ echo ""
 echo -e "${CYAN}================================${NC}"
 echo -e "${GREEN}🎉 小程序 H5 启动成功！${NC}"
 echo ""
-echo -e "   ${BLUE}后端 API:${NC}      http://localhost:3000"
+echo -e "   ${BLUE}后端 API:${NC}      http://localhost:3456"
 echo -e "   ${BLUE}小程序 H5:${NC}     http://localhost:10086"
-echo -e "   ${BLUE}API 文档:${NC}      http://localhost:3000/api-docs"
+echo -e "   ${BLUE}API 文档:${NC}      http://localhost:3456/api-docs"
 echo ""
 echo -e "${YELLOW}💡 提示：H5 编译需要一些时间，请耐心等待...${NC}"
 echo -e "${YELLOW}按 Ctrl+C 停止小程序 H5${NC}"

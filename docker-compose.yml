@@ -52,7 +52,7 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: production
-      PORT: 3000
+      PORT: 3456
       DATABASE_URL: postgresql://${POSTGRES_USER:?POSTGRES_USER is required}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-kekeling}?schema=public
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required - generate with: openssl rand -base64 32}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
@@ -63,12 +63,12 @@ services:
       WECHAT_PAY_API_KEY: ${WECHAT_PAY_API_KEY:-}
       WECHAT_PAY_NOTIFY_URL: ${WECHAT_PAY_NOTIFY_URL:-}
     ports:
-      - "${API_PORT:-3000}:3000"
+      - "${API_PORT:-3456}:3456"
     depends_on:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/home/stats"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3456/api/home/stats"]
       interval: 30s
       timeout: 10s
       retries: 3

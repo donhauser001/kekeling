@@ -55,6 +55,7 @@ import { Route as ClerkAuthenticatedUserManagementRouteImport } from './routes/c
 import { Route as ClerkauthSignUpRouteImport } from './routes/clerk/(auth)/sign-up'
 import { Route as ClerkauthSignInRouteImport } from './routes/clerk/(auth)/sign-in'
 import { Route as AuthenticatedUsersPatientsRouteImport } from './routes/_authenticated/users/patients'
+import { Route as AuthenticatedUsersUserIdRouteImport } from './routes/_authenticated/users/$userId'
 import { Route as AuthenticatedSettingsPaymentRouteImport } from './routes/_authenticated/settings/payment'
 import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings/notifications'
 import { Route as AuthenticatedSettingsDisplayRouteImport } from './routes/_authenticated/settings/display'
@@ -328,6 +329,12 @@ const AuthenticatedUsersPatientsRoute =
     path: '/users/patients',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedUsersUserIdRoute =
+  AuthenticatedUsersUserIdRouteImport.update({
+    id: '/users/$userId',
+    path: '/users/$userId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSettingsPaymentRoute =
   AuthenticatedSettingsPaymentRouteImport.update({
     id: '/payment',
@@ -480,6 +487,7 @@ export interface FileRoutesByFullPath {
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/settings/payment': typeof AuthenticatedSettingsPaymentRoute
+  '/users/$userId': typeof AuthenticatedUsersUserIdRoute
   '/users/patients': typeof AuthenticatedUsersPatientsRoute
   '/clerk/sign-in': typeof ClerkauthSignInRoute
   '/clerk/sign-up': typeof ClerkauthSignUpRoute
@@ -545,6 +553,7 @@ export interface FileRoutesByTo {
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/settings/payment': typeof AuthenticatedSettingsPaymentRoute
+  '/users/$userId': typeof AuthenticatedUsersUserIdRoute
   '/users/patients': typeof AuthenticatedUsersPatientsRoute
   '/clerk/sign-in': typeof ClerkauthSignInRoute
   '/clerk/sign-up': typeof ClerkauthSignUpRoute
@@ -615,6 +624,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/display': typeof AuthenticatedSettingsDisplayRoute
   '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/_authenticated/settings/payment': typeof AuthenticatedSettingsPaymentRoute
+  '/_authenticated/users/$userId': typeof AuthenticatedUsersUserIdRoute
   '/_authenticated/users/patients': typeof AuthenticatedUsersPatientsRoute
   '/clerk/(auth)/sign-in': typeof ClerkauthSignInRoute
   '/clerk/(auth)/sign-up': typeof ClerkauthSignUpRoute
@@ -683,6 +693,7 @@ export interface FileRouteTypes {
     | '/settings/display'
     | '/settings/notifications'
     | '/settings/payment'
+    | '/users/$userId'
     | '/users/patients'
     | '/clerk/sign-in'
     | '/clerk/sign-up'
@@ -748,6 +759,7 @@ export interface FileRouteTypes {
     | '/settings/display'
     | '/settings/notifications'
     | '/settings/payment'
+    | '/users/$userId'
     | '/users/patients'
     | '/clerk/sign-in'
     | '/clerk/sign-up'
@@ -817,6 +829,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/display'
     | '/_authenticated/settings/notifications'
     | '/_authenticated/settings/payment'
+    | '/_authenticated/users/$userId'
     | '/_authenticated/users/patients'
     | '/clerk/(auth)/sign-in'
     | '/clerk/(auth)/sign-up'
@@ -1196,6 +1209,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedUsersPatientsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/users/$userId': {
+      id: '/_authenticated/users/$userId'
+      path: '/users/$userId'
+      fullPath: '/users/$userId'
+      preLoaderRoute: typeof AuthenticatedUsersUserIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/settings/payment': {
       id: '/_authenticated/settings/payment'
       path: '/payment'
@@ -1382,6 +1402,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEscortsEscortIdRoute: typeof AuthenticatedEscortsEscortIdRoute
   AuthenticatedEscortsWithdrawRecordsRoute: typeof AuthenticatedEscortsWithdrawRecordsRoute
   AuthenticatedServicesIdRoute: typeof AuthenticatedServicesIdRoute
+  AuthenticatedUsersUserIdRoute: typeof AuthenticatedUsersUserIdRoute
   AuthenticatedUsersPatientsRoute: typeof AuthenticatedUsersPatientsRoute
   AuthenticatedChatsIndexRoute: typeof AuthenticatedChatsIndexRoute
   AuthenticatedDepartmentsIndexRoute: typeof AuthenticatedDepartmentsIndexRoute
@@ -1432,6 +1453,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEscortsWithdrawRecordsRoute:
     AuthenticatedEscortsWithdrawRecordsRoute,
   AuthenticatedServicesIdRoute: AuthenticatedServicesIdRoute,
+  AuthenticatedUsersUserIdRoute: AuthenticatedUsersUserIdRoute,
   AuthenticatedUsersPatientsRoute: AuthenticatedUsersPatientsRoute,
   AuthenticatedChatsIndexRoute: AuthenticatedChatsIndexRoute,
   AuthenticatedDepartmentsIndexRoute: AuthenticatedDepartmentsIndexRoute,
