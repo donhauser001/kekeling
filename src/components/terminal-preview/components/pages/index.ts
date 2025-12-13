@@ -27,6 +27,22 @@ export const ProfilePage = lazy(() =>
   import('./ProfilePage').then(m => ({ default: m.ProfilePage }))
 )
 
+export const UserOrdersPage = lazy(() =>
+  import('./UserOrdersPage').then(m => ({ default: m.UserOrdersPage }))
+)
+
+export const UserOrderDetailPage = lazy(() =>
+  import('./UserOrderDetailPage').then(m => ({ default: m.UserOrderDetailPage }))
+)
+
+export const PatientsPage = lazy(() =>
+  import('./PatientsPage').then(m => ({ default: m.PatientsPage }))
+)
+
+export const PatientEditPage = lazy(() =>
+  import('./PatientEditPage').then(m => ({ default: m.PatientEditPage }))
+)
+
 // ============================================================================
 // 营销中心页面（9 个）
 // ============================================================================
@@ -113,6 +129,10 @@ export const OrderDetailPage = lazy(() =>
 
 export const WorkbenchSettingsPage = lazy(() =>
   import('./workbench').then(m => ({ default: m.WorkbenchSettingsPage }))
+)
+
+export const MyOrdersPage = lazy(() =>
+  import('./workbench').then(m => ({ default: m.MyOrdersPage }))
 )
 
 // ============================================================================

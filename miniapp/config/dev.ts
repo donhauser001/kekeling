@@ -14,11 +14,11 @@ export default {
       // API 代理配置 (可选，也可以直接配置 CORS)
       proxy: {
         '/api': {
-          target: 'http://localhost:3000',
+          target: 'http://localhost:3456',
           changeOrigin: true,
         },
         '/uploads': {
-          target: 'http://localhost:3000',
+          target: 'http://localhost:3456',
           changeOrigin: true,
         },
       },

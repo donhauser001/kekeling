@@ -36,6 +36,7 @@ interface ServiceDetailPageProps {
   themeSettings: ThemeSettings
   isDarkMode?: boolean
   onBack?: () => void
+  onServiceClick?: (serviceId: string) => void
 }
 
 // 选项卡类型
@@ -46,6 +47,7 @@ export function ServiceDetailPage({
   themeSettings,
   isDarkMode = false,
   onBack,
+  onServiceClick,
 }: ServiceDetailPageProps) {
   const [isFavorite, setIsFavorite] = useState(false)
   const [activeImageIndex, setActiveImageIndex] = useState(0)
@@ -58,6 +60,11 @@ export function ServiceDetailPage({
   const [isDragging, setIsDragging] = useState(false)
   const [startX, setStartX] = useState(0)
   const [scrollLeft, setScrollLeft] = useState(0)
+
+  // 图片轮播滑动 (必须在条件返回之前定义所有 hooks)
+  const imageSliderRef = useRef<HTMLDivElement>(null)
+  const [imageStartX, setImageStartX] = useState(0)
+  const [imageSwiping, setImageSwiping] = useState(false)
 
   const handleWorkflowMouseDown = (e: React.MouseEvent) => {
     if (!workflowRef.current) return
@@ -250,11 +257,6 @@ export function ServiceDetailPage({
 
   // 图片列表（从 detailImages 获取，否则使用封面图）
   const images = service.detailImages?.length ? service.detailImages : (service.coverImage ? [service.coverImage] : [])
-
-  // 图片轮播滑动
-  const imageSliderRef = useRef<HTMLDivElement>(null)
-  const [imageStartX, setImageStartX] = useState(0)
-  const [imageSwiping, setImageSwiping] = useState(false)
 
   const handleImageTouchStart = (e: React.TouchEvent) => {
     if (images.length <= 1) return
@@ -821,6 +823,7 @@ export function ServiceDetailPage({
                   key={item.id}
                   className='w-28 flex-shrink-0 rounded-xl overflow-hidden cursor-pointer transition-all hover:shadow-lg active:scale-[0.98]'
                   style={{ backgroundColor: isDarkMode ? '#3a3a3a' : '#f9fafb' }}
+                  onClick={() => onServiceClick?.(item.id)}
                 >
                   {/* 封面 */}
                   <div

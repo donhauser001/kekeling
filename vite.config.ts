@@ -10,11 +10,11 @@ export default defineConfig({
     port: 9527, // 周星驰经典号码 🎬
     proxy: {
       '/api': {
-        target: 'http://localhost:3000',
+        target: 'http://localhost:3456',
         changeOrigin: true,
       },
       '/uploads': {
-        target: 'http://localhost:3000',
+        target: 'http://localhost:3456',
         changeOrigin: true,
       },
     },

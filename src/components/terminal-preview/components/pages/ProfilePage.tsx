@@ -36,6 +36,8 @@ interface ProfilePageProps {
   onWorkbenchClick?: () => void
   /** 退出陪诊员视角回调 */
   onExitEscortMode?: () => void
+  /** 导航到其他页面 */
+  onNavigate?: (page: string, params?: Record<string, string>) => void
 }
 
 // 订单入口
@@ -63,6 +65,7 @@ export function ProfilePage({
   onEscortEntryClick,
   onWorkbenchClick,
   onExitEscortMode,
+  onNavigate,
 }: ProfilePageProps) {
   // 深色模式颜色
   const bgColor = isDarkMode ? '#1a1a1a' : '#f5f7fa'
@@ -129,7 +132,11 @@ export function ProfilePage({
         <div className='rounded-xl overflow-hidden' style={{ backgroundColor: cardBg }}>
           <div className='flex items-center justify-between px-4 py-3 border-b' style={{ borderColor }}>
             <span className='text-sm font-medium' style={{ color: textPrimary }}>我的订单</span>
-            <div className='flex items-center gap-0.5 cursor-pointer' style={{ color: textMuted }}>
+            <div
+              className='flex items-center gap-0.5 cursor-pointer hover:opacity-80 active:opacity-60'
+              style={{ color: textMuted }}
+              onClick={() => onNavigate?.('user-orders')}
+            >
               <span className='text-xs'>全部订单</span>
               <ChevronRight className='h-4 w-4' />
             </div>
@@ -140,7 +147,8 @@ export function ProfilePage({
               return (
                 <div
                   key={entry.key}
-                  className='flex-1 flex flex-col items-center gap-1.5 cursor-pointer'
+                  className='flex-1 flex flex-col items-center gap-1.5 cursor-pointer hover:opacity-80 active:opacity-60 transition-opacity'
+                  onClick={() => onNavigate?.('user-orders', { status: entry.key })}
                 >
                   <div className='relative'>
                     <IconComp className='h-6 w-6' style={{ color: textSecondary }} />
@@ -172,6 +180,16 @@ export function ProfilePage({
                 className='flex items-center justify-between px-4 py-3 cursor-pointer transition-colors hover:opacity-80 active:opacity-60'
                 style={{
                   borderBottom: index < menuItems.length - 1 ? `1px solid ${borderColor}` : 'none',
+                }}
+                onClick={() => {
+                  // 就诊人管理点击跳转
+                  if (item.key === 'patients') {
+                    onNavigate?.('patients')
+                  }
+                  // 我的优惠券点击跳转
+                  if (item.key === 'coupons') {
+                    onNavigate?.('coupons')
+                  }
                 }}
               >
                 <div className='flex items-center gap-3'>

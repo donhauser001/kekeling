@@ -50,7 +50,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
-  const port = process.env.PORT || 3000;
+  const port = process.env.PORT || 3456;
   await app.listen(port);
 
   console.log(`🚀 科科灵 API 服务已启动: http://localhost:${port}`);

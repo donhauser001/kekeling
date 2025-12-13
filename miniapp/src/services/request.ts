@@ -13,7 +13,7 @@ const ENV_CONFIG = {
   // 开发环境：本地后端
   development: isH5
     ? '/api'  // H5 使用代理，避免跨域
-    : 'http://localhost:3000/api', // 小程序直连（需开启"不校验合法域名"）
+    : 'http://localhost:3456/api', // 小程序直连（需开启"不校验合法域名"）
   // 生产环境：线上后端（备案后替换）
   production: 'https://api.yourdomain.com/api',
 }
@@ -22,7 +22,7 @@ const ENV_CONFIG = {
 const RESOURCE_CONFIG = {
   development: isH5
     ? ''  // H5 使用代理，相对路径即可
-    : 'http://localhost:3000', // 小程序需要完整地址
+    : 'http://localhost:3456', // 小程序需要完整地址
   production: 'https://api.yourdomain.com',
 }
 

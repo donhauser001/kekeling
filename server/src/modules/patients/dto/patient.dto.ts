@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsBoolean, IsInt, Min, Max } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsBoolean, IsDateString } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 
 export class CreatePatientDto {
@@ -12,11 +12,10 @@ export class CreatePatientDto {
   @IsNotEmpty()
   gender: string;
 
-  @ApiProperty({ description: '年龄' })
-  @IsInt()
-  @Min(0)
-  @Max(150)
-  age: number;
+  @ApiPropertyOptional({ description: '出生日期', example: '1990-01-01' })
+  @IsDateString()
+  @IsOptional()
+  birthday?: string;
 
   @ApiProperty({ description: '手机号' })
   @IsString()
@@ -39,5 +38,5 @@ export class CreatePatientDto {
   isDefault?: boolean;
 }
 
-export class UpdatePatientDto extends PartialType(CreatePatientDto) {}
+export class UpdatePatientDto extends PartialType(CreatePatientDto) { }
 

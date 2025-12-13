@@ -55,6 +55,12 @@ export type PreviewPage =
   | 'referrals'
   | 'campaigns'
   | 'campaigns-detail'
+  // 用户订单
+  | 'user-orders'
+  | 'user-order-detail'
+  // 就诊人管理
+  | 'patients'
+  | 'patient-edit'
   // 陪诊员（用户视角可查看）
   | 'escort-list'
   | 'escort-detail'
@@ -93,6 +99,12 @@ export const VALID_PAGE_KEYS: readonly PreviewPage[] = [
   'referrals',
   'campaigns',
   'campaigns-detail',
+  // 用户订单
+  'user-orders',
+  'user-order-detail',
+  // 就诊人管理
+  'patients',
+  'patient-edit',
   // 陪诊员（用户视角可查看）
   'escort-list',
   'escort-detail',
@@ -151,6 +163,14 @@ export const PAGE_METADATA: Record<PreviewPage, PageMetadata> = {
   'referrals': { entryAllowed: true, description: '邀请有礼' },
   'campaigns': { entryAllowed: true, description: '活动列表' },
   'campaigns-detail': { entryAllowed: false, requiredParams: ['id'], description: '活动详情' },
+
+  // 用户订单
+  'user-orders': { entryAllowed: false, description: '用户订单' },
+  'user-order-detail': { entryAllowed: false, requiredParams: ['id'], description: '用户订单详情' },
+
+  // 就诊人管理
+  'patients': { entryAllowed: false, description: '就诊人列表' },
+  'patient-edit': { entryAllowed: false, description: '就诊人编辑' },
 
   // 陪诊员公开页
   'escort-list': { entryAllowed: true, description: '陪诊员列表' },
@@ -222,6 +242,10 @@ export interface PreviewPageParamsMap {
   'workbench-withdraw': Record<string, never>
   'workbench-settings': Record<string, never>
   'my-orders': { status?: 'all' | 'pending' | 'ongoing' | 'completed' | 'cancelled' }
+
+  // 就诊人管理
+  'patients': Record<string, never>
+  'patient-edit': { id?: string }
 
   // 分销中心
   'distribution': Record<string, never>
