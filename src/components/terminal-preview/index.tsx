@@ -80,6 +80,11 @@ import {
   OrderDetailPage,
   WorkbenchSettingsPage,
   MyOrdersPage,
+  UserOrdersPage,
+  UserOrderDetailPage,
+  // 就诊人管理
+  PatientsPage,
+  PatientEditPage,
   // 分销中心页面（Step 11.3-11.5）
   DistributionPage,
   DistributionMembersPage,
@@ -508,6 +513,7 @@ export function TerminalPreview({
           themeSettings={themeSettings}
           isDarkMode={isDarkMode}
           onBack={handleBackFromDetail}
+          onServiceClick={handleServiceClick}
         />
       )
     }
@@ -532,6 +538,7 @@ export function TerminalPreview({
             onEscortEntryClick={handleEscortEntryClick}
             onWorkbenchClick={handleWorkbenchClick}
             onExitEscortMode={handleExitEscortMode}
+            onNavigate={(page, params) => navigateToPage(page, params)}
           />
         )
 
@@ -707,7 +714,7 @@ export function TerminalPreview({
           />
         )
 
-      // Step 14.13 FIX-P3-01: 我的订单页面
+      // Step 14.13 FIX-P3-01: 我的订单页面（陪诊员）
       case 'my-orders':
         return (
           <MyOrdersPage
@@ -718,6 +725,51 @@ export function TerminalPreview({
             onBack={() => navigateToPage('workbench')}
             onNavigate={(page, params) => navigateToPage(page, params)}
             onLogin={() => setShowEscortLoginDialog(true)}
+          />
+        )
+
+      // 用户订单页面（普通用户）
+      case 'user-orders':
+        return (
+          <UserOrdersPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            pageParams={pageParams}
+            onBack={() => navigateToPage('profile')}
+            onNavigate={(page, params) => navigateToPage(page, params)}
+          />
+        )
+
+      // 用户订单详情页
+      case 'user-order-detail':
+        return (
+          <UserOrderDetailPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            orderId={pageParams?.id}
+            onBack={() => navigateToPage('user-orders')}
+            onNavigate={(page, params) => navigateToPage(page, params)}
+          />
+        )
+
+      // 就诊人管理
+      case 'patients':
+        return (
+          <PatientsPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            onBack={() => navigateToPage('profile')}
+            onNavigate={(page, params) => navigateToPage(page, params)}
+          />
+        )
+      case 'patient-edit':
+        return (
+          <PatientEditPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            patientId={pageParams?.id}
+            onBack={() => navigateToPage('patients')}
+            onNavigate={(page, params) => navigateToPage(page, params)}
           />
         )
 

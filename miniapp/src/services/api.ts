@@ -391,7 +391,7 @@ export const uploadApi = {
 
     return new Promise((resolve, reject) => {
       Taro.default.uploadFile({
-        url: 'http://localhost:3000/api/upload', // TODO: 根据环境切换
+        url: 'http://localhost:3456/api/upload', // TODO: 根据环境切换
         filePath,
         name: 'file',
         header: {

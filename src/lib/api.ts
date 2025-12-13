@@ -916,6 +916,113 @@ export const userApi = {
 }
 
 // ============================================
+// 就诊人管理 API
+// ============================================
+
+export interface Patient {
+  id: string
+  name: string
+  gender: string
+  birthday?: string | null
+  age?: number | null
+  phone: string
+  idCard?: string | null
+  relation: string
+  isDefault: boolean
+  orderCount?: number
+  user?: {
+    id: string
+    nickname: string | null
+    phone: string | null
+  }
+  createdAt: string
+  updatedAt: string
+}
+
+export interface PatientDetail extends Patient {
+  orders?: Array<{
+    id: string
+    orderNo: string
+    status: string
+    totalAmount: number
+    createdAt: string
+    service?: { name: string }
+    hospital?: { name: string }
+  }>
+}
+
+export interface PatientQuery {
+  keyword?: string
+  userId?: string
+  page?: number
+  pageSize?: number
+}
+
+export interface PatientStats {
+  total: number
+  withIdCard: number
+  withIdCardRate: number
+  relationStats: Array<{
+    relation: string
+    count: number
+  }>
+}
+
+export interface CreatePatientData {
+  name: string
+  gender: string
+  birthday?: string
+  phone: string
+  idCard?: string
+  relation: string
+  isDefault?: boolean
+}
+
+export interface UpdatePatientData extends Partial<CreatePatientData> { }
+
+export const patientApi = {
+  // 获取列表
+  getList: (query: PatientQuery = {}) =>
+    request<PaginatedData<Patient>>('/admin/patients', {
+      params: query as Record<string, string | number | boolean | undefined>,
+    }),
+
+  // 获取统计
+  getStats: () =>
+    request<PatientStats>('/admin/patients/stats'),
+
+  // 获取详情
+  getById: (id: string) =>
+    request<PatientDetail>(`/admin/patients/${id}`),
+
+  // 更新就诊人
+  update: (id: string, data: UpdatePatientData) =>
+    request<Patient>(`/admin/patients/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // 删除就诊人
+  delete: (id: string) =>
+    request<null>(`/admin/patients/${id}`, {
+      method: 'DELETE',
+    }),
+
+  // 设为默认
+  setDefault: (id: string) =>
+    request<Patient>(`/admin/patients/${id}/default`, {
+      method: 'POST',
+    }),
+
+  // 为用户添加就诊人
+  createForUser: (userId: string, data: CreatePatientData) =>
+    request<Patient>(`/admin/users/${userId}/patients`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+}
+
+// ============================================
 // 首页配置 API
 // ============================================
 

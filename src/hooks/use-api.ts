@@ -793,6 +793,83 @@ export function useUserOrders(userId: string, query: { page?: number; pageSize?:
 }
 
 // ============================================
+// 就诊人管理
+// ============================================
+
+import { patientApi, type PatientQuery, type CreatePatientData, type UpdatePatientData } from '@/lib/api'
+
+export function usePatients(query: PatientQuery = {}) {
+  return useQuery({
+    queryKey: ['patients', query],
+    queryFn: () => patientApi.getList(query),
+    staleTime: 30 * 1000,
+  })
+}
+
+export function usePatientStats() {
+  return useQuery({
+    queryKey: ['patients', 'stats'],
+    queryFn: () => patientApi.getStats(),
+    staleTime: 60 * 1000,
+  })
+}
+
+export function usePatient(id: string) {
+  return useQuery({
+    queryKey: ['patients', id],
+    queryFn: () => patientApi.getById(id),
+    enabled: !!id,
+  })
+}
+
+export function useUpdatePatient() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdatePatientData }) =>
+      patientApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['patients'] })
+    },
+  })
+}
+
+export function useDeletePatient() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) => patientApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['patients'] })
+    },
+  })
+}
+
+export function useSetPatientDefault() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) => patientApi.setDefault(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['patients'] })
+    },
+  })
+}
+
+export function useCreatePatientForUser() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ userId, data }: { userId: string; data: CreatePatientData }) =>
+      patientApi.createForUser(userId, data),
+    onSuccess: (_, { userId }) => {
+      queryClient.invalidateQueries({ queryKey: ['patients'] })
+      queryClient.invalidateQueries({ queryKey: ['users', userId, 'patients'] })
+    },
+  })
+}
+
+// ============================================
 // 首页配置
 // ============================================
 

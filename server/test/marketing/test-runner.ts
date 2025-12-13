@@ -8,7 +8,7 @@
 
 import axios from 'axios'
 
-const BASE_URL = process.env.API_URL || 'http://localhost:3000/api'
+const BASE_URL = process.env.API_URL || 'http://localhost:3456/api'
 const TEST_USER_TOKEN = process.env.TEST_USER_TOKEN || ''
 
 interface TestResult {

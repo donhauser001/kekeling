@@ -1,0 +1,5 @@
+export { getPatientsColumns } from './patients-columns'
+export { PatientsTable } from './patients-table'
+export { PatientFormDialog } from './patient-form-dialog'
+export { PatientDeleteDialog } from './patient-delete-dialog'
+export { PatientDetailSheet } from './patient-detail-sheet'
