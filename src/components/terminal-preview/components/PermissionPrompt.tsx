@@ -60,13 +60,15 @@ export function PermissionPrompt({
 
   return (
     <div
+      role="alert"
+      aria-live="polite"
       className="flex-1 flex flex-col items-center justify-center px-4 py-12"
       style={{
         backgroundColor: isDarkMode ? '#1a1a1a' : '#f5f7fa',
       }}
     >
       {/* 锁图标 */}
-      <div className="text-5xl mb-4">🔒</div>
+      <div className="text-5xl mb-4" aria-hidden="true">🔒</div>
 
       {/* 标题 */}
       <div
@@ -90,6 +92,7 @@ export function PermissionPrompt({
       {onLogin && (
         <button
           onClick={onLogin}
+          aria-label="去登录陪诊员账号"
           className="mt-6 px-6 py-2 rounded-lg text-white text-sm font-medium transition-colors hover:opacity-90"
           style={{ backgroundColor: primaryColor }}
         >

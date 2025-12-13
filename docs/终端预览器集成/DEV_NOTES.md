@@ -1,6 +1,6 @@
 # TerminalPreview 改造开发笔记
 
-> **文档版本**: v3.2  
+> **文档版本**: v3.8  
 > **创建日期**: 2024-12-12  
 > **最后更新**: 2024-12-13  
 > **适用范围**: `src/components/terminal-preview/**`  
@@ -44,6 +44,14 @@
 | **管理后台集成** | ✅ 完成 | Step 12 | 积分/邀请/活动/陪诊员管理页面集成侧栏预览 |
 | **工作台扩展** | ✅ 完成 | Step 13 | workbench-settings 设置页面 |
 | **优化与测试** | ✅ 完成 | Step 14 | CI 守门脚本 ✅ + Mock/性能/测试 ✅ |
+| **系统稳定性修复** | ✅ 完成 | Step 14.5 | ErrorBoundary + 数值安全 + 导航一致性 |
+| **状态机加载体验优化** | ✅ 完成 | Step 14.9 | ListSkeleton 骨架屏 + ErrorRetry 重试按钮（16 页面） |
+| **动效过渡优化** | ✅ 完成 | Step 14.10 | PageTransition 页面切换 + 列表刷新过渡（7 页面） |
+| **滚动位置恢复** | ✅ 完成 | Step 14.11 | useScrollRestore Hook + 页面/TabBar 切换滚动恢复 |
+| **一致性修复** | ✅ 完成 | Step 14.12 | UI-C 文案/回调命名统一 + DebugPanel 折叠持久化 |
+| **异常数据防护增强** | ✅ 完成 | Step 14.14 | 数据校验工具 + API transform + 枚举降级（6 文件） |
+| **A11y 基础支持** | ✅ 完成 | Step 14.15 | Esc 关闭 + aria 属性 + 键盘导航（3 组件） |
+| **暗色对比度优化** | ✅ 完成 | Step 14.16 | 颜色工具函数 + 骨架屏优化（5 核心页面） |
 | **真实端接入准备** | 📋 占位 | Step 15 | 未来真实终端接入的约束清单 |
 
 ### Step 编号体系（单线制，禁止跳号或多套并存）
@@ -58,6 +66,15 @@ Step 11    分销中心（11.1 类型 → 11.2 API → 11.3-11.5 页面批次）
 Step 12    管理后台预览器集成（积分/邀请/活动/陪诊员）✅
 Step 13    工作台扩展（settings 页面）✅
 Step 14    优化与测试（14.1-A/B/C + 14.2 CI 守门脚本 ✅）✅
+Step 14.5  系统稳定性修复（ErrorBoundary + 数值安全 + 导航一致性）✅
+Step 14.9  状态机加载体验优化（UI-B: 骨架屏 + 重试按钮，16 页面）✅
+Step 14.10 动效过渡优化（UI-B-Motion: 页面切换 + 锁态过渡 + 列表刷新）✅
+Step 14.11 滚动位置恢复（UI-B-Scroll: useScrollRestore + 页面/TabBar 切换）✅
+Step 14.12 一致性修复（UI-C: 文案/回调命名统一 + DebugPanel 折叠持久化）✅
+Step 14.13 P3 技术债务清理 Batch 1（my-orders 页面 + 邀请实时预览 + DebugPanel 确认）✅
+Step 14.14 异常数据防护增强（数据校验工具 + API transform + 枚举降级）✅
+Step 14.15 A11y 基础支持（Esc 关闭 + aria 属性 + 键盘导航）✅
+Step 14.16 暗色对比度优化（颜色工具函数 + 骨架屏优化）✅
 Step 15    真实终端接入准备（占位，未来实现）📋
 ```
 
@@ -67,7 +84,11 @@ Step 15    真实终端接入准备（占位，未来实现）📋
 |--------|------|------|
 | ~~**P1**~~ | ~~Step 12: 管理后台预览器集成~~ | ✅ 已完成 |
 | ~~**P2**~~ | ~~Step 13: 工作台扩展~~ | ✅ 已完成 |
-| **P2** | Step 14: 优化与测试 | 14.1-A/B/C ✅ + 14.2 ✅ |
+| ~~**P2**~~ | ~~Step 14: 优化与测试~~ | ✅ 14.1-A/B/C + 14.2 已完成 |
+| ~~**P1**~~ | ~~Step 14.5: 系统稳定性修复~~ | ✅ 审计问题已全部修复 |
+| ~~**P2**~~ | ~~Step 14.9: 状态机加载体验优化~~ | ✅ 骨架屏 + 重试按钮已完成 |
+| ~~**P2**~~ | ~~Step 14.10: 动效过渡优化~~ | ✅ 页面切换 + 列表刷新过渡已完成 |
+| ~~**P2**~~ | ~~Step 14.11: 滚动位置恢复~~ | ✅ useScrollRestore Hook 已完成 |
 | **P3** | Step 15: 真实端接入 | 📋 占位，未来实现 |
 
 ---
@@ -87,6 +108,189 @@ Step 15    真实终端接入准备（占位，未来实现）📋
 | **通道强制** | 分销中心/工作台所有 API **必须** `escortRequest`，即使后端暂时没验 token 也必须按私域通道走 |
 | **禁止变通** | 禁止为了"方便预览"改成 `userRequest`，预览器的便利不能牺牲权限边界 |
 | **Token 校验** | 真实 token 必须经过 `verifyEscortToken()` 校验，mock token 仅用于开发态 |
+
+---
+
+## 📊 数据覆盖优先级规则
+
+> **文档化日期**: 2024-12-13  
+> **来源**: SYSTEM-3 审计项（P3）
+
+### 三层数据优先级
+
+TerminalPreview 的数据来源遵循以下优先级（从高到低）：
+
+```
+Props Override（最高） > API 返回数据（中） > 默认值（最低）
+```
+
+**合并逻辑**（位于 `src/components/terminal-preview/index.tsx`）：
+
+```typescript
+// 示例：themeSettings 合并
+const themeSettings = useMemo(
+  () => ({ ...defaultThemeSettings, ...fetchedThemeSettings, ...themeSettingsOverride }),
+  [fetchedThemeSettings, themeSettingsOverride]
+)
+```
+
+### 数据类型覆盖规则
+
+| 数据类型 | Props Override | API 数据 | 默认值 | 合并方式 |
+|---------|----------------|----------|--------|----------|
+| `themeSettings` | `themeSettingsOverride` | `previewApi.getThemeSettings()` | `defaultThemeSettings` | 对象展开合并 |
+| `homeSettings` | `homeSettingsOverride` | `previewApi.getHomePageSettings()` | `defaultHomeSettings` | 深层合并（stats/content 单独合并） |
+| `bannerData` | `bannerDataOverride` | `previewApi.getBanners('home')` | `null` | 直接替换（`??` 运算符） |
+| `statsData` | `statsDataOverride` | `previewApi.getStats()` | `defaultStatsData` | 对象展开合并 |
+| `categories` | `categoriesOverride` | `previewApi.getCategories()` | `[]` | 直接替换（`??` 运算符） |
+| `recommendedServices` | `recommendedServicesOverride` | `previewApi.getRecommendedServices()` | `null` | 直接替换（`??` 运算符） |
+
+### autoLoad 行为
+
+| autoLoad 值 | API 请求行为 | 最终数据来源 |
+|-------------|-------------|--------------|
+| `true`（默认） | 尝试获取所有 API 数据 | override > fetched > default |
+| `false` | **不发起任何 API 请求** | override > default（无 fetched） |
+
+### Mock 降级规则
+
+| 通道 | 条件 | 行为 |
+|------|------|------|
+| `userRequest` | API 返回 404/500 | 降级到 mock 数据 |
+| `escortRequest` | `escortToken?.startsWith('mock-')` | **直接返回 mock，不调真实 API** |
+| `escortRequest` | 真实 token + API 404/500 | 降级到 mock 数据 |
+| `escortRequest` | 无 token | 部分函数返回 mock，部分抛错 |
+
+### 使用场景指南
+
+| 场景 | 推荐方式 | 说明 |
+|------|---------|------|
+| 管理后台品牌设置页 | `themeSettingsOverride` + `autoLoad=true` | 实时预览编辑中的主题 |
+| 管理后台首页设置页 | `homeSettingsOverride` + `autoLoad=true` | 实时预览编辑中的首页 |
+| 静态 UI 结构展示 | `autoLoad=false` | 只展示默认值，不请求 API |
+| 完全自定义数据 | 全部 `xxxOverride` + `autoLoad=false` | 使用纯 Props 数据 |
+
+### 代码位置索引
+
+| 逻辑 | 文件 | 行号范围 |
+|------|------|----------|
+| useQuery 数据获取 | `index.tsx` | 252-298 |
+| useMemo 数据合并 | `index.tsx` | 300-331 |
+| 默认值定义 | `types.ts` | defaultThemeSettings / defaultHomeSettings / defaultStatsData |
+
+---
+
+## 🛠️ 开发环境调试功能
+
+> **文档化日期**: 2024-12-13  
+> **来源**: SYSTEM-4 审计项（P3）
+
+### 未知 page key 警告
+
+在开发环境下，当传入未知的 `page` 值时，控制台会输出警告信息：
+
+```typescript
+// 示例警告输出
+[TerminalPreview] Unknown page key: "invalid-page". Valid keys: home, services, cases, ...
+```
+
+**实现位置**: `src/components/terminal-preview/index.tsx` 的 `renderPageContent()` 函数
+
+**触发条件**:
+- `process.env.NODE_ENV === 'development'`
+- `currentPage` 不在 `VALID_PAGE_KEYS` 列表中
+
+**行为**:
+- 仅输出 `console.warn`，不阻断渲染
+- 页面仍会降级到首页（default case）
+
+### 有效 page key 列表
+
+完整的 page key 列表定义在 `src/components/terminal-preview/types.ts` 的 `VALID_PAGE_KEYS` 常量中：
+
+| 分类 | page keys |
+|------|-----------|
+| TabBar 页面 | `home`, `services`, `cases`, `profile` |
+| 营销中心 | `membership`, `membership-plans`, `coupons`, `coupons-available`, `points`, `points-records`, `referrals`, `campaigns`, `campaigns-detail` |
+| 陪诊员公开页 | `escort-list`, `escort-detail` |
+| 工作台 | `workbench`, `workbench-orders-pool`, `workbench-order-detail`, `workbench-earnings`, `workbench-withdraw`, `workbench-settings` |
+| 分销中心 | `distribution`, `distribution-members`, `distribution-records`, `distribution-invite`, `distribution-promotion` |
+
+### 新增页面时的同步清单
+
+添加新页面时，需要同步更新以下位置：
+1. `types.ts` - `PreviewPage` 类型
+2. `types.ts` - `VALID_PAGE_KEYS` 常量
+3. `types.ts` - `PreviewPageParamsMap` 接口
+4. `types.ts` - `PAGE_METADATA` 常量
+5. `index.tsx` - `renderPageContent()` 的 switch case
+6. `lint:preview-guard` 脚本会检测不一致
+
+---
+
+## 🔒 类型安全与运行时校验
+
+> **文档化日期**: 2024-12-13  
+> **来源**: SYSTEM-1/SYSTEM-2 审计项（P3）
+
+### pageParams 类型校验
+
+在开发环境下，`navigateToPage()` 会自动校验参数是否符合预期：
+
+```typescript
+// 示例警告输出
+[TerminalPreview] Page "campaigns-detail" requires params: [id]. Missing: [id]. Current params: {}
+```
+
+**需要必填参数的页面**（定义在 `PAGES_REQUIRING_PARAMS`）：
+
+| 页面 | 必填参数 |
+|------|----------|
+| `campaigns-detail` | `id` |
+| `escort-detail` | `id` |
+| `workbench-order-detail` | `id` |
+
+**参数类型映射**（定义在 `PreviewPageParamsMap`）：
+
+```typescript
+interface PreviewPageParamsMap {
+  'campaigns-detail': { id: string }
+  'distribution-members': { relation?: 'direct' | 'indirect' }
+  'distribution-records': { range?: '7d' | '30d' | 'all'; status?: 'pending' | 'settled' }
+  // ... 完整列表见 types.ts
+}
+```
+
+### 页面分类元数据
+
+页面分为两类，定义在 `PAGE_METADATA` 常量中：
+
+| 分类 | entryAllowed | 说明 | 示例 |
+|------|--------------|------|------|
+| **entry pages** | `true` | 可作为 `page={xxx}` 初始入口 | home, workbench, distribution |
+| **leaf-only pages** | `false` | 仅允许通过 navigateToPage 导航进入 | campaigns-detail, escort-detail |
+
+**开发环境警告**：
+
+```typescript
+// 如果将 leaf-only page 作为初始入口
+[TerminalPreview] Page "campaigns-detail" is not allowed as initial entry. 
+This page should only be accessed via navigateToPage(). 
+Description: 活动详情. Required params: id
+```
+
+**entry pages 清单**（可作为初始入口）：
+- TabBar: `home`, `services`, `cases`, `profile`
+- 营销中心: `membership`, `coupons`, `points`, `referrals`, `campaigns`
+- 陪诊员: `escort-list`
+- 工作台: `workbench`
+- 分销中心: `distribution`
+
+**leaf-only pages 清单**（仅允许导航进入）：
+- 营销中心: `membership-plans`, `coupons-available`, `points-records`, `campaigns-detail`
+- 陪诊员: `escort-detail`
+- 工作台: `workbench-orders-pool`, `workbench-order-detail`, `workbench-earnings`, `workbench-withdraw`, `workbench-settings`
+- 分销中心: `distribution-members`, `distribution-records`, `distribution-invite`, `distribution-promotion`
 
 ---
 
@@ -1226,7 +1430,414 @@ if (!isEscort) {
 }
 ```
 
-**组件位置**: `src/components/terminal-preview/components/PermissionPrompt.tsx`（待创建）
+**组件位置**: `src/components/terminal-preview/components/PermissionPrompt.tsx`
+
+---
+
+### ListSkeleton 组件（列表骨架屏）
+
+> **新增日期**: 2024-12-13  
+> **来源**: Step 14.9 UI-B-1
+
+**规则**: 所有列表/详情页的 Loading 状态 **必须** 使用 `<ListSkeleton />` 组件，**不允许** 使用简单的 "加载中..." 文字。
+
+```typescript
+// ListSkeleton Props
+interface ListSkeletonProps {
+  count?: number              // 骨架条目数量，默认 3
+  variant?: 'card' | 'row' | 'detail'  // 骨架变体
+  isDarkMode?: boolean        // 暗色模式适配
+  className?: string          // 自定义类名
+}
+```
+
+**变体说明**:
+| 变体 | 适用场景 | 示例页面 |
+|------|---------|---------|
+| `card` | 卡片列表 | CampaignsPage, CouponsPage, OrdersPoolPage |
+| `row` | 行列表 | PointsPage, PointsRecordsPage |
+| `detail` | 详情页 | MembershipPage, OrderDetailPage, EscortDetailPage |
+
+**使用示例**:
+```typescript
+// ✅ 正确：使用骨架屏组件
+{isLoading && (
+  <ListSkeleton count={3} variant="card" isDarkMode={isDarkMode} />
+)}
+
+// ❌ 禁止：简单文字
+{isLoading && (
+  <div className="text-gray-400 text-sm">加载中...</div>
+)}
+```
+
+**组件位置**: `src/components/terminal-preview/components/ListSkeleton.tsx`
+
+---
+
+### ErrorRetry 组件（错误重试）
+
+> **新增日期**: 2024-12-13  
+> **来源**: Step 14.9 UI-B-2
+
+**规则**: 所有页面的 Error 状态 **必须** 使用 `<ErrorRetry />` 组件，**必须** 提供重试按钮。
+
+```typescript
+// ErrorRetry Props
+interface ErrorRetryProps {
+  onRetry: () => void         // 必填：重试回调
+  message?: string            // 错误消息，默认 "加载失败"
+  icon?: string               // 自定义图标，默认 😔
+  isDarkMode?: boolean        // 暗色模式适配
+  primaryColor?: string       // 主题色（按钮颜色）
+  className?: string          // 自定义类名
+}
+```
+
+**使用示例**:
+```typescript
+// ✅ 正确：使用统一组件 + 重试按钮
+{isError && (
+  <ErrorRetry
+    onRetry={() => refetch()}
+    isDarkMode={isDarkMode}
+    primaryColor={themeSettings.primaryColor}
+  />
+)}
+
+// ❌ 禁止：无重试按钮
+{isError && (
+  <div className="text-gray-400 text-sm">加载失败，请稍后重试</div>
+)}
+```
+
+**组件位置**: `src/components/terminal-preview/components/ErrorRetry.tsx`
+
+---
+
+### 动效规范（Motion Contract）
+
+> **新增日期**: 2024-12-13  
+> **来源**: Step 14.10 UI-B-Motion
+
+**规则**: 所有页面切换、锁态切换、列表刷新 **必须** 使用统一的过渡动效，**不允许** 瞬间切换造成视觉跳变。
+
+**过渡时长标准**:
+
+| 场景 | 时长 | 缓动函数 | 组件/方式 |
+|------|------|---------|----------|
+| 页面切换 | 200ms | ease-in-out | `PageTransition` |
+| 锁态↔解锁态 | 200ms | ease-in-out | `PageTransition`（基于 pageKey 变化） |
+| 列表刷新 | 150ms | ease-out | `getRefreshingClass()` |
+
+**页面切换过渡**:
+
+```tsx
+// index.tsx - 使用 PageTransition 包裹页面内容
+<PageTransition
+  pageKey={`${currentPage}-${selectedServiceId}-${effectiveViewerRole}`}
+  duration={200}
+>
+  {renderPageContent()}
+</PageTransition>
+```
+
+**列表刷新过渡**:
+
+```tsx
+import { getRefreshingClass } from '../../PageTransition'
+
+// 在列表容器上使用
+const { data, isFetching } = useQuery({...})
+
+{!isLoading && !isError && items.length > 0 && (
+  <div className={`space-y-3 ${getRefreshingClass(isFetching, items.length > 0)}`}>
+    {items.map(...)}
+  </div>
+)}
+```
+
+**组件位置**: `src/components/terminal-preview/components/PageTransition.tsx`
+
+**导出函数**:
+- `PageTransition` - 页面切换过渡组件
+- `FadeTransition` - 可见性过渡组件
+- `getRefreshingClass()` - 列表刷新过渡样式生成函数
+
+---
+
+### 滚动位置恢复（Scroll Position Restoration）
+
+> **新增日期**: 2024-12-13  
+> **来源**: Step 14.11 UI-B-Scroll
+
+**规则**: 页面切换和 TabBar 切换时 **必须** 保存/恢复滚动位置，提升用户体验。
+
+**支持场景**:
+
+| 场景 | 行为 | 实现 |
+|------|------|------|
+| 列表 → 详情 → 返回 | 恢复列表滚动位置 | `saveScrollPosition` + `restoreScrollPosition` |
+| TabBar 切换 | 保持各 Tab 独立滚动位置 | 每个 Tab 独立存储 |
+| 服务详情 → 返回 | 恢复服务列表滚动位置 | `handleBackFromDetail` |
+| 新页面首次进入 | 滚动到顶部 | `fallbackToTop: true` |
+
+**使用方式**:
+
+```tsx
+import { useScrollRestore } from './hooks/useScrollRestore'
+
+// 在 TerminalPreview 中使用
+const {
+  saveScrollPosition,
+  restoreScrollPosition,
+  scrollToTop,
+} = useScrollRestore(scrollContainerRef)
+
+// 页面跳转前保存
+saveScrollPosition(currentPage)
+
+// 页面切换后恢复（延迟等待渲染）
+restoreScrollPosition(targetPage, { delay: 50, fallbackToTop: true })
+```
+
+**Hook API**:
+
+```typescript
+interface UseScrollRestoreResult {
+  // 保存指定页面的滚动位置
+  saveScrollPosition: (pageKey: string) => void
+  
+  // 恢复指定页面的滚动位置
+  restoreScrollPosition: (pageKey: string, options?: RestoreOptions) => void
+  
+  // 滚动到顶部
+  scrollToTop: (smooth?: boolean) => void
+  
+  // 获取/清除滚动位置
+  getScrollPosition: (pageKey: string) => number | undefined
+  clearScrollPosition: (pageKey?: string) => void
+}
+
+interface RestoreOptions {
+  smooth?: boolean      // 是否平滑滚动，默认 false
+  delay?: number        // 恢复延迟（ms），默认 0
+  fallbackToTop?: boolean // 无保存位置时是否回顶，默认 true
+}
+```
+
+**pageKey 命名规范**:
+
+| 场景 | pageKey 格式 | 示例 |
+|------|-------------|------|
+| TabBar 页面 | `{pageName}` | `home`, `services`, `profile` |
+| 普通页面 | `{pageName}` | `campaigns`, `distribution` |
+| 服务详情页 | `{pageName}-service-{serviceId}` | `services-service-123` |
+
+**边界情况处理**:
+
+1. **新页面（无历史滚动位置）**: 使用 `fallbackToTop: true` 滚动到顶部
+2. **内容高度变化**: 恢复时自动校正，避免滚动位置超出内容范围
+3. **组件卸载**: 使用 `useRef` 存储，组件卸载不影响
+
+**组件位置**: `src/components/terminal-preview/hooks/useScrollRestore.ts`
+
+---
+
+### 数据校验工具函数（Step 14.14 异常数据防护增强）
+
+> **新增日期**: 2024-12-13  
+> **来源**: TerminalPreview-UI交互综合审计报告 8.5 节「异常数据形态」
+
+**规则**: 所有从 API 获取的数据在使用前 **必须** 经过安全转换，防止 `null`/`undefined`/异常类型导致页面崩溃。
+
+**工具函数位置**: `src/components/terminal-preview/utils.ts`
+
+| 函数 | 用途 | 示例 |
+|------|------|------|
+| `safeNumber(value, fallback)` | 安全数值转换 | `safeNumber(null)` → `0` |
+| `safeString(value, fallback)` | 安全字符串转换 | `safeString(undefined, '-')` → `'-'` |
+| `safeArray<T>(value, fallback)` | 安全数组转换 | `safeArray({})` → `[]` |
+| `safeObject<T>(value, fallback)` | 安全对象转换 | `safeObject(null)` → `{}` |
+| `safeEnum(value, validValues, fallback)` | 安全枚举校验 | `safeEnum('unknown', ['a','b'], 'a')` → `'a'` |
+
+**使用场景**:
+
+```typescript
+// ✅ 正确：使用 safeNumber 保护数值调用
+<span>¥{formatMoney(safeNumber(stats?.totalEarnings))}</span>
+
+// ❌ 危险：直接调用可能崩溃
+<span>¥{stats.totalEarnings.toFixed(2)}</span>
+
+// ✅ 正确：使用 safeEnum 处理未知枚举
+const status = safeEnum(order.status, ['pending', 'completed'], 'pending')
+
+// ❌ 危险：未知枚举可能导致 UI 异常
+const config = statusConfig[order.status] // 可能是 undefined
+```
+
+---
+
+### API 层 transform 规范（Step 14.14）
+
+**规则**: 高风险页面的 `useQuery` **必须** 添加 `select` transform，在数据进入组件前完成安全转换。
+
+**适用页面**:
+- 金额统计页面（WorkbenchEarningsPage、DistributionPage）
+- 嵌套对象页面（OrderDetailPage）
+- 列表数据页面（带 `recentRecords`、`items` 等字段）
+
+**实现模式**:
+
+```typescript
+const { data } = useQuery({
+  queryKey: ['preview', 'workbench', 'earnings-stats'],
+  queryFn: () => previewApi.getEarningsStats(),
+  enabled: isEscort,
+  // Step 14.14: API 层 transform，防止异常数据击穿到 UI
+  select: (data) => ({
+    ...data,
+    totalEarnings: safeNumber(data?.totalEarnings),
+    monthlyEarnings: safeNumber(data?.monthlyEarnings),
+    recentRecords: safeArray(data?.recentRecords),
+  }),
+})
+```
+
+**已添加 transform 的页面**:
+- `WorkbenchEarningsPage.tsx` - 金额字段 + 记录列表
+- `DistributionPage.tsx` - 统计字段 + 等级信息
+- `OrderDetailPage.tsx` - 嵌套对象（service/appointment/user/payment）
+
+---
+
+### 枚举值降级规范（Step 14.14）
+
+**规则**: 所有使用枚举值渲染 UI 的位置 **必须** 提供 `default` 分支，处理后端返回未知枚举值的情况。
+
+**实现模式**:
+
+```typescript
+// ✅ 正确：使用对象映射 + 默认值
+const statusConfig: Record<string, { icon: ReactNode; color: string; label: string }> = {
+  pending: { icon: <Clock />, color: '#f59e0b', label: '待处理' },
+  completed: { icon: <Check />, color: '#10b981', label: '已完成' },
+  // Step 14.14: 未知状态降级
+  default: { icon: <Clock />, color: '#9ca3af', label: '未知状态' },
+}
+
+const config = statusConfig[record.status] ?? statusConfig.default
+
+// ❌ 危险：缺少默认分支
+const config = statusConfig[record.status] // 可能是 undefined
+```
+
+**已添加降级处理的页面**:
+- `OrderDetailPage.tsx` - `order.status` 枚举（通过 `safeEnum` 在 select 中处理）
+- `DistributionRecordsPage.tsx` - `record.status` 枚举
+- `CampaignsPage.tsx` - `campaign.status` 枚举
+
+---
+
+### A11y 可访问性规范（Step 14.15）
+
+> **新增日期**: 2024-12-13  
+> **来源**: TerminalPreview-UI交互综合审计报告 8.3 节
+
+**规则**: 基础可访问性支持，符合 WCAG Level A 标准。
+
+**弹窗 Esc 关闭**:
+
+```tsx
+// 所有弹窗组件必须支持 Esc 关闭
+useEffect(() => {
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === 'Escape' && open) {
+      onClose()
+    }
+  }
+  document.addEventListener('keydown', handleKeyDown)
+  return () => document.removeEventListener('keydown', handleKeyDown)
+}, [open, onClose])
+```
+
+**已实现组件**: `EscortLoginDialog.tsx`
+
+**ARIA 属性**:
+
+```tsx
+// 权限提示区域
+<div role="alert" aria-live="polite">
+  <div aria-hidden="true">🔒</div>
+  <button aria-label="去登录陪诊员账号">去登录</button>
+</div>
+```
+
+**已实现组件**: `PermissionPrompt.tsx`
+
+**键盘导航**:
+
+```tsx
+// TabBar 键盘导航
+<nav role="tablist" aria-label="主导航">
+  <button
+    role="tab"
+    tabIndex={0}
+    aria-selected={isActive}
+    onKeyDown={(e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault()
+        onChange(tab.key)
+      }
+    }}
+  >
+    {tab.text}
+  </button>
+</nav>
+```
+
+**已实现组件**: `TabBarNav.tsx`
+
+---
+
+### 暗色模式对比度规范（Step 14.16）
+
+> **新增日期**: 2024-12-13  
+> **来源**: TerminalPreview-UI交互综合审计报告 8.4 节
+
+**规则**: 暗色模式下次要文案使用更亮的颜色，提升对比度（WCAG AA 标准：3:1）。
+
+**颜色工具函数**:
+
+```tsx
+import { getSecondaryTextClass, getTertiaryTextClass } from '../../../utils'
+
+// 次要文案（暗色下使用 text-gray-300）
+<span className={getSecondaryTextClass(isDarkMode)}>次要文案</span>
+
+// 三级文案（暗色下使用 text-gray-400）
+<span className={getTertiaryTextClass(isDarkMode)}>三级文案</span>
+```
+
+**工具函数位置**: `src/components/terminal-preview/utils.ts`
+
+**对比度标准**:
+
+| 场景 | 亮色模式 | 暗色模式 | 对比度 |
+|------|---------|---------|--------|
+| 次要文案 | `text-gray-500` | `text-gray-300` | ~4:1 |
+| 三级文案 | `text-gray-400` | `text-gray-400` | ~2.5:1 |
+| 骨架屏 | `bg-gray-200` | `bg-gray-600` | ~2.5:1 |
+
+**已优化页面（5 个核心）**:
+- `WorkbenchPage.tsx`
+- `DistributionPage.tsx`
+- `CampaignsPage.tsx`
+- `OrdersPoolPage.tsx`
+- `PointsPage.tsx`
+
+**骨架屏组件**: `ListSkeleton.tsx` - `bg-gray-700` → `bg-gray-600`
 
 ---
 
@@ -2411,6 +3022,303 @@ interface DistributionStats {
 | 13.1-A | 工作台设置 | workbench-settings 页面 | 4h | ✅ |
 | 14.2 | CI 守门脚本 | lint:preview-guard | 1h | ✅ |
 | 14.4 | 反模式清单 | Anti-Patterns 文档 | 0.5h | ✅ |
+| **14.5** | **系统稳定性修复** | **审计问题 P1/P2 全部修复** | **4h** | ✅ |
+| **14.6** | **P3 Batch 1** | **文档化 + 开发体验优化** | **1h** | ✅ |
+| **14.7** | **P3 Batch 2** | **类型安全增强** | **2h** | ✅ |
+| **14.8** | **UI-D Batch 1** | **管理后台集成修复** | **3h** | ✅ |
+| **14.9** | **UI-B 加载体验优化** | **骨架屏 + 重试按钮** | **4h** | ✅ |
+| **14.12** | **UI-C 一致性修复** | **文案/回调命名统一 + DebugPanel** | **1h** | ✅ |
+| **14.13** | **P3 技术债务清理 Batch 1** | **my-orders 页面 + 邀请实时预览** | **2.5h** | ✅ |
+
+---
+
+### 已完成（Step 14.13 P3 技术债务清理 Batch 1）
+
+> **修复日期**: 2024-12-13
+> **修复依据**: TerminalPreview-UI交互综合审计报告-2024-12-13.md UI-A-5/UI-D-5/DebugPanel
+
+#### CARD 14.13-A: FIX-P3-01 "我的订单"页面组件实现（1.5h）
+
+| 子任务 | 内容 | 状态 |
+|--------|------|------|
+| A.1 | types.ts 添加 `my-orders` page key 和相关类型 | ✅ |
+| A.2 | api.ts 添加 `getMyOrders()` API | ✅ |
+| A.3 | mocks/workbench.ts 添加 `getMockMyOrders()` | ✅ |
+| A.4 | 新增 `MyOrdersPage.tsx` 组件 | ✅ |
+| A.5 | index.tsx 添加 `my-orders` case | ✅ |
+| A.6 | 支持订单状态筛选 Tab | ✅ |
+
+#### CARD 14.13-B: FIX-P3-02 邀请奖励弹窗实时预览（30min）
+
+| 子任务 | 内容 | 状态 |
+|--------|------|------|
+| B.1 | types.ts 新增 `ReferralsDataOverride` 类型 | ✅ |
+| B.2 | `ReferralsPage.tsx` 支持 `referralsOverride` 覆盖 | ✅ |
+| B.3 | index.tsx 传递 `marketingData.referrals` | ✅ |
+| B.4 | `referral-rules-action-dialog.tsx` 添加 `marketingData` | ✅ |
+
+#### CARD 14.13-C: FIX-P3-03 DebugPanel 清除 token 确认弹窗（15min）
+
+| 子任务 | 内容 | 状态 |
+|--------|------|------|
+| C.1 | 添加 `handleClearToken` 确认逻辑 | ✅ |
+| C.2 | 使用 `window.confirm` 弹窗确认 | ✅ |
+
+#### 修改文件清单
+
+**新增文件（1 个）**:
+- `components/pages/workbench/MyOrdersPage.tsx` - 我的订单页面
+
+**修改文件（11 个）**:
+- `types.ts` - 新增 `my-orders` page key、`ReferralsDataOverride` 类型
+- `api.ts` - 新增 `getMyOrders()` API
+- `mocks/workbench.ts` - 新增 `getMockMyOrders()` 函数
+- `mocks/index.ts` - 导出新 mock 函数
+- `components/pages/workbench/index.ts` - 导出 `MyOrdersPage`
+- `components/pages/marketing/ReferralsPage.tsx` - 支持数据覆盖
+- `index.tsx` - 新增 `my-orders` case、传递 referralsOverride
+- `DebugPanel.tsx` - 添加清除 token 确认逻辑
+- `referral-rules-action-dialog.tsx` - 添加实时预览
+
+---
+
+### 已完成（Step 14.12 UI-C 一致性 + DebugPanel 体验优化）
+
+> **修复日期**: 2024-12-13
+> **修复依据**: TerminalPreview-UI交互综合审计报告-2024-12-13.md UI-C-1/UI-C-2 + DebugPanel
+
+#### CARD 14.12-A: UI-C-1 PermissionPrompt description 文案统一（15min）
+
+| 子任务 | 内容 | 状态 |
+|--------|------|------|
+| A.1 | 统一工作台页面文案格式（去掉"后再"） | ✅ |
+| A.2 | 8 个工作台页面已修改 | ✅ |
+
+**修改文件（8 个）**:
+- `WorkbenchPage.tsx`, `WorkbenchEarningsPage.tsx`, `OrdersPoolPage.tsx`, `WorkbenchSettingsPage.tsx`
+- `WorkbenchWithdrawPage.tsx`, `EarningsPage.tsx`, `WithdrawPage.tsx`, `OrderDetailPage.tsx`
+
+#### CARD 14.12-B: UI-C-2 onLogin 回调命名统一（30min）
+
+| 子任务 | 内容 | 状态 |
+|--------|------|------|
+| B.1 | 工作台页面 `onShowLoginDialog` → `onLogin` | ✅ |
+| B.2 | 分销中心页面 `onLoginClick` → `onLogin` | ✅ |
+| B.3 | `index.tsx` 统一使用 `onLogin` prop | ✅ |
+
+**修改文件（14 个）**:
+- 工作台 8 个 + 分销中心 5 个 + `index.tsx`
+
+#### CARD 14.12-C: DebugPanel 折叠状态持久化（15min）
+
+| 子任务 | 内容 | 状态 |
+|--------|------|------|
+| C.1 | 初始状态从 localStorage 读取 | ✅ |
+| C.2 | 状态变化时同步到 localStorage | ✅ |
+
+**修改文件（1 个）**:
+- `DebugPanel.tsx`: 添加 localStorage 读写逻辑
+
+---
+
+### 已完成（Step 14.9 UI-B 状态机加载体验优化）
+
+> **修复日期**: 2024-12-13
+> **修复依据**: TerminalPreview-UI交互综合审计报告-2024-12-13.md UI-B-1/UI-B-2
+
+#### CARD 14.9-A: 创建 ListSkeleton 骨架屏组件（45min）
+
+| 子任务 | 内容 | 状态 |
+|--------|------|------|
+| A.1 | 创建 `ListSkeleton.tsx`（card/row/detail 三种变体） | ✅ |
+| A.2 | 支持 `isDarkMode` 暗色模式适配 | ✅ |
+| A.3 | 使用 `animate-pulse` 闪烁效果 | ✅ |
+| A.4 | 在 `index.ts` 中导出 | ✅ |
+
+#### CARD 14.9-B: 创建 ErrorRetry 错误重试组件（30min）
+
+| 子任务 | 内容 | 状态 |
+|--------|------|------|
+| B.1 | 创建 `ErrorRetry.tsx`（统一错误 UI + 重试按钮） | ✅ |
+| B.2 | 支持 `onRetry` 回调、`primaryColor` 主题色 | ✅ |
+| B.3 | 参考 DistributionPage 现有实现 | ✅ |
+| B.4 | 在 `index.ts` 中导出 | ✅ |
+
+#### CARD 14.9-C: 替换营销中心模块（1h）
+
+| 子任务 | 页面 | 骨架变体 | 状态 |
+|--------|------|---------|------|
+| C.1 | CampaignsPage | card | ✅ |
+| C.2 | CampaignDetailPage | detail | ✅ |
+| C.3 | CouponsPage | card | ✅ |
+| C.4 | CouponsAvailablePage | card | ✅ |
+| C.5 | PointsPage | row | ✅ |
+| C.6 | PointsRecordsPage | row | ✅ |
+| C.7 | MembershipPage | detail | ✅ |
+| C.8 | MembershipPlansPage | card | ✅ |
+| C.9 | ReferralsPage | card | ✅ |
+
+#### CARD 14.9-D: 替换工作台模块（45min）
+
+| 子任务 | 页面 | 骨架变体 | 状态 |
+|--------|------|---------|------|
+| D.1 | WorkbenchPage | detail | ✅ |
+| D.2 | OrdersPoolPage | card | ✅ |
+| D.3 | OrderDetailPage | detail | ✅ |
+| D.4 | WorkbenchEarningsPage | detail | ✅ |
+| D.5 | WorkbenchWithdrawPage | detail | ✅ |
+
+#### CARD 14.9-E: 替换陪诊员模块（30min）
+
+| 子任务 | 页面 | 骨架变体 | 状态 |
+|--------|------|---------|------|
+| E.1 | EscortListPage | card | ✅ |
+| E.2 | EscortDetailPage | detail | ✅ |
+
+#### 修改文件清单
+
+**新增文件（2 个）**:
+- `components/ListSkeleton.tsx` - 列表骨架屏组件
+- `components/ErrorRetry.tsx` - 错误重试组件
+
+**修改文件（17 个）**:
+- `components/index.ts` - 导出新组件
+- 营销中心 9 个页面
+- 工作台 5 个页面
+- 陪诊员 2 个页面
+
+---
+
+### 已完成（Step 14.8 UI-D Batch 1 修复）
+
+> **修复日期**: 2024-12-13  
+> **修复依据**: TerminalPreview-UI交互综合审计报告-2024-12-13.md UI-D
+
+#### CARD 14.8-A: UI-D-1 积分规则弹窗实时预览（40min）
+
+| 子任务 | 内容 | 状态 |
+|--------|------|------|
+| A.1 | 扩展 MarketingDataOverride 添加 points 字段 | ✅ |
+| A.2 | PointsPage 支持 pointsOverride 覆盖 | ✅ |
+| A.3 | points-action-dialog 构建 marketingData 实时预览 | ✅ |
+
+#### CARD 14.8-B: UI-D-2 活动弹窗实时预览（40min）
+
+| 子任务 | 内容 | 状态 |
+|--------|------|------|
+| B.1 | 扩展 MarketingDataOverride 添加 campaigns 字段 | ✅ |
+| B.2 | CampaignsPage 支持 campaignsOverride 覆盖 | ✅ |
+| B.3 | campaigns-action-dialog 构建 marketingData 实时预览 | ✅ |
+
+#### CARD 14.8-C: UI-D-3 弹窗预览器高度调整（5min）
+
+| 子任务 | 内容 | 状态 |
+|--------|------|------|
+| C.1 | points-action-dialog height 500 → 600 | ✅ |
+| C.2 | campaigns-action-dialog height 500 → 600 | ✅ |
+
+#### CARD 14.8-D: UI-D-4 服务编辑页集成预览器（1.5h）
+
+| 子任务 | 内容 | 状态 |
+|--------|------|------|
+| D.1 | edit.tsx 导入 TerminalPreview | ✅ |
+| D.2 | 构建 previewServiceData 实时预览数据 | ✅ |
+| D.3 | 三列布局：编辑区 + 设置区 + 预览器 | ✅ |
+| D.4 | 响应式：仅 2xl 屏幕显示预览器 | ✅ |
+
+---
+
+### 已完成（Step 14.7 P3 Batch 2 修复）
+
+> **修复日期**: 2024-12-13  
+> **修复依据**: TerminalPreview-系统行为审计报告-2024-12-13.md SYSTEM-1/SYSTEM-2
+
+#### CARD 14.7-A: P3-TYPE-01 pageParams 类型运行时校验（1h）
+
+| 子任务 | 内容 | 状态 |
+|--------|------|------|
+| A.1 | 扩展 PreviewPageParamsMap（27 个页面参数类型） | ✅ |
+| A.2 | 新增 PAGES_REQUIRING_PARAMS 常量 | ✅ |
+| A.3 | utils.ts 新增 validatePageParams() 函数 | ✅ |
+| A.4 | index.tsx navigateToPage 集成参数校验 | ✅ |
+
+#### CARD 14.7-B: P3-TYPE-02 页面分类元数据（1h）
+
+| 子任务 | 内容 | 状态 |
+|--------|------|------|
+| B.1 | 新增 PageMetadata 接口 | ✅ |
+| B.2 | 新增 PAGE_METADATA 常量（27 个页面元数据） | ✅ |
+| B.3 | utils.ts 新增 validateInitialPage() 函数 | ✅ |
+| B.4 | index.tsx 组件初始化时校验初始页面 | ✅ |
+| B.5 | DEV_NOTES.md 新增「类型安全与运行时校验」章节 | ✅ |
+| B.6 | 更新审计报告 SYSTEM-1/SYSTEM-2 风险点修复状态 | ✅ |
+
+---
+
+### 已完成（Step 14.6 P3 Batch 1 修复）
+
+> **修复日期**: 2024-12-13  
+> **修复依据**: TerminalPreview-系统行为审计报告-2024-12-13.md SYSTEM-3/SYSTEM-4
+
+#### CARD 14.6-A: P3-DOC-01 文档化数据优先级规则（0.5h）
+
+| 子任务 | 内容 | 状态 |
+|--------|------|------|
+| A.1 | DEV_NOTES.md 新增「数据覆盖优先级规则」章节 | ✅ |
+| A.2 | 说明三层优先级、6 种数据类型覆盖规则 | ✅ |
+| A.3 | 说明 autoLoad 行为和 Mock 降级规则 | ✅ |
+| A.4 | 更新审计报告 SYSTEM-3 修复状态 | ✅ |
+
+#### CARD 14.6-B: P3-DEV-01 开发环境未知 page key 警告（0.5h）
+
+| 子任务 | 内容 | 状态 |
+|--------|------|------|
+| B.1 | types.ts 新增 VALID_PAGE_KEYS 常量 | ✅ |
+| B.2 | index.tsx renderPageContent() 添加开发环境校验 | ✅ |
+| B.3 | DEV_NOTES.md 新增「开发环境调试功能」章节 | ✅ |
+| B.4 | 更新审计报告 SYSTEM-4 风险点修复状态 | ✅ |
+
+---
+
+### 已完成（Step 14.5 系统稳定性修复）
+
+> **修复日期**: 2024-12-13  
+> **修复依据**: TerminalPreview-系统行为审计报告-2024-12-13.md + TerminalPreview-UI交互综合审计报告-2024-12-13.md
+
+#### CARD 14.5-A: Phase 1 系统止血（2h）
+
+| 子任务 | 内容 | 状态 |
+|--------|------|------|
+| A.1 | 创建 PreviewErrorBoundary 组件 | ✅ |
+| A.2 | 集成 ErrorBoundary 到 index.tsx | ✅ |
+| A.3 | 添加数值安全工具函数（safeNumber/formatMoney/formatCount/formatPercent） | ✅ |
+| A.4 | 修复 workbench 相关页面数值调用（5 个文件） | ✅ |
+| A.5 | 修复 distribution 相关页面数值调用（4 个文件） | ✅ |
+| A.6 | 修复其他页面数值调用（ServicesPage, ServiceDetailPage） | ✅ |
+
+**修改文件清单**:
+- `components/PreviewErrorBoundary.tsx` (新增)
+- `components/index.ts` (导出)
+- `index.tsx` (集成 ErrorBoundary)
+- `utils.ts` (数值工具函数)
+- `WorkbenchEarningsPage.tsx` / `WorkbenchPage.tsx` / `OrderDetailPage.tsx` / `EarningsPage.tsx` / `WorkbenchWithdrawPage.tsx` / `WithdrawPage.tsx`
+- `DistributionPage.tsx` / `DistributionMembersPage.tsx` / `DistributionInvitePage.tsx` / `DistributionPromotionPage.tsx` / `DistributionRecordsPage.tsx`
+- `ServicesPage.tsx` / `ServiceDetailPage.tsx`
+
+#### CARD 14.5-B: Phase 2 路径一致性修复（2h）
+
+| 子任务 | 内容 | 状态 |
+|--------|------|------|
+| B.1 | 统一所有 onBack 使用 navigateToPage 清空 pageParams | ✅ |
+| B.2 | handlePageChange (TabBar) 改用 navigateToPage | ✅ |
+| B.3 | handleWorkbenchClick / handleExitEscortMode 改用 navigateToPage | ✅ |
+| B.4 | 补齐 OrdersPool → OrderDetail 导航入口 | ✅ |
+| B.5 | OrderDetailPage 缺 id 改为友好提示 | ✅ |
+
+**修改文件清单**:
+- `index.tsx` (所有 onBack 回调、handlePageChange、handleWorkbenchClick、handleExitEscortMode)
+- `OrdersPoolPage.tsx` (OrderCard 新增 onViewDetail)
+- `OrderDetailPage.tsx` (移除 mock id，添加友好提示)
 
 ---
 
@@ -2454,9 +3362,54 @@ interface DistributionStats {
 
 | 类别 | 卡片数 | 子任务数 | 预估工时 | 状态 |
 |------|--------|---------|---------|------|
-| 已完成 | 7 | - | 13h | ✅ |
-| **已完成** | 3 | 17 | **16h** | ✅ |
-| 合计 | 10 | 17 | 29h | - |
+| Step 12-14 已完成 | 7 | - | 13h | ✅ |
+| Step 14 质量固化 | 3 | 17 | 16h | ✅ |
+| Step 14.5 稳定性修复 | 2 | 11 | 4h | ✅ |
+| Step 14.6 P3 Batch 1 | 2 | 8 | 1h | ✅ |
+| Step 14.7 P3 Batch 2 | 2 | 10 | 2h | ✅ |
+| Step 14.8 UI-D Batch 1 | 4 | 12 | 3h | ✅ |
+| Step 14.9 UI-B 加载体验 | 5 | 21 | 4h | ✅ |
+| **Step 14.12 UI-C 一致性** | **3** | **7** | **1h** | ✅ |
+| **Step 14.13 P3 Batch 1** | **3** | **12** | **2.5h** | ✅ |
+| 合计 | 31 | 98 | 46.5h | - |
+
+---
+
+### Step 14.17 暗色对比度批量优化 Batch 1（1h）✅
+
+**任务**: 使用颜色工具函数批量优化暗色模式下的文字对比度
+
+| 子任务 | 内容 | 状态 |
+|--------|------|------|
+| A.1 | 营销中心暗色优化（MembershipPage, CouponsPage, ReferralsPage） | ✅ |
+| A.2 | 陪诊员页面暗色优化（EscortListPage, EscortDetailPage） | ✅ |
+| A.3 | 工作台暗色优化（WorkbenchEarningsPage, WorkbenchWithdrawPage, OrderDetailPage） | ✅ |
+
+**修改文件（8 个）**:
+- `MembershipPage.tsx`, `CouponsPage.tsx`, `ReferralsPage.tsx`
+- `EscortListPage.tsx`, `EscortDetailPage.tsx`
+- `WorkbenchEarningsPage.tsx`, `WorkbenchWithdrawPage.tsx`, `OrderDetailPage.tsx`
+
+**修复方式**: 导入 `getSecondaryTextClass()`/`getTertiaryTextClass()` 替换硬编码颜色类
+
+### Step 14.18 暗色对比度批量优化 Batch 2（1.5h）✅
+
+**任务**: 继续使用颜色工具函数批量优化暗色模式下的文字对比度
+
+| 子任务 | 内容 | 状态 |
+|--------|------|------|
+| A.1 | 营销中心剩余优化（CouponsAvailablePage, MembershipPlansPage, PointsRecordsPage, CampaignDetailPage） | ✅ |
+| A.2 | 工作台剩余优化（EarningsPage, WithdrawPage, WorkbenchSettingsPage, MyOrdersPage） | ✅ |
+| A.3 | 分销中心剩余优化（DistributionMembersPage, DistributionRecordsPage） | ✅ |
+
+**修改文件（10 个）**:
+- 营销中心: `CouponsAvailablePage.tsx`, `MembershipPlansPage.tsx`, `PointsRecordsPage.tsx`, `CampaignDetailPage.tsx`
+- 工作台: `EarningsPage.tsx`, `WithdrawPage.tsx`, `WorkbenchSettingsPage.tsx`, `MyOrdersPage.tsx`
+- 分销中心: `DistributionMembersPage.tsx`, `DistributionRecordsPage.tsx`
+
+**修复方式**: 导入 `getSecondaryTextClass()`/`getTertiaryTextClass()` 替换硬编码颜色类
+
+**已优化页面总数**: 13（Batch 1）+ 10（Batch 2）= **23 个页面**
 
 ---
 

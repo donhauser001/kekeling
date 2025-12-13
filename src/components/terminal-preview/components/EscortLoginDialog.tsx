@@ -9,7 +9,7 @@
  * ⚠️ 当前为 UI 骨架，真实登录接口后续接入
  */
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { X, Phone, Lock, Eye, EyeOff, Loader2 } from 'lucide-react'
 import type { ThemeSettings } from '../types'
 
@@ -48,6 +48,17 @@ export function EscortLoginDialog({
   const [countdown, setCountdown] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
+
+  // Step 14.15 A11y-01: Esc 键关闭弹窗
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && open) {
+        onClose()
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [open, onClose])
 
   // 发送验证码
   const handleSendCode = useCallback(async () => {
@@ -110,7 +121,7 @@ export function EscortLoginDialog({
 
       const mockEscortToken = `mock-escort-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 8)}`
 
-      console.log('[EscortLoginDialog] 登录成功（模拟），escortToken:', mockEscortToken)
+      console.log('[EscortLoginDialog] 登录成功（模拟），escortToken:', `${mockEscortToken.slice(0, 6)}...${mockEscortToken.slice(-4)}`)
 
       onLoginSuccess(mockEscortToken)
       onClose()

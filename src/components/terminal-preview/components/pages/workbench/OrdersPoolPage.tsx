@@ -11,6 +11,11 @@ import { useQuery } from '@tanstack/react-query'
 import { MapPin, Clock, ChevronRight } from 'lucide-react'
 import type { ThemeSettings, PreviewViewerRole } from '../../../types'
 import { previewApi, type PoolOrderItem } from '../../../api'
+import { PermissionPrompt } from '../../PermissionPrompt'
+import { ListSkeleton } from '../../ListSkeleton'
+import { ErrorRetry } from '../../ErrorRetry'
+import { getRefreshingClass } from '../../PageTransition'
+import { getSecondaryTextClass, getTertiaryTextClass } from '../../../utils'
 
 // ============================================================================
 // 类型定义
@@ -22,6 +27,8 @@ export interface OrdersPoolPageProps {
   effectiveViewerRole: PreviewViewerRole
   onBack?: () => void
   onNavigate?: (page: string, params?: Record<string, string>) => void
+  /** 显示登录弹窗回调 */
+  onLogin?: () => void
 }
 
 // ============================================================================
@@ -34,6 +41,7 @@ export function OrdersPoolPage({
   effectiveViewerRole,
   onBack,
   onNavigate,
+  onLogin,
 }: OrdersPoolPageProps) {
   const isEscort = effectiveViewerRole === 'escort'
 
@@ -42,6 +50,8 @@ export function OrdersPoolPage({
     data: ordersPool,
     isLoading,
     isError,
+    isFetching,
+    refetch,
   } = useQuery({
     queryKey: ['preview', 'workbench', 'orders-pool'],
     queryFn: () => previewApi.getWorkbenchOrdersPool(),
@@ -49,7 +59,7 @@ export function OrdersPoolPage({
     enabled: isEscort,
   })
 
-  // 非 escort 视角：显示提示
+  // 非 escort 视角：显示统一的 PermissionPrompt
   if (!isEscort) {
     return (
       <div
@@ -74,14 +84,16 @@ export function OrdersPoolPage({
           </h1>
         </div>
 
-        <div className="flex-1 flex flex-col items-center justify-center px-4">
-          <div className="text-5xl mb-4">🔒</div>
-          <div className={`text-base font-medium text-center ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-            需要陪诊员身份
-          </div>
-          <div className={`text-sm text-center mt-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-            请先登录陪诊员账号后再访问订单池。
-          </div>
+        {/* 权限提示 */}
+        <div className="flex-1">
+          <PermissionPrompt
+            title="需要陪诊员身份"
+            description="请先登录陪诊员账号访问订单池"
+            onLogin={onLogin}
+            showDebugInject={process.env.NODE_ENV === 'development'}
+            primaryColor={themeSettings.primaryColor}
+            isDarkMode={isDarkMode}
+          />
         </div>
       </div>
     )
@@ -116,37 +128,36 @@ export function OrdersPoolPage({
 
       {/* 内容区 */}
       <div className="px-4 py-4">
-        {/* 加载中 */}
+        {/* 加载中 - 骨架屏 */}
         {isLoading && (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-gray-400 text-sm">加载中...</div>
-          </div>
+          <ListSkeleton count={3} variant="card" isDarkMode={isDarkMode} />
         )}
 
-        {/* 请求失败 */}
+        {/* 请求失败 - 带重试按钮 */}
         {isError && (
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="text-4xl mb-2">😔</div>
-            <div className="text-gray-400 text-sm">加载失败，请稍后重试</div>
-          </div>
+          <ErrorRetry
+            onRetry={() => refetch()}
+            isDarkMode={isDarkMode}
+            primaryColor={themeSettings.primaryColor}
+          />
         )}
 
         {/* 空态 */}
         {isEmpty && !isError && (
           <div className="flex flex-col items-center justify-center py-12">
             <div className="text-5xl mb-3">📋</div>
-            <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            <div className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>
               暂无可接订单
             </div>
-            <div className={`text-xs mt-1 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+            <div className={`text-xs mt-1 ${getTertiaryTextClass(isDarkMode)}`}>
               新订单会实时推送，请保持在线
             </div>
           </div>
         )}
 
-        {/* 订单列表 */}
+        {/* 订单列表 - Step 14.10-C: 刷新过渡效果 */}
         {!isLoading && !isError && orders.length > 0 && (
-          <div className="space-y-3">
+          <div className={`space-y-3 ${getRefreshingClass(isFetching, orders.length > 0)}`}>
             {orders.map((order) => (
               <OrderCard
                 key={order.id}
@@ -156,6 +167,9 @@ export function OrdersPoolPage({
                 onAccept={() => {
                   // TODO: 接单逻辑
                   console.log('[OrdersPoolPage] 接单:', order.id)
+                }}
+                onViewDetail={() => {
+                  onNavigate?.('workbench-order-detail', { id: order.id })
                 }}
               />
             ))}
@@ -178,15 +192,18 @@ interface OrderCardProps {
   themeSettings: ThemeSettings
   isDarkMode: boolean
   onAccept: () => void
+  /** 查看订单详情回调 */
+  onViewDetail?: () => void
 }
 
-function OrderCard({ order, themeSettings, isDarkMode, onAccept }: OrderCardProps) {
+function OrderCard({ order, themeSettings, isDarkMode, onAccept, onViewDetail }: OrderCardProps) {
   return (
     <div
-      className="rounded-xl overflow-hidden"
+      className="rounded-xl overflow-hidden cursor-pointer transition-shadow hover:shadow-md"
       style={{
         backgroundColor: isDarkMode ? '#2a2a2a' : '#fff',
       }}
+      onClick={onViewDetail}
     >
       {/* 头部 */}
       <div className="px-4 py-3 border-b" style={{ borderColor: isDarkMode ? '#3a3a3a' : '#f3f4f6' }}>
@@ -198,11 +215,11 @@ function OrderCard({ order, themeSettings, isDarkMode, onAccept }: OrderCardProp
             >
               {order.serviceType === 'accompany' ? '全程陪诊' : order.serviceName}
             </span>
-            <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            <span className={`text-xs ${getSecondaryTextClass(isDarkMode)}`}>
               {order.orderNo}
             </span>
           </div>
-          <span className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+          <span className={`text-xs ${getTertiaryTextClass(isDarkMode)}`}>
             {order.createdAt.split(' ')[1]}
           </span>
         </div>
@@ -231,7 +248,7 @@ function OrderCard({ order, themeSettings, isDarkMode, onAccept }: OrderCardProp
         </div>
 
         {order.distance !== undefined && (
-          <div className={`text-xs mt-2 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+          <div className={`text-xs mt-2 ${getTertiaryTextClass(isDarkMode)}`}>
             距您约 {order.distance} km
           </div>
         )}
@@ -243,13 +260,16 @@ function OrderCard({ order, themeSettings, isDarkMode, onAccept }: OrderCardProp
         style={{ borderColor: isDarkMode ? '#3a3a3a' : '#f3f4f6' }}
       >
         <div>
-          <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>预计佣金 </span>
+          <span className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>预计佣金 </span>
           <span className="text-lg font-bold" style={{ color: themeSettings.primaryColor }}>
             ¥{order.commission}
           </span>
         </div>
         <button
-          onClick={onAccept}
+          onClick={(e) => {
+            e.stopPropagation()  // 防止触发卡片点击
+            onAccept()
+          }}
           className="px-6 py-2 rounded-full text-white text-sm font-medium"
           style={{ backgroundColor: themeSettings.primaryColor }}
         >

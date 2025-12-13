@@ -9,6 +9,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { SafeHTML } from '@/components/ui/safe-html'
 import { cn } from '@/lib/utils'
 import { type OperationGuide } from '@/lib/api'
 
@@ -93,9 +94,10 @@ export function OperationGuidesDetailSheet({
             <div className='space-y-3'>
               <h4 className='text-sm font-medium text-muted-foreground'>规范内容</h4>
               <ScrollArea className='h-[400px] rounded-md border p-4'>
-                <div
-                  className='prose prose-sm dark:prose-invert max-w-none'
-                  dangerouslySetInnerHTML={{ __html: item.content || '' }}
+                <SafeHTML
+                  html={item.content || ''}
+                  prose
+                  className='max-w-none'
                 />
               </ScrollArea>
             </div>

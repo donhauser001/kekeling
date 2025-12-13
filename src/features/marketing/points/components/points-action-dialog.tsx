@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -31,7 +31,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { SelectDropdown } from '@/components/select-dropdown'
 import { pointApi, type PointRule } from '@/lib/api'
-import { TerminalPreview } from '@/components/terminal-preview'
+import { TerminalPreview, type MarketingDataOverride } from '@/components/terminal-preview'
 
 const formSchema = z.object({
   name: z.string().min(1, '请输入规则名称'),
@@ -157,6 +157,23 @@ export function PointsActionDialog({
   }
 
   const isPending = createMutation.isPending || updateMutation.isPending
+
+  // 构建预览数据
+  const watchedValues = form.watch()
+  const marketingData = useMemo<MarketingDataOverride>(() => ({
+    points: {
+      balance: 1000, // 示例余额
+      rules: [{
+        id: currentRow?.id || 'preview-rule',
+        name: watchedValues.name || '新规则',
+        code: watchedValues.code,
+        type: (watchedValues.type as 'earn' | 'spend') || 'earn',
+        points: watchedValues.points || 0,
+        description: watchedValues.description,
+        isActive: watchedValues.isActive,
+      }],
+    },
+  }), [watchedValues.name, watchedValues.code, watchedValues.type, watchedValues.points, watchedValues.description, watchedValues.isActive, currentRow?.id])
 
   // 脏表单关闭拦截
   const onOpenChangeWrapper = (open: boolean) => {
@@ -362,9 +379,10 @@ export function PointsActionDialog({
               <div className='text-sm text-muted-foreground mb-2'>终端预览</div>
               <TerminalPreview
                 page='points'
-                height={500}
+                height={600}
                 showFrame={false}
                 autoLoad={false}
+                marketingData={marketingData}
               />
             </div>
           </div>
