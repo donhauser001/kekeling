@@ -199,3 +199,4 @@ function DetailSkeleton({ cardColor, shimmerColor }: DetailSkeletonProps) {
     </>
   )
 }
+
