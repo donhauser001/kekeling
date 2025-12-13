@@ -10,6 +10,10 @@
 import { useQuery } from '@tanstack/react-query'
 import type { ThemeSettings } from '../../../types'
 import { previewApi, type EscortListItem } from '../../../api'
+import { ListSkeleton } from '../../ListSkeleton'
+import { ErrorRetry } from '../../ErrorRetry'
+import { getRefreshingClass } from '../../PageTransition'
+import { getSecondaryTextClass } from '../../../utils'
 
 // ============================================================================
 // 类型定义
@@ -31,6 +35,8 @@ export function EscortListPage({ themeSettings, isDarkMode, onNavigate }: Escort
     data: escorts,
     isLoading,
     isError,
+    isFetching,
+    refetch,
   } = useQuery({
     queryKey: ['preview', 'escorts'],
     queryFn: () => previewApi.getEscorts(),
@@ -65,34 +71,33 @@ export function EscortListPage({ themeSettings, isDarkMode, onNavigate }: Escort
 
       {/* 内容区 */}
       <div className="px-4 py-4">
-        {/* 加载中 */}
+        {/* 加载中 - 骨架屏 */}
         {isLoading && (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-gray-400 text-sm">加载中...</div>
-          </div>
+          <ListSkeleton count={4} variant="card" isDarkMode={isDarkMode} />
         )}
 
-        {/* 请求失败 */}
+        {/* 请求失败 - 带重试按钮 */}
         {isError && (
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="text-4xl mb-2">😔</div>
-            <div className="text-gray-400 text-sm">加载失败，请稍后重试</div>
-          </div>
+          <ErrorRetry
+            onRetry={() => refetch()}
+            isDarkMode={isDarkMode}
+            primaryColor={themeSettings.primaryColor}
+          />
         )}
 
         {/* 空态 */}
         {isEmpty && !isError && (
           <div className="flex flex-col items-center justify-center py-12">
             <div className="text-5xl mb-3">👩‍⚕️</div>
-            <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            <div className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>
               暂无可用陪诊员
             </div>
           </div>
         )}
 
-        {/* 陪诊员列表 */}
+        {/* 陪诊员列表 - Step 14.10-C: 刷新过渡效果 */}
         {!isLoading && !isError && escorts && escorts.length > 0 && (
-          <div className="space-y-3">
+          <div className={`space-y-3 ${getRefreshingClass(isFetching, !!escorts)}`}>
             {escorts.map((escort) => (
               <EscortCard
                 key={escort.id}
@@ -162,7 +167,7 @@ function EscortCard({ escort, themeSettings, isDarkMode, onClick }: EscortCardPr
             </span>
           )}
         </div>
-        <div className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+        <div className={`text-xs mt-1 ${getSecondaryTextClass(isDarkMode)}`}>
           {escort.serviceCount}次服务 · 好评率{escort.rating}%
         </div>
         {escort.tags && escort.tags.length > 0 && (
@@ -170,9 +175,8 @@ function EscortCard({ escort, themeSettings, isDarkMode, onClick }: EscortCardPr
             {escort.tags.slice(0, 3).map((tag, index) => (
               <span
                 key={index}
-                className={`px-2 py-0.5 rounded text-xs ${
-                  isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'
-                }`}
+                className={`px-2 py-0.5 rounded text-xs ${isDarkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-600'
+                  }`}
               >
                 {tag}
               </span>
@@ -184,9 +188,8 @@ function EscortCard({ escort, themeSettings, isDarkMode, onClick }: EscortCardPr
       {/* 状态 */}
       <div className="flex-shrink-0 text-right">
         <span
-          className={`text-xs ${
-            escort.status === 'available' ? 'text-green-500' : 'text-gray-400'
-          }`}
+          className={`text-xs ${escort.status === 'available' ? 'text-green-500' : 'text-gray-400'
+            }`}
         >
           {escort.status === 'available' ? '● 在线' : '○ 离线'}
         </span>

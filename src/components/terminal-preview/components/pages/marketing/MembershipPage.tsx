@@ -15,6 +15,9 @@ import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import type { ThemeSettings, MembershipInfoOverride } from '../../../types'
 import { previewApi, type MembershipInfo } from '../../../api'
+import { ListSkeleton } from '../../ListSkeleton'
+import { ErrorRetry } from '../../ErrorRetry'
+import { getSecondaryTextClass, getTertiaryTextClass } from '../../../utils'
 
 // ============================================================================
 // 类型定义
@@ -46,6 +49,7 @@ export function MembershipPage({ themeSettings, isDarkMode, onNavigate, membersh
     data: apiMembership,
     isLoading: apiLoading,
     isError: apiError,
+    refetch,
   } = useQuery({
     queryKey: ['preview', 'membership', 'my'],
     queryFn: previewApi.getMyMembership,
@@ -96,19 +100,18 @@ export function MembershipPage({ themeSettings, isDarkMode, onNavigate, membersh
 
       {/* 会员卡片区 */}
       <div className="px-4 py-4">
-        {/* 加载中 */}
+        {/* 加载中 - 骨架屏 */}
         {isLoading && (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-gray-400 text-sm">加载中...</div>
-          </div>
+          <ListSkeleton count={1} variant="detail" isDarkMode={isDarkMode} />
         )}
 
-        {/* 请求失败 */}
+        {/* 请求失败 - 带重试按钮 */}
         {isError && (
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="text-4xl mb-2">😔</div>
-            <div className="text-gray-400 text-sm">加载失败，请稍后重试</div>
-          </div>
+          <ErrorRetry
+            onRetry={() => refetch()}
+            isDarkMode={isDarkMode}
+            primaryColor={themeSettings.primaryColor}
+          />
         )}
 
         {/* 已开通会员 */}
@@ -124,10 +127,10 @@ export function MembershipPage({ themeSettings, isDarkMode, onNavigate, membersh
         {!isLoading && !isError && !hasMembership && (
           <div className="flex flex-col items-center justify-center py-12">
             <div className="text-5xl mb-3">👑</div>
-            <div className={`text-sm mb-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            <div className={`text-sm mb-2 ${getSecondaryTextClass(isDarkMode)}`}>
               您还不是会员
             </div>
-            <div className={`text-xs mb-4 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+            <div className={`text-xs mb-4 ${getTertiaryTextClass(isDarkMode)}`}>
               开通会员享受更多专属权益
             </div>
             <button
@@ -157,7 +160,7 @@ export function MembershipPage({ themeSettings, isDarkMode, onNavigate, membersh
                 }}
               >
                 <div className="text-2xl mb-1">{benefit.icon}</div>
-                <div className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                <div className={`text-xs ${getSecondaryTextClass(isDarkMode)}`}>
                   {benefit.name}
                 </div>
               </div>

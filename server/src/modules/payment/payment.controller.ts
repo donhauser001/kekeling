@@ -16,7 +16,7 @@ import { Request } from 'express';
 
 @Controller('payment')
 export class PaymentController {
-  constructor(private readonly paymentService: PaymentService) {}
+  constructor(private readonly paymentService: PaymentService) { }
 
   /**
    * 创建预支付订单
@@ -61,14 +61,34 @@ export class PaymentController {
   }
 
   /**
-   * 模拟支付成功（仅用于测试）
+   * 模拟支付成功（仅用于开发/测试环境）
+   *
+   * ⚠️ 安全修复（P1-10）：
+   * - 生产环境完全禁用
+   * - 需要显式开启 ENABLE_MOCK_PAYMENT=true
+   *
+   * @see docs/终端预览器集成/安全审计报告-2024-12-13.md - P1-10
    */
   @Post('mock-pay')
   async mockPay(@Body() body: { orderId: string }) {
-    // 生产环境应该禁用此接口
-    if (process.env.NODE_ENV === 'production') {
-      return ApiResponse.error('生产环境不支持模拟支付');
+    // 安全修复：双重检查，生产环境完全禁用
+    const isProduction = process.env.NODE_ENV === 'production';
+    const isMockEnabled = process.env.ENABLE_MOCK_PAYMENT === 'true';
+
+    if (isProduction) {
+      return ApiResponse.error('生产环境禁止使用模拟支付', 403);
     }
+
+    if (!isMockEnabled) {
+      return ApiResponse.error(
+        '模拟支付未启用。如需测试，请设置环境变量 ENABLE_MOCK_PAYMENT=true',
+        403,
+      );
+    }
+
+    console.warn(
+      `[Payment] ⚠️ 警告：模拟支付被调用，orderId=${body.orderId}。仅限开发环境使用！`,
+    );
 
     const result = await this.paymentService.mockPaymentSuccess(body.orderId);
     return ApiResponse.success(result);

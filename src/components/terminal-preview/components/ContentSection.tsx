@@ -2,7 +2,7 @@
  * 内容区组件
  */
 
-import { cn } from '@/lib/utils'
+import { SafeHTML } from '@/components/ui/safe-html'
 import type { HomePageSettings } from '../types'
 
 interface ContentSectionProps {
@@ -20,12 +20,10 @@ export function ContentSection({ homeSettings, isDarkMode = false }: ContentSect
       className='relative z-10 px-3 py-3'
       style={{ backgroundColor: isDarkMode ? '#2a2a2a' : '#ffffff' }}
     >
-      <div
-        className={cn(
-          'prose prose-sm max-w-none [&_*]:!m-0 [&_*]:!p-0 [&_*]:!text-xs [&_*]:!leading-relaxed [&_h1]:!text-base [&_h2]:!text-sm [&_h3]:!text-xs [&_p]:!my-1',
-          isDarkMode && 'prose-invert'
-        )}
-        dangerouslySetInnerHTML={{ __html: homeSettings.content.code }}
+      <SafeHTML
+        html={homeSettings.content.code}
+        prose
+        className='max-w-none [&_*]:!m-0 [&_*]:!p-0 [&_*]:!text-xs [&_*]:!leading-relaxed [&_h1]:!text-base [&_h2]:!text-sm [&_h3]:!text-xs [&_p]:!my-1'
       />
     </div>
   )

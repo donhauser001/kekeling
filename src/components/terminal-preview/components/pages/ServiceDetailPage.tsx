@@ -25,9 +25,10 @@ import {
   AlertCircle,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { SafeHTML } from '@/components/ui/safe-html'
 import type { ThemeSettings } from '../../types'
 import { previewApi } from '../../api'
-import { getResourceUrl } from '../../utils'
+import { getResourceUrl, formatCount } from '../../utils'
 import { BannerSection } from '../BannerSection'
 
 interface ServiceDetailPageProps {
@@ -447,7 +448,7 @@ export function ServiceDetailPage({
             </div>
             <div className='flex items-center gap-1'>
               <Users className='h-3.5 w-3.5' />
-              <span>{service.orderCount.toLocaleString()}人购</span>
+              <span>{formatCount(service.orderCount)}人购</span>
             </div>
           </div>
         </div>
@@ -663,7 +664,7 @@ export function ServiceDetailPage({
                 margin: 12px 0 8px;
               }
             `}</style>
-            <div dangerouslySetInnerHTML={{ __html: service.content }} />
+            <SafeHTML html={service.content} />
           </div>
         ) : (
           <div
@@ -848,7 +849,7 @@ export function ServiceDetailPage({
                       </span>
                     </div>
                     <p className='text-[10px] mt-0.5' style={{ color: textMuted }}>
-                      {item.orderCount.toLocaleString()}人购
+                      {formatCount(item.orderCount)}人购
                     </p>
                   </div>
                 </div>

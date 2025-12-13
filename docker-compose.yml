@@ -1,6 +1,13 @@
 # ============================================
 # 科科灵陪诊平台 Docker Compose (生产环境)
 # ============================================
+# ⚠️ 安全警告：生产环境部署前必须配置 .env 文件！
+# - JWT_SECRET: 必须配置高熵随机字符串（至少 32 字符）
+# - POSTGRES_PASSWORD: 必须配置强密码
+# - 未配置环境变量时服务将拒绝启动
+#
+# @see docs/终端预览器集成/安全审计报告-2024-12-13.md - P0-4,5,6
+# ============================================
 # 一键启动: docker-compose up -d --build
 # 停止:     docker-compose down
 # 查看日志: docker-compose logs -f
@@ -16,16 +23,18 @@ services:
     container_name: kekeling-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-kekeling}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-kekeling123}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required - use a strong password}
       POSTGRES_DB: ${POSTGRES_DB:-kekeling}
       TZ: Asia/Shanghai
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "${POSTGRES_PORT:-5436}:5432"
+    # ⚠️ 安全修复：生产环境不暴露数据库端口到宿主机
+    # 如需本地调试，请使用 docker-compose.dev.yml
+    # ports:
+    #   - "${POSTGRES_PORT:-5432}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U kekeling -d kekeling"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-kekeling} -d ${POSTGRES_DB:-kekeling}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -44,8 +53,8 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-      DATABASE_URL: postgresql://${POSTGRES_USER:-kekeling}:${POSTGRES_PASSWORD:-kekeling123}@postgres:5432/${POSTGRES_DB:-kekeling}?schema=public
-      JWT_SECRET: ${JWT_SECRET:-kekeling-jwt-secret-key-production-2024}
+      DATABASE_URL: postgresql://${POSTGRES_USER:?POSTGRES_USER is required}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-kekeling}?schema=public
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required - generate with: openssl rand -base64 32}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
       # 微信配置
       WECHAT_APP_ID: ${WECHAT_APP_ID:-}
@@ -92,14 +101,18 @@ services:
       - kekeling-network
 
   # ==========================================
-  # Adminer - 数据库管理工具 (可选)
+  # Adminer - 数据库管理工具 (仅开发环境)
   # ==========================================
+  # ⚠️ 安全警告：生产环境禁止启用 Adminer！
+  # 如需使用，请通过 profiles 显式启用：
+  # docker-compose --profile tools up -d adminer
   adminer:
     image: adminer:latest
     container_name: kekeling-adminer
     restart: unless-stopped
     ports:
-      - "${ADMINER_PORT:-8080}:8080"
+      # 绑定到 127.0.0.1，禁止外部访问
+      - "127.0.0.1:${ADMINER_PORT:-8080}:8080"
     depends_on:
       - postgres
     environment:

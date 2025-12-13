@@ -14,6 +14,8 @@ import { ChevronLeft, RefreshCw, User } from 'lucide-react'
 import type { ThemeSettings, PreviewViewerRole, DistributionMember } from '../../../types'
 import { previewApi } from '../../../api'
 import { PermissionPrompt } from '../../PermissionPrompt'
+import { formatMoney, getSecondaryTextClass, getTertiaryTextClass } from '../../../utils'
+import { getRefreshingClass } from '../../PageTransition'
 
 // ============================================================================
 // 类型定义
@@ -26,7 +28,7 @@ export interface DistributionMembersPageProps {
   /** 路由参数：relation 筛选 */
   pageParams?: Record<string, string>
   onNavigate?: (page: string, params?: Record<string, string>) => void
-  onLoginClick?: () => void
+  onLogin?: () => void
 }
 
 type RelationFilter = 'all' | 'direct' | 'indirect'
@@ -41,7 +43,7 @@ export function DistributionMembersPage({
   effectiveViewerRole,
   pageParams,
   onNavigate,
-  onLoginClick,
+  onLogin,
 }: DistributionMembersPageProps) {
   const isEscort = effectiveViewerRole === 'escort'
 
@@ -56,6 +58,7 @@ export function DistributionMembersPage({
     data: membersData,
     isLoading,
     isError,
+    isFetching,
     refetch,
   } = useQuery({
     queryKey: ['preview', 'distribution', 'members', relationFilter],
@@ -94,7 +97,7 @@ export function DistributionMembersPage({
         <PermissionPrompt
           title="需要陪诊员身份"
           description="请先登录陪诊员账号查看团队成员"
-          onLogin={onLoginClick}
+          onLogin={onLogin}
           showDebugInject={process.env.NODE_ENV === 'development'}
           primaryColor={themeSettings.primaryColor}
           isDarkMode={isDarkMode}
@@ -166,7 +169,7 @@ export function DistributionMembersPage({
         {isError && (
           <div className="flex flex-col items-center justify-center py-12">
             <div className="text-4xl mb-2">😔</div>
-            <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            <div className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>
               加载失败
             </div>
             <button
@@ -184,15 +187,15 @@ export function DistributionMembersPage({
         {!isLoading && !isError && membersData && membersData.items.length === 0 && (
           <div className="flex flex-col items-center justify-center py-12">
             <div className="text-4xl mb-2">👥</div>
-            <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            <div className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>
               暂无{relationFilter === 'direct' ? '直属' : relationFilter === 'indirect' ? '间接' : ''}成员
             </div>
           </div>
         )}
 
-        {/* 成员列表 */}
+        {/* 成员列表 - Step 14.10-C: 刷新过渡效果 */}
         {!isLoading && !isError && membersData && membersData.items.length > 0 && (
-          <div className="space-y-3 pb-4">
+          <div className={`space-y-3 pb-4 ${getRefreshingClass(isFetching, membersData.items.length > 0)}`}>
             {membersData.items.map((member) => (
               <MemberCard
                 key={member.id}
@@ -273,7 +276,7 @@ function MemberCard({ member, themeSettings, isDarkMode }: MemberCardProps) {
               {member.relation === 'direct' ? '直属' : '间接'}
             </span>
           </div>
-          <div className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+          <div className={`text-xs mt-1 ${getSecondaryTextClass(isDarkMode)}`}>
             {member.phone} · {member.level}
           </div>
         </div>
@@ -282,7 +285,7 @@ function MemberCard({ member, themeSettings, isDarkMode }: MemberCardProps) {
       {/* 统计数据 */}
       <div className="flex gap-6 mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
         <div>
-          <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+          <div className={`text-xs ${getSecondaryTextClass(isDarkMode)}`}>
             累计订单
           </div>
           <div className={`text-sm font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -290,15 +293,15 @@ function MemberCard({ member, themeSettings, isDarkMode }: MemberCardProps) {
           </div>
         </div>
         <div>
-          <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+          <div className={`text-xs ${getSecondaryTextClass(isDarkMode)}`}>
             累计分润
           </div>
           <div className="text-sm font-semibold" style={{ color: themeSettings.primaryColor }}>
-            ¥{member.totalDistribution.toFixed(2)}
+            ¥{formatMoney(member.totalDistribution)}
           </div>
         </div>
         <div>
-          <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+          <div className={`text-xs ${getSecondaryTextClass(isDarkMode)}`}>
             加入时间
           </div>
           <div className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>

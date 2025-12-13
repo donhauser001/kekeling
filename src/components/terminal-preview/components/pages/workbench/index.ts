@@ -33,3 +33,7 @@ export type { OrderDetailPageProps } from './OrderDetailPage'
 // 工作台设置（Step 13）
 export { WorkbenchSettingsPage } from './WorkbenchSettingsPage'
 export type { WorkbenchSettingsPageProps } from './WorkbenchSettingsPage'
+
+// 我的订单（Step 14.13 FIX-P3-01）
+export { MyOrdersPage } from './MyOrdersPage'
+export type { MyOrdersPageProps } from './MyOrdersPage'

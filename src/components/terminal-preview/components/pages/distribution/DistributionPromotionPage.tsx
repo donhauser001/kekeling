@@ -16,6 +16,7 @@ import { ChevronLeft, RefreshCw, Award, TrendingUp, CheckCircle, Target, Crown }
 import type { ThemeSettings, PreviewViewerRole, DistributionRequirement } from '../../../types'
 import { previewApi } from '../../../api'
 import { PermissionPrompt } from '../../PermissionPrompt'
+import { formatPercent, safeNumber } from '../../../utils'
 
 // ============================================================================
 // 类型定义
@@ -26,7 +27,7 @@ export interface DistributionPromotionPageProps {
   isDarkMode: boolean
   effectiveViewerRole: PreviewViewerRole
   onNavigate?: (page: string, params?: Record<string, string>) => void
-  onLoginClick?: () => void
+  onLogin?: () => void
 }
 
 // ============================================================================
@@ -64,7 +65,7 @@ export function DistributionPromotionPage({
   isDarkMode,
   effectiveViewerRole,
   onNavigate,
-  onLoginClick,
+  onLogin,
 }: DistributionPromotionPageProps) {
   const isEscort = effectiveViewerRole === 'escort'
 
@@ -108,7 +109,7 @@ export function DistributionPromotionPage({
         <PermissionPrompt
           title="需要陪诊员身份"
           description="请先登录陪诊员账号查看晋升信息"
-          onLogin={onLoginClick}
+          onLogin={onLogin}
           showDebugInject={process.env.NODE_ENV === 'development'}
           primaryColor={themeSettings.primaryColor}
           isDarkMode={isDarkMode}
@@ -272,7 +273,7 @@ export function DistributionPromotionPage({
                 className="text-sm"
                 style={{ color: themeSettings.primaryColor }}
               >
-                佣金比例 {(currentLevel.commissionRate * 100).toFixed(0)}%
+                佣金比例 {formatPercent(currentLevel.commissionRate, 0)}%
               </div>
             </div>
           </div>
@@ -370,9 +371,9 @@ export function DistributionPromotionPage({
                     {nextLevel.name}
                   </div>
                   <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                    佣金比例 {(nextLevel.commissionRate * 100).toFixed(0)}%
+                    佣金比例 {formatPercent(nextLevel.commissionRate, 0)}%
                     <span className="ml-1 text-xs" style={{ color: themeSettings.primaryColor }}>
-                      (+{((nextLevel.commissionRate - currentLevel.commissionRate) * 100).toFixed(0)}%)
+                      (+{formatPercent(safeNumber(nextLevel.commissionRate) - safeNumber(currentLevel.commissionRate), 0)}%)
                     </span>
                   </div>
                 </div>
@@ -456,13 +457,12 @@ export function DistributionPromotionPage({
                           </span>
                         </div>
                         <span
-                          className={`text-sm font-medium ${
-                            isCompleted
-                              ? 'text-green-500'
-                              : isDarkMode
-                                ? 'text-gray-400'
-                                : 'text-gray-500'
-                          }`}
+                          className={`text-sm font-medium ${isCompleted
+                            ? 'text-green-500'
+                            : isDarkMode
+                              ? 'text-gray-400'
+                              : 'text-gray-500'
+                            }`}
                         >
                           {req.current} / {req.required}
                         </span>
@@ -489,13 +489,12 @@ export function DistributionPromotionPage({
 
                       {/* 进度百分比提示 */}
                       <div
-                        className={`text-xs text-right ${
-                          isCompleted
-                            ? 'text-green-500'
-                            : isDarkMode
-                              ? 'text-gray-500'
-                              : 'text-gray-400'
-                        }`}
+                        className={`text-xs text-right ${isCompleted
+                          ? 'text-green-500'
+                          : isDarkMode
+                            ? 'text-gray-500'
+                            : 'text-gray-400'
+                          }`}
                       >
                         {isCompleted ? '已完成' : `${progress}%`}
                       </div>

@@ -10,6 +10,9 @@
 import { useQuery } from '@tanstack/react-query'
 import type { ThemeSettings } from '../../../types'
 import { previewApi, type CampaignDetail } from '../../../api'
+import { ListSkeleton } from '../../ListSkeleton'
+import { ErrorRetry } from '../../ErrorRetry'
+import { getSecondaryTextClass } from '../../../utils'
 
 // ============================================================================
 // 类型定义
@@ -62,7 +65,7 @@ export function CampaignDetailPage({
         {/* 无 ID 提示 */}
         <div className="flex-1 flex flex-col items-center justify-center">
           <div className="text-4xl mb-2">❓</div>
-          <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+          <div className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>
             未指定活动
           </div>
           <button
@@ -82,6 +85,7 @@ export function CampaignDetailPage({
     data: campaign,
     isLoading,
     isError,
+    refetch,
   } = useQuery({
     queryKey: ['preview', 'campaigns', campaignId],
     queryFn: () => previewApi.getCampaignDetail(campaignId),
@@ -113,20 +117,19 @@ export function CampaignDetailPage({
       </div>
 
       {/* 内容区 */}
-      <div>
-        {/* 加载中 */}
+      <div className="px-4 py-4">
+        {/* 加载中 - 骨架屏 */}
         {isLoading && (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-gray-400 text-sm">加载中...</div>
-          </div>
+          <ListSkeleton count={1} variant="detail" isDarkMode={isDarkMode} />
         )}
 
-        {/* 请求失败 */}
+        {/* 请求失败 - 带重试按钮 */}
         {isError && (
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="text-4xl mb-2">😔</div>
-            <div className="text-gray-400 text-sm">加载失败，请稍后重试</div>
-          </div>
+          <ErrorRetry
+            onRetry={() => refetch()}
+            isDarkMode={isDarkMode}
+            primaryColor={themeSettings.primaryColor}
+          />
         )}
 
         {/* 活动详情 */}
@@ -169,13 +172,12 @@ function CampaignContent({ campaign, themeSettings, isDarkMode }: CampaignConten
         {/* 状态标签 */}
         <div className="absolute bottom-4 left-4">
           <span
-            className={`px-3 py-1 rounded-full text-sm text-white ${
-              isExpired
-                ? 'bg-gray-500'
-                : isUpcoming
+            className={`px-3 py-1 rounded-full text-sm text-white ${isExpired
+              ? 'bg-gray-500'
+              : isUpcoming
                 ? 'bg-blue-500'
                 : 'bg-green-500'
-            }`}
+              }`}
           >
             {isExpired ? '已结束' : isUpcoming ? '即将开始' : '进行中'}
           </span>
@@ -187,7 +189,7 @@ function CampaignContent({ campaign, themeSettings, isDarkMode }: CampaignConten
         <h2 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
           {campaign.title}
         </h2>
-        <div className={`text-sm mt-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+        <div className={`text-sm mt-2 ${getSecondaryTextClass(isDarkMode)}`}>
           {campaign.startTime} ~ {campaign.endTime}
         </div>
 
