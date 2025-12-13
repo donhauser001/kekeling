@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -31,7 +31,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { SelectDropdown } from '@/components/select-dropdown'
 import { referralApi, type ReferralRule } from '@/lib/api'
-import { TerminalPreview } from '@/components/terminal-preview'
+import { TerminalPreview, type MarketingDataOverride } from '@/components/terminal-preview'
 
 const formSchema = z.object({
   name: z.string().min(1, '请输入规则名称'),
@@ -154,6 +154,25 @@ export function ReferralRulesActionDialog({
   }
 
   const isPending = createMutation.isPending || updateMutation.isPending
+
+  // Step 14.13 FIX-P3-02: 构建实时预览数据
+  const marketingData = useMemo<MarketingDataOverride>(() => {
+    const watchValues = form.watch()
+    // 计算奖励积分显示值（仅积分类型时显示）
+    const rewardPoints = watchValues.rewardType === 'points' ? watchValues.rewardValue : 0
+    const inviterRewardPoints = watchValues.inviterRewardType === 'points' ? watchValues.inviterReward : 0
+
+    return {
+      referrals: {
+        inviteCode: 'ABC123',
+        invitedCount: 0,
+        earnedPoints: 0,
+        pendingPoints: 0,
+        // 显示邀请双方各得的积分（被邀请人 + 邀请人）
+        rewardPoints: rewardPoints + inviterRewardPoints,
+      },
+    }
+  }, [form.watch()])
 
   // 脏表单关闭拦截
   const onOpenChangeWrapper = (open: boolean) => {
@@ -362,14 +381,15 @@ export function ReferralRulesActionDialog({
               </Form>
             </div>
 
-            {/* 右侧：预览器 */}
+            {/* 右侧：预览器 - Step 14.13 FIX-P3-02: 实时预览 */}
             <div className='w-[375px] flex-shrink-0'>
               <div className='text-sm text-muted-foreground mb-2'>终端预览</div>
               <TerminalPreview
                 page='referrals'
-                height={500}
+                height={600}
                 showFrame={false}
                 autoLoad={false}
+                marketingData={marketingData}
               />
             </div>
           </div>

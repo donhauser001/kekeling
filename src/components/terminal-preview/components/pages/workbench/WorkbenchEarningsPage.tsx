@@ -29,6 +29,9 @@ import {
 import type { ThemeSettings, PreviewViewerRole } from '../../../types'
 import { previewApi, type EarningsStats, type EarningsStatsRecord } from '../../../api'
 import { PermissionPrompt } from '../../PermissionPrompt'
+import { ListSkeleton } from '../../ListSkeleton'
+import { ErrorRetry } from '../../ErrorRetry'
+import { formatMoney, formatMoneyWithComma, formatCount, safeNumber, safeArray, getSecondaryTextClass, getTertiaryTextClass } from '../../../utils'
 
 // ============================================================================
 // 类型定义
@@ -41,7 +44,7 @@ export interface WorkbenchEarningsPageProps {
     onBack?: () => void
     onNavigate?: (page: string, params?: Record<string, string>) => void
     /** 显示登录弹窗回调 */
-    onShowLoginDialog?: () => void
+    onLogin?: () => void
 }
 
 // ============================================================================
@@ -54,7 +57,7 @@ export function WorkbenchEarningsPage({
     effectiveViewerRole,
     onBack,
     onNavigate,
-    onShowLoginDialog,
+    onLogin,
 }: WorkbenchEarningsPageProps) {
     const isEscort = effectiveViewerRole === 'escort'
 
@@ -63,11 +66,26 @@ export function WorkbenchEarningsPage({
         data: earningsStats,
         isLoading,
         isError,
+        refetch,
     } = useQuery({
         queryKey: ['preview', 'workbench', 'earnings-stats'],
         queryFn: () => previewApi.getEarningsStats(),
         staleTime: 60 * 1000,
         enabled: isEscort, // 只有 escort 视角才发请求
+        // Step 14.14: API 层 transform，防止异常数据击穿到 UI
+        select: (data): EarningsStats => ({
+            ...data,
+            totalEarnings: safeNumber(data?.totalEarnings),
+            monthlyEarnings: safeNumber(data?.monthlyEarnings),
+            withdrawable: safeNumber(data?.withdrawable),
+            pendingWithdraw: safeNumber(data?.pendingWithdraw),
+            totalOrders: safeNumber(data?.totalOrders),
+            monthlyOrders: safeNumber(data?.monthlyOrders),
+            monthlyOrdersGrowth: data?.monthlyOrdersGrowth !== undefined
+                ? safeNumber(data.monthlyOrdersGrowth)
+                : undefined,
+            recentRecords: safeArray<EarningsStatsRecord>(data?.recentRecords),
+        }),
     })
 
     // 非 escort 视角：显示统一的 PermissionPrompt
@@ -84,8 +102,8 @@ export function WorkbenchEarningsPage({
                 <div className="flex-1">
                     <PermissionPrompt
                         title="需要陪诊员身份"
-                        description="请先登录陪诊员账号后再查看收入明细"
-                        onLogin={onShowLoginDialog}
+                        description="请先登录陪诊员账号查看收入明细"
+                        onLogin={onLogin}
                         showDebugInject={process.env.NODE_ENV === 'development'}
                         primaryColor={themeSettings.primaryColor}
                         isDarkMode={isDarkMode}
@@ -105,19 +123,20 @@ export function WorkbenchEarningsPage({
             {/* 页面标题 */}
             <Header themeSettings={themeSettings} onBack={onBack} />
 
-            {/* 加载中 */}
+            {/* 加载中 - 骨架屏 */}
             {isLoading && (
-                <div className="flex items-center justify-center py-20">
-                    <div className="text-gray-400 text-sm">加载中...</div>
+                <div className="px-4 py-4">
+                    <ListSkeleton count={1} variant="detail" isDarkMode={isDarkMode} />
                 </div>
             )}
 
-            {/* 请求失败 */}
+            {/* 请求失败 - 带重试按钮 */}
             {isError && !earningsStats && (
-                <div className="flex flex-col items-center justify-center py-20">
-                    <div className="text-4xl mb-2">😔</div>
-                    <div className="text-gray-400 text-sm">加载失败，请稍后重试</div>
-                </div>
+                <ErrorRetry
+                    onRetry={() => refetch()}
+                    isDarkMode={isDarkMode}
+                    primaryColor={themeSettings.primaryColor}
+                />
             )}
 
             {/* 数据内容 */}
@@ -179,7 +198,7 @@ function EarningsContent({
                     <div className="relative z-10">
                         <div className="text-white/80 text-sm font-medium">可提现余额</div>
                         <div className="text-white text-4xl font-bold mt-2 tracking-tight">
-                            ¥{stats.withdrawable.toLocaleString('zh-CN', { minimumFractionDigits: 2 })}
+                            ¥{formatMoneyWithComma(stats.withdrawable)}
                         </div>
 
                         {/* 提现中金额 */}
@@ -187,7 +206,7 @@ function EarningsContent({
                             <div className="flex items-center gap-1 mt-2">
                                 <Clock className="w-3.5 h-3.5 text-white/60" />
                                 <span className="text-white/60 text-xs">
-                                    提现中 ¥{stats.pendingWithdraw.toFixed(2)}
+                                    提现中 ¥{formatMoney(stats.pendingWithdraw)}
                                 </span>
                             </div>
                         )}
@@ -256,7 +275,7 @@ function EarningsContent({
                             <FileText className="w-5 h-5" style={{ color: themeSettings.primaryColor }} />
                         </div>
                         <div>
-                            <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                            <div className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>
                                 本月完成订单
                             </div>
                             <div className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -299,7 +318,7 @@ function EarningsContent({
                         style={{ backgroundColor: isDarkMode ? '#2a2a2a' : '#fff' }}
                     >
                         <div className="text-4xl mb-2">📊</div>
-                        <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                        <div className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>
                             暂无收支记录
                         </div>
                     </div>
@@ -375,8 +394,8 @@ function StatCard({
     accentColor,
 }: StatCardProps) {
     const formattedValue = prefix === '¥'
-        ? value.toLocaleString('zh-CN', { minimumFractionDigits: 2 })
-        : value.toLocaleString('zh-CN')
+        ? formatMoneyWithComma(value)
+        : formatCount(value)
 
     return (
         <div
@@ -392,7 +411,7 @@ function StatCard({
                 >
                     <Icon className="w-5 h-5" style={{ color: accentColor }} />
                 </div>
-                <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                <span className={`text-xs ${getSecondaryTextClass(isDarkMode)}`}>
                     {label}
                 </span>
             </div>
@@ -411,7 +430,7 @@ interface EarningsRecordRowProps {
 }
 
 function EarningsRecordRow({ record, themeSettings, isDarkMode, isLast }: EarningsRecordRowProps) {
-    const isIncome = record.amount > 0
+    const isIncome = safeNumber(record.amount) > 0
     const IconComponent = getRecordIcon(record.type)
     const iconColor = isIncome ? '#10b981' : isDarkMode ? '#9ca3af' : '#6b7280'
 
@@ -463,7 +482,7 @@ function EarningsRecordRow({ record, themeSettings, isDarkMode, isLast }: Earnin
                         </span>
                     )}
                 </div>
-                <div className={`text-xs mt-0.5 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                <div className={`text-xs mt-0.5 ${getTertiaryTextClass(isDarkMode)}`}>
                     {record.createdAt}
                     {record.orderNo && ` · ${record.orderNo}`}
                 </div>
@@ -471,10 +490,10 @@ function EarningsRecordRow({ record, themeSettings, isDarkMode, isLast }: Earnin
 
             {/* 金额 */}
             <div
-                className={`text-sm font-semibold flex-shrink-0 ${isIncome ? 'text-green-500' : isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                className={`text-sm font-semibold flex-shrink-0 ${isIncome ? 'text-green-500' : getSecondaryTextClass(isDarkMode)
                     }`}
             >
-                {isIncome ? '+' : ''}{record.amount.toFixed(2)}
+                {isIncome ? '+' : ''}{formatMoney(record.amount)}
             </div>
         </div>
     )

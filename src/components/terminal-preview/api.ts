@@ -62,6 +62,7 @@ import {
   getMockWithdrawStats,
   getMockWorkbenchOrderDetail,
   getMockWorkbenchSettings,
+  getMockMyOrders,
   // 分销中心
   getMockDistributionStats,
   getMockDistributionMembers,
@@ -662,6 +663,60 @@ export interface OrdersPoolResponse {
   items: PoolOrderItem[]
   total: number
   hasMore: boolean
+}
+
+/**
+ * 我的订单项
+ * 对应接口: GET /escort-app/my-orders
+ */
+export interface MyOrderItem {
+  id: string
+  /** 订单号 */
+  orderNo: string
+  /** 服务类型 */
+  serviceType: string
+  /** 服务名称 */
+  serviceName: string
+  /** 预约时间 */
+  appointmentTime: string
+  /** 医院名称 */
+  hospitalName: string
+  /** 科室 */
+  department?: string
+  /** 订单金额 */
+  amount: number
+  /** 预计佣金 */
+  commission: number
+  /** 订单状态 */
+  status: 'pending' | 'accepted' | 'ongoing' | 'completed' | 'cancelled'
+  /** 创建时间 */
+  createdAt: string
+  /** 用户名称（脱敏） */
+  userName?: string
+  /** 用户电话（脱敏） */
+  userPhone?: string
+}
+
+/**
+ * 我的订单响应
+ * 对应接口: GET /escort-app/my-orders
+ */
+export interface MyOrdersResponse {
+  items: MyOrderItem[]
+  total: number
+  hasMore: boolean
+}
+
+/**
+ * 我的订单查询参数
+ */
+export interface MyOrdersParams {
+  /** 订单状态筛选 */
+  status?: 'pending' | 'ongoing' | 'completed' | 'cancelled'
+  /** 页码 */
+  page?: number
+  /** 每页数量 */
+  pageSize?: number
 }
 
 /**
@@ -1298,6 +1353,49 @@ export const previewApi = {
         return getMockOrdersPool()
       }
       throw error
+    }
+  },
+
+  /**
+   * 获取我的订单列表
+   * 接口: GET /escort-app/my-orders
+   * 通道: escortRequest（⚠️ 必须 escortToken）
+   *
+   * Step 14.13 FIX-P3-01: 实现 my-orders 页面组件
+   * Mock Token 规则：token 以 'mock-' 开头时直接返回 mock 数据
+   */
+  getMyOrders: async (params?: MyOrdersParams): Promise<MyOrdersResponse> => {
+    const escortToken = getEscortToken()
+
+    // 无 token 时返回 mock 数据（非 escort 视角）
+    if (!escortToken) {
+      console.log('[previewApi.getMyOrders] 无 escortToken，返回 mock 数据')
+      return getMockMyOrders(params?.status)
+    }
+
+    // mock token 直接返回 mock 数据，不请求真实后端
+    if (escortToken.startsWith('mock-')) {
+      console.log('[previewApi.getMyOrders] mock token, 返回 mock 数据')
+      return getMockMyOrders(params?.status)
+    }
+
+    try {
+      const searchParams = new URLSearchParams()
+      if (params?.status) searchParams.set('status', params.status)
+      if (params?.page) searchParams.set('page', params.page.toString())
+      if (params?.pageSize) searchParams.set('pageSize', params.pageSize.toString())
+      const query = searchParams.toString()
+      return await escortRequest<MyOrdersResponse>(
+        `/escort-app/my-orders${query ? `?${query}` : ''}`
+      )
+    } catch (error) {
+      if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
+        console.warn('[previewApi.getMyOrders] 接口错误，使用 mock 数据')
+        return getMockMyOrders(params?.status)
+      }
+      // 其他错误也降级到 mock，保证预览器可用
+      console.warn('[previewApi.getMyOrders] 请求失败，降级 mock:', error)
+      return getMockMyOrders(params?.status)
     }
   },
 

@@ -15,6 +15,10 @@ import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import type { ThemeSettings, CouponItemOverride } from '../../../types'
 import { previewApi } from '../../../api'
+import { ListSkeleton } from '../../ListSkeleton'
+import { ErrorRetry } from '../../ErrorRetry'
+import { getRefreshingClass } from '../../PageTransition'
+import { getSecondaryTextClass, getTertiaryTextClass } from '../../../utils'
 
 // ============================================================================
 // 类型定义
@@ -47,6 +51,8 @@ export function CouponsPage({ themeSettings, isDarkMode, couponsOverride }: Coup
     data: apiCouponsData,
     isLoading: apiLoading,
     isError: apiError,
+    isFetching: apiFetching,
+    refetch,
   } = useQuery({
     queryKey: ['preview', 'coupons', 'my'],
     queryFn: previewApi.getMyCoupons,
@@ -74,6 +80,7 @@ export function CouponsPage({ themeSettings, isDarkMode, couponsOverride }: Coup
   // 状态计算
   const isLoading = !hasOverride && apiLoading
   const isError = !hasOverride && apiError
+  const isFetching = !hasOverride && apiFetching
   const isEmpty = !isLoading && coupons.length === 0
 
   return (
@@ -97,26 +104,25 @@ export function CouponsPage({ themeSettings, isDarkMode, couponsOverride }: Coup
 
       {/* 内容区 */}
       <div className="px-4 py-4">
-        {/* 加载中 */}
+        {/* 加载中 - 骨架屏 */}
         {isLoading && (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-gray-400 text-sm">加载中...</div>
-          </div>
+          <ListSkeleton count={3} variant="card" isDarkMode={isDarkMode} />
         )}
 
-        {/* 请求失败 */}
+        {/* 请求失败 - 带重试按钮 */}
         {isError && (
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="text-4xl mb-2">😔</div>
-            <div className="text-gray-400 text-sm">加载失败，请稍后重试</div>
-          </div>
+          <ErrorRetry
+            onRetry={() => refetch()}
+            isDarkMode={isDarkMode}
+            primaryColor={themeSettings.primaryColor}
+          />
         )}
 
         {/* 空态 */}
         {isEmpty && !isError && (
           <div className="flex flex-col items-center justify-center py-12">
             <div className="text-5xl mb-3">🎫</div>
-            <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            <div className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>
               暂无优惠券
             </div>
             <button
@@ -128,9 +134,9 @@ export function CouponsPage({ themeSettings, isDarkMode, couponsOverride }: Coup
           </div>
         )}
 
-        {/* 优惠券列表 */}
+        {/* 优惠券列表 - Step 14.10-C: 刷新过渡效果 */}
         {!isLoading && !isError && coupons.length > 0 && (
-          <div className="space-y-3">
+          <div className={`space-y-3 ${getRefreshingClass(isFetching, true)}`}>
             {coupons.map((coupon) => (
               <CouponCard
                 key={coupon.id}
@@ -196,10 +202,10 @@ function CouponCard({ coupon, themeSettings, isDarkMode }: CouponCardProps) {
           <div className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
             {coupon.name}
           </div>
-          <div className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+          <div className={`text-xs mt-1 ${getSecondaryTextClass(isDarkMode)}`}>
             {coupon.description || '全场通用'}
           </div>
-          <div className={`text-xs mt-2 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+          <div className={`text-xs mt-2 ${getTertiaryTextClass(isDarkMode)}`}>
             有效期至 {coupon.expireAt}
           </div>
         </div>

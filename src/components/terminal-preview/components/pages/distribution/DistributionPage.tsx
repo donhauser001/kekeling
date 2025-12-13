@@ -15,6 +15,7 @@ import { ChevronRight, Users, FileText, Gift, TrendingUp, RefreshCw } from 'luci
 import type { ThemeSettings, PreviewViewerRole, DistributionStats } from '../../../types'
 import { previewApi } from '../../../api'
 import { PermissionPrompt } from '../../PermissionPrompt'
+import { formatMoney, safeNumber, safeString, getSecondaryTextClass } from '../../../utils'
 
 // ============================================================================
 // 类型定义
@@ -27,7 +28,7 @@ export interface DistributionPageProps {
   effectiveViewerRole: PreviewViewerRole
   onNavigate?: (page: string, params?: Record<string, string>) => void
   /** 打开登录对话框 */
-  onLoginClick?: () => void
+  onLogin?: () => void
 }
 
 // ============================================================================
@@ -39,7 +40,7 @@ export function DistributionPage({
   isDarkMode,
   effectiveViewerRole,
   onNavigate,
-  onLoginClick,
+  onLogin,
 }: DistributionPageProps) {
   const isEscort = effectiveViewerRole === 'escort'
 
@@ -54,6 +55,22 @@ export function DistributionPage({
     queryFn: () => previewApi.getDistributionStats(),
     staleTime: 60 * 1000,
     enabled: isEscort, // 只有 escort 视角才发请求
+    // Step 14.14: API 层 transform，防止异常数据击穿到 UI
+    select: (data) => ({
+      ...data,
+      totalTeamSize: safeNumber(data?.totalTeamSize),
+      directCount: safeNumber(data?.directCount),
+      indirectCount: safeNumber(data?.indirectCount),
+      totalDistribution: safeNumber(data?.totalDistribution),
+      monthlyDistribution: safeNumber(data?.monthlyDistribution),
+      pendingDistribution: safeNumber(data?.pendingDistribution),
+      currentLevel: safeString(data?.currentLevel, '初级'),
+      nextLevel: data?.nextLevel ? safeString(data.nextLevel) : undefined,
+      // promotionProgress: 0 是有效值，不能转换为 undefined
+      promotionProgress: data?.promotionProgress !== undefined
+        ? safeNumber(data.promotionProgress)
+        : undefined,
+    }),
   })
 
   // 非 escort 视角：显示统一的 PermissionPrompt
@@ -77,7 +94,7 @@ export function DistributionPage({
         <PermissionPrompt
           title="需要陪诊员身份"
           description="请先登录陪诊员账号查看分销数据"
-          onLogin={onLoginClick}
+          onLogin={onLogin}
           showDebugInject={process.env.NODE_ENV === 'development'}
           primaryColor={themeSettings.primaryColor}
           isDarkMode={isDarkMode}
@@ -114,7 +131,7 @@ export function DistributionPage({
         {isError && (
           <div className="flex flex-col items-center justify-center py-12">
             <div className="text-4xl mb-2">😔</div>
-            <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            <div className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>
               加载失败
             </div>
             <button
@@ -176,19 +193,19 @@ function DistributionContent({
       >
         <div className="text-white/80 text-sm mb-1">累计分润</div>
         <div className="text-white text-3xl font-bold">
-          ¥{stats.totalDistribution.toFixed(2)}
+          ¥{formatMoney(stats.totalDistribution)}
         </div>
         <div className="flex gap-6 mt-4">
           <div>
             <div className="text-white/60 text-xs">本月分润</div>
             <div className="text-white text-lg font-semibold">
-              ¥{stats.monthlyDistribution.toFixed(2)}
+              ¥{formatMoney(stats.monthlyDistribution)}
             </div>
           </div>
           <div>
             <div className="text-white/60 text-xs">待结算</div>
             <div className="text-white text-lg font-semibold">
-              ¥{stats.pendingDistribution.toFixed(2)}
+              ¥{formatMoney(stats.pendingDistribution)}
             </div>
           </div>
         </div>
@@ -255,7 +272,7 @@ function DistributionContent({
               {stats.currentLevel}
             </div>
             {stats.nextLevel && (
-              <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              <div className={`text-xs ${getSecondaryTextClass(isDarkMode)}`}>
                 下一等级：{stats.nextLevel}
               </div>
             )}
@@ -266,7 +283,7 @@ function DistributionContent({
         {stats.promotionProgress !== undefined && stats.nextLevel && (
           <div className="mt-3">
             <div className="flex items-center justify-between text-xs mb-1">
-              <span className={isDarkMode ? 'text-gray-400' : 'text-gray-500'}>
+              <span className={getSecondaryTextClass(isDarkMode)}>
                 晋升进度
               </span>
               <span style={{ color: themeSettings.primaryColor }}>
@@ -344,7 +361,7 @@ function StatCard({ label, value, isDarkMode }: StatCardProps) {
       <div className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
         {value}
       </div>
-      <div className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+      <div className={`text-xs mt-1 ${getSecondaryTextClass(isDarkMode)}`}>
         {label}
       </div>
     </div>

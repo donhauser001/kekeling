@@ -339,3 +339,132 @@ export function getMockWithdrawZeroBalance(): WithdrawInfo {
   }
 }
 
+// ============================================================================
+// 我的订单 Mock（Step 14.13 FIX-P3-01）
+// ============================================================================
+
+/**
+ * 我的订单项类型
+ */
+export interface MyOrderItem {
+  id: string
+  orderNo: string
+  serviceType: string
+  serviceName: string
+  appointmentTime: string
+  hospitalName: string
+  department?: string
+  amount: number
+  commission: number
+  status: 'pending' | 'accepted' | 'ongoing' | 'completed' | 'cancelled'
+  createdAt: string
+  userName?: string
+  userPhone?: string
+}
+
+/**
+ * 我的订单响应类型
+ */
+export interface MyOrdersResponse {
+  items: MyOrderItem[]
+  total: number
+  hasMore: boolean
+}
+
+/**
+ * Mock 我的订单数据
+ */
+export function getMockMyOrders(status?: string): MyOrdersResponse {
+  const allOrders: MyOrderItem[] = [
+    {
+      id: 'my-order-1',
+      orderNo: 'ORD202412130001',
+      serviceType: 'accompany',
+      serviceName: '全程陪诊',
+      appointmentTime: '2024-12-15 09:00',
+      hospitalName: '北京协和医院',
+      department: '内科',
+      amount: 299,
+      commission: 180,
+      status: 'pending',
+      createdAt: '2024-12-13 10:30',
+      userName: '王**',
+      userPhone: '138****8888',
+    },
+    {
+      id: 'my-order-2',
+      orderNo: 'ORD202412130002',
+      serviceType: 'accompany',
+      serviceName: '检查陪同',
+      appointmentTime: '2024-12-14 14:00',
+      hospitalName: '北京儿童医院',
+      department: '儿科',
+      amount: 259,
+      commission: 150,
+      status: 'ongoing',
+      createdAt: '2024-12-12 16:20',
+      userName: '李**',
+      userPhone: '139****9999',
+    },
+    {
+      id: 'my-order-3',
+      orderNo: 'ORD202412120003',
+      serviceType: 'medicine',
+      serviceName: '取药代办',
+      appointmentTime: '2024-12-12 10:00',
+      hospitalName: '北京朝阳医院',
+      amount: 99,
+      commission: 50,
+      status: 'completed',
+      createdAt: '2024-12-11 08:45',
+      userName: '张**',
+      userPhone: '137****7777',
+    },
+    {
+      id: 'my-order-4',
+      orderNo: 'ORD202412100004',
+      serviceType: 'accompany',
+      serviceName: '门诊陪同',
+      appointmentTime: '2024-12-10 09:30',
+      hospitalName: '北京大学第一医院',
+      department: '外科',
+      amount: 199,
+      commission: 120,
+      status: 'completed',
+      createdAt: '2024-12-09 14:10',
+      userName: '赵**',
+      userPhone: '136****6666',
+    },
+    {
+      id: 'my-order-5',
+      orderNo: 'ORD202412080005',
+      serviceType: 'accompany',
+      serviceName: '住院陪护',
+      appointmentTime: '2024-12-08 08:00',
+      hospitalName: '中日友好医院',
+      department: '骨科',
+      amount: 599,
+      commission: 350,
+      status: 'cancelled',
+      createdAt: '2024-12-07 09:00',
+      userName: '刘**',
+      userPhone: '135****5555',
+    },
+  ]
+
+  // 根据状态筛选
+  let filteredOrders = allOrders
+  if (status && status !== 'all') {
+    filteredOrders = allOrders.filter((order) => {
+      if (status === 'pending') return order.status === 'pending' || order.status === 'accepted'
+      return order.status === status
+    })
+  }
+
+  return {
+    items: filteredOrders,
+    total: filteredOrders.length,
+    hasMore: false,
+  }
+}
+

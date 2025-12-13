@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useNavigate, useParams } from '@tanstack/react-router'
 import { Loader2, ArrowLeft, Save } from 'lucide-react'
 import { toast } from 'sonner'
@@ -7,6 +7,7 @@ import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { ThemeSwitch } from '@/components/theme-switch'
+import { TerminalPreview, type RecommendedServicesData } from '@/components/terminal-preview'
 import {
     useService,
     useActiveServiceCategories,
@@ -278,6 +279,26 @@ export function ServiceEdit() {
 
     const isPending = createMutation.isPending || updateMutation.isPending
 
+    // 构建预览数据
+    const previewServiceData = useMemo<RecommendedServicesData>(() => ({
+        enabled: true,
+        tabs: [{
+            key: 'recommended' as const,
+            title: '推荐',
+            services: [{
+                id: id || 'preview-service',
+                name: formData.name || '新服务',
+                price: parseFloat(formData.price) || 0,
+                originalPrice: formData.originalPrice ? parseFloat(formData.originalPrice) : undefined,
+                unit: formData.unit,
+                coverImage: formData.coverImages[0] || undefined,
+                salesCount: 0,
+                description: formData.description || undefined,
+                tags: formData.tags ? formData.tags.split(/[,，、]/).filter(Boolean) : undefined,
+            }],
+        }],
+    }), [id, formData.name, formData.price, formData.originalPrice, formData.unit, formData.coverImages, formData.description, formData.tags])
+
     if (isEdit && isLoadingService) {
         return (
             <div className='flex h-screen items-center justify-center'>
@@ -327,7 +348,7 @@ export function ServiceEdit() {
             <Main className='pb-8'>
                 <div className='flex gap-6'>
                     {/* 左侧：编辑区域 */}
-                    <div className='flex-1'>
+                    <div className='flex-1 min-w-0'>
                         <div className='space-y-6'>
                             <BasicInfoCard
                                 formData={formData}
@@ -354,8 +375,8 @@ export function ServiceEdit() {
                         </div>
                     </div>
 
-                    {/* 右侧：设置区域 */}
-                    <div className='w-[380px] shrink-0'>
+                    {/* 中间：设置区域 */}
+                    <div className='w-[320px] shrink-0'>
                         <div className='space-y-6'>
                             <ServiceHighlightsCard
                                 formData={formData}
@@ -383,6 +404,20 @@ export function ServiceEdit() {
                             <PurchaseLimitCard
                                 formData={formData}
                                 onFormChange={setFormData}
+                            />
+                        </div>
+                    </div>
+
+                    {/* 右侧：终端预览器（仅大屏显示） */}
+                    <div className='hidden 2xl:block w-[375px] shrink-0'>
+                        <div className='sticky top-6'>
+                            <div className='text-sm text-muted-foreground mb-2'>终端预览</div>
+                            <TerminalPreview
+                                page='services'
+                                height={680}
+                                showFrame={true}
+                                autoLoad={false}
+                                recommendedServices={previewServiceData}
                             />
                         </div>
                     </div>

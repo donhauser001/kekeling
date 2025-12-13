@@ -12,6 +12,7 @@ import { CreditCard, CheckCircle, AlertCircle } from 'lucide-react'
 import type { ThemeSettings, PreviewViewerRole } from '../../../types'
 import { previewApi, type WithdrawInfo } from '../../../api'
 import { PermissionPrompt } from '../../PermissionPrompt'
+import { formatMoney, formatPercent, safeNumber, getSecondaryTextClass, getTertiaryTextClass } from '../../../utils'
 
 // ============================================================================
 // 类型定义
@@ -24,7 +25,7 @@ export interface WithdrawPageProps {
   onBack?: () => void
   onNavigate?: (page: string, params?: Record<string, string>) => void
   /** 显示登录弹窗回调 */
-  onShowLoginDialog?: () => void
+  onLogin?: () => void
 }
 
 // ============================================================================
@@ -36,7 +37,7 @@ export function WithdrawPage({
   isDarkMode,
   effectiveViewerRole,
   onBack,
-  onShowLoginDialog,
+  onLogin,
 }: WithdrawPageProps) {
   const isEscort = effectiveViewerRole === 'escort'
 
@@ -85,8 +86,8 @@ export function WithdrawPage({
         <div className="flex-1">
           <PermissionPrompt
             title="需要陪诊员身份"
-            description="请先登录陪诊员账号后再进行提现操作"
-            onLogin={onShowLoginDialog}
+            description="请先登录陪诊员账号进行提现操作"
+            onLogin={onLogin}
             showDebugInject={process.env.NODE_ENV === 'development'}
             primaryColor={themeSettings.primaryColor}
             isDarkMode={isDarkMode}
@@ -146,7 +147,7 @@ export function WithdrawPage({
         {/* 加载中 */}
         {isLoading && (
           <div className="flex items-center justify-center py-12">
-            <div className="text-gray-400 text-sm">加载中...</div>
+            <div className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>加载中...</div>
           </div>
         )}
 
@@ -154,7 +155,7 @@ export function WithdrawPage({
         {isError && (
           <div className="flex flex-col items-center justify-center py-12">
             <div className="text-4xl mb-2">😔</div>
-            <div className="text-gray-400 text-sm">加载失败，请稍后重试</div>
+            <div className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>加载失败，请稍后重试</div>
           </div>
         )}
 
@@ -168,14 +169,14 @@ export function WithdrawPage({
                 backgroundColor: isDarkMode ? '#2a2a2a' : '#fff',
               }}
             >
-              <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              <div className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>
                 可提现金额
               </div>
               <div
                 className="text-3xl font-bold mt-1"
                 style={{ color: themeSettings.primaryColor }}
               >
-                ¥{withdrawInfo.withdrawable.toFixed(2)}
+                ¥{formatMoney(withdrawInfo.withdrawable)}
               </div>
             </div>
 
@@ -186,7 +187,7 @@ export function WithdrawPage({
                 backgroundColor: isDarkMode ? '#2a2a2a' : '#fff',
               }}
             >
-              <div className={`text-sm mb-3 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              <div className={`text-sm mb-3 ${getSecondaryTextClass(isDarkMode)}`}>
                 提现金额
               </div>
               <div className="flex items-baseline gap-1">
@@ -213,21 +214,21 @@ export function WithdrawPage({
             <div className="mt-4 space-y-2">
               <div className="flex items-center gap-2">
                 <AlertCircle className="w-4 h-4" style={{ color: themeSettings.primaryColor }} />
-                <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                <span className={`text-xs ${getSecondaryTextClass(isDarkMode)}`}>
                   最低提现金额：¥{withdrawInfo.minWithdrawAmount}
                 </span>
               </div>
-              {withdrawInfo.feeRate > 0 && (
+              {safeNumber(withdrawInfo.feeRate) > 0 && (
                 <div className="flex items-center gap-2">
                   <AlertCircle className="w-4 h-4" style={{ color: themeSettings.primaryColor }} />
-                  <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                    手续费：{(withdrawInfo.feeRate * 100).toFixed(1)}%
+                  <span className={`text-xs ${getSecondaryTextClass(isDarkMode)}`}>
+                    手续费：{formatPercent(withdrawInfo.feeRate, 1)}%
                   </span>
                 </div>
               )}
               <div className="flex items-center gap-2">
                 <AlertCircle className="w-4 h-4" style={{ color: themeSettings.primaryColor }} />
-                <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                <span className={`text-xs ${getSecondaryTextClass(isDarkMode)}`}>
                   预计 {withdrawInfo.estimatedHours} 小时内到账
                 </span>
               </div>
@@ -240,13 +241,13 @@ export function WithdrawPage({
                 backgroundColor: isDarkMode ? '#2a2a2a' : '#fff',
               }}
             >
-              <div className={`text-sm mb-3 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              <div className={`text-sm mb-3 ${getSecondaryTextClass(isDarkMode)}`}>
                 提现至
               </div>
 
               {hasNoBankCard ? (
                 <div className="text-center py-4">
-                  <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  <div className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>
                     暂无绑定银行卡
                   </div>
                   <button
@@ -263,8 +264,8 @@ export function WithdrawPage({
                       key={card.id}
                       onClick={() => setSelectedCardId(card.id)}
                       className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${selectedCardId === card.id
-                          ? 'ring-2'
-                          : ''
+                        ? 'ring-2'
+                        : ''
                         }`}
                       style={{
                         backgroundColor: isDarkMode ? '#3a3a3a' : '#f5f7fa',
@@ -279,7 +280,7 @@ export function WithdrawPage({
                         <div className={`text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                           {card.bankName}
                         </div>
-                        <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                        <div className={`text-xs ${getSecondaryTextClass(isDarkMode)}`}>
                           尾号 {card.cardNo}
                         </div>
                       </div>
@@ -298,18 +299,18 @@ export function WithdrawPage({
             {/* 到账金额预览 */}
             {inputAmount > 0 && (
               <div className="mt-4 text-center">
-                <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                <span className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>
                   实际到账：
                 </span>
                 <span
                   className="text-lg font-bold ml-1"
                   style={{ color: themeSettings.primaryColor }}
                 >
-                  ¥{actualAmount.toFixed(2)}
+                  ¥{formatMoney(actualAmount)}
                 </span>
                 {fee > 0 && (
-                  <span className={`text-xs ml-2 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                    (手续费 ¥{fee.toFixed(2)})
+                  <span className={`text-xs ml-2 ${getTertiaryTextClass(isDarkMode)}`}>
+                    (手续费 ¥{formatMoney(fee)})
                   </span>
                 )}
               </div>

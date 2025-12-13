@@ -1,60 +1,79 @@
 /**
- * 陪诊员订单池页面（预览器版本）
+ * 我的订单页面（预览器版本）
  *
- * Step 7/7 批次 A: workbench-orders-pool
- * - page key: 'workbench-orders-pool'
- * - API: previewApi.getWorkbenchOrdersPool()
+ * Step 14.13 FIX-P3-01: 实现 my-orders 页面组件
+ * - page key: 'my-orders'
+ * - API: previewApi.getMyOrders()
  * - 数据通道: escortRequest（⚠️ 需要 escortToken）
  */
 
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { MapPin, Clock, ChevronRight } from 'lucide-react'
 import type { ThemeSettings, PreviewViewerRole } from '../../../types'
-import { previewApi, type PoolOrderItem } from '../../../api'
+import { previewApi, type MyOrderItem } from '../../../api'
 import { PermissionPrompt } from '../../PermissionPrompt'
 import { ListSkeleton } from '../../ListSkeleton'
 import { ErrorRetry } from '../../ErrorRetry'
 import { getRefreshingClass } from '../../PageTransition'
-import { getSecondaryTextClass, getTertiaryTextClass } from '../../../utils'
+import { formatMoney, getSecondaryTextClass } from '../../../utils'
 
 // ============================================================================
 // 类型定义
 // ============================================================================
 
-export interface OrdersPoolPageProps {
+export interface MyOrdersPageProps {
   themeSettings: ThemeSettings
   isDarkMode: boolean
   effectiveViewerRole: PreviewViewerRole
+  pageParams?: Record<string, string>
   onBack?: () => void
   onNavigate?: (page: string, params?: Record<string, string>) => void
   /** 显示登录弹窗回调 */
   onLogin?: () => void
 }
 
+/** 订单状态 Tab */
+type OrderStatusTab = 'all' | 'pending' | 'ongoing' | 'completed' | 'cancelled'
+
+const STATUS_TABS: { key: OrderStatusTab; label: string }[] = [
+  { key: 'all', label: '全部' },
+  { key: 'pending', label: '待服务' },
+  { key: 'ongoing', label: '进行中' },
+  { key: 'completed', label: '已完成' },
+  { key: 'cancelled', label: '已取消' },
+]
+
 // ============================================================================
 // 组件实现
 // ============================================================================
 
-export function OrdersPoolPage({
+export function MyOrdersPage({
   themeSettings,
   isDarkMode,
   effectiveViewerRole,
+  pageParams,
   onBack,
   onNavigate,
   onLogin,
-}: OrdersPoolPageProps) {
+}: MyOrdersPageProps) {
   const isEscort = effectiveViewerRole === 'escort'
+
+  // 当前选中的状态 Tab
+  const [activeTab, setActiveTab] = useState<OrderStatusTab>(
+    (pageParams?.status as OrderStatusTab) || 'all'
+  )
 
   // ⚠️ 非 escort 视角时不发请求
   const {
-    data: ordersPool,
+    data: ordersResponse,
     isLoading,
     isError,
     isFetching,
     refetch,
   } = useQuery({
-    queryKey: ['preview', 'workbench', 'orders-pool'],
-    queryFn: () => previewApi.getWorkbenchOrdersPool(),
+    queryKey: ['preview', 'my-orders', activeTab],
+    queryFn: () => previewApi.getMyOrders({ status: activeTab === 'all' ? undefined : activeTab }),
     staleTime: 30 * 1000, // 30秒刷新
     enabled: isEscort,
   })
@@ -80,7 +99,7 @@ export function OrdersPoolPage({
             </button>
           )}
           <h1 className="text-lg font-semibold text-white flex-1 text-center pr-6">
-            订单池
+            我的订单
           </h1>
         </div>
 
@@ -88,7 +107,7 @@ export function OrdersPoolPage({
         <div className="flex-1">
           <PermissionPrompt
             title="需要陪诊员身份"
-            description="请先登录陪诊员账号访问订单池"
+            description="请先登录陪诊员账号查看订单"
             onLogin={onLogin}
             showDebugInject={process.env.NODE_ENV === 'development'}
             primaryColor={themeSettings.primaryColor}
@@ -99,7 +118,7 @@ export function OrdersPoolPage({
     )
   }
 
-  const orders = ordersPool?.items ?? []
+  const orders = ordersResponse?.items ?? []
   const isEmpty = !isLoading && orders.length === 0
 
   return (
@@ -122,8 +141,35 @@ export function OrdersPoolPage({
           </button>
         )}
         <h1 className="text-lg font-semibold text-white flex-1 text-center pr-6">
-          订单池
+          我的订单
         </h1>
+      </div>
+
+      {/* 状态 Tab */}
+      <div
+        className="flex items-center px-2 py-2 overflow-x-auto"
+        style={{
+          backgroundColor: isDarkMode ? '#2a2a2a' : '#fff',
+        }}
+      >
+        {STATUS_TABS.map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={`px-4 py-2 text-sm whitespace-nowrap rounded-full transition-colors ${activeTab === tab.key
+              ? 'text-white'
+              : isDarkMode
+                ? 'text-gray-300'
+                : 'text-gray-600'
+              }`}
+            style={{
+              backgroundColor:
+                activeTab === tab.key ? themeSettings.primaryColor : 'transparent',
+            }}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       {/* 内容区 */}
@@ -147,27 +193,20 @@ export function OrdersPoolPage({
           <div className="flex flex-col items-center justify-center py-12">
             <div className="text-5xl mb-3">📋</div>
             <div className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>
-              暂无可接订单
-            </div>
-            <div className={`text-xs mt-1 ${getTertiaryTextClass(isDarkMode)}`}>
-              新订单会实时推送，请保持在线
+              暂无{activeTab === 'all' ? '' : STATUS_TABS.find(t => t.key === activeTab)?.label}订单
             </div>
           </div>
         )}
 
-        {/* 订单列表 - Step 14.10-C: 刷新过渡效果 */}
+        {/* 订单列表 - 刷新过渡效果 */}
         {!isLoading && !isError && orders.length > 0 && (
           <div className={`space-y-3 ${getRefreshingClass(isFetching, orders.length > 0)}`}>
             {orders.map((order) => (
-              <OrderCard
+              <MyOrderCard
                 key={order.id}
                 order={order}
                 themeSettings={themeSettings}
                 isDarkMode={isDarkMode}
-                onAccept={() => {
-                  // TODO: 接单逻辑
-                  console.log('[OrdersPoolPage] 接单:', order.id)
-                }}
                 onViewDetail={() => {
                   onNavigate?.('workbench-order-detail', { id: order.id })
                 }}
@@ -187,16 +226,25 @@ export function OrdersPoolPage({
 // 订单卡片子组件
 // ============================================================================
 
-interface OrderCardProps {
-  order: PoolOrderItem
+interface MyOrderCardProps {
+  order: MyOrderItem
   themeSettings: ThemeSettings
   isDarkMode: boolean
-  onAccept: () => void
-  /** 查看订单详情回调 */
   onViewDetail?: () => void
 }
 
-function OrderCard({ order, themeSettings, isDarkMode, onAccept, onViewDetail }: OrderCardProps) {
+function MyOrderCard({ order, themeSettings, isDarkMode, onViewDetail }: MyOrderCardProps) {
+  // 订单状态配置
+  const statusConfig: Record<string, { label: string; color: string }> = {
+    pending: { label: '待服务', color: '#f59e0b' },
+    accepted: { label: '已接单', color: '#3b82f6' },
+    ongoing: { label: '进行中', color: '#10b981' },
+    completed: { label: '已完成', color: '#6b7280' },
+    cancelled: { label: '已取消', color: '#ef4444' },
+  }
+
+  const status = statusConfig[order.status] || { label: order.status, color: '#6b7280' }
+
   return (
     <div
       className="rounded-xl overflow-hidden cursor-pointer transition-shadow hover:shadow-md"
@@ -219,8 +267,11 @@ function OrderCard({ order, themeSettings, isDarkMode, onAccept, onViewDetail }:
               {order.orderNo}
             </span>
           </div>
-          <span className={`text-xs ${getTertiaryTextClass(isDarkMode)}`}>
-            {order.createdAt.split(' ')[1]}
+          <span
+            className="text-xs px-2 py-0.5 rounded"
+            style={{ backgroundColor: `${status.color}20`, color: status.color }}
+          >
+            {status.label}
           </span>
         </div>
       </div>
@@ -246,12 +297,6 @@ function OrderCard({ order, themeSettings, isDarkMode, onAccept, onViewDetail }:
             </span>
           </div>
         </div>
-
-        {order.distance !== undefined && (
-          <div className={`text-xs mt-2 ${getTertiaryTextClass(isDarkMode)}`}>
-            距您约 {order.distance} km
-          </div>
-        )}
       </div>
 
       {/* 底部 */}
@@ -260,23 +305,16 @@ function OrderCard({ order, themeSettings, isDarkMode, onAccept, onViewDetail }:
         style={{ borderColor: isDarkMode ? '#3a3a3a' : '#f3f4f6' }}
       >
         <div>
-          <span className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>预计佣金 </span>
+          <span className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>订单金额 </span>
           <span className="text-lg font-bold" style={{ color: themeSettings.primaryColor }}>
-            ¥{order.commission}
+            ¥{formatMoney(order.amount)}
           </span>
         </div>
-        <button
-          onClick={(e) => {
-            e.stopPropagation()  // 防止触发卡片点击
-            onAccept()
-          }}
-          className="px-6 py-2 rounded-full text-white text-sm font-medium"
-          style={{ backgroundColor: themeSettings.primaryColor }}
-        >
-          立即接单
-        </button>
+        <div className="flex items-center gap-1 text-sm" style={{ color: themeSettings.primaryColor }}>
+          查看详情
+          <ChevronRight className="w-4 h-4" />
+        </div>
       </div>
     </div>
   )
 }
-

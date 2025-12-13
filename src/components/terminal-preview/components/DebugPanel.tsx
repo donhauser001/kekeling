@@ -9,7 +9,7 @@
  * @see docs/终端预览器集成/01-TerminalPreview集成规格.md
  */
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import type { PreviewViewerRole } from '../types'
 
 // ============================================================================
@@ -100,12 +100,32 @@ export function DebugPanel({
   onClearEscortToken,
   onRevalidate,
 }: DebugPanelProps) {
-  const [isExpanded, setIsExpanded] = useState(true)
+  // 折叠状态持久化到 localStorage
+  const [isExpanded, setIsExpanded] = useState(() => {
+    if (typeof localStorage === 'undefined') return true
+    return localStorage.getItem('debugPanel.expanded') !== 'false'
+  })
+
+  // 状态变化时同步到 localStorage
+  useEffect(() => {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('debugPanel.expanded', String(isExpanded))
+    }
+  }, [isExpanded])
 
   const handleInjectToken = useCallback(() => {
     const mockToken = generateMockEscortToken()
     onInjectEscortToken(mockToken)
   }, [onInjectEscortToken])
+
+  // Step 14.13 FIX-P3-03: 清除 token 前添加确认
+  const handleClearToken = useCallback(() => {
+    // 使用 confirm 弹窗确认（避免引入额外依赖）
+    const confirmed = window.confirm('确定要退出陪诊员视角吗？\n\n退出后将回到用户视角。')
+    if (confirmed) {
+      onClearEscortToken()
+    }
+  }, [onClearEscortToken])
 
   const isEscort = effectiveViewerRole === 'escort'
 
@@ -131,11 +151,10 @@ export function DebugPanel({
           <div className="flex items-center gap-2 pt-2">
             <span className="text-gray-400">视角:</span>
             <span
-              className={`px-1.5 py-0.5 rounded font-medium ${
-                isEscort
-                  ? 'bg-orange-500/20 text-orange-400'
-                  : 'bg-blue-500/20 text-blue-400'
-              }`}
+              className={`px-1.5 py-0.5 rounded font-medium ${isEscort
+                ? 'bg-orange-500/20 text-orange-400'
+                : 'bg-blue-500/20 text-blue-400'
+                }`}
             >
               {isEscort ? '🔐 陪诊员' : '👤 用户'}
             </span>
@@ -171,7 +190,7 @@ export function DebugPanel({
               </button>
             ) : (
               <button
-                onClick={onClearEscortToken}
+                onClick={handleClearToken}
                 className="px-2 py-1 bg-red-600 hover:bg-red-500 rounded text-white transition-colors"
               >
                 清除 escortToken

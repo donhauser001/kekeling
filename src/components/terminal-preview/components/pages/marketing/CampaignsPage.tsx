@@ -5,11 +5,18 @@
  * - page key: 'campaigns'
  * - API: previewApi.getCampaigns()
  * - 数据通道: userRequest
+ *
+ * Step 14.8 UI-D-2: 支持 marketingData.campaigns 覆盖
  */
 
+import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import type { ThemeSettings } from '../../../types'
+import type { ThemeSettings, CampaignsDataOverride, CampaignOverride } from '../../../types'
 import { previewApi, type Campaign } from '../../../api'
+import { ListSkeleton } from '../../ListSkeleton'
+import { ErrorRetry } from '../../ErrorRetry'
+import { getRefreshingClass } from '../../PageTransition'
+import { getSecondaryTextClass, getTertiaryTextClass } from '../../../utils'
 
 // ============================================================================
 // 类型定义
@@ -19,23 +26,41 @@ export interface CampaignsPageProps {
   themeSettings: ThemeSettings
   isDarkMode: boolean
   onNavigate?: (page: string, params?: { id: string }) => void
+  /** 活动数据覆盖（管理后台实时预览用） */
+  campaignsOverride?: CampaignsDataOverride
 }
 
 // ============================================================================
 // 组件实现
 // ============================================================================
 
-export function CampaignsPage({ themeSettings, isDarkMode, onNavigate }: CampaignsPageProps) {
-  // 获取活动列表
+export function CampaignsPage({ themeSettings, isDarkMode, onNavigate, campaignsOverride }: CampaignsPageProps) {
+  // 获取活动列表（当有覆盖数据时不发起请求）
   const {
-    data: campaigns,
-    isLoading,
-    isError,
+    data: apiCampaigns,
+    isLoading: isApiLoading,
+    isError: isApiError,
+    isFetching: isApiFetching,
+    refetch,
   } = useQuery({
     queryKey: ['preview', 'campaigns'],
     queryFn: previewApi.getCampaigns,
     staleTime: 60 * 1000,
+    enabled: !campaignsOverride, // 有覆盖数据时禁用 API 请求
   })
+
+  // 合并数据：覆盖优先
+  const campaigns = useMemo<Campaign[] | undefined>(() => {
+    if (campaignsOverride?.items) {
+      return campaignsOverride.items.map(mapOverrideToCampaign)
+    }
+    return apiCampaigns
+  }, [campaignsOverride, apiCampaigns])
+
+  // 加载状态
+  const isLoading = !campaignsOverride && isApiLoading
+  const isError = !campaignsOverride && isApiError
+  const isFetching = !campaignsOverride && isApiFetching
 
   const isEmpty = !isLoading && (!campaigns || campaigns.length === 0)
 
@@ -66,37 +91,36 @@ export function CampaignsPage({ themeSettings, isDarkMode, onNavigate }: Campaig
 
       {/* 内容区 */}
       <div className="px-4 py-4">
-        {/* 加载中 */}
+        {/* 加载中 - 骨架屏 */}
         {isLoading && (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-gray-400 text-sm">加载中...</div>
-          </div>
+          <ListSkeleton count={3} variant="card" isDarkMode={isDarkMode} />
         )}
 
-        {/* 请求失败 */}
+        {/* 请求失败 - 带重试按钮 */}
         {isError && (
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="text-4xl mb-2">😔</div>
-            <div className="text-gray-400 text-sm">加载失败，请稍后重试</div>
-          </div>
+          <ErrorRetry
+            onRetry={() => refetch()}
+            isDarkMode={isDarkMode}
+            primaryColor={themeSettings.primaryColor}
+          />
         )}
 
         {/* 空态 */}
         {isEmpty && !isError && (
           <div className="flex flex-col items-center justify-center py-12">
             <div className="text-5xl mb-3">🎉</div>
-            <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            <div className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>
               暂无进行中的活动
             </div>
-            <div className={`text-xs mt-1 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+            <div className={`text-xs mt-1 ${getTertiaryTextClass(isDarkMode)}`}>
               敬请期待更多精彩活动
             </div>
           </div>
         )}
 
-        {/* 活动列表 */}
+        {/* 活动列表 - Step 14.10-C: 刷新过渡效果 */}
         {!isLoading && !isError && campaigns && campaigns.length > 0 && (
-          <div className="space-y-4">
+          <div className={`space-y-4 ${getRefreshingClass(isFetching, true)}`}>
             {campaigns.map((campaign) => (
               <CampaignCard
                 key={campaign.id}
@@ -128,15 +152,25 @@ interface CampaignCardProps {
 }
 
 function CampaignCard({ campaign, themeSettings, isDarkMode, onClick }: CampaignCardProps) {
+  // Step 14.14: 活动状态配置，添加 default 处理未知枚举值
+  const statusConfig: Record<string, { label: string; className: string }> = {
+    ended: { label: '已结束', className: 'bg-gray-500' },
+    upcoming: { label: '即将开始', className: 'bg-blue-500' },
+    pending: { label: '即将开始', className: 'bg-blue-500' },
+    ongoing: { label: '进行中', className: 'bg-green-500' },
+    active: { label: '进行中', className: 'bg-green-500' },
+    // 未知状态降级为进行中
+    default: { label: '进行中', className: 'bg-green-500' },
+  }
+
+  const status = statusConfig[campaign.status] ?? statusConfig.default
   const isExpired = campaign.status === 'ended'
-  const isUpcoming = campaign.status === 'upcoming'
 
   return (
     <div
       onClick={onClick}
-      className={`rounded-xl overflow-hidden cursor-pointer transition-transform active:scale-[0.98] ${
-        isExpired ? 'opacity-60' : ''
-      }`}
+      className={`rounded-xl overflow-hidden cursor-pointer transition-transform active:scale-[0.98] ${isExpired ? 'opacity-60' : ''
+        }`}
       style={{
         backgroundColor: isDarkMode ? '#2a2a2a' : '#fff',
       }}
@@ -149,18 +183,10 @@ function CampaignCard({ campaign, themeSettings, isDarkMode, onClick }: Campaign
           backgroundImage: campaign.coverImage ? `url(${campaign.coverImage})` : undefined,
         }}
       >
-        {/* 状态标签 */}
+        {/* 状态标签 - Step 14.14: 使用 statusConfig 统一处理 */}
         <div className="absolute top-2 right-2">
-          <span
-            className={`px-2 py-0.5 rounded text-xs text-white ${
-              isExpired
-                ? 'bg-gray-500'
-                : isUpcoming
-                ? 'bg-blue-500'
-                : 'bg-green-500'
-            }`}
-          >
-            {isExpired ? '已结束' : isUpcoming ? '即将开始' : '进行中'}
+          <span className={`px-2 py-0.5 rounded text-xs text-white ${status.className}`}>
+            {status.label}
           </span>
         </div>
 
@@ -177,14 +203,65 @@ function CampaignCard({ campaign, themeSettings, isDarkMode, onClick }: Campaign
         <div className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
           {campaign.title}
         </div>
-        <div className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+        <div className={`text-xs mt-1 ${getSecondaryTextClass(isDarkMode)}`}>
           {campaign.description}
         </div>
-        <div className={`text-xs mt-2 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+        <div className={`text-xs mt-2 ${getTertiaryTextClass(isDarkMode)}`}>
           {campaign.startTime} ~ {campaign.endTime}
         </div>
       </div>
     </div>
   )
+}
+
+// ============================================================================
+// 辅助函数
+// ============================================================================
+
+/**
+ * 将覆盖数据转换为 Campaign 类型
+ */
+function mapOverrideToCampaign(override: CampaignOverride): Campaign {
+  const formatDate = (dateStr?: string) => {
+    if (!dateStr) return ''
+    try {
+      return new Date(dateStr).toLocaleDateString('zh-CN')
+    } catch {
+      return dateStr
+    }
+  }
+
+  // 根据 status 映射 - Step 14.14: 未知状态降级为 'ongoing'
+  const statusMap: Record<string, Campaign['status']> = {
+    pending: 'upcoming',
+    active: 'ongoing',
+    ended: 'ended',
+    cancelled: 'ended',
+  }
+
+  return {
+    id: override.id,
+    title: override.name,
+    description: override.description || getDiscountText(override),
+    coverImage: override.bannerUrl,
+    startTime: formatDate(override.startAt),
+    endTime: formatDate(override.endAt),
+    // 未知状态降级为 'ongoing'（进行中）
+    status: statusMap[override.status] || 'ongoing',
+  }
+}
+
+/**
+ * 生成优惠描述文本
+ */
+function getDiscountText(override: CampaignOverride): string {
+  if (!override.discountType || override.discountValue === undefined) {
+    return '限时优惠活动'
+  }
+  if (override.discountType === 'amount') {
+    const minText = override.minAmount ? `满${override.minAmount}元` : ''
+    return `${minText}减${override.discountValue}元`
+  }
+  return `${override.discountValue}折优惠`
 }
 

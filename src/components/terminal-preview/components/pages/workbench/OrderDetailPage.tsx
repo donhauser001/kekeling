@@ -11,6 +11,9 @@ import { Calendar, MapPin, User, Phone, Clock, CreditCard, FileText } from 'luci
 import type { ThemeSettings, PreviewViewerRole } from '../../../types'
 import { previewApi, type WorkbenchOrderDetail } from '../../../api'
 import { PermissionPrompt } from '../../PermissionPrompt'
+import { ListSkeleton } from '../../ListSkeleton'
+import { ErrorRetry } from '../../ErrorRetry'
+import { formatMoney, safeNumber, safeString, safeEnum, getSecondaryTextClass, getTertiaryTextClass } from '../../../utils'
 
 // ============================================================================
 // 类型定义
@@ -25,7 +28,7 @@ export interface OrderDetailPageProps {
   onBack?: () => void
   onNavigate?: (page: string, params?: Record<string, string>) => void
   /** 显示登录弹窗回调 */
-  onShowLoginDialog?: () => void
+  onLogin?: () => void
 }
 
 // ============================================================================
@@ -50,25 +53,110 @@ export function OrderDetailPage({
   effectiveViewerRole,
   orderId,
   onBack,
-  onShowLoginDialog,
+  onLogin,
 }: OrderDetailPageProps) {
   const isEscort = effectiveViewerRole === 'escort'
-
-  // TODO: 当前使用 pageParams 透传 orderId
-  // 如果没有 orderId，使用 mock id 跑通页面结构
-  const effectiveOrderId = orderId || 'mock-order-001'
 
   // ⚠️ 非 escort 视角时不发请求
   const {
     data: order,
     isLoading,
     isError,
+    refetch,
   } = useQuery({
-    queryKey: ['preview', 'workbench', 'order-detail', effectiveOrderId],
-    queryFn: () => previewApi.getWorkbenchOrderDetail(effectiveOrderId),
+    queryKey: ['preview', 'workbench', 'order-detail', orderId],
+    queryFn: () => previewApi.getWorkbenchOrderDetail(orderId!),
     staleTime: 60 * 1000,
-    enabled: isEscort,
+    enabled: isEscort && !!orderId,  // 必须有 orderId 且是 escort 视角
+    // Step 14.14: API 层 transform，防止异常数据击穿到 UI
+    select: (data): WorkbenchOrderDetail | undefined => {
+      if (!data) return data
+      // 使用类型断言确保 safeObject 返回正确类型
+      const rawService = data.service as Record<string, unknown> | null | undefined
+      const rawAppointment = data.appointment as Record<string, unknown> | null | undefined
+      const rawUser = data.user as Record<string, unknown> | null | undefined
+      const rawPayment = data.payment as Record<string, unknown> | null | undefined
+
+      return {
+        ...data,
+        status: safeEnum(data.status, ['pending', 'accepted', 'ongoing', 'completed', 'cancelled'] as const, 'pending'),
+        statusText: safeString(data.statusText, '未知状态'),
+        orderNo: safeString(data.orderNo, '-'),
+        service: {
+          id: safeString(rawService?.id, ''),
+          name: safeString(rawService?.name, '未知服务'),
+          type: safeString(rawService?.type, ''),
+          duration: rawService?.duration !== undefined ? safeNumber(rawService.duration) : undefined,
+        },
+        appointment: {
+          date: safeString(rawAppointment?.date, '-'),
+          time: safeString(rawAppointment?.time, '-'),
+          hospitalName: safeString(rawAppointment?.hospitalName, '-'),
+          department: rawAppointment?.department ? safeString(rawAppointment.department) : undefined,
+          address: rawAppointment?.address ? safeString(rawAppointment.address) : undefined,
+        },
+        user: {
+          id: safeString(rawUser?.id, ''),
+          name: safeString(rawUser?.name, '未知用户'),
+          phone: safeString(rawUser?.phone, ''),
+          maskedPhone: safeString(rawUser?.maskedPhone, '***'),
+          avatar: rawUser?.avatar ? safeString(rawUser.avatar) : undefined,
+        },
+        payment: {
+          amount: safeNumber(rawPayment?.amount),
+          commission: safeNumber(rawPayment?.commission),
+          tip: rawPayment?.tip !== undefined ? safeNumber(rawPayment.tip) : undefined,
+        },
+        remark: data.remark ? safeString(data.remark) : undefined,
+        createdAt: safeString(data.createdAt, '-'),
+        updatedAt: safeString(data.updatedAt, '-'),
+      }
+    },
   })
+
+  // 无 ID 时显示友好提示（统一处理方式，与 CampaignDetailPage 一致）
+  if (!orderId) {
+    return (
+      <div
+        className="min-h-full flex flex-col"
+        style={{
+          backgroundColor: isDarkMode ? '#1a1a1a' : '#f5f7fa',
+        }}
+      >
+        {/* 页面标题 */}
+        <div
+          className="px-4 py-3 flex items-center"
+          style={{
+            backgroundColor: themeSettings.primaryColor,
+          }}
+        >
+          {onBack && (
+            <button onClick={onBack} className="text-white mr-3">
+              ←
+            </button>
+          )}
+          <h1 className="text-lg font-semibold text-white flex-1 text-center pr-6">
+            订单详情
+          </h1>
+        </div>
+
+        {/* 无 ID 提示 */}
+        <div className="flex-1 flex flex-col items-center justify-center">
+          <div className="text-4xl mb-2">❓</div>
+          <div className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>
+            未指定订单
+          </div>
+          <button
+            onClick={onBack}
+            className="mt-4 px-6 py-2 rounded-full text-white text-sm"
+            style={{ backgroundColor: themeSettings.primaryColor }}
+          >
+            返回订单池
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   // 非 escort 视角：显示统一的 PermissionPrompt
   if (!isEscort) {
@@ -99,8 +187,8 @@ export function OrderDetailPage({
         <div className="flex-1">
           <PermissionPrompt
             title="需要陪诊员身份"
-            description="请先登录陪诊员账号后再查看订单详情"
-            onLogin={onShowLoginDialog}
+            description="请先登录陪诊员账号查看订单详情"
+            onLogin={onLogin}
             showDebugInject={process.env.NODE_ENV === 'development'}
             primaryColor={themeSettings.primaryColor}
             isDarkMode={isDarkMode}
@@ -136,19 +224,18 @@ export function OrderDetailPage({
 
       {/* 内容区 */}
       <div className="px-4 py-4">
-        {/* 加载中 */}
+        {/* 加载中 - 骨架屏 */}
         {isLoading && (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-gray-400 text-sm">加载中...</div>
-          </div>
+          <ListSkeleton count={1} variant="detail" isDarkMode={isDarkMode} />
         )}
 
-        {/* 请求失败 */}
+        {/* 请求失败 - 带重试按钮 */}
         {isError && (
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="text-4xl mb-2">😔</div>
-            <div className="text-gray-400 text-sm">加载失败，请稍后重试</div>
-          </div>
+          <ErrorRetry
+            onRetry={() => refetch()}
+            isDarkMode={isDarkMode}
+            primaryColor={themeSettings.primaryColor}
+          />
         )}
 
         {/* 订单详情 */}
@@ -338,23 +425,23 @@ function OrderDetailContent({ order, themeSettings, isDarkMode }: OrderDetailCon
           <InfoRow
             icon={<CreditCard className="w-4 h-4" />}
             label="订单金额"
-            value={`¥${order.payment.amount.toFixed(2)}`}
+            value={`¥${formatMoney(order.payment.amount)}`}
             themeSettings={themeSettings}
             isDarkMode={isDarkMode}
           />
           <InfoRow
             icon={<CreditCard className="w-4 h-4" />}
             label="预计佣金"
-            value={`¥${order.payment.commission.toFixed(2)}`}
+            value={`¥${formatMoney(order.payment.commission)}`}
             themeSettings={themeSettings}
             isDarkMode={isDarkMode}
             highlight
           />
-          {order.payment.tip !== undefined && order.payment.tip > 0 && (
+          {order.payment.tip !== undefined && safeNumber(order.payment.tip) > 0 && (
             <InfoRow
               icon={<CreditCard className="w-4 h-4" />}
               label="用户打赏"
-              value={`¥${order.payment.tip.toFixed(2)}`}
+              value={`¥${formatMoney(order.payment.tip)}`}
               themeSettings={themeSettings}
               isDarkMode={isDarkMode}
             />
@@ -371,7 +458,7 @@ function OrderDetailContent({ order, themeSettings, isDarkMode }: OrderDetailCon
           }}
         >
           <SectionTitle title="订单备注" isDarkMode={isDarkMode} />
-          <div className={`mt-3 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+          <div className={`mt-3 text-sm ${getSecondaryTextClass(isDarkMode)}`}>
             {order.remark}
           </div>
         </div>
@@ -379,10 +466,10 @@ function OrderDetailContent({ order, themeSettings, isDarkMode }: OrderDetailCon
 
       {/* 时间信息 */}
       <div className="mt-4 text-center">
-        <div className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+        <div className={`text-xs ${getTertiaryTextClass(isDarkMode)}`}>
           创建时间：{order.createdAt}
         </div>
-        <div className={`text-xs mt-1 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+        <div className={`text-xs mt-1 ${getTertiaryTextClass(isDarkMode)}`}>
           更新时间：{order.updatedAt}
         </div>
       </div>
@@ -501,13 +588,13 @@ function InfoRow({ icon, label, value, themeSettings, isDarkMode, highlight, act
         {icon}
       </div>
       <div className="flex-1 ml-3">
-        <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+        <div className={`text-xs ${getSecondaryTextClass(isDarkMode)}`}>
           {label}
         </div>
         <div
           className={`text-sm font-medium ${highlight
-              ? ''
-              : isDarkMode ? 'text-white' : 'text-gray-900'
+            ? ''
+            : isDarkMode ? 'text-white' : 'text-gray-900'
             }`}
           style={highlight ? { color: themeSettings.primaryColor } : undefined}
         >

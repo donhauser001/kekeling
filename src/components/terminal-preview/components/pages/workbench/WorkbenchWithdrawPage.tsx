@@ -31,6 +31,9 @@ import {
 import type { ThemeSettings, PreviewViewerRole } from '../../../types'
 import { previewApi, type WithdrawStats, type WithdrawAccount, type WithdrawRecord } from '../../../api'
 import { PermissionPrompt } from '../../PermissionPrompt'
+import { ListSkeleton } from '../../ListSkeleton'
+import { ErrorRetry } from '../../ErrorRetry'
+import { formatMoney, formatMoneyWithComma, formatCount, formatPercent, safeNumber, getSecondaryTextClass, getTertiaryTextClass } from '../../../utils'
 
 // ============================================================================
 // 类型定义
@@ -43,7 +46,7 @@ export interface WorkbenchWithdrawPageProps {
   onBack?: () => void
   onNavigate?: (page: string, params?: Record<string, string>) => void
   /** 显示登录弹窗回调 */
-  onShowLoginDialog?: () => void
+  onLogin?: () => void
 }
 
 // ============================================================================
@@ -55,7 +58,7 @@ export function WorkbenchWithdrawPage({
   isDarkMode,
   effectiveViewerRole,
   onBack,
-  onShowLoginDialog,
+  onLogin,
 }: WorkbenchWithdrawPageProps) {
   const isEscort = effectiveViewerRole === 'escort'
 
@@ -68,6 +71,7 @@ export function WorkbenchWithdrawPage({
     data: withdrawStats,
     isLoading,
     isError,
+    refetch,
   } = useQuery({
     queryKey: ['preview', 'workbench', 'withdraw-stats'],
     queryFn: () => previewApi.getWithdrawStats(),
@@ -97,8 +101,8 @@ export function WorkbenchWithdrawPage({
         <div className="flex-1">
           <PermissionPrompt
             title="需要陪诊员身份"
-            description="请先登录陪诊员账号后再进行提现操作"
-            onLogin={onShowLoginDialog}
+            description="请先登录陪诊员账号进行提现操作"
+            onLogin={onLogin}
             showDebugInject={process.env.NODE_ENV === 'development'}
             primaryColor={themeSettings.primaryColor}
             isDarkMode={isDarkMode}
@@ -118,19 +122,20 @@ export function WorkbenchWithdrawPage({
       {/* 页面标题 */}
       <Header themeSettings={themeSettings} onBack={onBack} />
 
-      {/* 加载中 */}
+      {/* 加载中 - 骨架屏 */}
       {isLoading && (
-        <div className="flex items-center justify-center py-20">
-          <div className="text-gray-400 text-sm">加载中...</div>
+        <div className="px-4 py-4">
+          <ListSkeleton count={1} variant="detail" isDarkMode={isDarkMode} />
         </div>
       )}
 
-      {/* 请求失败 */}
+      {/* 请求失败 - 带重试按钮 */}
       {isError && !withdrawStats && (
-        <div className="flex flex-col items-center justify-center py-20">
-          <div className="text-4xl mb-2">😔</div>
-          <div className="text-gray-400 text-sm">加载失败，请稍后重试</div>
-        </div>
+        <ErrorRetry
+          onRetry={() => refetch()}
+          isDarkMode={isDarkMode}
+          primaryColor={themeSettings.primaryColor}
+        />
       )}
 
       {/* 内容区 */}
@@ -221,13 +226,13 @@ function WithdrawContent({
         <div className="relative z-10">
           <div className="text-white/80 text-sm">可提现余额</div>
           <div className="text-white text-4xl font-bold mt-2 tracking-tight">
-            ¥{stats.withdrawable.toLocaleString('zh-CN', { minimumFractionDigits: 2 })}
+            ¥{formatMoneyWithComma(stats.withdrawable)}
           </div>
-          {stats.pendingAmount > 0 && (
+          {safeNumber(stats.pendingAmount) > 0 && (
             <div className="flex items-center gap-1 mt-2">
               <Clock className="w-3.5 h-3.5 text-white/60" />
               <span className="text-white/60 text-xs">
-                处理中 ¥{stats.pendingAmount.toFixed(2)}
+                处理中 ¥{formatMoney(stats.pendingAmount)}
               </span>
             </div>
           )}
@@ -241,7 +246,7 @@ function WithdrawContent({
           backgroundColor: isDarkMode ? '#2a2a2a' : '#fff',
         }}
       >
-        <div className={`text-sm mb-3 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+        <div className={`text-sm mb-3 ${getSecondaryTextClass(isDarkMode)}`}>
           提现金额
         </div>
         <div className="flex items-baseline gap-1">
@@ -263,7 +268,7 @@ function WithdrawContent({
           >
             全部提现
           </button>
-          <span className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+          <span className={`text-xs ${getTertiaryTextClass(isDarkMode)}`}>
             今日剩余 {stats.remainingTimes} 次
           </span>
         </div>
@@ -273,14 +278,14 @@ function WithdrawContent({
       <div className="space-y-2 px-1">
         <RuleItem
           Icon={AlertCircle}
-          text={`最低提现 ¥${stats.minAmount}，单笔最高 ¥${stats.maxAmount.toLocaleString()}`}
+          text={`最低提现 ¥${safeNumber(stats.minAmount)}，单笔最高 ¥${formatCount(stats.maxAmount)}`}
           themeSettings={themeSettings}
           isDarkMode={isDarkMode}
         />
-        {stats.feeRate > 0 && (
+        {safeNumber(stats.feeRate) > 0 && (
           <RuleItem
             Icon={AlertCircle}
-            text={`手续费 ${(stats.feeRate * 100).toFixed(1)}%`}
+            text={`手续费 ${formatPercent(stats.feeRate, 1)}%`}
             themeSettings={themeSettings}
             isDarkMode={isDarkMode}
           />
@@ -300,13 +305,13 @@ function WithdrawContent({
           backgroundColor: isDarkMode ? '#2a2a2a' : '#fff',
         }}
       >
-        <div className={`text-sm mb-3 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+        <div className={`text-sm mb-3 ${getSecondaryTextClass(isDarkMode)}`}>
           提现至
         </div>
 
         {accounts.length === 0 ? (
           <div className="text-center py-4">
-            <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            <div className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>
               暂无绑定账户
             </div>
             <button
@@ -352,18 +357,18 @@ function WithdrawContent({
             backgroundColor: isDarkMode ? '#2a2a2a' : '#fff',
           }}
         >
-          <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+          <span className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>
             实际到账
           </span>
           <div
             className="text-2xl font-bold mt-1"
             style={{ color: themeSettings.primaryColor }}
           >
-            ¥{actualAmount.toFixed(2)}
+            ¥{formatMoney(actualAmount)}
           </div>
           {fee > 0 && (
-            <span className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-              (手续费 ¥{fee.toFixed(2)})
+            <span className={`text-xs ${getTertiaryTextClass(isDarkMode)}`}>
+              (手续费 ¥{formatMoney(fee)})
             </span>
           )}
         </div>
@@ -458,7 +463,7 @@ function RuleItem({ Icon, text, themeSettings, isDarkMode }: RuleItemProps) {
   return (
     <div className="flex items-center gap-2">
       <Icon className="w-4 h-4 flex-shrink-0" style={{ color: themeSettings.primaryColor }} />
-      <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+      <span className={`text-xs ${getSecondaryTextClass(isDarkMode)}`}>
         {text}
       </span>
     </div>
@@ -519,7 +524,7 @@ function AccountCard({
             </span>
           )}
         </div>
-        <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+        <div className={`text-xs ${getSecondaryTextClass(isDarkMode)}`}>
           {account.type === 'bank' ? `尾号 ${account.accountNo.replace(/\*/g, '')}` : account.accountNo}
         </div>
       </div>
@@ -589,14 +594,14 @@ function WithdrawRecordRow({
             {status.text}
           </span>
         </div>
-        <div className={`text-xs mt-0.5 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+        <div className={`text-xs mt-0.5 ${getTertiaryTextClass(isDarkMode)}`}>
           {record.createdAt}
         </div>
       </div>
 
       {/* 金额 */}
-      <div className={`text-sm font-semibold flex-shrink-0 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-        -¥{record.amount.toFixed(2)}
+      <div className={`text-sm font-semibold flex-shrink-0 ${getSecondaryTextClass(isDarkMode)}`}>
+        -¥{formatMoney(record.amount)}
       </div>
     </div>
   )

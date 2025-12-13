@@ -15,6 +15,9 @@ import { LogOut } from 'lucide-react'
 import type { ThemeSettings, PreviewViewerRole } from '../../../types'
 import { previewApi, type WorkbenchStats } from '../../../api'
 import { PermissionPrompt } from '../../PermissionPrompt'
+import { ListSkeleton } from '../../ListSkeleton'
+import { ErrorRetry } from '../../ErrorRetry'
+import { formatMoney, getSecondaryTextClass } from '../../../utils'
 
 // ============================================================================
 // 类型定义
@@ -29,7 +32,7 @@ export interface WorkbenchPageProps {
   /** 退出陪诊员视角回调 */
   onExitEscortMode?: () => void
   /** 显示登录弹窗回调 */
-  onShowLoginDialog?: () => void
+  onLogin?: () => void
 }
 
 // ============================================================================
@@ -42,7 +45,7 @@ export function WorkbenchPage({
   effectiveViewerRole,
   onNavigate,
   onExitEscortMode,
-  onShowLoginDialog,
+  onLogin,
 }: WorkbenchPageProps) {
   const isEscort = effectiveViewerRole === 'escort'
 
@@ -51,6 +54,7 @@ export function WorkbenchPage({
     data: stats,
     isLoading,
     isError,
+    refetch,
   } = useQuery({
     queryKey: ['preview', 'workbench', 'stats'],
     queryFn: () => previewApi.getWorkbenchStats(),
@@ -83,8 +87,8 @@ export function WorkbenchPage({
         <div className="flex-1">
           <PermissionPrompt
             title="需要陪诊员身份"
-            description="请先登录陪诊员账号后再访问工作台"
-            onLogin={onShowLoginDialog}
+            description="请先登录陪诊员账号访问工作台"
+            onLogin={onLogin}
             showDebugInject={process.env.NODE_ENV === 'development'}
             primaryColor={themeSettings.primaryColor}
             isDarkMode={isDarkMode}
@@ -124,19 +128,18 @@ export function WorkbenchPage({
 
       {/* 内容区 */}
       <div className="px-4 py-4">
-        {/* 加载中 */}
+        {/* 加载中 - 骨架屏 */}
         {isLoading && (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-gray-400 text-sm">加载中...</div>
-          </div>
+          <ListSkeleton count={1} variant="detail" isDarkMode={isDarkMode} />
         )}
 
-        {/* 请求失败 */}
+        {/* 请求失败 - 带重试按钮 */}
         {isError && (
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="text-4xl mb-2">😔</div>
-            <div className="text-gray-400 text-sm">加载失败，请稍后重试</div>
-          </div>
+          <ErrorRetry
+            onRetry={() => refetch()}
+            isDarkMode={isDarkMode}
+            primaryColor={themeSettings.primaryColor}
+          />
         )}
 
         {/* 工作台内容 */}
@@ -219,21 +222,21 @@ function WorkbenchContent({
         </div>
         <div className="flex items-baseline gap-1">
           <span className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-            ¥{stats.todayIncome.toFixed(2)}
+            ¥{formatMoney(stats.todayIncome)}
           </span>
-          <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+          <span className={`text-xs ${getSecondaryTextClass(isDarkMode)}`}>
             今日收入
           </span>
         </div>
         <div className="flex gap-4 mt-3">
           <div>
             <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-              本月：¥{stats.monthIncome.toFixed(2)}
+              本月：¥{formatMoney(stats.monthIncome)}
             </span>
           </div>
           <div>
             <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-              可提现：¥{stats.withdrawable.toFixed(2)}
+              可提现：¥{formatMoney(stats.withdrawable)}
             </span>
           </div>
         </div>
@@ -285,14 +288,14 @@ function WorkbenchContent({
             <div className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
               接单状态
             </div>
-            <div className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            <div className={`text-xs mt-1 ${getSecondaryTextClass(isDarkMode)}`}>
               {stats.isOnline ? '当前可接收新订单' : '暂停接单中'}
             </div>
           </div>
           <div
             className={`px-4 py-2 rounded-full text-sm font-medium ${stats.isOnline
-                ? 'bg-green-100 text-green-600'
-                : 'bg-gray-100 text-gray-500'
+              ? 'bg-green-100 text-green-600'
+              : 'bg-gray-100 text-gray-500'
               }`}
           >
             {stats.isOnline ? '● 在线' : '○ 离线'}
@@ -320,7 +323,7 @@ function StatCard({ label, value, color, isDarkMode }: StatCardProps) {
       <div className="text-2xl font-bold" style={{ color }}>
         {value}
       </div>
-      <div className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+      <div className={`text-xs mt-1 ${getSecondaryTextClass(isDarkMode)}`}>
         {label}
       </div>
     </div>

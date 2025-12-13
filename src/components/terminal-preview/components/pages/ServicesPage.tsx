@@ -23,6 +23,7 @@ import {
 import { cn } from '@/lib/utils'
 import type { ThemeSettings, ServiceCategory, ServiceListItem, BannerAreaData } from '../../types'
 import { previewApi } from '../../api'
+import { formatCount } from '../../utils'
 import { getResourceUrl } from '../../utils'
 import { BannerSection } from '../BannerSection'
 
@@ -327,7 +328,7 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
                     <Star className='h-2.5 w-2.5 text-amber-400' />
                     <span>{service.rating}%</span>
                   </div>
-                  <span>{service.orderCount.toLocaleString()}人购</span>
+                  <span>{formatCount(service.orderCount)}人购</span>
                 </div>
                 <div className='mt-1.5 flex items-center justify-between'>
                   <div className='flex items-baseline gap-0.5'>
@@ -423,7 +424,7 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
                         <Star className='h-3 w-3 text-amber-400' />
                         <span>{service.rating}%</span>
                       </div>
-                      <span>{service.orderCount.toLocaleString()}人购</span>
+                      <span>{formatCount(service.orderCount)}人购</span>
                     </div>
                     <div className='mt-1.5 flex items-center justify-between'>
                       <div className='flex items-baseline gap-1'>

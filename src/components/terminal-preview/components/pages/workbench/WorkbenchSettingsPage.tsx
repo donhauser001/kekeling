@@ -25,6 +25,7 @@ import {
 import type { ThemeSettings, PreviewViewerRole } from '../../../types'
 import { previewApi, type WorkbenchSettings } from '../../../api'
 import { PermissionPrompt } from '../../PermissionPrompt'
+import { getSecondaryTextClass, getTertiaryTextClass } from '../../../utils'
 
 // ============================================================================
 // 类型定义
@@ -39,7 +40,7 @@ export interface WorkbenchSettingsPageProps {
   /** 退出陪诊员视角回调 */
   onExitEscortMode?: () => void
   /** 显示登录弹窗回调 */
-  onShowLoginDialog?: () => void
+  onLogin?: () => void
 }
 
 // ============================================================================
@@ -51,7 +52,7 @@ export function WorkbenchSettingsPage({
   isDarkMode,
   effectiveViewerRole,
   onNavigate,
-  onShowLoginDialog,
+  onLogin,
 }: WorkbenchSettingsPageProps) {
   const isEscort = effectiveViewerRole === 'escort'
 
@@ -96,8 +97,8 @@ export function WorkbenchSettingsPage({
         <div className="flex-1">
           <PermissionPrompt
             title="需要陪诊员身份"
-            description="请先登录陪诊员账号后再访问设置页面"
-            onLogin={onShowLoginDialog}
+            description="请先登录陪诊员账号访问设置页面"
+            onLogin={onLogin}
             showDebugInject={process.env.NODE_ENV === 'development'}
           />
         </div>
@@ -135,7 +136,7 @@ export function WorkbenchSettingsPage({
               style={{ borderColor: themeSettings.primaryColor }}
             />
             <p
-              className={`mt-2 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}
+              className={`mt-2 text-sm ${getSecondaryTextClass(isDarkMode)}`}
             >
               加载中...
             </p>
@@ -171,7 +172,7 @@ export function WorkbenchSettingsPage({
         <div className="flex-1 flex items-center justify-center px-4">
           <div className="text-center">
             <div className="text-4xl mb-2">😢</div>
-            <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            <p className={`${getSecondaryTextClass(isDarkMode)}`}>
               加载失败，请稍后重试
             </p>
           </div>
@@ -250,14 +251,14 @@ export function WorkbenchSettingsPage({
                   {settings.profile.level}
                 </span>
                 <span
-                  className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}
+                  className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}
                 >
                   评分 {settings.profile.rating}
                 </span>
               </div>
             </div>
             <ChevronRight
-              className={`w-5 h-5 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}
+              className={`w-5 h-5 ${getTertiaryTextClass(isDarkMode)}`}
             />
           </div>
         </div>
@@ -265,7 +266,7 @@ export function WorkbenchSettingsPage({
         {/* 接单状态 */}
         <div className="px-4 mt-4">
           <h2
-            className={`text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}
+            className={`text-sm font-medium mb-2 ${getSecondaryTextClass(isDarkMode)}`}
           >
             接单状态
           </h2>
@@ -295,7 +296,7 @@ export function WorkbenchSettingsPage({
         {/* 接单偏好 */}
         <div className="px-4 mt-4">
           <h2
-            className={`text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}
+            className={`text-sm font-medium mb-2 ${getSecondaryTextClass(isDarkMode)}`}
           >
             接单偏好
           </h2>
@@ -345,7 +346,7 @@ export function WorkbenchSettingsPage({
         {/* 通知设置 */}
         <div className="px-4 mt-4">
           <h2
-            className={`text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}
+            className={`text-sm font-medium mb-2 ${getSecondaryTextClass(isDarkMode)}`}
           >
             通知设置
           </h2>
@@ -433,12 +434,12 @@ function SettingItem({
         {label}
       </span>
       <span
-        className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}
+        className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}
       >
         {value}
       </span>
       <ChevronRight
-        className={`w-4 h-4 ml-1 ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}
+        className={`w-4 h-4 ml-1 ${getTertiaryTextClass(isDarkMode)}`}
       />
     </div>
   )

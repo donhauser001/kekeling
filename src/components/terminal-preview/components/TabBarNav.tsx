@@ -25,7 +25,9 @@ export function TabBarNav({
   }
 
   return (
-    <div
+    <nav
+      role='tablist'
+      aria-label='主导航'
       className='flex-shrink-0 flex items-center justify-around border-t py-2'
       style={{
         backgroundColor: isDarkMode ? '#1f1f1f' : '#ffffff',
@@ -36,14 +38,25 @@ export function TabBarNav({
         const isActive = item.key === activePage
         const IconComponent = item.icon
         return (
-          <div
+          <button
             key={item.key}
-            className='flex flex-col items-center gap-1 cursor-pointer transition-transform duration-150 active:scale-90'
+            role='tab'
+            tabIndex={0}
+            aria-selected={isActive}
+            aria-label={item.text}
+            className='flex flex-col items-center gap-1 cursor-pointer transition-transform duration-150 active:scale-90 bg-transparent border-none outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-500 rounded-lg p-1'
             onClick={() => handleTabClick(item.key)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                handleTabClick(item.key)
+              }
+            }}
           >
             <IconComponent
               className='h-5 w-5 transition-colors duration-200'
               style={{ color: isActive ? themeSettings.primaryColor : inactiveColor }}
+              aria-hidden='true'
             />
             <span
               className='text-xs transition-colors duration-200'
@@ -54,9 +67,9 @@ export function TabBarNav({
             >
               {item.text}
             </span>
-          </div>
+          </button>
         )
       })}
-    </div>
+    </nav>
   )
 }

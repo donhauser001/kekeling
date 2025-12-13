@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -30,7 +30,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { SelectDropdown } from '@/components/select-dropdown'
 import { campaignApi, type Campaign } from '@/lib/api'
-import { TerminalPreview } from '@/components/terminal-preview'
+import { TerminalPreview, type MarketingDataOverride } from '@/components/terminal-preview'
 
 const formSchema = z.object({
   name: z.string().min(1, '请输入活动名称'),
@@ -215,6 +215,39 @@ export function CampaignsActionDialog({
   }
 
   const isPending = createMutation.isPending || updateMutation.isPending
+
+  // 构建预览数据
+  const watchedValues = form.watch()
+  const marketingData = useMemo<MarketingDataOverride>(() => ({
+    campaigns: {
+      items: [{
+        id: currentRow?.id || 'preview-campaign',
+        name: watchedValues.name || '新活动',
+        type: (watchedValues.type as 'flash_sale' | 'seckill' | 'threshold' | 'newcomer') || 'flash_sale',
+        status: (watchedValues.status as 'pending' | 'active' | 'ended' | 'cancelled') || 'pending',
+        startAt: watchedValues.startAt,
+        endAt: watchedValues.endAt,
+        discountType: (watchedValues.discountType as 'amount' | 'percent') || 'amount',
+        discountValue: watchedValues.discountValue || 0,
+        minAmount: watchedValues.minAmount || 0,
+        bannerUrl: watchedValues.bannerUrl,
+        description: watchedValues.description,
+      }],
+      total: 1,
+    },
+  }), [
+    watchedValues.name,
+    watchedValues.type,
+    watchedValues.status,
+    watchedValues.startAt,
+    watchedValues.endAt,
+    watchedValues.discountType,
+    watchedValues.discountValue,
+    watchedValues.minAmount,
+    watchedValues.bannerUrl,
+    watchedValues.description,
+    currentRow?.id,
+  ])
 
   return (
     <>
@@ -560,10 +593,11 @@ export function CampaignsActionDialog({
             <div className='w-[375px] flex-shrink-0'>
               <div className='text-sm text-muted-foreground mb-2'>终端预览</div>
               <TerminalPreview
-                page={isEdit ? 'campaigns-detail' : 'campaigns'}
-                height={500}
+                page='campaigns'
+                height={600}
                 showFrame={false}
                 autoLoad={false}
+                marketingData={marketingData}
               />
             </div>
           </div>

@@ -15,6 +15,9 @@ import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import type { ThemeSettings, AvailableCouponOverride } from '../../../types'
 import { previewApi, type AvailableCoupon } from '../../../api'
+import { ListSkeleton } from '../../ListSkeleton'
+import { ErrorRetry } from '../../ErrorRetry'
+import { getSecondaryTextClass, getTertiaryTextClass } from '../../../utils'
 
 // ============================================================================
 // 类型定义
@@ -45,6 +48,7 @@ export function CouponsAvailablePage({ themeSettings, isDarkMode, onBack, availa
     data: apiCoupons,
     isLoading: apiLoading,
     isError: apiError,
+    refetch,
   } = useQuery({
     queryKey: ['preview', 'coupons', 'available'],
     queryFn: previewApi.getAvailableCoupons,
@@ -99,29 +103,28 @@ export function CouponsAvailablePage({ themeSettings, isDarkMode, onBack, availa
 
       {/* 内容区 */}
       <div className="px-4 py-4">
-        {/* 加载中 */}
+        {/* 加载中 - 骨架屏 */}
         {isLoading && (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-gray-400 text-sm">加载中...</div>
-          </div>
+          <ListSkeleton count={3} variant="card" isDarkMode={isDarkMode} />
         )}
 
-        {/* 请求失败 */}
+        {/* 请求失败 - 带重试按钮 */}
         {isError && (
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="text-4xl mb-2">😔</div>
-            <div className="text-gray-400 text-sm">加载失败，请稍后重试</div>
-          </div>
+          <ErrorRetry
+            onRetry={() => refetch()}
+            isDarkMode={isDarkMode}
+            primaryColor={themeSettings.primaryColor}
+          />
         )}
 
         {/* 空态 */}
         {isEmpty && !isError && (
           <div className="flex flex-col items-center justify-center py-12">
             <div className="text-5xl mb-3">🎫</div>
-            <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            <div className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>
               暂无可领取的优惠券
             </div>
-            <div className={`text-xs mt-1 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+            <div className={`text-xs mt-1 ${getTertiaryTextClass(isDarkMode)}`}>
               敬请期待更多优惠活动
             </div>
           </div>
@@ -193,11 +196,11 @@ function AvailableCouponCard({ coupon, themeSettings, isDarkMode }: AvailableCou
           <div className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
             {coupon.name}
           </div>
-          <div className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+          <div className={`text-xs mt-1 ${getSecondaryTextClass(isDarkMode)}`}>
             {coupon.description || '全场通用'}
           </div>
           <div className="flex items-center justify-between mt-2">
-            <span className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+            <span className={`text-xs ${getTertiaryTextClass(isDarkMode)}`}>
               剩余 {coupon.remaining} 张
             </span>
             <button
