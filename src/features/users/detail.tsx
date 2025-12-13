@@ -21,6 +21,18 @@ import {
   Clock,
   XCircle,
   CreditCard,
+  Plus,
+  Star,
+  Trash2,
+  Eye,
+  FileText,
+  Stethoscope,
+  Gift,
+  Coins,
+  TrendingUp,
+  TrendingDown,
+  RotateCcw,
+  Ticket,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Header } from '@/components/layout/header'
@@ -61,7 +73,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { userApi, orderApi, type Order } from '@/lib/api'
+import { userApi, orderApi, patientApi, couponApi, pointApi, type Order, type Patient, type CreatePatientData, type UserCoupon, type PointRecord, type UserPoint } from '@/lib/api'
+import { PatientFormDialog, PatientDeleteDialog } from './patients/components'
 
 // 订单状态配置
 const orderStatusConfig: Record<string, { label: string; color: string; icon: React.ComponentType<{ className?: string }> }> = {
@@ -86,6 +99,12 @@ export function UserDetail() {
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [editForm, setEditForm] = useState({ nickname: '', phone: '' })
 
+  // 就诊人相关状态
+  const [patientFormOpen, setPatientFormOpen] = useState(false)
+  const [patientDeleteOpen, setPatientDeleteOpen] = useState(false)
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null)
+  const [isAddingPatient, setIsAddingPatient] = useState(false)
+
   // 获取用户详情
   const { data: user, isLoading, error } = useQuery({
     queryKey: ['user', userId],
@@ -103,6 +122,27 @@ export function UserDetail() {
     enabled: !!user,
   })
 
+  // 获取用户优惠券
+  const { data: couponsData, isLoading: couponsLoading } = useQuery({
+    queryKey: ['user-coupons', userId],
+    queryFn: () => couponApi.getUserCoupons({ userId }),
+    enabled: !!user,
+  })
+
+  // 获取用户积分
+  const { data: userPointData, isLoading: pointLoading } = useQuery({
+    queryKey: ['user-point', userId],
+    queryFn: () => pointApi.getUserPoints({ userId }),
+    enabled: !!user,
+  })
+
+  // 获取积分记录
+  const { data: pointRecordsData, isLoading: pointRecordsLoading } = useQuery({
+    queryKey: ['user-point-records', userId],
+    queryFn: () => pointApi.getPointRecords({ userId }),
+    enabled: !!user,
+  })
+
   // 更新用户
   const updateMutation = useMutation({
     mutationFn: (data: { nickname?: string; phone?: string }) =>
@@ -114,6 +154,61 @@ export function UserDetail() {
     },
     onError: (err: Error) => {
       toast.error(err.message || '更新失败')
+    },
+  })
+
+  // 添加就诊人
+  const createPatientMutation = useMutation({
+    mutationFn: (data: CreatePatientData) => patientApi.createForUser(userId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user', userId] })
+      toast.success('添加就诊人成功')
+      setPatientFormOpen(false)
+      setIsAddingPatient(false)
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || '添加失败')
+    },
+  })
+
+  // 更新就诊人
+  const updatePatientMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: CreatePatientData }) =>
+      patientApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user', userId] })
+      toast.success('更新就诊人成功')
+      setPatientFormOpen(false)
+      setSelectedPatient(null)
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || '更新失败')
+    },
+  })
+
+  // 删除就诊人
+  const deletePatientMutation = useMutation({
+    mutationFn: (id: string) => patientApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user', userId] })
+      toast.success('删除就诊人成功')
+      setPatientDeleteOpen(false)
+      setSelectedPatient(null)
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || '删除失败')
+    },
+  })
+
+  // 设为默认就诊人
+  const setDefaultPatientMutation = useMutation({
+    mutationFn: (id: string) => patientApi.setDefault(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user', userId] })
+      toast.success('已设为默认就诊人')
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || '设置失败')
     },
   })
 
@@ -134,6 +229,47 @@ export function UserDetail() {
       nickname: editForm.nickname || undefined,
       phone: editForm.phone || undefined,
     })
+  }
+
+  // 添加就诊人
+  const handleAddPatient = () => {
+    setIsAddingPatient(true)
+    setSelectedPatient(null)
+    setPatientFormOpen(true)
+  }
+
+  // 编辑就诊人
+  const handleEditPatient = (patient: Patient) => {
+    setIsAddingPatient(false)
+    setSelectedPatient(patient)
+    setPatientFormOpen(true)
+  }
+
+  // 删除就诊人
+  const handleDeletePatient = (patient: Patient) => {
+    setSelectedPatient(patient)
+    setPatientDeleteOpen(true)
+  }
+
+  // 设为默认
+  const handleSetDefaultPatient = (patient: Patient) => {
+    setDefaultPatientMutation.mutate(patient.id)
+  }
+
+  // 保存就诊人（添加或编辑）
+  const handleSavePatient = async (data: CreatePatientData) => {
+    if (isAddingPatient) {
+      createPatientMutation.mutate(data)
+    } else if (selectedPatient) {
+      updatePatientMutation.mutate({ id: selectedPatient.id, data })
+    }
+  }
+
+  // 确认删除就诊人
+  const handleConfirmDeletePatient = async () => {
+    if (selectedPatient) {
+      deletePatientMutation.mutate(selectedPatient.id)
+    }
   }
 
   if (isLoading) {
@@ -286,6 +422,18 @@ export function UserDetail() {
               <ClipboardList className="h-4 w-4" />
               订单记录
             </TabsTrigger>
+            <TabsTrigger value="coupons" className="gap-2">
+              <Ticket className="h-4 w-4" />
+              优惠券
+            </TabsTrigger>
+            <TabsTrigger value="points" className="gap-2">
+              <Coins className="h-4 w-4" />
+              积分
+            </TabsTrigger>
+            <TabsTrigger value="medical-records" className="gap-2">
+              <FileText className="h-4 w-4" />
+              病例
+            </TabsTrigger>
           </TabsList>
 
           {/* 概览 Tab */}
@@ -395,18 +543,22 @@ export function UserDetail() {
                   <Separator />
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">可用积分</span>
-                    <span className="font-medium">0 分</span>
+                    <span className="font-medium text-amber-600">
+                      {pointLoading ? '...' : (userPointData?.data?.[0]?.currentPoints || 0)} 分
+                    </span>
                   </div>
                   <Separator />
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">优惠券</span>
-                    <span>0 张</span>
+                    <span className="font-medium text-orange-600">
+                      {couponsLoading ? '...' : (couponsData?.data?.filter((c: UserCoupon) => c.status === 'unused').length || 0)} 张
+                    </span>
                   </div>
                   <Separator />
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">陪诊员身份</span>
                     {user.isEscort ? (
-                      <Badge className="bg-purple-50 text-purple-700">
+                      <Badge className="bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300">
                         <Shield className="mr-1 h-3 w-3" />
                         是
                       </Badge>
@@ -422,42 +574,94 @@ export function UserDetail() {
           {/* 就诊人 Tab */}
           <TabsContent value="patients" className="space-y-4">
             <Card>
-              <CardHeader>
-                <CardTitle className="text-base">就诊人列表</CardTitle>
-                <CardDescription>该用户添加的所有就诊人信息</CardDescription>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="text-base">就诊人列表</CardTitle>
+                  <CardDescription>管理该用户的所有就诊人信息</CardDescription>
+                </div>
+                <Button size="sm" onClick={handleAddPatient}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  添加就诊人
+                </Button>
               </CardHeader>
               <CardContent>
                 {user.patients && user.patients.length > 0 ? (
-                  <div className="space-y-3">
-                    {user.patients.map((patient, index) => (
-                      <div
-                        key={patient.id}
-                        className="flex items-center justify-between rounded-lg border p-4"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
-                            <User className="h-5 w-5 text-muted-foreground" />
-                          </div>
-                          <div>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>姓名</TableHead>
+                        <TableHead>性别</TableHead>
+                        <TableHead>手机号</TableHead>
+                        <TableHead>关系</TableHead>
+                        <TableHead>身份证</TableHead>
+                        <TableHead className="text-right">操作</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {user.patients.map((patient, index) => (
+                        <TableRow key={patient.id}>
+                          <TableCell>
                             <div className="flex items-center gap-2">
                               <span className="font-medium">{patient.name}</span>
-                              <Badge variant="outline">{patient.relationship}</Badge>
                               {index === 0 && (
-                                <Badge className="bg-blue-50 text-blue-700">默认</Badge>
+                                <Badge variant="secondary" className="bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+                                  <Star className="mr-1 h-3 w-3" />
+                                  默认
+                                </Badge>
                               )}
                             </div>
-                            <div className="flex gap-4 mt-1 text-sm text-muted-foreground">
-                              <span>{patient.gender === 'male' ? '男' : patient.gender === 'female' ? '女' : '-'}</span>
-                              <span>{patient.phone}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                          </TableCell>
+                          <TableCell>
+                            {patient.gender === 'male' ? '男' : patient.gender === 'female' ? '女' : '-'}
+                          </TableCell>
+                          <TableCell>{patient.phone}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{patient.relationship || patient.relation || '-'}</Badge>
+                          </TableCell>
+                          <TableCell className="font-mono text-xs text-muted-foreground">
+                            {patient.idCard ? `${patient.idCard.slice(0, 6)}****${patient.idCard.slice(-4)}` : '-'}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleEditPatient(patient as Patient)}>
+                                  <Edit className="mr-2 h-4 w-4" />
+                                  编辑
+                                </DropdownMenuItem>
+                                {index !== 0 && (
+                                  <DropdownMenuItem onClick={() => handleSetDefaultPatient(patient as Patient)}>
+                                    <Star className="mr-2 h-4 w-4" />
+                                    设为默认
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="text-destructive"
+                                  onClick={() => handleDeletePatient(patient as Patient)}
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  删除
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 ) : (
-                  <div className="flex h-32 items-center justify-center text-muted-foreground">
+                  <div className="flex h-32 flex-col items-center justify-center gap-3 text-muted-foreground">
+                    <UsersIcon className="h-10 w-10" />
                     <p>暂无就诊人</p>
+                    <Button variant="outline" size="sm" onClick={handleAddPatient}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      添加第一位就诊人
+                    </Button>
                   </div>
                 )}
               </CardContent>
@@ -565,6 +769,228 @@ export function UserDetail() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* 优惠券 Tab */}
+          <TabsContent value="coupons" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">优惠券</CardTitle>
+                <CardDescription>查看用户持有的优惠券</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {couponsLoading ? (
+                  <div className="flex h-32 items-center justify-center">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : couponsData?.data && couponsData.data.length > 0 ? (
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {couponsData.data.map((coupon: UserCoupon) => (
+                      <div
+                        key={coupon.id}
+                        className={`relative rounded-lg border p-4 ${coupon.status === 'unused'
+                            ? 'border-orange-200 bg-orange-50 dark:border-orange-900 dark:bg-orange-950'
+                            : 'border-gray-200 bg-gray-50 opacity-60 dark:border-gray-800 dark:bg-gray-900'
+                          }`}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="font-medium">{coupon.name}</p>
+                            <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                              {coupon.type === 'amount' && `¥${coupon.value}`}
+                              {coupon.type === 'percent' && `${coupon.value}折`}
+                              {coupon.type === 'free' && '免单'}
+                            </p>
+                          </div>
+                          <Badge
+                            variant={coupon.status === 'unused' ? 'default' : 'secondary'}
+                            className={coupon.status === 'unused' ? 'bg-orange-500' : ''}
+                          >
+                            {coupon.status === 'unused' && '可使用'}
+                            {coupon.status === 'used' && '已使用'}
+                            {coupon.status === 'expired' && '已过期'}
+                          </Badge>
+                        </div>
+                        <div className="mt-2 text-xs text-muted-foreground">
+                          <p>满 ¥{coupon.minAmount} 可用</p>
+                          <p>有效期至 {new Date(coupon.expireAt).toLocaleDateString()}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex h-32 flex-col items-center justify-center gap-3 text-muted-foreground">
+                    <Gift className="h-10 w-10" />
+                    <p>暂无优惠券</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* 积分 Tab */}
+          <TabsContent value="points" className="space-y-4">
+            {/* 积分概览 */}
+            <div className="grid gap-4 md:grid-cols-4">
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-lg bg-amber-50 p-2 dark:bg-amber-950">
+                      <Coins className="h-5 w-5 text-amber-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">可用积分</p>
+                      <p className="font-semibold text-xl">
+                        {pointLoading ? '-' : (userPointData?.data?.[0]?.currentPoints || 0)}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-lg bg-green-50 p-2 dark:bg-green-950">
+                      <TrendingUp className="h-5 w-5 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">累计获得</p>
+                      <p className="font-semibold text-xl">
+                        {pointLoading ? '-' : (userPointData?.data?.[0]?.totalPoints || 0)}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-lg bg-blue-50 p-2 dark:bg-blue-950">
+                      <TrendingDown className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">已使用</p>
+                      <p className="font-semibold text-xl">
+                        {pointLoading ? '-' : (userPointData?.data?.[0]?.usedPoints || 0)}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-lg bg-gray-50 p-2 dark:bg-gray-800">
+                      <RotateCcw className="h-5 w-5 text-gray-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">已过期</p>
+                      <p className="font-semibold text-xl">
+                        {pointLoading ? '-' : (userPointData?.data?.[0]?.expiredPoints || 0)}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* 积分记录 */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">积分明细</CardTitle>
+                <CardDescription>查看积分变动记录</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {pointRecordsLoading ? (
+                  <div className="flex h-32 items-center justify-center">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : pointRecordsData?.data && pointRecordsData.data.length > 0 ? (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>时间</TableHead>
+                        <TableHead>类型</TableHead>
+                        <TableHead>说明</TableHead>
+                        <TableHead className="text-right">积分变动</TableHead>
+                        <TableHead className="text-right">余额</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {pointRecordsData.data.map((record: PointRecord) => (
+                        <TableRow key={record.id}>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {new Date(record.createdAt).toLocaleString()}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant="outline"
+                              className={
+                                record.type === 'earn'
+                                  ? 'border-green-200 bg-green-50 text-green-700'
+                                  : record.type === 'use'
+                                    ? 'border-blue-200 bg-blue-50 text-blue-700'
+                                    : record.type === 'refund'
+                                      ? 'border-orange-200 bg-orange-50 text-orange-700'
+                                      : 'border-gray-200 bg-gray-50 text-gray-700'
+                              }
+                            >
+                              {record.type === 'earn' && '获得'}
+                              {record.type === 'use' && '使用'}
+                              {record.type === 'expire' && '过期'}
+                              {record.type === 'refund' && '退还'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {record.description || record.source || '-'}
+                          </TableCell>
+                          <TableCell className="text-right font-medium">
+                            <span className={record.points > 0 ? 'text-green-600' : 'text-red-600'}>
+                              {record.points > 0 ? '+' : ''}{record.points}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-right text-muted-foreground">
+                            {record.balance}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <div className="flex h-32 flex-col items-center justify-center gap-3 text-muted-foreground">
+                    <Coins className="h-10 w-10" />
+                    <p>暂无积分记录</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* 病例 Tab */}
+          <TabsContent value="medical-records" className="space-y-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="text-base">病例记录</CardTitle>
+                  <CardDescription>查看该用户的历史病例信息</CardDescription>
+                </div>
+                <Button size="sm" disabled>
+                  <Plus className="mr-2 h-4 w-4" />
+                  添加病例
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <div className="flex h-48 flex-col items-center justify-center gap-4 text-muted-foreground">
+                  <div className="rounded-full bg-muted p-4">
+                    <Stethoscope className="h-10 w-10" />
+                  </div>
+                  <div className="text-center">
+                    <p className="font-medium">暂无病例记录</p>
+                    <p className="text-sm mt-1">病例记录功能即将上线</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </Main>
 
@@ -606,6 +1032,31 @@ export function UserDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* 就诊人表单对话框 */}
+      <PatientFormDialog
+        open={patientFormOpen}
+        onOpenChange={(open) => {
+          setPatientFormOpen(open)
+          if (!open) {
+            setSelectedPatient(null)
+            setIsAddingPatient(false)
+          }
+        }}
+        patient={isAddingPatient ? null : selectedPatient}
+        userId={userId}
+        onSubmit={handleSavePatient}
+        isLoading={createPatientMutation.isPending || updatePatientMutation.isPending}
+      />
+
+      {/* 就诊人删除确认对话框 */}
+      <PatientDeleteDialog
+        open={patientDeleteOpen}
+        onOpenChange={setPatientDeleteOpen}
+        patient={selectedPatient}
+        onConfirm={handleConfirmDeletePatient}
+        isLoading={deletePatientMutation.isPending}
+      />
     </>
   )
 }
