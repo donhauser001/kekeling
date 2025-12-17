@@ -19,9 +19,10 @@ import {
   TrendingUp,
   ThumbsUp,
   DollarSign,
+  Percent,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { ThemeSettings, ServiceCategory, ServiceListItem, BannerAreaData } from '../../types'
+import type { ThemeSettings, ServiceCategory, ServiceListItem, BannerAreaData, PreviewViewerRole } from '../../types'
 import { previewApi } from '../../api'
 import { formatCount } from '../../utils'
 import { getResourceUrl } from '../../utils'
@@ -37,6 +38,8 @@ interface ServicesPageProps {
   bannerData?: BannerAreaData | null
   /** 服务点击回调 */
   onServiceClick?: (serviceId: string) => void
+  /** 当前视角角色（用于显示陪诊员专属信息） */
+  effectiveViewerRole?: PreviewViewerRole
 }
 
 // 排序选项
@@ -48,7 +51,9 @@ const sortOptions: { value: SortType; label: string; icon: React.ReactNode }[] =
   { value: 'price-desc', label: '价格↓', icon: <DollarSign className='h-3 w-3' /> },
 ]
 
-export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: bannerDataOverride, onServiceClick }: ServicesPageProps) {
+export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: bannerDataOverride, onServiceClick, effectiveViewerRole = 'user' }: ServicesPageProps) {
+  // 是否为陪诊员视角
+  const isEscort = effectiveViewerRole === 'escort'
   const [activeCategory, setActiveCategory] = useState('all')
   const [layoutMode, setLayoutMode] = useState<LayoutMode>('grid')
   const [sortType, setSortType] = useState<SortType>('default')
@@ -343,6 +348,20 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
                       </span>
                     )}
                   </div>
+                  {/* 陪诊员视角：分成比例 */}
+                  {isEscort && (
+                    <div
+                      className='flex items-center gap-0.5 px-1.5 py-0.5 rounded'
+                      style={{
+                        backgroundColor: `${themeSettings.primaryColor}15`,
+                      }}
+                    >
+                      <Percent className='h-2.5 w-2.5' style={{ color: themeSettings.primaryColor }} />
+                      <span className='text-[10px] font-medium' style={{ color: themeSettings.primaryColor }}>
+                        {service.commissionRate ?? 70}%
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -439,6 +458,20 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
                           </span>
                         )}
                       </div>
+                      {/* 陪诊员视角：分成比例 */}
+                      {isEscort && (
+                        <div
+                          className='flex items-center gap-1 px-2 py-1 rounded'
+                          style={{
+                            backgroundColor: `${themeSettings.primaryColor}15`,
+                          }}
+                        >
+                          <Percent className='h-3 w-3' style={{ color: themeSettings.primaryColor }} />
+                          <span className='text-xs font-medium' style={{ color: themeSettings.primaryColor }}>
+                            分成 {service.commissionRate ?? 70}%
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

@@ -38,8 +38,44 @@ model User {
   campaignParticipations CampaignParticipation[]
   complaints     Complaint[]
   messages       Message[]
+  addresses      UserAddress[]
 
   @@map("users")
+}
+
+// 用户地址
+model UserAddress {
+  id          String    @id @default(uuid())
+  userId      String    @map("user_id")
+  
+  // 联系信息
+  name        String                           // 收货人姓名
+  phone       String                           // 联系电话
+  
+  // 地址信息
+  province    String                           // 省
+  city        String                           // 市
+  district    String                           // 区/县
+  address     String                           // 详细地址
+  
+  // 位置信息（可选，用于定位）
+  latitude    Float?                           // 纬度
+  longitude   Float?                           // 经度
+  
+  // 标签
+  tag         String?                          // 家、公司、学校 等
+  
+  // 状态
+  isDefault   Boolean   @default(false) @map("is_default")  // 是否默认地址
+  
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, isDefault])
+  @@map("user_addresses")
 }
 
 // 就诊人
@@ -1888,4 +1924,83 @@ model NotificationLog {
   @@index([recipientId, createdAt])
   @@index([templateCode, createdAt])
   @@map("notification_logs")
+}
+
+// ========== CMS 内容管理模块 ==========
+
+// 静态页面（关于我们、用户协议、隐私政策等）
+model Page {
+  id          String    @id @default(uuid())
+  title       String                          // 页面标题
+  slug        String    @unique               // URL 别名（如: about, privacy, terms）
+  content     String    @db.Text              // 富文本内容
+  excerpt     String?   @db.Text              // 摘要/描述
+  coverImage  String?   @map("cover_image")   // 封面图
+  seoTitle    String?   @map("seo_title")     // SEO 标题
+  seoDesc     String?   @map("seo_desc")      // SEO 描述
+  seoKeywords String?   @map("seo_keywords")  // SEO 关键词
+  sort        Int       @default(0)           // 排序权重
+  status      String    @default("draft")     // draft=草稿, published=已发布
+  publishedAt DateTime? @map("published_at")  // 发布时间
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@index([slug])
+  @@index([status])
+  @@map("cms_pages")
+}
+
+// 文章分类
+model ArticleCategory {
+  id          String    @id @default(uuid())
+  name        String                          // 分类名称
+  slug        String    @unique               // URL 别名（如: help, news, guide）
+  description String?   @db.Text              // 分类描述
+  icon        String?                         // 图标（Lucide 图标名）
+  coverImage  String?   @map("cover_image")   // 封面图
+  sort        Int       @default(0)           // 排序权重
+  status      String    @default("active")    // active=启用, inactive=禁用
+  isSystem    Boolean   @default(false) @map("is_system")  // 是否系统内置分类（不可删除）
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  articles    Article[]
+
+  @@index([slug])
+  @@index([status])
+  @@map("cms_article_categories")
+}
+
+// 文章
+model Article {
+  id          String    @id @default(uuid())
+  categoryId  String?   @map("category_id")   // 分类ID
+  title       String                          // 文章标题
+  slug        String    @unique               // URL 别名
+  summary     String?   @db.Text              // 摘要
+  content     String    @db.Text              // 富文本内容
+  coverImage  String?   @map("cover_image")   // 封面图
+  author      String?                         // 作者
+  source      String?                         // 来源
+  tags        String[]  @default([])          // 标签
+  viewCount   Int       @default(0) @map("view_count")  // 阅读量
+  isTop       Boolean   @default(false) @map("is_top")  // 置顶
+  isHot       Boolean   @default(false) @map("is_hot")  // 热门
+  seoTitle    String?   @map("seo_title")     // SEO 标题
+  seoDesc     String?   @map("seo_desc")      // SEO 描述
+  seoKeywords String?   @map("seo_keywords")  // SEO 关键词
+  sort        Int       @default(0)           // 排序权重
+  status      String    @default("draft")     // draft=草稿, published=已发布, archived=已归档
+  publishedAt DateTime? @map("published_at")  // 发布时间
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  category    ArticleCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@index([categoryId])
+  @@index([slug])
+  @@index([status])
+  @@index([isTop, sort])
+  @@index([publishedAt])
+  @@map("cms_articles")
 }

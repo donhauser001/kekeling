@@ -47,6 +47,26 @@ export const CreateOrderPage = lazy(() =>
   import('./CreateOrderPage').then(m => ({ default: m.CreateOrderPage }))
 )
 
+export const CmsPageDetailPage = lazy(() =>
+  import('./CmsPageDetailPage').then(m => ({ default: m.CmsPageDetailPage }))
+)
+
+export const HelpCenterPage = lazy(() =>
+  import('./HelpCenterPage').then(m => ({ default: m.HelpCenterPage }))
+)
+
+export const ArticleDetailPage = lazy(() =>
+  import('./ArticleDetailPage').then(m => ({ default: m.ArticleDetailPage }))
+)
+
+export const AddressListPage = lazy(() =>
+  import('./AddressListPage').then(m => ({ default: m.AddressListPage }))
+)
+
+export const AddressEditPage = lazy(() =>
+  import('./AddressEditPage').then(m => ({ default: m.AddressEditPage }))
+)
+
 // ============================================================================
 // 营销中心页面（9 个）
 // ============================================================================

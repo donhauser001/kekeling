@@ -393,6 +393,25 @@ export interface ServiceDetail {
   customFields?: CustomField[]    // 自定义字段
   fieldOrder?: string[]           // 字段排序
   builtinFieldsRequired?: Record<string, boolean>  // 内置字段必填配置
+  // 陪诊员视角专属字段（仅陪诊员可见）
+  commissionRate?: number         // 分成比例 0-100（如 70 表示陪诊员得 70%）
+  commissionNote?: string         // 分成说明
+  operationGuides?: OperationGuide[]  // 操作规范列表
+}
+
+// 操作规范类型
+export interface OperationGuide {
+  id: string
+  title: string
+  summary?: string          // 摘要
+  content: string           // 富文本内容
+  coverImage?: string
+  tags?: string[]
+  category?: {
+    id: string
+    name: string
+    icon?: string
+  }
 }
 
 // ============================================================================
@@ -1062,6 +1081,186 @@ export const previewApi = {
   getBanners: (area: string = 'home') =>
     userRequest<BannerAreaData>(`/home/banners?position=${area}`),
   getStats: () => userRequest<StatsData>('/home/stats'),
+
+  // CMS 页面（公开接口）
+  getCmsPageBySlug: async (slug: string) => {
+    try {
+      return await userRequest<{
+        id: string
+        title: string
+        slug: string
+        content: string
+        excerpt?: string
+        coverImage?: string
+        status: string
+        publishedAt?: string
+      }>(`/cms/pages/public/${slug}`)
+    } catch (error) {
+      console.warn(`[previewApi.getCmsPageBySlug] 页面 ${slug} 不存在或未发布`)
+      return null
+    }
+  },
+
+  // CMS 文章（公开接口）
+  getArticlesByCategory: async (categorySlug: string) => {
+    try {
+      const result = await userRequest<{
+        list: Array<{
+          id: string
+          title: string
+          slug: string
+          summary?: string
+          coverImage?: string
+          publishedAt?: string
+        }>
+        total: number
+      }>(`/cms/articles/public?categorySlug=${categorySlug}`)
+      // 适配返回格式
+      return {
+        items: result.list.map(item => ({
+          ...item,
+          excerpt: item.summary,
+        })),
+        total: result.total,
+      }
+    } catch (error) {
+      console.warn(`[previewApi.getArticlesByCategory] 获取分类 ${categorySlug} 文章失败`)
+      return { items: [], total: 0 }
+    }
+  },
+
+  getArticleBySlug: async (slug: string) => {
+    try {
+      return await userRequest<{
+        id: string
+        title: string
+        slug: string
+        content: string
+        excerpt?: string
+        coverImage?: string
+        publishedAt?: string
+        category?: {
+          id: string
+          name: string
+          slug: string
+        }
+      }>(`/cms/articles/public/${slug}`)
+    } catch (error) {
+      console.warn(`[previewApi.getArticleBySlug] 文章 ${slug} 不存在或未发布`)
+      return null
+    }
+  },
+
+  getArticleById: async (id: string) => {
+    try {
+      return await userRequest<{
+        id: string
+        title: string
+        slug: string
+        content: string
+        excerpt?: string
+        coverImage?: string
+        publishedAt?: string
+        category?: {
+          id: string
+          name: string
+          slug: string
+        }
+      }>(`/cms/articles/public/detail/${id}`)
+    } catch (error) {
+      console.warn(`[previewApi.getArticleById] 文章 ${id} 不存在或未发布`)
+      return null
+    }
+  },
+
+  // 用户地址
+  getAddresses: async () => {
+    try {
+      return await userRequest<Array<{
+        id: string
+        name: string
+        phone: string
+        province: string
+        city: string
+        district: string
+        address: string
+        latitude?: number
+        longitude?: number
+        tag?: string
+        isDefault: boolean
+        createdAt: string
+        updatedAt: string
+      }>>('/user/addresses')
+    } catch (error) {
+      console.warn('[previewApi.getAddresses] 获取地址失败')
+      return []
+    }
+  },
+
+  getDefaultAddress: async () => {
+    try {
+      return await userRequest<{
+        id: string
+        name: string
+        phone: string
+        province: string
+        city: string
+        district: string
+        address: string
+        tag?: string
+        isDefault: boolean
+      } | null>('/user/addresses/default')
+    } catch (error) {
+      console.warn('[previewApi.getDefaultAddress] 获取默认地址失败')
+      return null
+    }
+  },
+
+  createAddress: async (data: {
+    name: string
+    phone: string
+    province: string
+    city: string
+    district: string
+    address: string
+    tag?: string
+    isDefault?: boolean
+  }) => {
+    return await userRequest<{ id: string }>('/user/addresses', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    })
+  },
+
+  updateAddress: async (id: string, data: {
+    name?: string
+    phone?: string
+    province?: string
+    city?: string
+    district?: string
+    address?: string
+    tag?: string
+    isDefault?: boolean
+  }) => {
+    return await userRequest<{ id: string }>(`/user/addresses/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    })
+  },
+
+  deleteAddress: async (id: string) => {
+    return await userRequest<{ success: boolean }>(`/user/addresses/${id}`, {
+      method: 'DELETE',
+    })
+  },
+
+  setDefaultAddress: async (id: string) => {
+    return await userRequest<{ id: string }>(`/user/addresses/${id}/default`, {
+      method: 'POST',
+    })
+  },
 
   // 服务
   getCategories: () => userRequest<ServiceCategory[]>('/services/categories'),

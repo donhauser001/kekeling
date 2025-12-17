@@ -216,6 +216,18 @@ export function ProfilePage({
                   if (item.key === 'coupons') {
                     onNavigate?.('coupons')
                   }
+                  // 地址管理点击跳转
+                  if (item.key === 'address') {
+                    onNavigate?.('address-list')
+                  }
+                  // 帮助中心跳转（文章分类）
+                  if (item.key === 'help') {
+                    onNavigate?.('help-center')
+                  }
+                  // 关于我们跳转（CMS 页面）
+                  if (item.key === 'about') {
+                    onNavigate?.('cms-page', { slug: 'about' })
+                  }
                 }}
               >
                 <div className='flex items-center gap-3'>

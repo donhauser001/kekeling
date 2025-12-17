@@ -23,10 +23,15 @@ import {
   ImageIcon,
   Sparkles,
   AlertCircle,
+  Percent,
+  BookOpen,
+  ChevronDown,
+  ChevronUp,
+  Briefcase,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { SafeHTML } from '@/components/ui/safe-html'
-import type { ThemeSettings } from '../../types'
+import type { ThemeSettings, PreviewViewerRole } from '../../types'
 import { previewApi } from '../../api'
 import { getResourceUrl, formatCount } from '../../utils'
 import { BannerSection } from '../BannerSection'
@@ -38,6 +43,8 @@ interface ServiceDetailPageProps {
   onBack?: () => void
   onServiceClick?: (serviceId: string) => void
   onNavigate?: (page: string, params?: Record<string, string>) => void
+  /** 当前视角角色（用于显示陪诊员专属信息） */
+  effectiveViewerRole?: PreviewViewerRole
 }
 
 // 选项卡类型
@@ -50,12 +57,17 @@ export function ServiceDetailPage({
   onBack,
   onServiceClick,
   onNavigate,
+  effectiveViewerRole = 'user',
 }: ServiceDetailPageProps) {
+  // 是否为陪诊员视角
+  const isEscort = effectiveViewerRole === 'escort'
   const [isFavorite, setIsFavorite] = useState(false)
   const [activeImageIndex, setActiveImageIndex] = useState(0)
   const [activeInfoTab, setActiveInfoTab] = useState<InfoTabType>('highlights')
   const [showGuaranteeDetail, setShowGuaranteeDetail] = useState(false)
   const [selectedGuarantee, setSelectedGuarantee] = useState<{ name: string; description: string | null; icon: string } | null>(null)
+  // 陪诊员专属：操作规范展开状态
+  const [expandedGuideId, setExpandedGuideId] = useState<string | null>(null)
 
   // 流程横向拖动
   const workflowRef = useRef<HTMLDivElement>(null)
@@ -520,6 +532,256 @@ export function ServiceDetailPage({
           </div>
         )}
       </div>
+
+      {/* ============================================================================
+          陪诊员专属区块：分成比例和操作规范
+          ⚠️ 仅在 effectiveViewerRole === 'escort' 时显示
+          ============================================================================ */}
+      {isEscort && (
+        <div
+          className='mx-3 mt-3 rounded-xl overflow-hidden'
+          style={{
+            backgroundColor: isDarkMode ? `${themeSettings.primaryColor}15` : `${themeSettings.primaryColor}08`,
+            border: `1px solid ${themeSettings.primaryColor}40`,
+          }}
+        >
+          {/* 区块标题 */}
+          <div
+            className='flex items-center gap-2 px-4 py-3 border-b'
+            style={{ borderColor: `${themeSettings.primaryColor}30` }}
+          >
+            <Briefcase className='h-4 w-4' style={{ color: themeSettings.primaryColor }} />
+            <span className='text-sm font-semibold' style={{ color: themeSettings.primaryColor }}>
+              陪诊员专属信息
+            </span>
+            <span
+              className='ml-auto text-[10px] px-2 py-0.5 rounded-full'
+              style={{
+                backgroundColor: `${themeSettings.primaryColor}20`,
+                color: themeSettings.primaryColor,
+              }}
+            >
+              仅您可见
+            </span>
+          </div>
+
+          {/* 分成比例 */}
+          <div className='px-4 py-3'>
+            <div className='flex items-center justify-between'>
+              <div className='flex items-center gap-2'>
+                <Percent className='h-4 w-4' style={{ color: themeSettings.primaryColor }} />
+                <span className='text-sm font-medium' style={{ color: textPrimary }}>
+                  分成比例
+                </span>
+              </div>
+              <div className='flex items-center gap-2'>
+                <span
+                  className='text-lg font-bold'
+                  style={{ color: themeSettings.primaryColor }}
+                >
+                  {service.commissionRate ?? 70}%
+                </span>
+                <span className='text-xs' style={{ color: textMuted }}>
+                  (预计收入 ¥{((service.price * (service.commissionRate ?? 70)) / 100).toFixed(2)})
+                </span>
+              </div>
+            </div>
+            {service.commissionNote && (
+              <p
+                className='mt-2 text-xs pl-6'
+                style={{ color: textSecondary }}
+              >
+                {service.commissionNote}
+              </p>
+            )}
+          </div>
+
+          {/* 操作规范 */}
+          {service.operationGuides && service.operationGuides.length > 0 && (
+            <div
+              className='px-4 py-3 border-t'
+              style={{ borderColor: `${themeSettings.primaryColor}30` }}
+            >
+              <div className='flex items-center gap-2 mb-3'>
+                <BookOpen className='h-4 w-4' style={{ color: themeSettings.primaryColor }} />
+                <span className='text-sm font-medium' style={{ color: textPrimary }}>
+                  操作规范
+                </span>
+                <span className='text-xs' style={{ color: textMuted }}>
+                  ({service.operationGuides.length}项)
+                </span>
+              </div>
+              <div className='space-y-2'>
+                {service.operationGuides.map((guide) => (
+                  <div
+                    key={guide.id}
+                    className='rounded-lg overflow-hidden'
+                    style={{ backgroundColor: cardBg }}
+                  >
+                    {/* 规范标题 */}
+                    <button
+                      className='w-full flex items-center justify-between px-3 py-2.5 text-left'
+                      onClick={() =>
+                        setExpandedGuideId(
+                          expandedGuideId === guide.id ? null : guide.id
+                        )
+                      }
+                    >
+                      <div className='flex items-center gap-2'>
+                        <div
+                          className='w-1.5 h-1.5 rounded-full'
+                          style={{ backgroundColor: themeSettings.primaryColor }}
+                        />
+                        <span className='text-sm font-medium' style={{ color: textPrimary }}>
+                          {guide.title}
+                        </span>
+                        {guide.category && (
+                          <span
+                            className='text-[10px] px-1.5 py-0.5 rounded'
+                            style={{
+                              backgroundColor: isDarkMode ? '#3a3a3a' : '#f3f4f6',
+                              color: textMuted,
+                            }}
+                          >
+                            {guide.category.name}
+                          </span>
+                        )}
+                      </div>
+                      {expandedGuideId === guide.id ? (
+                        <ChevronUp className='h-4 w-4' style={{ color: textMuted }} />
+                      ) : (
+                        <ChevronDown className='h-4 w-4' style={{ color: textMuted }} />
+                      )}
+                    </button>
+
+                    {/* 规范内容（展开时显示） */}
+                    {expandedGuideId === guide.id && (
+                      <div
+                        className='px-3 pb-3 border-t'
+                        style={{ borderColor: isDarkMode ? '#3a3a3a' : '#e5e7eb' }}
+                      >
+                        {guide.summary && (
+                          <p
+                            className='mt-2 text-xs'
+                            style={{ color: textSecondary }}
+                          >
+                            {guide.summary}
+                          </p>
+                        )}
+                        <div
+                          className='mt-2 text-xs leading-relaxed guide-content'
+                          style={{ color: textSecondary }}
+                        >
+                          <style>{`
+                            .guide-content h1 {
+                              font-size: 1rem;
+                              font-weight: 700;
+                              margin: 12px 0 8px;
+                              color: ${textPrimary};
+                            }
+                            .guide-content h2 {
+                              font-size: 0.875rem;
+                              font-weight: 600;
+                              margin: 10px 0 6px;
+                              color: ${textPrimary};
+                            }
+                            .guide-content h3 {
+                              font-size: 0.8125rem;
+                              font-weight: 600;
+                              margin: 8px 0 4px;
+                              color: ${textPrimary};
+                            }
+                            .guide-content h4, .guide-content h5, .guide-content h6 {
+                              font-size: 0.75rem;
+                              font-weight: 600;
+                              margin: 6px 0 4px;
+                              color: ${textPrimary};
+                            }
+                            .guide-content p {
+                              margin-bottom: 8px;
+                              line-height: 1.6;
+                            }
+                            .guide-content ul, .guide-content ol {
+                              padding-left: 16px;
+                              margin-bottom: 8px;
+                            }
+                            .guide-content ul {
+                              list-style-type: disc;
+                            }
+                            .guide-content ol {
+                              list-style-type: decimal;
+                            }
+                            .guide-content li {
+                              margin-bottom: 4px;
+                              line-height: 1.5;
+                            }
+                            .guide-content strong, .guide-content b {
+                              font-weight: 600;
+                              color: ${textPrimary};
+                            }
+                            .guide-content em, .guide-content i {
+                              font-style: italic;
+                            }
+                            .guide-content blockquote {
+                              border-left: 3px solid ${themeSettings.primaryColor};
+                              padding-left: 10px;
+                              margin: 8px 0;
+                              color: ${textMuted};
+                            }
+                            .guide-content code {
+                              background: ${isDarkMode ? '#3a3a3a' : '#f3f4f6'};
+                              padding: 2px 4px;
+                              border-radius: 4px;
+                              font-size: 0.7rem;
+                            }
+                            .guide-content pre {
+                              background: ${isDarkMode ? '#3a3a3a' : '#f3f4f6'};
+                              padding: 8px;
+                              border-radius: 6px;
+                              overflow-x: auto;
+                              margin: 8px 0;
+                            }
+                            .guide-content img {
+                              max-width: 100%;
+                              border-radius: 6px;
+                              margin: 8px 0;
+                            }
+                            .guide-content a {
+                              color: ${themeSettings.primaryColor};
+                              text-decoration: underline;
+                            }
+                            .guide-content table {
+                              width: 100%;
+                              border-collapse: collapse;
+                              margin: 8px 0;
+                              font-size: 0.7rem;
+                            }
+                            .guide-content th, .guide-content td {
+                              border: 1px solid ${isDarkMode ? '#3a3a3a' : '#e5e7eb'};
+                              padding: 4px 8px;
+                              text-align: left;
+                            }
+                            .guide-content th {
+                              background: ${isDarkMode ? '#3a3a3a' : '#f9fafb'};
+                              font-weight: 600;
+                            }
+                            .guide-content hr {
+                              border: none;
+                              border-top: 1px solid ${isDarkMode ? '#3a3a3a' : '#e5e7eb'};
+                              margin: 12px 0;
+                            }
+                          `}</style>
+                          <SafeHTML html={guide.content} />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 信息选项卡 */}
       <div className='mx-3 mt-3 rounded-xl overflow-hidden' style={{ backgroundColor: cardBg }}>

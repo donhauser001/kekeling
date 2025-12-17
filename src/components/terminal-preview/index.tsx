@@ -88,6 +88,13 @@ import {
   PatientEditPage,
   // 下单页
   CreateOrderPage,
+  // CMS 页面
+  CmsPageDetailPage,
+  HelpCenterPage,
+  ArticleDetailPage,
+  // 地址管理
+  AddressListPage,
+  AddressEditPage,
   // 分销中心页面（Step 11.3-11.5）
   DistributionPage,
   DistributionMembersPage,
@@ -532,6 +539,7 @@ export function TerminalPreview({
             setSelectedServiceId(null)
             navigateToPage(page, params)
           }}
+          effectiveViewerRole={effectiveViewerRole}
         />
       )
     }
@@ -543,6 +551,7 @@ export function TerminalPreview({
             themeSettings={themeSettings}
             isDarkMode={isDarkMode}
             onServiceClick={handleServiceClick}
+            effectiveViewerRole={effectiveViewerRole}
           />
         )
       case 'cases':
@@ -875,6 +884,62 @@ export function TerminalPreview({
             effectiveViewerRole={effectiveViewerRole}
             onNavigate={(page, params) => navigateToPage(page, params)}
             onLogin={() => setShowEscortLoginDialog(true)}
+          />
+        )
+
+      // CMS 页面（关于我们等）
+      case 'cms-page':
+        return (
+          <CmsPageDetailPage
+            slug={pageParams?.slug || 'about'}
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            onBack={() => navigateToPage('profile')}
+          />
+        )
+
+      // 帮助中心（文章分类）
+      case 'help-center':
+        return (
+          <HelpCenterPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            onBack={() => navigateToPage('profile')}
+            onNavigate={(page, params) => navigateToPage(page, params)}
+          />
+        )
+
+      // 文章详情
+      case 'article-detail':
+        return (
+          <ArticleDetailPage
+            articleId={pageParams?.id || ''}
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            onBack={() => navigateToPage('help-center')}
+          />
+        )
+
+      // 地址管理
+      case 'address-list':
+        return (
+          <AddressListPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            onBack={() => navigateToPage('profile')}
+            onNavigate={(page, params) => navigateToPage(page, params)}
+          />
+        )
+
+      case 'address-edit':
+        return (
+          <AddressEditPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            addressId={pageParams?.id}
+            mode={pageParams?.mode as 'create' | 'edit' || (pageParams?.id ? 'edit' : 'create')}
+            onBack={() => navigateToPage('address-list')}
+            onNavigate={(page, params) => navigateToPage(page, params)}
           />
         )
 

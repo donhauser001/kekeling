@@ -3264,3 +3264,295 @@ export const distributionApi = {
   getLevelStats: () => request<DistributionLevelWithStats[]>('/admin/distribution/settings/levels/stats'),
 }
 
+// ============================================
+// CMS 页面管理
+// ============================================
+
+export interface CmsPage {
+  id: string
+  title: string
+  slug: string
+  content: string
+  excerpt: string | null
+  coverImage: string | null
+  seoTitle: string | null
+  seoDesc: string | null
+  seoKeywords: string | null
+  sort: number
+  status: 'draft' | 'published'
+  publishedAt: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateCmsPageData {
+  title: string
+  slug: string
+  content: string
+  excerpt?: string
+  coverImage?: string
+  seoTitle?: string
+  seoDesc?: string
+  seoKeywords?: string
+  sort?: number
+  status?: 'draft' | 'published'
+}
+
+export interface UpdateCmsPageData extends Partial<CreateCmsPageData> { }
+
+export interface CmsPageQuery {
+  status?: string
+  keyword?: string
+}
+
+export const cmsPageApi = {
+  // 获取页面列表
+  getAll: (query?: CmsPageQuery) =>
+    request<CmsPage[]>('/cms/pages', { params: query }),
+
+  // 获取页面详情
+  getById: (id: string) => request<CmsPage>(`/cms/pages/${id}`),
+
+  // 创建页面
+  create: (data: CreateCmsPageData) =>
+    request<CmsPage>('/cms/pages', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // 更新页面
+  update: (id: string, data: UpdateCmsPageData) =>
+    request<CmsPage>(`/cms/pages/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // 删除页面
+  delete: (id: string) =>
+    request<void>(`/cms/pages/${id}`, {
+      method: 'DELETE',
+    }),
+
+  // 发布页面
+  publish: (id: string) =>
+    request<CmsPage>(`/cms/pages/${id}/publish`, {
+      method: 'POST',
+    }),
+
+  // 取消发布
+  unpublish: (id: string) =>
+    request<CmsPage>(`/cms/pages/${id}/unpublish`, {
+      method: 'POST',
+    }),
+
+  // 公开接口：获取已发布页面列表
+  getPublished: () =>
+    request<Pick<CmsPage, 'id' | 'title' | 'slug' | 'excerpt' | 'coverImage' | 'publishedAt'>[]>('/cms/pages/public'),
+
+  // 公开接口：根据 slug 获取页面
+  getBySlug: (slug: string) =>
+    request<CmsPage>(`/cms/pages/public/${slug}`),
+}
+
+// ============================================
+// CMS 文章分类管理
+// ============================================
+
+export interface ArticleCategory {
+  id: string
+  name: string
+  slug: string
+  description: string | null
+  icon: string | null
+  coverImage: string | null
+  sort: number
+  status: 'active' | 'inactive'
+  isSystem?: boolean  // 是否系统内置分类
+  articleCount?: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateArticleCategoryData {
+  name: string
+  slug: string
+  description?: string
+  icon?: string
+  coverImage?: string
+  sort?: number
+  status?: 'active' | 'inactive'
+}
+
+export interface UpdateArticleCategoryData extends Partial<CreateArticleCategoryData> { }
+
+export const articleCategoryApi = {
+  // 获取启用的分类
+  getActive: () =>
+    request<ArticleCategory[]>('/cms/article-categories/active'),
+
+  // 获取分类列表
+  getAll: (query?: { status?: string; keyword?: string }) =>
+    request<ArticleCategory[]>('/cms/article-categories', { params: query }),
+
+  // 获取分类详情
+  getById: (id: string) =>
+    request<ArticleCategory>(`/cms/article-categories/${id}`),
+
+  // 创建分类
+  create: (data: CreateArticleCategoryData) =>
+    request<ArticleCategory>('/cms/article-categories', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // 更新分类
+  update: (id: string, data: UpdateArticleCategoryData) =>
+    request<ArticleCategory>(`/cms/article-categories/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // 删除分类
+  delete: (id: string) =>
+    request<void>(`/cms/article-categories/${id}`, {
+      method: 'DELETE',
+    }),
+}
+
+// ============================================
+// CMS 文章管理
+// ============================================
+
+export interface Article {
+  id: string
+  categoryId: string | null
+  title: string
+  slug: string
+  summary: string | null
+  content: string
+  coverImage: string | null
+  author: string | null
+  source: string | null
+  tags: string[]
+  viewCount: number
+  isTop: boolean
+  isHot: boolean
+  seoTitle: string | null
+  seoDesc: string | null
+  seoKeywords: string | null
+  sort: number
+  status: 'draft' | 'published' | 'archived'
+  publishedAt: string | null
+  createdAt: string
+  updatedAt: string
+  category?: {
+    id: string
+    name: string
+    slug: string
+  } | null
+}
+
+export interface CreateArticleData {
+  categoryId?: string
+  title: string
+  slug: string
+  summary?: string
+  content: string
+  coverImage?: string
+  author?: string
+  source?: string
+  tags?: string[]
+  isTop?: boolean
+  isHot?: boolean
+  seoTitle?: string
+  seoDesc?: string
+  seoKeywords?: string
+  sort?: number
+  status?: 'draft' | 'published' | 'archived'
+}
+
+export interface UpdateArticleData extends Partial<CreateArticleData> { }
+
+export interface ArticleQuery {
+  categoryId?: string
+  categorySlug?: string
+  status?: string
+  isTop?: boolean
+  isHot?: boolean
+  keyword?: string
+  page?: number
+  pageSize?: number
+}
+
+export const articleApi = {
+  // 获取文章列表
+  getList: (query: ArticleQuery = {}) =>
+    request<{
+      list: Article[]
+      total: number
+      page: number
+      pageSize: number
+      totalPages: number
+    }>('/cms/articles', {
+      params: query as Record<string, string | number | boolean | undefined>,
+    }),
+
+  // 获取文章详情
+  getById: (id: string) =>
+    request<Article>(`/cms/articles/${id}`),
+
+  // 创建文章
+  create: (data: CreateArticleData) =>
+    request<Article>('/cms/articles', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // 更新文章
+  update: (id: string, data: UpdateArticleData) =>
+    request<Article>(`/cms/articles/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // 删除文章
+  delete: (id: string) =>
+    request<void>(`/cms/articles/${id}`, {
+      method: 'DELETE',
+    }),
+
+  // 发布文章
+  publish: (id: string) =>
+    request<Article>(`/cms/articles/${id}/publish`, {
+      method: 'POST',
+    }),
+
+  // 取消发布
+  unpublish: (id: string) =>
+    request<Article>(`/cms/articles/${id}/unpublish`, {
+      method: 'POST',
+    }),
+
+  // 置顶/取消置顶
+  toggleTop: (id: string) =>
+    request<Article>(`/cms/articles/${id}/toggle-top`, {
+      method: 'POST',
+    }),
+
+  // 公开接口：获取已发布文章列表
+  getPublished: (query: ArticleQuery = {}) =>
+    request<{
+      list: Pick<Article, 'id' | 'title' | 'slug' | 'summary' | 'coverImage' | 'author' | 'tags' | 'viewCount' | 'isTop' | 'isHot' | 'publishedAt' | 'category'>[]
+      total: number
+      page: number
+      pageSize: number
+      totalPages: number
+    }>('/cms/articles/public', {
+      params: query as Record<string, string | number | boolean | undefined>,
+    }),
+
+  // 公开接口：根据 slug 获取文章
+  getBySlug: (slug: string) =>
+    request<Article>(`/cms/articles/public/${slug}`),
+}
+

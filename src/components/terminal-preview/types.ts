@@ -81,6 +81,13 @@ export type PreviewPage =
   | 'distribution-records'
   | 'distribution-invite'
   | 'distribution-promotion'
+  // CMS 页面
+  | 'cms-page'
+  | 'help-center'
+  | 'article-detail'
+  // 地址管理
+  | 'address-list'
+  | 'address-edit'
 
 /**
  * 有效的页面 key 列表（用于开发环境校验）
@@ -128,6 +135,13 @@ export const VALID_PAGE_KEYS: readonly PreviewPage[] = [
   'distribution-records',
   'distribution-invite',
   'distribution-promotion',
+  // CMS 页面
+  'cms-page',
+  'help-center',
+  'article-detail',
+  // 地址管理
+  'address-list',
+  'address-edit',
 ] as const
 
 // ============================================================================
@@ -892,6 +906,8 @@ export interface ServiceListItem {
     name: string
     icon?: string
   }
+  // 陪诊员视角专属字段（仅陪诊员可见）
+  commissionRate?: number  // 分成比例 0-100
 }
 
 // 服务列表响应
