@@ -36,6 +36,7 @@ import { previewApi } from '../../api'
 import { getResourceUrl, formatCount } from '../../utils'
 import { BannerSection } from '../BannerSection'
 import { getWxBridge } from '../../bridge'
+import { isBrowserEnvironment } from '../../platform/env'
 
 interface ServiceDetailPageProps {
   serviceId: string
@@ -686,7 +687,7 @@ export function ServiceDetailPage({
                           className='mt-2 text-xs leading-relaxed guide-content'
                           style={{ color: textSecondary }}
                         >
-                          <style>{`
+                          {isBrowserEnvironment() && <style>{`
                             .guide-content h1 {
                               font-size: 1rem;
                               font-weight: 700;
@@ -784,7 +785,7 @@ export function ServiceDetailPage({
                               border-top: 1px solid ${isDarkMode ? '#3a3a3a' : '#e5e7eb'};
                               margin: 12px 0;
                             }
-                          `}</style>
+                          `}</style>}
                           <SafeHTML html={guide.content} />
                         </div>
                       </div>
@@ -860,9 +861,9 @@ export function ServiceDetailPage({
               onTouchMove={handleWorkflowTouchMove}
               onTouchEnd={handleWorkflowTouchEnd}
             >
-              <style>{`
+              {isBrowserEnvironment() && <style>{`
                 div[class*="overflow-x-auto"]::-webkit-scrollbar { display: none; }
-              `}</style>
+              `}</style>}
               <div className='flex items-center gap-1 py-1'>
                 {workflowSteps.map((step, index) => (
                   <div key={step.id} className='flex items-center'>
@@ -923,7 +924,7 @@ export function ServiceDetailPage({
             style={{ color: textSecondary }}
           >
             {/* 富文本渲染 */}
-            <style>{`
+            {isBrowserEnvironment() && <style>{`
               .rich-content img {
                 max-width: 100%;
                 border-radius: 8px;
@@ -943,7 +944,7 @@ export function ServiceDetailPage({
                 font-weight: 600;
                 margin: 12px 0 8px;
               }
-            `}</style>
+            `}</style>}
             <SafeHTML html={service.content} />
           </div>
         ) : (
@@ -1091,9 +1092,9 @@ export function ServiceDetailPage({
             onTouchMove={handleRecommendTouchMove}
             onTouchEnd={handleRecommendTouchEnd}
           >
-            <style>{`
+            {isBrowserEnvironment() && <style>{`
               div[class*="overflow-x-auto"]::-webkit-scrollbar { display: none; }
-            `}</style>
+            `}</style>}
             <div className='flex gap-2.5 px-4'>
               {recommendedServices.map((item) => (
                 <div

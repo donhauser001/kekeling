@@ -26,15 +26,24 @@ const queryClient = new QueryClient({
 function ServicesPageContent() {
   const [themeSettings, setThemeSettings] = useState<ThemeSettings>(defaultThemeSettings)
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    // 调试：打印环境信息
+    console.log('[ServicesPage] 页面加载')
+    console.log('[ServicesPage] TARO_ENV:', process.env.TARO_ENV)
+
     previewApi.getThemeSettings()
       .then((settings) => {
+        console.log('[ServicesPage] 主题设置加载成功:', settings)
         if (settings) {
           setThemeSettings({ ...defaultThemeSettings, ...settings })
         }
       })
-      .catch(console.error)
+      .catch((err) => {
+        console.error('[ServicesPage] 主题设置加载失败:', err)
+        setError(err?.message || '加载失败')
+      })
       .finally(() => setIsLoading(false))
   }, [])
 

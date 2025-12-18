@@ -317,7 +317,7 @@ const iconfontUnicodeMap: Record<IconName, string> = {
   'alert': '⚠',
   'info': 'ℹ',
   'star': '★',
-  'heart': '\ue68b',      // Heart
+  'heart': '♥',           // 实心心形（替换空心 iconfont）
 
   // === 通讯类 ===
   'phone': '\ue711',      // 医疗咨询图标

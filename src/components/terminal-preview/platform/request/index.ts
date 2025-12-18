@@ -180,19 +180,13 @@ async function wxRequestAdapter(
 // ============================================================================
 
 /**
- * 创建平台请求函数
- *
- * 根据运行环境自动选择适配器
- */
-function createPlatformRequest(): PlatformRequestFn {
-  if (isWxEnvironment()) {
-    return wxRequestAdapter
-  }
-  return browserRequestAdapter
-}
-
-/**
  * 平台请求函数
+ *
+ * 动态检测环境，每次请求时选择正确的适配器
+ * 
+ * 注意：不能在模块加载时固定适配器，因为：
+ * 1. 小程序环境中 wx 对象可能在模块初始化后才可用
+ * 2. isWxEnvironment() 使用缓存，首次调用时可能环境未就绪
  *
  * 用法与 fetch 类似：
  * ```typescript
@@ -204,11 +198,22 @@ function createPlatformRequest(): PlatformRequestFn {
  * const data = await response.json()
  * ```
  */
-export const platformRequest: PlatformRequestFn = createPlatformRequest()
+export const platformRequest: PlatformRequestFn = async (
+  url: string,
+  options?: PlatformRequestOptions
+): Promise<PlatformResponse> => {
+  // 每次请求时动态检测环境
+  if (isWxEnvironment()) {
+    console.log('[platformRequest] 使用小程序适配器:', url)
+    return wxRequestAdapter(url, options)
+  }
+  console.log('[platformRequest] 使用浏览器适配器:', url)
+  return browserRequestAdapter(url, options)
+}
 
 /**
- * 重新初始化平台请求（用于测试或动态环境切换）
+ * 创建平台请求函数（用于测试或自定义场景）
  */
-export function reinitializePlatformRequest(): PlatformRequestFn {
-  return createPlatformRequest()
+export function createPlatformRequest(): PlatformRequestFn {
+  return platformRequest
 }

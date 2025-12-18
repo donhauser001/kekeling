@@ -1553,3 +1553,35 @@ page {
 .terminal-scroll {
   -webkit-overflow-scrolling: touch;
 }
+
+/* 服务页分类滚动条隐藏 */
+.services-category-scroll::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.services-category-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+/* 隐藏所有滚动条（小程序全局） */
+::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+  background: transparent;
+}
+
+/* 服务页分类滚动条隐藏 */
+.services-category-scroll {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.services-category-scroll::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
