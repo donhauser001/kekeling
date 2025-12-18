@@ -217,10 +217,19 @@ export function DebugPanel({
 
 /**
  * 判断是否显示 DebugPanel
- * 仅在开发环境显示
+ * 仅在 Web 开发环境显示，小程序中不显示
  */
 export function shouldShowDebugPanel(): boolean {
-  // 开发环境始终显示
+  // 小程序环境不显示（检测 TARO_ENV 或 wx 全局对象）
+  // @ts-expect-error TARO_ENV 是 Taro 编译时注入的环境变量
+  if (typeof process !== 'undefined' && process.env && process.env.TARO_ENV) {
+    return false
+  }
+  // 检测微信小程序环境
+  if (typeof wx !== 'undefined' && wx.getSystemInfoSync) {
+    return false
+  }
+  // Web 开发环境显示
   if (process.env.NODE_ENV === 'development') {
     return true
   }

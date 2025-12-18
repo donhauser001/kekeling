@@ -297,17 +297,16 @@ export function getDisabledButtonTextColor(isDarkMode: boolean): string {
 // 资源 URL 处理函数
 // ============================================================================
 
-// 获取资源 URL
+import { getFullResourceUrl } from './platform'
+
+/**
+ * 获取资源 URL
+ *
+ * 在小程序环境中自动转换为完整 URL（包含服务器地址）
+ * 在浏览器环境中保持相对路径
+ */
 export function getResourceUrl(path: string): string {
-  if (!path) return ''
-  if (path.startsWith('http://') || path.startsWith('https://')) {
-    return path
-  }
-  // 上传的文件直接访问，不需要 /api 前缀
-  if (path.startsWith('/uploads/')) {
-    return path
-  }
-  return path.startsWith('/') ? path : `/${path}`
+  return getFullResourceUrl(path)
 }
 
 // 提取颜色（如果是渐变取第一个颜色）

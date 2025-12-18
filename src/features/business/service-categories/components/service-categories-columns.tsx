@@ -8,21 +8,6 @@ import {
     ArrowDownCircle,
     PackageSearch,
     Pin,
-    Layers,
-    Hospital,
-    FileText,
-    Heart,
-    Stethoscope,
-    Truck,
-    MessageSquare,
-    Building,
-    Sparkles,
-    Pill,
-    Syringe,
-    Baby,
-    Eye as EyeIcon,
-    Bone,
-    Brain,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -36,28 +21,40 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { DataTableColumnHeader } from '@/components/data-table'
 import { type ServiceCategory } from '@/lib/api'
+// 引入 iconfont 样式
+import '@/shared/assets/iconfont/iconfont.css'
 
-// 图标映射
-const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
-    stethoscope: Stethoscope,
-    truck: Truck,
-    'message-square': MessageSquare,
-    building: Building,
-    sparkles: Sparkles,
-    hospital: Hospital,
-    heart: Heart,
-    pill: Pill,
-    syringe: Syringe,
-    baby: Baby,
-    eye: EyeIcon,
-    bone: Bone,
-    brain: Brain,
-    'file-text': FileText,
+// iconfont 图标类名映射
+const iconClassMap: Record<string, string> = {
+    // 医疗专业图标
+    stethoscope: 'icon-wenyisheng',
+    hospital: 'icon-sharpicons_medical-sign',
+    pill: 'icon-yiliaoyongpin',
+    syringe: 'icon--yiliao-zhushe',
+    baby: 'icon-ertongyule',
+    bone: 'icon-yiliao',
+    brain: 'icon-yiliao1',
+    eye: 'icon-20-a',
+    'heart-pulse': 'icon-xindiantu',
+    thermometer: 'icon-tiwenji',
+    activity: 'icon--yiliao-xieyang',
+    ambulance: 'icon-sharpicons_ambulance',
+    clipboard: 'icon-bingli',
+    // 通用图标
+    heart: 'icon-Heart',
+    briefcase: 'icon-filesync',
+    star: 'icon-empathize-line',
+    user: 'icon-user-folder',
+    file: 'icon-bingan',
+    phone: 'icon-yiliaozixun',
+    'map-pin': 'icon-first-aid-kit-line',
+    clock: 'icon-tubiao_-2',
+    calendar: 'icon-tubiao_-',
 }
 
-const getIconComponent = (iconName: string | null) => {
-    if (!iconName) return Layers
-    return iconMap[iconName] || Layers
+const getIconClass = (iconName: string | null) => {
+    if (!iconName) return 'icon-yiliao'
+    return iconClassMap[iconName] || 'icon-yiliao'
 }
 
 interface ColumnsProps {
@@ -82,7 +79,7 @@ export function getServiceCategoriesColumns({
             meta: { title: '分类名称' },
             cell: ({ row }) => {
                 const category = row.original
-                const IconComponent = getIconComponent(category.icon)
+                const iconClass = getIconClass(category.icon)
                 const bgStyle = category.color
                     ? { background: category.color }
                     : { backgroundColor: '#6b7280' }
@@ -93,7 +90,7 @@ export function getServiceCategoriesColumns({
                             className='flex h-8 w-8 items-center justify-center rounded-lg'
                             style={bgStyle}
                         >
-                            <IconComponent className='h-4 w-4 text-white' />
+                            <i className={`iconfont ${iconClass} text-base text-white`} />
                         </div>
                         <div className='flex flex-col'>
                             <div className='flex items-center gap-1.5 font-medium'>

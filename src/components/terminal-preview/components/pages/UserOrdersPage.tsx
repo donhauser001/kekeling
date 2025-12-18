@@ -9,6 +9,7 @@
 import { useState } from 'react'
 import { ArrowLeft, MapPin, Clock, ChevronRight, Package, FileText } from 'lucide-react'
 import type { ThemeSettings } from '../../types'
+import { getWxBridge } from '../../bridge'
 
 // ============================================================================
 // 类型定义
@@ -227,9 +228,25 @@ export function UserOrdersPage({
                       <button
                         className='px-4 py-1.5 rounded-full text-xs text-white'
                         style={{ backgroundColor: themeSettings.primaryColor }}
-                        onClick={(e) => {
+                        onClick={async (e) => {
                           e.stopPropagation()
-                          // 支付逻辑
+                          const wxBridge = getWxBridge()
+                          wxBridge.showLoading('支付中...')
+
+                          // TODO: 调用后端获取订单支付参数
+                          // const payParams = await userRequest<PayParams>(`/orders/${order.id}/pay`)
+
+                          // 宿主能力对接：调用微信支付
+                          // const result = await wxBridge.requestPayment({
+                          //   timeStamp: payParams.timeStamp,
+                          //   nonceStr: payParams.nonceStr,
+                          //   package: payParams.package,
+                          //   signType: payParams.signType,
+                          //   paySign: payParams.paySign,
+                          // })
+
+                          wxBridge.hideLoading()
+                          wxBridge.showToast({ title: '支付功能待对接', icon: 'none' })
                         }}
                       >
                         立即支付

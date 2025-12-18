@@ -1,0 +1,62 @@
+/**
+ * 平台配置
+ *
+ * 提供运行时配置，支持不同环境（开发/生产、Web/小程序）
+ */
+
+import { isWxEnvironment } from './env'
+
+// ============================================================================
+// 后端服务器配置
+// ============================================================================
+
+/**
+ * 获取 API 服务器基础 URL
+ *
+ * - 浏览器环境：使用相对路径（由 Vite 代理处理）
+ * - 小程序环境：需要完整 URL（开发时使用本地服务器，生产使用线上服务器）
+ *
+ * 注意：小程序开发时需要在微信开发者工具中勾选"不校验合法域名"
+ */
+export function getApiBaseUrl(): string {
+  if (isWxEnvironment()) {
+    // 小程序环境
+    // @ts-expect-error Taro 环境变量
+    if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'production') {
+      // 生产环境：使用线上服务器（需要配置）
+      return 'https://api.kekeliang.com'  // TODO: 替换为实际的生产服务器地址
+    }
+    // 开发环境：使用局域网 IP + HTTPS（需要在微信开发者工具中勾选"不校验合法域名"）
+    // 注意：如果 IP 地址变化，需要修改此处
+    return 'https://192.168.31.180:3456'
+  }
+
+  // 浏览器环境：使用相对路径
+  return ''
+}
+
+/**
+ * 获取完整的资源 URL
+ *
+ * 将相对路径转换为完整 URL（小程序环境需要）
+ *
+ * @param path - 资源路径（如 /uploads/xxx.png 或 http://xxx）
+ * @returns 完整的资源 URL
+ */
+export function getFullResourceUrl(path: string): string {
+  if (!path) return ''
+
+  // 已经是完整 URL
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    return path
+  }
+
+  // 小程序环境：添加服务器基础 URL
+  if (isWxEnvironment()) {
+    const baseUrl = getApiBaseUrl()
+    return `${baseUrl}${path.startsWith('/') ? path : `/${path}`}`
+  }
+
+  // 浏览器环境：保持相对路径
+  return path.startsWith('/') ? path : `/${path}`
+}

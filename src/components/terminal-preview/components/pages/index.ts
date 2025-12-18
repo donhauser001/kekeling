@@ -35,6 +35,10 @@ export const UserOrderDetailPage = lazy(() =>
   import('./UserOrderDetailPage').then(m => ({ default: m.UserOrderDetailPage }))
 )
 
+export const OrderComplaintPage = lazy(() =>
+  import('./OrderComplaintPage').then(m => ({ default: m.OrderComplaintPage }))
+)
+
 export const PatientsPage = lazy(() =>
   import('./PatientsPage').then(m => ({ default: m.PatientsPage }))
 )
@@ -65,6 +69,10 @@ export const AddressListPage = lazy(() =>
 
 export const AddressEditPage = lazy(() =>
   import('./AddressEditPage').then(m => ({ default: m.AddressEditPage }))
+)
+
+export const UserProfileEditPage = lazy(() =>
+  import('./UserProfileEditPage').then(m => ({ default: m.UserProfileEditPage }))
 )
 
 // ============================================================================
@@ -161,6 +169,10 @@ export const ServiceTypesPage = lazy(() =>
 
 export const MyOrdersPage = lazy(() =>
   import('./workbench').then(m => ({ default: m.MyOrdersPage }))
+)
+
+export const EscortProfileEditPage = lazy(() =>
+  import('./workbench').then(m => ({ default: m.EscortProfileEditPage }))
 )
 
 // ============================================================================

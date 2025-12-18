@@ -27,7 +27,8 @@ import {
     type LucideIcon,
 } from 'lucide-react'
 import type { ThemeSettings, PreviewViewerRole } from '../../../types'
-import { previewApi, type EarningsStats, type EarningsStatsRecord } from '../../../api'
+import { previewApi } from '../../../api'
+import type { EarningsStats, EarningsStatsRecord } from '../../../api'
 import { PermissionPrompt } from '../../PermissionPrompt'
 import { ListSkeleton } from '../../ListSkeleton'
 import { ErrorRetry } from '../../ErrorRetry'

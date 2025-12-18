@@ -21,7 +21,8 @@
  * ```
  */
 
-import { useCallback, useRef, type RefObject } from 'react'
+import { useCallback, useRef } from 'react'
+import type { RefObject } from 'react'
 
 export interface UseScrollRestoreOptions {
   /**
@@ -222,6 +223,7 @@ export function useScrollRestore(
     scrollPositions: scrollPositionsRef.current,
   }
 }
+
 
 
 

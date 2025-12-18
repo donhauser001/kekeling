@@ -60,6 +60,7 @@ export type PreviewPage =
   // 用户订单
   | 'user-orders'
   | 'user-order-detail'
+  | 'order-complaint'
   // 就诊人管理
   | 'patients'
   | 'patient-edit'
@@ -88,6 +89,9 @@ export type PreviewPage =
   // 地址管理
   | 'address-list'
   | 'address-edit'
+  // 个人资料编辑
+  | 'user-profile-edit'
+  | 'escort-profile-edit'
 
 /**
  * 有效的页面 key 列表（用于开发环境校验）
@@ -114,6 +118,7 @@ export const VALID_PAGE_KEYS: readonly PreviewPage[] = [
   // 用户订单
   'user-orders',
   'user-order-detail',
+  'order-complaint',
   // 就诊人管理
   'patients',
   'patient-edit',
@@ -142,6 +147,9 @@ export const VALID_PAGE_KEYS: readonly PreviewPage[] = [
   // 地址管理
   'address-list',
   'address-edit',
+  // 个人资料编辑
+  'user-profile-edit',
+  'escort-profile-edit',
 ] as const
 
 // ============================================================================
@@ -190,6 +198,7 @@ export const PAGE_METADATA: Record<PreviewPage, PageMetadata> = {
   // 用户订单
   'user-orders': { entryAllowed: false, description: '用户订单' },
   'user-order-detail': { entryAllowed: false, requiredParams: ['id'], description: '用户订单详情' },
+  'order-complaint': { entryAllowed: false, requiredParams: ['id'], description: '订单投诉' },
 
   // 就诊人管理
   'patients': { entryAllowed: false, description: '就诊人列表' },
@@ -215,6 +224,19 @@ export const PAGE_METADATA: Record<PreviewPage, PageMetadata> = {
   'distribution-records': { entryAllowed: false, description: '分润记录' },
   'distribution-invite': { entryAllowed: false, description: '邀请好友' },
   'distribution-promotion': { entryAllowed: false, description: '晋升进度' },
+
+  // CMS 页面
+  'cms-page': { entryAllowed: false, requiredParams: ['slug'], description: 'CMS 页面' },
+  'help-center': { entryAllowed: false, description: '帮助中心' },
+  'article-detail': { entryAllowed: false, requiredParams: ['id'], description: '文章详情' },
+
+  // 地址管理
+  'address-list': { entryAllowed: false, description: '地址列表' },
+  'address-edit': { entryAllowed: false, description: '地址编辑' },
+
+  // 个人资料编辑
+  'user-profile-edit': { entryAllowed: false, description: '用户资料编辑' },
+  'escort-profile-edit': { entryAllowed: false, description: '陪诊员资料编辑' },
 } as const
 
 /**
@@ -260,6 +282,7 @@ export interface PreviewPageParamsMap {
   // 用户订单
   'user-orders': Record<string, never>
   'user-order-detail': { id: string }
+  'order-complaint': { id: string }
 
   // 陪诊员公开页
   'escort-list': Record<string, never>
@@ -285,6 +308,19 @@ export interface PreviewPageParamsMap {
   'distribution-records': { range?: '7d' | '30d' | 'all'; status?: 'pending' | 'settled' }
   'distribution-invite': Record<string, never>
   'distribution-promotion': Record<string, never>
+
+  // CMS 页面
+  'cms-page': { slug: string }
+  'help-center': Record<string, never>
+  'article-detail': { id: string }
+
+  // 地址管理
+  'address-list': Record<string, never>
+  'address-edit': { id?: string }
+
+  // 个人资料编辑
+  'user-profile-edit': Record<string, never>
+  'escort-profile-edit': Record<string, never>
 }
 
 /**

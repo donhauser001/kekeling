@@ -28,12 +28,14 @@ import {
   FileImage,
   Camera,
   X,
-  Image as ImageIcon,
-} from 'lucide-react'
+  ImageIcon,
+} from '../../ui/lucide-compat'
 import { cn } from '@/lib/utils'
 import type { ThemeSettings } from '../../types'
-import { previewApi, type CustomField } from '../../api'
+import { previewApi } from '../../api'
+import type { CustomField } from '../../api'
 import { getResourceUrl } from '../../utils'
+import { getWxBridge } from '../../bridge'
 
 interface CreateOrderPageProps {
   serviceId: string
@@ -617,14 +619,32 @@ export function CreateOrderPage({
                         <button
                           className='flex items-center gap-1 px-3 py-1.5 rounded-full text-xs'
                           style={{ backgroundColor: `${themeSettings.primaryColor}10`, color: themeSettings.primaryColor }}
-                          onClick={() => {
-                            // 模拟添加图片
-                            if (images.length < maxImages) {
-                              const mockImg = `https://via.placeholder.com/200x200/f0f0f0/999?text=${field.label}`
-                              setCustomFieldValues(prev => ({
-                                ...prev,
-                                [field.id]: [...images, mockImg]
-                              }))
+                          onClick={async () => {
+                            if (images.length >= maxImages) {
+                              const wxBridge = getWxBridge()
+                              wxBridge.showToast({ title: `最多上传${maxImages}张图片`, icon: 'none' })
+                              return
+                            }
+
+                            try {
+                              // 宿主能力对接：通过 WxBridge 选择图片
+                              const wxBridge = getWxBridge()
+                              const result = await wxBridge.chooseImage({
+                                count: maxImages - images.length,
+                                sourceType: ['album', 'camera'],
+                                sizeType: ['compressed'],
+                              })
+
+                              // 将选择的图片添加到表单
+                              if (result.tempFilePaths.length > 0) {
+                                setCustomFieldValues(prev => ({
+                                  ...prev,
+                                  [field.id]: [...images, ...result.tempFilePaths]
+                                }))
+                              }
+                            } catch (err) {
+                              // 用户取消选择，不做处理
+                              console.log('[CreateOrderPage] 用户取消选择图片', err)
                             }
                           }}
                         >
@@ -741,6 +761,45 @@ export function CreateOrderPage({
         <button
           className='w-full py-3 rounded-full text-base font-medium text-white transition-all active:scale-[0.98]'
           style={{ backgroundColor: themeSettings.primaryColor }}
+          onClick={async () => {
+            const wxBridge = getWxBridge()
+            // 表单校验
+            if (!selectedPatientId) {
+              wxBridge.showToast({ title: '请选择就诊人', icon: 'none' })
+              return
+            }
+            if (!selectedHospitalId) {
+              wxBridge.showToast({ title: '请选择医院', icon: 'none' })
+              return
+            }
+            if (!selectedDate) {
+              wxBridge.showToast({ title: '请选择日期', icon: 'none' })
+              return
+            }
+
+            // TODO: 调用后端创建订单 API 获取支付参数
+            // const orderResult = await userRequest<CreateOrderResponse>('/orders', { method: 'POST', body: {...} })
+            // const payParams = orderResult.data.payParams
+
+            // 宿主能力对接：调用微信支付
+            // 注：实际支付参数需从后端获取，以下为占位演示
+            wxBridge.showToast({ title: '订单创建中...', icon: 'loading' })
+
+            // 当后端 API 就绪后，取消注释以下代码：
+            // const result = await wxBridge.requestPayment({
+            //   timeStamp: payParams.timeStamp,
+            //   nonceStr: payParams.nonceStr,
+            //   package: payParams.package,
+            //   signType: payParams.signType,
+            //   paySign: payParams.paySign,
+            // })
+            // if (result.success) {
+            //   wxBridge.showToast({ title: '支付成功', icon: 'success' })
+            //   onNavigate?.('user-order-detail', { id: orderResult.data.orderId })
+            // } else {
+            //   wxBridge.showToast({ title: result.errMsg || '支付失败', icon: 'error' })
+            // }
+          }}
         >
           提交订单
         </button>

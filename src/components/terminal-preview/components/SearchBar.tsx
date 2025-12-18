@@ -2,7 +2,11 @@
  * 搜索框组件
  */
 
-import { Search } from 'lucide-react'
+import { Box, Button, Text } from '../ui/primitives'
+import { isWxEnvironment } from '../platform/env'
+
+// 小程序环境的缩放比例
+const wxScale = isWxEnvironment() ? 1.15 : 1
 
 interface SearchBarProps {
   isDarkMode?: boolean
@@ -10,24 +14,30 @@ interface SearchBarProps {
 
 export function SearchBar({ isDarkMode = false }: SearchBarProps) {
   return (
-    <div className='relative z-10 px-3'>
-      <div
-        className='flex items-center gap-2.5 rounded-full px-4 py-3 shadow-md cursor-pointer transition-all duration-200 hover:shadow-lg active:scale-[0.98]'
+    <Box
+      className='relative z-10 px-3'
+      style={{ position: 'relative', zIndex: 10, paddingLeft: 12 * wxScale, paddingRight: 12 * wxScale }}
+    >
+      <Button
         style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10 * wxScale,
+          borderRadius: 24,
+          paddingLeft: 16 * wxScale,
+          paddingRight: 16 * wxScale,
+          paddingTop: 12 * wxScale,
+          paddingBottom: 12 * wxScale,
+          boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
           backgroundColor: isDarkMode ? '#2a2a2a' : '#ffffff',
         }}
+        aria-label="搜索"
       >
-        <Search
-          className='h-5 w-5'
-          style={{ color: isDarkMode ? '#6b7280' : '#9ca3af' }}
-        />
-        <span
-          className='text-sm'
-          style={{ color: isDarkMode ? '#6b7280' : '#9ca3af' }}
-        >
+        <Text style={{ fontSize: 14 * wxScale, color: isDarkMode ? '#6b7280' : '#9ca3af' }}>🔍</Text>
+        <Text style={{ fontSize: 14 * wxScale, color: isDarkMode ? '#6b7280' : '#9ca3af' }}>
           搜索服务、医院、医生
-        </span>
-      </div>
-    </div>
+        </Text>
+      </Button>
+    </Box>
   )
 }

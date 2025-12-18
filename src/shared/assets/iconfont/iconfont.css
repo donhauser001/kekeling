@@ -1,0 +1,216 @@
+/**
+ * Kekeling 图标字体
+ *
+ * ⚠️ 此文件由 iconfont.cn 生成，更新后需同步修改
+ *
+ * 项目 ID: 5092051
+ * 项目名称: kekeling-icons
+ */
+
+@font-face {
+  font-family: 'iconfont';
+  src:
+    url('./iconfont.woff2') format('woff2'),
+    url('./iconfont.woff') format('woff'),
+    url('./iconfont.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+.iconfont {
+  font-family: 'iconfont' !important;
+  font-size: 16px;
+  font-style: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1;
+}
+
+/* ============================================================================
+ * 基础图标
+ * ============================================================================ */
+
+/* 导航类 */
+.icon-home:before {
+  content: '\e600';
+}
+
+.icon-search:before {
+  content: '\e615';
+}
+
+/* ============================================================================
+ * 医疗专业图标
+ * ============================================================================ */
+
+/* 医疗通用 */
+.icon-yiliao:before {
+  content: '\e6e6';
+}
+
+.icon-yiliao1:before {
+  content: '\e74c';
+}
+
+.icon-jiankangyuyiliao-yiliao:before {
+  content: '\ea2e';
+}
+
+/* 听诊器/问诊 */
+.icon-wenyisheng:before {
+  content: '\e608';
+}
+
+.icon-yiliaozixun:before {
+  content: '\e711';
+}
+
+/* 医院/急救 */
+.icon-sharpicons_ambulance:before {
+  content: '\e80b';
+}
+
+.icon-sharpicons_medical-sign:before {
+  content: '\e810';
+}
+
+.icon-first-aid-kit-line:before {
+  content: '\e812';
+}
+
+.icon-yaoxiangyiliao:before {
+  content: '\e62e';
+}
+
+/* 药品/注射 */
+.icon-yiliaoyongpin:before {
+  content: '\e630';
+}
+
+.icon--yiliao-zhushe:before {
+  content: '\e62b';
+}
+
+.icon-mazuike--:before {
+  content: '\e6d1';
+}
+
+/* 病历/处方 */
+.icon-bingli:before {
+  content: '\e657';
+}
+
+.icon-bingan:before {
+  content: '\e610';
+}
+
+.icon-tubiao_-:before {
+  content: '\e6fe';
+}
+
+/* 儿科 */
+.icon-ertongyule:before {
+  content: '\e60c';
+}
+
+.icon-ertongpiao:before {
+  content: '\e60a';
+}
+
+.icon-kefangyongrenfangertongfang:before {
+  content: '\e6b2';
+}
+
+/* 心电图/体检 */
+.icon-xindiantu:before {
+  content: '\e7a6';
+}
+
+.icon-xindiantu1:before {
+  content: '\e61c';
+}
+
+.icon--yiliao-xieyang:before {
+  content: '\e62d';
+}
+
+/* 体温 */
+.icon-tiwenji:before {
+  content: '\e707';
+}
+
+.icon-thermometer-line:before {
+  content: '\e82f';
+}
+
+/* CT/检查 */
+.icon--yiliao-ct:before {
+  content: '\e62a';
+}
+
+.icon--yiliao:before {
+  content: '\e62c';
+}
+
+/* 医疗器械 */
+.icon-icon_yiliaoqixie:before {
+  content: '\e602';
+}
+
+/* 病毒/病菌 */
+.icon-bingdu:before {
+  content: '\e6a0';
+}
+
+.icon-tubiao_-1:before {
+  content: '\e6ff';
+}
+
+/* 医疗险/卡片 */
+.icon-yiliaoxian:before {
+  content: '\e65d';
+}
+
+.icon-tubiao_-2:before {
+  content: '\e700';
+}
+
+/* 爱心/关怀 */
+.icon-Heart:before {
+  content: '\e68b';
+}
+
+.icon-Hearts:before {
+  content: '\e68c';
+}
+
+.icon-empathize-line:before {
+  content: '\e811';
+}
+
+/* 创可贴 */
+.icon-Patch:before {
+  content: '\e68d';
+}
+
+/* 其他 */
+.icon-20-a:before {
+  content: '\e607';
+}
+
+.icon-filesync:before {
+  content: '\e7b4';
+}
+
+.icon-user-folder:before {
+  content: '\e611';
+}
+
+.icon-nanxing:before {
+  content: '\ee2c';
+}
+
+.icon-yiliaofeiwulajitong_2:before {
+  content: '\e65e';
+}

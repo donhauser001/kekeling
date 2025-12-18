@@ -9,7 +9,8 @@
 import { useQuery } from '@tanstack/react-query'
 import { TrendingUp, TrendingDown, Gift, RefreshCw } from 'lucide-react'
 import type { ThemeSettings, PreviewViewerRole } from '../../../types'
-import { previewApi, type EarningsItem } from '../../../api'
+import { previewApi } from '../../../api'
+import type { EarningsItem } from '../../../api'
 import { PermissionPrompt } from '../../PermissionPrompt'
 import { formatMoney, safeNumber, getSecondaryTextClass, getTertiaryTextClass } from '../../../utils'
 

@@ -1,8 +1,10 @@
 /**
  * 底部信息区组件
+ *
+ * 使用跨宿主原语组件，支持 Web 和小程序
  */
 
-import { Phone } from 'lucide-react'
+import { Box, Text } from '../ui/primitives'
 import type { ThemeSettings, FooterVisiblePage } from '../types'
 import { BrandSection } from './BrandSection'
 
@@ -28,9 +30,18 @@ export function FooterSection({ themeSettings, isDarkMode, currentPage = 'home' 
   const showPhone = themeSettings.servicePhoneEnabled !== false
 
   return (
-    <div
+    <Box
       className='relative z-10 px-4 py-6 text-center'
-      style={{ backgroundColor: isDarkMode ? '#1f1f1f' : '#f9fafb' }}
+      style={{
+        position: 'relative',
+        zIndex: 10,
+        paddingLeft: 16,
+        paddingRight: 16,
+        paddingTop: 24,
+        paddingBottom: 24,
+        textAlign: 'center',
+        backgroundColor: isDarkMode ? '#1f1f1f' : '#f9fafb',
+      }}
     >
       <BrandSection
         layout={themeSettings.footerLayout}
@@ -41,14 +52,22 @@ export function FooterSection({ themeSettings, isDarkMode, currentPage = 'home' 
         isFooter
       />
       {showPhone && (
-        <div
+        <Box
           className='mt-3 flex items-center justify-center gap-1.5 text-xs'
-          style={{ color: isDarkMode ? '#6b7280' : '#9ca3af' }}
+          style={{
+            marginTop: 12,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 6,
+          }}
         >
-          <Phone className='h-3.5 w-3.5' />
-          <span>客服热线：{servicePhone}</span>
-        </div>
+          <Text style={{ fontSize: 12, color: isDarkMode ? '#6b7280' : '#9ca3af' }}>📞</Text>
+          <Text style={{ fontSize: 12, color: isDarkMode ? '#6b7280' : '#9ca3af' }}>
+            客服热线：{servicePhone}
+          </Text>
+        </Box>
       )}
-    </div>
+    </Box>
   )
 }

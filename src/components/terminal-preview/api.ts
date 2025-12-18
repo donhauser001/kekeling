@@ -13,11 +13,16 @@
  * - 用户 API 禁止走 escortRequest
  * - mock token（以 'mock-' 开头）不允许调真实后端
  *
+ * 平台适配（Task 3）：
+ * - 使用 platformRequest 替代 fetch，支持小程序环境
+ * - 业务层代码无需感知运行环境差异
+ *
  * @see src/components/terminal-preview/DEV_NOTES.md
  * @see docs/终端预览器集成/02-双身份会话与视角切换规格.md
  */
 
 import { getCookie } from '@/lib/cookies'
+import { platformRequest } from './platform'
 import type {
   ThemeSettings,
   HomePageSettings,
@@ -76,6 +81,20 @@ import {
 // 常量定义
 // ============================================================================
 
+import { getApiBaseUrl } from './platform'
+
+/**
+ * 获取 API 基础 URL
+ *
+ * - 浏览器环境：返回 '/api'（由 Vite 代理处理）
+ * - 小程序环境：返回完整 URL（如 'http://localhost:3456/api'）
+ */
+function getApiUrl(): string {
+  const baseUrl = getApiBaseUrl()
+  return baseUrl ? `${baseUrl}/api` : '/api'
+}
+
+// 兼容现有代码的常量
 const API_BASE_URL = '/api'
 
 /**
@@ -208,16 +227,23 @@ export async function userRequest<T>(
   endpoint: string,
   options?: RequestOptions
 ): Promise<T> {
-  const headers = new Headers(options?.headers)
+  // 构建 headers（使用普通对象，兼容 platformRequest）
+  const headers: Record<string, string> = { ...options?.headers }
   const userToken = getUserToken()
 
   if (userToken) {
-    headers.set('Authorization', `Bearer ${userToken}`)
+    headers['Authorization'] = `Bearer ${userToken}`
   }
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
+  const fullUrl = `${getApiUrl()}${endpoint}`
+
+  // 调试日志：帮助追踪 API 请求
+  console.log(`[userRequest] ${options?.method || 'GET'} ${fullUrl}`)
+
+  const response = await platformRequest(fullUrl, {
+    method: options?.method as string,
     headers,
+    body: options?.body as string,
   })
 
   // 统一错误处理
@@ -233,7 +259,7 @@ export async function userRequest<T>(
     throw new ApiError(response.status, `HTTP ${response.status}`, endpoint)
   }
 
-  const result = await response.json()
+  const result = await response.json() as { data: T }
   return result.data
 }
 
@@ -252,7 +278,8 @@ export async function escortRequest<T>(
   endpoint: string,
   options?: RequestOptions
 ): Promise<T> {
-  const headers = new Headers(options?.headers)
+  // 构建 headers（使用普通对象，兼容 platformRequest）
+  const headers: Record<string, string> = { ...options?.headers }
   const escortToken = getEscortToken()
 
   // 无 token 时直接报错
@@ -260,11 +287,12 @@ export async function escortRequest<T>(
     throw new ApiError(401, '需要陪诊员登录', endpoint)
   }
 
-  headers.set('Authorization', `Bearer ${escortToken}`)
+  headers['Authorization'] = `Bearer ${escortToken}`
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
+  const response = await platformRequest(`${getApiUrl()}${endpoint}`, {
+    method: options?.method as string,
     headers,
+    body: options?.body as string,
   })
 
   // 统一错误处理
@@ -282,7 +310,7 @@ export async function escortRequest<T>(
     throw new ApiError(response.status, `HTTP ${response.status}`, endpoint)
   }
 
-  const result = await response.json()
+  const result = await response.json() as { data: T }
   return result.data
 }
 
@@ -590,6 +618,48 @@ export interface AvailableCoupon {
 // getMockCampaignDetail - 已迁移到 ./mocks/marketing.ts
 
 // getMockAvailableCoupons - 已迁移到 ./mocks/marketing.ts
+
+// ==========================================================================
+// 用户资料类型
+// ==========================================================================
+
+/** 用户资料 */
+export interface UserProfile {
+  id: string
+  nickname?: string | null
+  avatar?: string | null
+  phone?: string | null
+  gender?: string | null
+  birthday?: string | null
+}
+
+/** 陪诊员资料 */
+export interface EscortProfile {
+  id: string
+  name: string
+  avatar?: string | null
+  phone: string
+  gender: string
+  introduction?: string | null
+  levelCode?: string | null
+  rating: number
+  orderCount: number
+}
+
+/** Mock 陪诊员资料 */
+function getMockEscortProfile(): EscortProfile {
+  return {
+    id: 'mock-escort-id',
+    name: '张小明',
+    avatar: null,
+    phone: '138****8888',
+    gender: 'male',
+    introduction: '从事陪诊服务3年，熟悉各大医院就诊流程，服务态度好，耐心细致。',
+    levelCode: 'gold',
+    rating: 4.9,
+    orderCount: 328,
+  }
+}
 
 // ==========================================================================
 // 陪诊员公开信息类型（用户端可查看）
@@ -1076,11 +1146,63 @@ export const previewApi = {
   // ==========================================================================
 
   // 主题与首页
-  getThemeSettings: () => userRequest<ThemeSettings>('/config/theme/settings'),
+  getThemeSettings: () => {
+    console.log('[previewApi.getThemeSettings] 开始获取主题设置')
+    return userRequest<ThemeSettings>('/config/theme/settings')
+  },
   getHomePageSettings: () => userRequest<HomePageSettings>('/home/page-settings'),
   getBanners: (area: string = 'home') =>
     userRequest<BannerAreaData>(`/home/banners?position=${area}`),
   getStats: () => userRequest<StatsData>('/home/stats'),
+
+  // ==========================================================================
+  // 用户资料
+  // ==========================================================================
+
+  /**
+   * 获取当前用户资料
+   * 接口: GET /users/profile
+   * 通道: userRequest
+   */
+  getUserProfile: async (): Promise<UserProfile | null> => {
+    try {
+      return await userRequest<UserProfile>('/users/profile')
+    } catch (error) {
+      console.warn('[previewApi.getUserProfile] 获取用户资料失败:', error)
+      // 返回 mock 数据用于预览
+      return {
+        id: 'mock-user-id',
+        nickname: '微信用户',
+        avatar: null,
+        phone: '138****8888',
+        gender: null,
+        birthday: null,
+      }
+    }
+  },
+
+  /**
+   * 更新用户资料
+   * 接口: PUT /users/profile
+   * 通道: userRequest
+   */
+  updateUserProfile: async (data: {
+    nickname?: string
+    avatar?: string
+    gender?: string
+    birthday?: string
+  }): Promise<UserProfile | null> => {
+    try {
+      return await userRequest<UserProfile>('/users/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+    } catch (error) {
+      console.warn('[previewApi.updateUserProfile] 更新用户资料失败:', error)
+      return null
+    }
+  },
 
   // CMS 页面（公开接口）
   getCmsPageBySlug: async (slug: string) => {
@@ -1497,6 +1619,39 @@ export const previewApi = {
   },
 
   // ==========================================================================
+  // 订单投诉（用户端）
+  // ==========================================================================
+
+  /**
+   * 提交订单投诉
+   * 接口: POST /orders/:id/complaint
+   * 通道: userRequest
+   */
+  submitComplaint: async (
+    orderId: string,
+    data: {
+      type: string
+      content: string
+      evidence?: string[]
+    }
+  ): Promise<{ id: string; status: string }> => {
+    try {
+      return await userRequest<{ id: string; status: string }>(
+        `/orders/${orderId}/complaint`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        }
+      )
+    } catch (error) {
+      console.warn('[previewApi.submitComplaint] 提交投诉失败:', error)
+      // Mock 模式下模拟成功
+      return { id: `complaint-${Date.now()}`, status: 'pending' }
+    }
+  },
+
+  // ==========================================================================
   // Escort Channel（陪诊员通道）
   // ⚠️ 以下接口必须走 escortRequest，禁止走 userRequest
   // ==========================================================================
@@ -1900,6 +2055,65 @@ export const previewApi = {
       // 预览器模式，即使后端接口不存在也返回成功，保证 UI 可用
       console.warn('[previewApi.updateWorkbenchSettings] 请求失败，模拟成功:', error)
       return { success: true }
+    }
+  },
+
+  /**
+   * 获取陪诊员资料
+   * 接口: GET /escort/profile
+   * 通道: escortRequest（⚠️ 必须 escortToken）
+   */
+  getEscortProfile: async (): Promise<EscortProfile | null> => {
+    const currentEscortToken = getEscortToken()
+
+    // 无 token 直接返回 mock
+    if (!currentEscortToken) {
+      console.log('[previewApi.getEscortProfile] 无 escortToken, 返回 mock')
+      return getMockEscortProfile()
+    }
+
+    // mock token 直接返回 mock，不请求真实后端
+    if (currentEscortToken.startsWith('mock-')) {
+      console.log('[previewApi.getEscortProfile] mock token, 返回 mock')
+      return getMockEscortProfile()
+    }
+
+    try {
+      return await escortRequest<EscortProfile>('/escort/profile')
+    } catch (error) {
+      console.warn('[previewApi.getEscortProfile] 请求失败，降级 mock:', error)
+      return getMockEscortProfile()
+    }
+  },
+
+  /**
+   * 更新陪诊员资料
+   * 接口: PUT /escort/profile
+   * 通道: escortRequest（⚠️ 必须 escortToken）
+   */
+  updateEscortProfile: async (data: {
+    name?: string
+    avatar?: string
+    gender?: string
+    introduction?: string
+  }): Promise<EscortProfile | null> => {
+    const currentEscortToken = getEscortToken()
+
+    // 无 token 或 mock token 时，模拟成功
+    if (!currentEscortToken || currentEscortToken.startsWith('mock-')) {
+      console.log('[previewApi.updateEscortProfile] mock 模式，模拟更新成功')
+      return getMockEscortProfile()
+    }
+
+    try {
+      return await escortRequest<EscortProfile>('/escort/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+    } catch (error) {
+      console.warn('[previewApi.updateEscortProfile] 请求失败:', error)
+      return null
     }
   },
 

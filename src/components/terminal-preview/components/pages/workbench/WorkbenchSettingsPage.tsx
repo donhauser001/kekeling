@@ -237,12 +237,13 @@ export function WorkbenchSettingsPage({
 
       {/* 内容区域 */}
       <div className="flex-1 overflow-y-auto pb-4">
-        {/* 个人资料卡片 */}
+        {/* 个人资料卡片 - 可点击跳转到资料编辑页 */}
         <div
-          className="mx-4 mt-4 rounded-xl p-4"
+          className="mx-4 mt-4 rounded-xl p-4 cursor-pointer hover:opacity-90 active:opacity-80 transition-opacity"
           style={{
             backgroundColor: isDarkMode ? '#2a2a2a' : '#fff',
           }}
+          onClick={() => onNavigate?.('escort-profile-edit')}
         >
           <div className="flex items-center gap-3">
             {settings.profile.avatar ? (

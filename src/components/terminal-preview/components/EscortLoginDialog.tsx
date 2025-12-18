@@ -1,16 +1,12 @@
 /**
  * 陪诊员二次登录对话框
  *
- * Step 4/7: 陪诊员入口二次登录流程骨架
- * - 普通用户点击陪诊员入口后弹出
- * - 登录成功后写入 escortToken
- * - 触发 viewerRole 校验闭环
- *
- * ⚠️ 当前为 UI 骨架，真实登录接口后续接入
+ * 使用跨宿主原语组件，支持 Web 和小程序
  */
 
 import { useState, useCallback, useEffect } from 'react'
-import { X, Phone, Lock, Eye, EyeOff, Loader2 } from 'lucide-react'
+import { Box, Text, Button, Input } from '../ui/primitives'
+import { isBrowserEnvironment } from '../platform/env'
 import type { ThemeSettings } from '../types'
 
 // ============================================================================
@@ -47,10 +43,10 @@ export function EscortLoginDialog({
   const [isSendingCode, setIsSendingCode] = useState(false)
   const [countdown, setCountdown] = useState(0)
   const [error, setError] = useState<string | null>(null)
-  const [showPassword, setShowPassword] = useState(false)
 
-  // Step 14.15 A11y-01: Esc 键关闭弹窗
+  // Esc 键关闭弹窗（仅浏览器环境）
   useEffect(() => {
+    if (!isBrowserEnvironment()) return
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && open) {
         onClose()
@@ -71,13 +67,7 @@ export function EscortLoginDialog({
     setError(null)
 
     try {
-      // TODO: 调用真实发送验证码接口
-      // await previewApi.sendEscortLoginCode(phone)
-
-      // 模拟发送成功
       await new Promise(resolve => setTimeout(resolve, 500))
-
-      // 开始倒计时
       setCountdown(60)
       const timer = setInterval(() => {
         setCountdown(prev => {
@@ -88,9 +78,7 @@ export function EscortLoginDialog({
           return prev - 1
         })
       }, 1000)
-
-      console.log('[EscortLoginDialog] 验证码已发送（模拟）')
-    } catch (err) {
+    } catch {
       setError('发送验证码失败，请重试')
     } finally {
       setIsSendingCode(false)
@@ -112,37 +100,18 @@ export function EscortLoginDialog({
     setError(null)
 
     try {
-      // TODO: 调用真实登录接口
-      // const result = await previewApi.escortLogin({ phone, code })
-      // onLoginSuccess(result.escortToken)
-
-      // 模拟登录成功，生成 mock escortToken
       await new Promise(resolve => setTimeout(resolve, 800))
-
       const mockEscortToken = `mock-escort-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 8)}`
-
-      console.log('[EscortLoginDialog] 登录成功（模拟），escortToken:', `${mockEscortToken.slice(0, 6)}...${mockEscortToken.slice(-4)}`)
-
       onLoginSuccess(mockEscortToken)
       onClose()
-
-      // 重置表单
       setPhone('')
       setCode('')
-    } catch (err) {
+    } catch {
       setError('登录失败，请检查验证码')
     } finally {
       setIsLoading(false)
     }
   }, [phone, code, onLoginSuccess, onClose])
-
-  // Step 14.19 A11y-04: 表单提交处理（支持 Enter 键提交）
-  const handleSubmit = useCallback((e: React.FormEvent) => {
-    e.preventDefault()
-    if (!isLoading && phone && code) {
-      handleLogin()
-    }
-  }, [isLoading, phone, code, handleLogin])
 
   if (!open) return null
 
@@ -150,103 +119,173 @@ export function EscortLoginDialog({
   const textPrimary = isDarkMode ? '#f3f4f6' : '#111827'
   const textSecondary = isDarkMode ? '#9ca3af' : '#6b7280'
   const inputBg = isDarkMode ? '#2a2a2a' : '#f5f7fa'
-  // Step 14.20 Batch 2: 使用更亮的暗色边框提升可见性
-  const borderColor = isDarkMode ? '#4b5563' : '#e5e7eb' // gray-600 vs gray-200
+  const borderColor = isDarkMode ? '#4b5563' : '#e5e7eb'
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <Box
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 50,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
       {/* 遮罩 */}
-      <div
-        className="absolute inset-0 bg-black/50"
+      <Box
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+        }}
         onClick={onClose}
       />
 
       {/* 对话框 */}
-      <div
-        className="relative w-[85%] max-w-sm rounded-2xl shadow-xl"
-        style={{ backgroundColor: bgColor }}
+      <Box
+        style={{
+          position: 'relative',
+          width: '85%',
+          maxWidth: 384,
+          borderRadius: 16,
+          boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+          backgroundColor: bgColor,
+        }}
       >
         {/* 标题栏 */}
-        <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor }}>
-          <h2 className="text-base font-semibold" style={{ color: textPrimary }}>
+        <Box
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            paddingLeft: 20,
+            paddingRight: 20,
+            paddingTop: 16,
+            paddingBottom: 16,
+            borderBottomWidth: 1,
+            borderBottomColor: borderColor,
+            borderBottomStyle: 'solid',
+          }}
+        >
+          <Text style={{ fontSize: 16, fontWeight: 600, color: textPrimary }}>
             陪诊员登录
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-          >
-            <X className="w-5 h-5" style={{ color: textSecondary }} />
-          </button>
-        </div>
+          </Text>
+          <Button onClick={onClose} style={{ padding: 4, borderRadius: 9999 }}>
+            <Text style={{ fontSize: 20, color: textSecondary }}>×</Text>
+          </Button>
+        </Box>
 
-        {/* 表单 - Step 14.19 A11y-04: 使用 form 标签支持 Enter 键提交 */}
-        <form className="px-5 py-6 space-y-4" onSubmit={handleSubmit}>
+        {/* 表单 */}
+        <Box style={{ paddingLeft: 20, paddingRight: 20, paddingTop: 24, paddingBottom: 24 }}>
           {/* 提示文字 */}
-          <p className="text-sm" style={{ color: textSecondary }}>
+          <Text style={{ fontSize: 14, color: textSecondary, marginBottom: 16 }}>
             请使用陪诊员账号登录，登录后可进入工作台接单
-          </p>
+          </Text>
 
           {/* 手机号输入 */}
-          <div
-            className="flex items-center gap-3 px-4 py-3 rounded-lg"
-            style={{ backgroundColor: inputBg }}
+          <Box
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              paddingLeft: 16,
+              paddingRight: 16,
+              paddingTop: 12,
+              paddingBottom: 12,
+              borderRadius: 8,
+              backgroundColor: inputBg,
+              marginBottom: 16,
+            }}
           >
-            <Phone className="w-5 h-5" style={{ color: textSecondary }} />
-            <input
+            <Text style={{ fontSize: 16, color: textSecondary }}>📱</Text>
+            <Input
               type="tel"
               placeholder="请输入手机号"
               value={phone}
-              onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 11))}
-              className="flex-1 bg-transparent outline-none text-sm"
-              style={{ color: textPrimary }}
+              onChange={(e: any) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 11))}
+              style={{
+                flex: 1,
+                backgroundColor: 'transparent',
+                fontSize: 14,
+                color: textPrimary,
+                border: 'none',
+                outline: 'none',
+              }}
             />
-          </div>
+          </Box>
 
           {/* 验证码输入 */}
-          <div
-            className="flex items-center gap-3 px-4 py-3 rounded-lg"
-            style={{ backgroundColor: inputBg }}
+          <Box
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              paddingLeft: 16,
+              paddingRight: 16,
+              paddingTop: 12,
+              paddingBottom: 12,
+              borderRadius: 8,
+              backgroundColor: inputBg,
+              marginBottom: 16,
+            }}
           >
-            <Lock className="w-5 h-5" style={{ color: textSecondary }} />
-            <input
-              type={showPassword ? 'text' : 'password'}
+            <Text style={{ fontSize: 16, color: textSecondary }}>🔒</Text>
+            <Input
+              type="text"
               placeholder="请输入验证码"
               value={code}
-              onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-              className="flex-1 bg-transparent outline-none text-sm"
-              style={{ color: textPrimary }}
+              onChange={(e: any) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              style={{
+                flex: 1,
+                backgroundColor: 'transparent',
+                fontSize: 14,
+                color: textPrimary,
+                border: 'none',
+                outline: 'none',
+              }}
             />
-            <button
-              onClick={() => setShowPassword(!showPassword)}
-              className="p-1"
-            >
-              {showPassword ? (
-                <EyeOff className="w-4 h-4" style={{ color: textSecondary }} />
-              ) : (
-                <Eye className="w-4 h-4" style={{ color: textSecondary }} />
-              )}
-            </button>
-            <button
+            <Button
               onClick={handleSendCode}
               disabled={isSendingCode || countdown > 0}
-              className="text-sm whitespace-nowrap disabled:opacity-50"
-              style={{ color: themeSettings.primaryColor }}
+              style={{
+                fontSize: 14,
+                whiteSpace: 'nowrap',
+                color: themeSettings.primaryColor,
+                opacity: (isSendingCode || countdown > 0) ? 0.5 : 1,
+              }}
             >
-              {isSendingCode ? '发送中...' : countdown > 0 ? `${countdown}s` : '获取验证码'}
-            </button>
-          </div>
+              <Text style={{ color: themeSettings.primaryColor }}>
+                {isSendingCode ? '发送中...' : countdown > 0 ? `${countdown}s` : '获取验证码'}
+              </Text>
+            </Button>
+          </Box>
 
           {/* 错误提示 */}
           {error && (
-            <p className="text-sm text-red-500">{error}</p>
+            <Text style={{ fontSize: 14, color: '#ef4444', marginBottom: 16 }}>{error}</Text>
           )}
 
-          {/* 登录按钮 - Step 14.20 Batch 2: 禁用态对比度优化 */}
-          <button
-            type="submit"
+          {/* 登录按钮 */}
+          <Button
+            onClick={handleLogin}
             disabled={isLoading || !phone || !code}
-            className="w-full py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-opacity"
             style={{
+              width: '100%',
+              paddingTop: 12,
+              paddingBottom: 12,
+              borderRadius: 8,
+              fontWeight: 500,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
               backgroundColor: (isLoading || !phone || !code)
                 ? (isDarkMode ? '#4b5563' : '#e5e7eb')
                 : themeSettings.primaryColor,
@@ -255,17 +294,30 @@ export function EscortLoginDialog({
                 : '#ffffff',
             }}
           >
-            {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
-            {isLoading ? '登录中...' : '登录'}
-          </button>
+            <Text
+              style={{
+                color: (isLoading || !phone || !code)
+                  ? (isDarkMode ? '#9ca3af' : '#6b7280')
+                  : '#ffffff',
+              }}
+            >
+              {isLoading ? '登录中...' : '登录'}
+            </Text>
+          </Button>
 
           {/* 底部提示 */}
-          <p className="text-xs text-center" style={{ color: textSecondary }}>
+          <Text
+            style={{
+              fontSize: 12,
+              textAlign: 'center',
+              color: textSecondary,
+              marginTop: 16,
+            }}
+          >
             登录即表示同意《陪诊员服务协议》
-          </p>
-        </form>
-      </div>
-    </div>
+          </Text>
+        </Box>
+      </Box>
+    </Box>
   )
 }
-

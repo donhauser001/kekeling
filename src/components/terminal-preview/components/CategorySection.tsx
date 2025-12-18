@@ -3,10 +3,14 @@
  */
 
 import { useRef, useState } from 'react'
-import { UserCheck, Rocket, Stethoscope } from 'lucide-react'
 import type { ServiceCategory, ThemeSettings } from '../types'
-import { getCategoryIcon } from '../icons'
 import { extractBaseColor } from '../utils'
+import { isBrowserEnvironment, isWxEnvironment } from '../platform/env'
+import { Box, ScrollView, Text, Icon } from '../ui/primitives'
+import { getIconName } from '../icons'
+
+// 小程序环境的缩放比例
+const wxScale = isWxEnvironment() ? 1.15 : 1
 
 interface CategorySectionProps {
   categories: ServiceCategory[]
@@ -37,44 +41,69 @@ function PinnedCategoryCard({
   primaryColor: string
   isDarkMode?: boolean
 }) {
-  const IconComponent = getCategoryIcon(category)
   const color = category.color || (index === 0 ? primaryColor : '#22c55e')
 
   return (
-    <div
-      className='flex flex-1 items-center justify-between gap-3 rounded-2xl px-3 py-5 shadow-sm cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-md active:scale-[0.98]'
-      style={{ backgroundColor: isDarkMode ? '#2a2a2a' : '#ffffff' }}
+    <Box
+      className='flex flex-1 items-center justify-between gap-3 rounded-2xl px-3 py-5 shadow-sm'
+      style={{
+        display: 'flex',
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 12 * wxScale,
+        borderRadius: 16,
+        paddingLeft: 12 * wxScale,
+        paddingRight: 12 * wxScale,
+        paddingTop: 20 * wxScale,
+        paddingBottom: 20 * wxScale,
+        backgroundColor: isDarkMode ? '#2a2a2a' : '#ffffff',
+      }}
     >
       {/* 左侧内容 */}
-      <div className='flex-1 min-w-0'>
+      <Box className='flex-1 min-w-0' style={{ flex: 1, minWidth: 0 }}>
         {/* 标题 + 数量 */}
-        <div className='flex items-center gap-2 mb-1.5'>
-          <span className='text-lg font-semibold' style={{ color }}>
-            {category.name}
-          </span>
-          <span
-            className='rounded-full px-2 py-0.5 text-[10px]'
-            style={{ color, backgroundColor: `${color}15` }}
+        <Box
+          className='flex items-center gap-2 mb-1.5'
+          style={{ display: 'flex', alignItems: 'center', gap: 8 * wxScale, marginBottom: 6 * wxScale }}
+        >
+          <Text style={{ fontSize: 18 * wxScale, fontWeight: 600, color }}>{category.name}</Text>
+          <Text
+            style={{
+              borderRadius: 12,
+              paddingLeft: 8 * wxScale,
+              paddingRight: 8 * wxScale,
+              paddingTop: 2,
+              paddingBottom: 2,
+              fontSize: 10 * wxScale,
+              color,
+              backgroundColor: `${color}15`,
+            }}
           >
             {category.serviceCount || 0}项
-          </span>
-        </div>
+          </Text>
+        </Box>
         {/* 描述 */}
-        <p
-          className='text-[13px] line-clamp-2'
-          style={{ color: isDarkMode ? '#6b7280' : '#9ca3af' }}
-        >
+        <Text style={{ fontSize: 13 * wxScale, color: isDarkMode ? '#6b7280' : '#9ca3af' }}>
           {category.description || '专业服务，用心陪伴'}
-        </p>
-      </div>
+        </Text>
+      </Box>
       {/* 右侧图标 */}
-      <div
-        className='flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl'
-        style={{ backgroundColor: `${color}15` }}
+      <Box
+        style={{
+          display: 'flex',
+          width: 36 * wxScale,
+          height: 36 * wxScale,
+          flexShrink: 0,
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderRadius: 12,
+          backgroundColor: `${color}15`,
+        }}
       >
-        <IconComponent className='h-5 w-5' style={{ color }} />
-      </div>
-    </div>
+        <Icon name={getIconName(category.icon || category.name || '')} size={18 * wxScale} color={color} />
+      </Box>
+    </Box>
   )
 }
 
@@ -88,33 +117,54 @@ function CategoryTag({
   primaryColor: string
   isDarkMode?: boolean
 }) {
-  const IconComponent = getCategoryIcon(category)
   const baseColor = extractBaseColor(category.color, primaryColor)
 
   return (
-    <div
-      className='flex flex-shrink-0 items-center gap-1.5 rounded-full px-3 py-2 cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95'
-      style={{ backgroundColor: isDarkMode ? '#3a3a3a' : '#f3f4f6' }}
+    <Box
+      style={{
+        display: 'flex',
+        flexShrink: 0,
+        alignItems: 'center',
+        gap: 6 * wxScale,
+        borderRadius: 20,
+        paddingLeft: 12 * wxScale,
+        paddingRight: 12 * wxScale,
+        paddingTop: 8 * wxScale,
+        paddingBottom: 8 * wxScale,
+        backgroundColor: isDarkMode ? '#3a3a3a' : '#f3f4f6',
+      }}
     >
-      <div
-        className='flex h-5 w-5 items-center justify-center rounded-lg'
-        style={{ backgroundColor: `${baseColor}15` }}
+      <Box
+        style={{
+          display: 'flex',
+          width: 20 * wxScale,
+          height: 20 * wxScale,
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderRadius: 8,
+          backgroundColor: `${baseColor}15`,
+        }}
       >
-        <IconComponent className='h-3 w-3' style={{ color: baseColor }} />
-      </div>
-      <span
-        className='text-[13px] font-medium'
-        style={{ color: isDarkMode ? '#e5e7eb' : '#374151' }}
-      >
+        <Icon name={getIconName(category.icon || category.name || '')} size={12 * wxScale} color={baseColor} />
+      </Box>
+      <Text style={{ fontSize: 13 * wxScale, fontWeight: 500, color: isDarkMode ? '#e5e7eb' : '#374151' }}>
         {category.name}
-      </span>
-      <span
-        className='rounded-lg px-1.5 py-0.5 text-[10px]'
-        style={{ color: baseColor, backgroundColor: `${baseColor}15` }}
+      </Text>
+      <Text
+        style={{
+          borderRadius: 8,
+          paddingLeft: 6 * wxScale,
+          paddingRight: 6 * wxScale,
+          paddingTop: 2,
+          paddingBottom: 2,
+          fontSize: 10 * wxScale,
+          color: baseColor,
+          backgroundColor: `${baseColor}15`,
+        }}
       >
         {category.serviceCount || 0}
-      </span>
-    </div>
+      </Text>
+    </Box>
   )
 }
 
@@ -126,6 +176,7 @@ function PlaceholderCategories({
   primaryColor: string
   isDarkMode?: boolean
 }) {
+  const isWeb = isBrowserEnvironment()
   const cardBg = isDarkMode ? '#2a2a2a' : '#ffffff'
   const tagBg = isDarkMode ? '#3a3a3a' : '#f3f4f6'
   const descColor = isDarkMode ? '#6b7280' : '#9ca3af'
@@ -134,77 +185,162 @@ function PlaceholderCategories({
   return (
     <>
       {/* 占位置顶分类 */}
-      <div className='mb-3 flex gap-2.5'>
-        <div
-          className='flex flex-1 items-center justify-between gap-3 rounded-2xl px-3 py-5 shadow-sm'
-          style={{ backgroundColor: cardBg }}
+      <Box style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
+        <Box
+          style={{
+            display: 'flex',
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+            borderRadius: 16,
+            paddingLeft: 12,
+            paddingRight: 12,
+            paddingTop: 20,
+            paddingBottom: 20,
+            backgroundColor: cardBg,
+          }}
         >
-          <div className='flex-1'>
-            <div className='flex items-center gap-2 mb-1.5'>
-              <span className='text-lg font-semibold' style={{ color: primaryColor }}>
-                陪诊服务
-              </span>
-              <span
-                className='rounded-full px-2 py-0.5 text-[10px]'
-                style={{ color: primaryColor, backgroundColor: `${primaryColor}15` }}
+          <Box style={{ flex: 1 }}>
+            <Box style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+              <Text style={{ fontSize: 18, fontWeight: 600, color: primaryColor }}>陪诊服务</Text>
+              <Text
+                style={{
+                  borderRadius: 12,
+                  paddingLeft: 8,
+                  paddingRight: 8,
+                  paddingTop: 2,
+                  paddingBottom: 2,
+                  fontSize: 10,
+                  color: primaryColor,
+                  backgroundColor: `${primaryColor}15`,
+                }}
               >
                 6项
-              </span>
-            </div>
-            <p className='text-[13px]' style={{ color: descColor }}>专业陪诊全程服务</p>
-          </div>
-          <div
-            className='flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl'
-            style={{ backgroundColor: `${primaryColor}15` }}
+              </Text>
+            </Box>
+            <Text style={{ fontSize: 13, color: descColor }}>专业陪诊全程服务</Text>
+          </Box>
+          <Box
+            style={{
+              display: 'flex',
+              width: 36,
+              height: 36,
+              flexShrink: 0,
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: 12,
+              backgroundColor: `${primaryColor}15`,
+            }}
           >
-            <UserCheck className='h-5 w-5' style={{ color: primaryColor }} />
-          </div>
-        </div>
-        <div
-          className='flex flex-1 items-center justify-between gap-3 rounded-2xl px-3 py-5 shadow-sm'
-          style={{ backgroundColor: cardBg }}
+            <Icon name={getIconName('stethoscope')} size={18} color={primaryColor} />
+          </Box>
+        </Box>
+        <Box
+          style={{
+            display: 'flex',
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+            borderRadius: 16,
+            paddingLeft: 12,
+            paddingRight: 12,
+            paddingTop: 20,
+            paddingBottom: 20,
+            backgroundColor: cardBg,
+          }}
         >
-          <div className='flex-1'>
-            <div className='flex items-center gap-2 mb-1.5'>
-              <span className='text-lg font-semibold text-green-600'>代办服务</span>
-              <span className='rounded-full bg-green-600/10 px-2 py-0.5 text-[10px] text-green-600'>
+          <Box style={{ flex: 1 }}>
+            <Box style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+              <Text style={{ fontSize: 18, fontWeight: 600, color: '#22c55e' }}>代办服务</Text>
+              <Text
+                style={{
+                  borderRadius: 12,
+                  paddingLeft: 8,
+                  paddingRight: 8,
+                  paddingTop: 2,
+                  paddingBottom: 2,
+                  fontSize: 10,
+                  color: '#22c55e',
+                  backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                }}
+              >
                 4项
-              </span>
-            </div>
-            <p className='text-[13px]' style={{ color: descColor }}>快捷代办省时省心</p>
-          </div>
-          <div className='flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-green-600/10'>
-            <Rocket className='h-5 w-5 text-green-600' />
-          </div>
-        </div>
-      </div>
+              </Text>
+            </Box>
+            <Text style={{ fontSize: 13, color: descColor }}>快捷代办省时省心</Text>
+          </Box>
+          <Box
+            style={{
+              display: 'flex',
+              width: 36,
+              height: 36,
+              flexShrink: 0,
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: 12,
+              backgroundColor: 'rgba(34, 197, 94, 0.1)',
+            }}
+          >
+            <Icon name={getIconName('truck')} size={18} color="#22c55e" />
+          </Box>
+        </Box>
+      </Box>
       {/* 占位非置顶分类 */}
-      <div className='rounded-2xl p-3 shadow-sm' style={{ backgroundColor: cardBg }}>
-        <style>{hideScrollbarStyle}</style>
-        <div className='category-scroll flex gap-2.5 overflow-x-auto cursor-grab active:cursor-grabbing select-none'>
-          {['全程陪诊', '代办挂号', '代取报告', '代办病历'].map((name, i) => (
-            <div
-              key={i}
-              className='flex flex-shrink-0 items-center gap-1.5 rounded-full px-3 py-2'
-              style={{ backgroundColor: tagBg }}
-            >
-              <div
-                className='flex h-5 w-5 items-center justify-center rounded-lg'
-                style={{ backgroundColor: `${primaryColor}15` }}
+      <Box style={{ borderRadius: 16, padding: 12, backgroundColor: cardBg }}>
+        {isWeb ? <style>{hideScrollbarStyle}</style> : null}
+        <ScrollView scrollX style={{ whiteSpace: 'nowrap' }}>
+          <Box style={{ display: 'inline-flex', flexDirection: 'row', gap: 10 }}>
+            {['全程陪诊', '代办挂号', '代取报告', '代办病历'].map((name, i) => (
+              <Box
+                key={i}
+                style={{
+                  display: 'flex',
+                  flexShrink: 0,
+                  alignItems: 'center',
+                  gap: 6,
+                  borderRadius: 20,
+                  paddingLeft: 12,
+                  paddingRight: 12,
+                  paddingTop: 8,
+                  paddingBottom: 8,
+                  backgroundColor: tagBg,
+                }}
               >
-                <Stethoscope className='h-3 w-3' style={{ color: primaryColor }} />
-              </div>
-              <span className='text-[13px] font-medium' style={{ color: textColor }}>{name}</span>
-              <span
-                className='rounded-lg px-1.5 py-0.5 text-[10px]'
-                style={{ color: primaryColor, backgroundColor: `${primaryColor}15` }}
-              >
-                {3 + i}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
+                <Box
+                  style={{
+                    display: 'flex',
+                    width: 20,
+                    height: 20,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: 8,
+                    backgroundColor: `${primaryColor}15`,
+                  }}
+                >
+                  <Icon name={getIconName(name)} size={12} color={primaryColor} />
+                </Box>
+                <Text style={{ fontSize: 13, fontWeight: 500, color: textColor }}>{name}</Text>
+                <Text
+                  style={{
+                    borderRadius: 8,
+                    paddingLeft: 6,
+                    paddingRight: 6,
+                    paddingTop: 2,
+                    paddingBottom: 2,
+                    fontSize: 10,
+                    color: primaryColor,
+                    backgroundColor: `${primaryColor}15`,
+                  }}
+                >
+                  {3 + i}
+                </Text>
+              </Box>
+            ))}
+          </Box>
+        </ScrollView>
+      </Box>
     </>
   )
 }
@@ -214,6 +350,7 @@ export function CategorySection({
   themeSettings,
   isDarkMode = false,
 }: CategorySectionProps) {
+  const isWeb = isBrowserEnvironment()
   // 置顶分类
   const pinnedCategories = categories.filter((c) => c.isPinned).slice(0, 2)
   // 非置顶分类
@@ -244,12 +381,12 @@ export function CategorySection({
   const handleMouseLeave = () => setIsDragging(false)
 
   return (
-    <div className='relative z-10 px-3 py-3'>
-      <style>{hideScrollbarStyle}</style>
+    <Box style={{ position: 'relative', zIndex: 10, paddingLeft: 12 * wxScale, paddingRight: 12 * wxScale, paddingTop: 12 * wxScale, paddingBottom: 12 * wxScale }}>
+      {isWeb ? <style>{hideScrollbarStyle}</style> : null}
 
       {/* 置顶分类 - 左右两个大卡片 */}
       {pinnedCategories.length > 0 && (
-        <div className='mb-3 flex gap-2.5'>
+        <Box style={{ display: 'flex', gap: 10 * wxScale, marginBottom: 12 * wxScale }}>
           {pinnedCategories.map((category, index) => (
             <PinnedCategoryCard
               key={category.id}
@@ -259,39 +396,58 @@ export function CategorySection({
               isDarkMode={isDarkMode}
             />
           ))}
-        </div>
+        </Box>
       )}
 
       {/* 非置顶分类 - 横向滚动标签 */}
       {otherCategories.length > 0 && (
-        <div
-          className='rounded-2xl p-2.5 shadow-sm'
-          style={{ backgroundColor: isDarkMode ? '#2a2a2a' : '#ffffff' }}
+        <Box
+          style={{
+            borderRadius: 16,
+            padding: 10 * wxScale,
+            backgroundColor: isDarkMode ? '#2a2a2a' : '#ffffff',
+          }}
         >
-          <div
-            ref={scrollRef}
-            className='category-scroll flex gap-2 overflow-x-auto cursor-grab active:cursor-grabbing select-none'
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseLeave}
-          >
-            {otherCategories.map((category) => (
-              <CategoryTag
-                key={category.id}
-                category={category}
-                primaryColor={themeSettings.primaryColor}
-                isDarkMode={isDarkMode}
-              />
-            ))}
-          </div>
-        </div>
+          {isWeb ? (
+            <Box
+              ref={scrollRef}
+              className='category-scroll'
+              style={{ display: 'flex', gap: 8 * wxScale, overflowX: 'auto' }}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseLeave}
+            >
+              {otherCategories.map((category) => (
+                <CategoryTag
+                  key={category.id}
+                  category={category}
+                  primaryColor={themeSettings.primaryColor}
+                  isDarkMode={isDarkMode}
+                />
+              ))}
+            </Box>
+          ) : (
+            <ScrollView scrollX style={{ whiteSpace: 'nowrap' }}>
+              <Box style={{ display: 'inline-flex', flexDirection: 'row', gap: 8 * wxScale }}>
+                {otherCategories.map((category) => (
+                  <CategoryTag
+                    key={category.id}
+                    category={category}
+                    primaryColor={themeSettings.primaryColor}
+                    isDarkMode={isDarkMode}
+                  />
+                ))}
+              </Box>
+            </ScrollView>
+          )}
+        </Box>
       )}
 
       {/* 无分类数据时的占位 */}
       {categories.length === 0 && (
         <PlaceholderCategories primaryColor={themeSettings.primaryColor} isDarkMode={isDarkMode} />
       )}
-    </div>
+    </Box>
   )
 }

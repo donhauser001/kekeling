@@ -9,7 +9,8 @@
 
 import { useQuery } from '@tanstack/react-query'
 import type { ThemeSettings } from '../../../types'
-import { previewApi, type PointsRecord } from '../../../api'
+import { previewApi } from '../../../api'
+import type { PointsRecord } from '../../../api'
 import { ListSkeleton } from '../../ListSkeleton'
 import { ErrorRetry } from '../../ErrorRetry'
 import { getRefreshingClass } from '../../PageTransition'

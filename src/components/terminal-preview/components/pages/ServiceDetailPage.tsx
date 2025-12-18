@@ -28,13 +28,14 @@ import {
   ChevronDown,
   ChevronUp,
   Briefcase,
-} from 'lucide-react'
+} from '../../ui/lucide-compat'
 import { cn } from '@/lib/utils'
 import { SafeHTML } from '@/components/ui/safe-html'
 import type { ThemeSettings, PreviewViewerRole } from '../../types'
 import { previewApi } from '../../api'
 import { getResourceUrl, formatCount } from '../../utils'
 import { BannerSection } from '../BannerSection'
+import { getWxBridge } from '../../bridge'
 
 interface ServiceDetailPageProps {
   serviceId: string
@@ -340,7 +341,20 @@ export function ServiceDetailPage({
               }}
             />
           </button>
-          <Share2 className='h-5 w-5' style={{ color: textMuted }} />
+          <button
+            onClick={() => {
+              // 通过 WxBridge 调用分享功能
+              const wxBridge = getWxBridge()
+              wxBridge.share({
+                title: service?.name || '服务详情',
+                desc: service?.description || '查看服务详情',
+                path: `/pages/service/detail?id=${serviceId}`,
+                imageUrl: service?.coverImage ? getResourceUrl(service.coverImage) : undefined,
+              })
+            }}
+          >
+            <Share2 className='h-5 w-5' style={{ color: textMuted }} />
+          </button>
         </div>
       </div>
 
@@ -1127,6 +1141,7 @@ export function ServiceDetailPage({
                   backgroundColor: isDarkMode ? '#3a3a3a' : '#f9fafb',
                   minHeight: '140px',
                 }}
+                onClick={() => onNavigate?.('services')}
               >
                 <div
                   className='w-10 h-10 rounded-full flex items-center justify-center mb-2'

@@ -44,7 +44,7 @@ echo ""
 check_backend() {
     echo -e "${YELLOW}🔍 检查后端服务...${NC}"
     
-    if curl -s http://localhost:3456/api/home/stats > /dev/null 2>&1; then
+    if curl -sk https://localhost:3456/api/home/stats > /dev/null 2>&1; then
         echo -e "${GREEN}   ✅ 后端服务已运行${NC}"
         return 0
     fi
@@ -66,7 +66,7 @@ check_backend() {
         local attempt=0
         
         while [ $attempt -lt $max_attempts ]; do
-            if curl -s http://localhost:3456/api/home/stats > /dev/null 2>&1; then
+            if curl -sk https://localhost:3456/api/home/stats > /dev/null 2>&1; then
                 echo -e "${GREEN}   ✅ 后端服务已就绪${NC}"
                 return 0
             fi

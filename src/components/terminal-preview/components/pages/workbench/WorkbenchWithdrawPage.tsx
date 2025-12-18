@@ -29,7 +29,8 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import type { ThemeSettings, PreviewViewerRole } from '../../../types'
-import { previewApi, type WithdrawStats, type WithdrawAccount, type WithdrawRecord } from '../../../api'
+import { previewApi } from '../../../api'
+import type { WithdrawStats, WithdrawAccount, WithdrawRecord } from '../../../api'
 import { PermissionPrompt } from '../../PermissionPrompt'
 import { ListSkeleton } from '../../ListSkeleton'
 import { ErrorRetry } from '../../ErrorRetry'

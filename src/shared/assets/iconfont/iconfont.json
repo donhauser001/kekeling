@@ -1,0 +1,296 @@
+{
+  "id": "5092051",
+  "name": "kekeling-icons",
+  "font_family": "iconfont",
+  "css_prefix_text": "icon-",
+  "description": "",
+  "glyphs": [
+    {
+      "icon_id": "18480271",
+      "name": "体温计",
+      "font_class": "tiwenji",
+      "unicode": "e707",
+      "unicode_decimal": 59143
+    },
+    {
+      "icon_id": "18480286",
+      "name": "医疗咨询",
+      "font_class": "yiliaozixun",
+      "unicode": "e711",
+      "unicode_decimal": 59153
+    },
+    {
+      "icon_id": "18940881",
+      "name": "医疗相关图标",
+      "font_class": "20-a",
+      "unicode": "e607",
+      "unicode_decimal": 58887
+    },
+    {
+      "icon_id": "19537686",
+      "name": "儿童娱乐",
+      "font_class": "ertongyule",
+      "unicode": "e60c",
+      "unicode_decimal": 58892
+    },
+    {
+      "icon_id": "24612600",
+      "name": "医疗用品",
+      "font_class": "yiliaoyongpin",
+      "unicode": "e630",
+      "unicode_decimal": 58928
+    },
+    {
+      "icon_id": "26528609",
+      "name": "病毒",
+      "font_class": "bingdu",
+      "unicode": "e6a0",
+      "unicode_decimal": 59040
+    },
+    {
+      "icon_id": "27104770",
+      "name": "客房佣人房儿童房",
+      "font_class": "kefangyongrenfangertongfang",
+      "unicode": "e6b2",
+      "unicode_decimal": 59058
+    },
+    {
+      "icon_id": "27402487",
+      "name": "男性",
+      "font_class": "nanxing",
+      "unicode": "ee2c",
+      "unicode_decimal": 60972
+    },
+    {
+      "icon_id": "32228191",
+      "name": "问医生",
+      "font_class": "wenyisheng",
+      "unicode": "e608",
+      "unicode_decimal": 58888
+    },
+    {
+      "icon_id": "32731492",
+      "name": "医疗",
+      "font_class": "yiliao1",
+      "unicode": "e74c",
+      "unicode_decimal": 59212
+    },
+    {
+      "icon_id": "34817827",
+      "name": "心电图",
+      "font_class": "xindiantu1",
+      "unicode": "e61c",
+      "unicode_decimal": 58908
+    },
+    {
+      "icon_id": "39017075",
+      "name": "医疗垃圾桶_2",
+      "font_class": "yiliaofeiwulajitong_2",
+      "unicode": "e65e",
+      "unicode_decimal": 58974
+    },
+    {
+      "icon_id": "42230742",
+      "name": "empathize-line",
+      "font_class": "empathize-line",
+      "unicode": "e811",
+      "unicode_decimal": 59409
+    },
+    {
+      "icon_id": "42230750",
+      "name": "first-aid-kit-line",
+      "font_class": "first-aid-kit-line",
+      "unicode": "e812",
+      "unicode_decimal": 59410
+    },
+    {
+      "icon_id": "42230822",
+      "name": "thermometer-line",
+      "font_class": "thermometer-line",
+      "unicode": "e82f",
+      "unicode_decimal": 59439
+    },
+    {
+      "icon_id": "45168664",
+      "name": "健康与医疗-医疗",
+      "font_class": "jiankangyuyiliao-yiliao",
+      "unicode": "ea2e",
+      "unicode_decimal": 59950
+    },
+    {
+      "icon_id": "45848647",
+      "name": "icon_医疗器械",
+      "font_class": "icon_yiliaoqixie",
+      "unicode": "e602",
+      "unicode_decimal": 58882
+    },
+    {
+      "icon_id": "160001",
+      "name": "home",
+      "font_class": "home",
+      "unicode": "e600",
+      "unicode_decimal": 58880
+    },
+    {
+      "icon_id": "4766462",
+      "name": "file sync",
+      "font_class": "filesync",
+      "unicode": "e7b4",
+      "unicode_decimal": 59316
+    },
+    {
+      "icon_id": "6900846",
+      "name": "user-folder",
+      "font_class": "user-folder",
+      "unicode": "e611",
+      "unicode_decimal": 58897
+    },
+    {
+      "icon_id": "10562071",
+      "name": "Heart",
+      "font_class": "Heart",
+      "unicode": "e68b",
+      "unicode_decimal": 59019
+    },
+    {
+      "icon_id": "10562072",
+      "name": "Hearts",
+      "font_class": "Hearts",
+      "unicode": "e68c",
+      "unicode_decimal": 59020
+    },
+    {
+      "icon_id": "10562073",
+      "name": "Patch",
+      "font_class": "Patch",
+      "unicode": "e68d",
+      "unicode_decimal": 59021
+    },
+    {
+      "icon_id": "10572780",
+      "name": "sharpicons_ambulance",
+      "font_class": "sharpicons_ambulance",
+      "unicode": "e80b",
+      "unicode_decimal": 59403
+    },
+    {
+      "icon_id": "10572806",
+      "name": "sharpicons_medical-sign",
+      "font_class": "sharpicons_medical-sign",
+      "unicode": "e810",
+      "unicode_decimal": 59408
+    },
+    {
+      "icon_id": "10885290",
+      "name": "病案",
+      "font_class": "bingan",
+      "unicode": "e610",
+      "unicode_decimal": 58896
+    },
+    {
+      "icon_id": "11064376",
+      "name": "麻醉科",
+      "font_class": "mazuike--",
+      "unicode": "e6d1",
+      "unicode_decimal": 59089
+    },
+    {
+      "icon_id": "11190336",
+      "name": "处方",
+      "font_class": "tubiao_-",
+      "unicode": "e6fe",
+      "unicode_decimal": 59134
+    },
+    {
+      "icon_id": "11190339",
+      "name": "病菌",
+      "font_class": "tubiao_-1",
+      "unicode": "e6ff",
+      "unicode_decimal": 59135
+    },
+    {
+      "icon_id": "11190341",
+      "name": "卡片",
+      "font_class": "tubiao_-2",
+      "unicode": "e700",
+      "unicode_decimal": 59136
+    },
+    {
+      "icon_id": "11227051",
+      "name": "6-医疗-ct",
+      "font_class": "-yiliao-ct",
+      "unicode": "e62a",
+      "unicode_decimal": 58922
+    },
+    {
+      "icon_id": "11227066",
+      "name": "6-医疗-注射",
+      "font_class": "-yiliao-zhushe",
+      "unicode": "e62b",
+      "unicode_decimal": 58923
+    },
+    {
+      "icon_id": "11227076",
+      "name": "6-医疗2",
+      "font_class": "-yiliao",
+      "unicode": "e62c",
+      "unicode_decimal": 58924
+    },
+    {
+      "icon_id": "11227078",
+      "name": "6-医疗-血氧",
+      "font_class": "-yiliao-xieyang",
+      "unicode": "e62d",
+      "unicode_decimal": 58925
+    },
+    {
+      "icon_id": "12225066",
+      "name": "search",
+      "font_class": "search",
+      "unicode": "e615",
+      "unicode_decimal": 58901
+    },
+    {
+      "icon_id": "12476911",
+      "name": "儿童票",
+      "font_class": "ertongpiao",
+      "unicode": "e60a",
+      "unicode_decimal": 58890
+    },
+    {
+      "icon_id": "14975823",
+      "name": "药箱医疗",
+      "font_class": "yaoxiangyiliao",
+      "unicode": "e62e",
+      "unicode_decimal": 58926
+    },
+    {
+      "icon_id": "15001614",
+      "name": "病历",
+      "font_class": "bingli",
+      "unicode": "e657",
+      "unicode_decimal": 58967
+    },
+    {
+      "icon_id": "15344246",
+      "name": "医疗险",
+      "font_class": "yiliaoxian",
+      "unicode": "e65d",
+      "unicode_decimal": 58973
+    },
+    {
+      "icon_id": "15839095",
+      "name": "心电图",
+      "font_class": "xindiantu",
+      "unicode": "e7a6",
+      "unicode_decimal": 59302
+    },
+    {
+      "icon_id": "16322545",
+      "name": "医疗",
+      "font_class": "yiliao",
+      "unicode": "e6e6",
+      "unicode_decimal": 59110
+    }
+  ]
+}

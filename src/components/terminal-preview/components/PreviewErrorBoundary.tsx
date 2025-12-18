@@ -1,16 +1,12 @@
 /**
  * TerminalPreview 系统级错误边界组件
  *
- * 功能：
- * - 捕获子组件渲染错误，防止整个预览器崩溃白屏
- * - 提供友好的错误提示 UI
- * - 提供「返回首页」和「重试」按钮
- * - 开发环境输出完整 error stack
- *
- * @see docs/终端预览器集成/TerminalPreview-系统行为审计报告-2024-12-13.md - SYSTEM-4
+ * 使用跨宿主原语组件，支持 Web 和小程序
  */
 
-import { Component, type ReactNode, type ErrorInfo } from 'react'
+import { Component } from 'react'
+import type { ReactNode, ErrorInfo } from 'react'
+import { Box, Text, Button } from '../ui/primitives'
 import type { ThemeSettings } from '../types'
 
 // ============================================================================
@@ -77,7 +73,7 @@ export class PreviewErrorBoundary extends Component<
 
   render(): ReactNode {
     const { children, themeSettings, isDarkMode = false } = this.props
-    const { hasError, error, errorInfo } = this.state
+    const { hasError, error } = this.state
 
     if (!hasError) {
       return children
@@ -85,80 +81,120 @@ export class PreviewErrorBoundary extends Component<
 
     const primaryColor = themeSettings?.primaryColor ?? '#f97316'
     const backgroundColor = isDarkMode ? '#1a1a1a' : '#f5f7fa'
-    const cardBg = isDarkMode ? '#2a2a2a' : '#fff'
-    const textColor = isDarkMode ? 'text-white' : 'text-gray-900'
-    const subTextColor = isDarkMode ? 'text-gray-400' : 'text-gray-500'
+    const textColor = isDarkMode ? '#ffffff' : '#111827'
+    const subTextColor = isDarkMode ? '#9ca3af' : '#6b7280'
 
     return (
-      <div
-        className="min-h-full flex flex-col items-center justify-center px-4 py-8"
-        style={{ backgroundColor }}
+      <Box
+        style={{
+          minHeight: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          paddingLeft: 16,
+          paddingRight: 16,
+          paddingTop: 32,
+          paddingBottom: 32,
+          backgroundColor,
+        }}
       >
         {/* 错误图标 */}
-        <div className="text-5xl mb-4">⚠️</div>
+        <Text style={{ fontSize: 48, marginBottom: 16 }}>⚠️</Text>
 
         {/* 错误标题 */}
-        <div className={`text-base font-medium text-center ${textColor}`}>
+        <Text
+          style={{
+            fontSize: 16,
+            fontWeight: 500,
+            textAlign: 'center',
+            color: textColor,
+          }}
+        >
           页面出现了问题
-        </div>
+        </Text>
 
         {/* 错误描述 */}
-        <div className={`text-sm text-center mt-2 ${subTextColor}`}>
+        <Text
+          style={{
+            fontSize: 14,
+            textAlign: 'center',
+            marginTop: 8,
+            color: subTextColor,
+          }}
+        >
           当前页面渲染时发生错误，请尝试重试或返回首页
-        </div>
+        </Text>
 
         {/* 操作按钮 */}
-        <div className="flex gap-3 mt-6">
-          <button
+        <Box
+          style={{
+            display: 'flex',
+            gap: 12,
+            marginTop: 24,
+          }}
+        >
+          <Button
             onClick={this.handleRetry}
-            className="px-5 py-2 rounded-lg text-sm font-medium transition-colors"
             style={{
+              paddingLeft: 20,
+              paddingRight: 20,
+              paddingTop: 8,
+              paddingBottom: 8,
+              borderRadius: 8,
+              fontSize: 14,
+              fontWeight: 500,
               backgroundColor: isDarkMode ? '#3a3a3a' : '#e5e7eb',
-              color: isDarkMode ? '#fff' : '#374151',
+              color: isDarkMode ? '#ffffff' : '#374151',
             }}
           >
-            重试
-          </button>
-          <button
+            <Text style={{ color: isDarkMode ? '#ffffff' : '#374151' }}>重试</Text>
+          </Button>
+          <Button
             onClick={this.handleReset}
-            className="px-5 py-2 rounded-lg text-white text-sm font-medium transition-colors hover:opacity-90"
-            style={{ backgroundColor: primaryColor }}
+            style={{
+              paddingLeft: 20,
+              paddingRight: 20,
+              paddingTop: 8,
+              paddingBottom: 8,
+              borderRadius: 8,
+              fontSize: 14,
+              fontWeight: 500,
+              backgroundColor: primaryColor,
+              color: '#ffffff',
+            }}
           >
-            返回首页
-          </button>
-        </div>
+            <Text style={{ color: '#ffffff' }}>返回首页</Text>
+          </Button>
+        </Box>
 
         {/* 开发环境：显示错误详情 */}
         {process.env.NODE_ENV === 'development' && error && (
-          <div
-            className="mt-6 w-full max-w-sm rounded-lg p-4 overflow-auto"
+          <Box
             style={{
-              backgroundColor: cardBg,
-              border: `1px solid ${isDarkMode ? '#3a3a3a' : '#e5e7eb'}`,
+              marginTop: 24,
+              width: '100%',
+              maxWidth: 384,
+              borderRadius: 8,
+              padding: 16,
+              backgroundColor: isDarkMode ? '#2a2a2a' : '#ffffff',
+              borderWidth: 1,
+              borderColor: isDarkMode ? '#3a3a3a' : '#e5e7eb',
+              borderStyle: 'solid',
             }}
           >
-            <div className="text-xs font-mono text-red-500 mb-2">
+            <Text
+              style={{
+                fontSize: 12,
+                fontFamily: 'monospace',
+                color: '#ef4444',
+              }}
+            >
               {error.name}: {error.message}
-            </div>
-            {errorInfo?.componentStack && (
-              <details className="mt-2">
-                <summary
-                  className={`text-xs cursor-pointer ${subTextColor}`}
-                  style={{ color: primaryColor }}
-                >
-                  查看组件堆栈
-                </summary>
-                <pre
-                  className={`text-xs font-mono mt-2 whitespace-pre-wrap ${subTextColor}`}
-                  style={{ fontSize: '10px', lineHeight: '1.4' }}
-                >
-                  {errorInfo.componentStack}
-                </pre>
-              </details>
-            )}
-          </div>
+            </Text>
+          </Box>
         )}
-      </div>
+      </Box>
     )
   }
 }

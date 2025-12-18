@@ -13,15 +13,20 @@
  */
 
 import { useState, useEffect, useMemo, useCallback, Suspense, useRef } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQueryClient } from '@tanstack/react-query'
 import { cn } from '@/lib/utils'
 import { previewApi } from './api'
+import { Box } from './ui/primitives'
+import { isBrowserEnvironment, isWxEnvironment } from './platform/env'
 import {
   type TerminalPreviewProps,
   type ThemeSettings,
   type HomePageSettings,
   type StatsData,
   type ServiceTabType,
+  type BannerAreaData,
+  type ServiceCategory,
+  type RecommendedServicesData,
   defaultThemeSettings,
   defaultHomeSettings,
   defaultStatsData,
@@ -83,6 +88,7 @@ import {
   MyOrdersPage,
   UserOrdersPage,
   UserOrderDetailPage,
+  OrderComplaintPage,
   // 就诊人管理
   PatientsPage,
   PatientEditPage,
@@ -95,6 +101,9 @@ import {
   // 地址管理
   AddressListPage,
   AddressEditPage,
+  // 个人资料编辑
+  UserProfileEditPage,
+  EscortProfileEditPage,
   // 分销中心页面（Step 11.3-11.5）
   DistributionPage,
   DistributionMembersPage,
@@ -348,59 +357,50 @@ export function TerminalPreview({
     restoreScrollPosition(page, { delay: 50, fallbackToTop: true })
   }, [currentPage, selectedServiceId, saveScrollPosition, restoreScrollPosition])
 
-  // 获取主题设置
-  const { data: fetchedThemeSettings } = useQuery({
-    queryKey: ['preview', 'theme'],
-    queryFn: previewApi.getThemeSettings,
-    enabled: autoLoad,
-    staleTime: 60 * 1000,
-  })
+  // ============================================================================
+  // 数据获取 - 使用 useState + useEffect（小程序环境 React Query 兼容性问题）
+  // ============================================================================
+  const [fetchedThemeSettings, setFetchedThemeSettings] = useState<ThemeSettings | null>(null)
+  const [fetchedHomeSettings, setFetchedHomeSettings] = useState<HomePageSettings | null>(null)
+  const [fetchedBannerData, setFetchedBannerData] = useState<BannerAreaData | null>(null)
+  const [fetchedStatsData, setFetchedStatsData] = useState<StatsData | null>(null)
+  const [fetchedCategories, setFetchedCategories] = useState<ServiceCategory[]>([])
+  const [fetchedRecommendedServices, setFetchedRecommendedServices] = useState<RecommendedServicesData | null>(null)
 
-  // 获取首页设置
-  const { data: fetchedHomeSettings } = useQuery({
-    queryKey: ['preview', 'homeSettings'],
-    queryFn: previewApi.getHomePageSettings,
-    enabled: autoLoad,
-    staleTime: 60 * 1000,
-  })
+  // 加载首页数据
+  useEffect(() => {
+    if (!autoLoad) return
 
-  // 获取轮播图
-  const { data: fetchedBannerData } = useQuery({
-    queryKey: ['preview', 'banners', 'home'],
-    queryFn: () => previewApi.getBanners('home'),
-    enabled: autoLoad,
-    staleTime: 60 * 1000,
-  })
-
-  // 获取统计数据
-  const { data: fetchedStatsData } = useQuery({
-    queryKey: ['preview', 'stats'],
-    queryFn: previewApi.getStats,
-    enabled: autoLoad,
-    staleTime: 60 * 1000,
-  })
-
-  // 获取服务分类
-  const { data: fetchedCategories } = useQuery({
-    queryKey: ['preview', 'categories'],
-    queryFn: previewApi.getCategories,
-    enabled: autoLoad,
-    staleTime: 60 * 1000,
-  })
-
-  // 获取推荐服务
-  const { data: fetchedRecommendedServices } = useQuery({
-    queryKey: ['preview', 'recommendedServices'],
-    queryFn: previewApi.getRecommendedServices,
-    enabled: autoLoad,
-    staleTime: 60 * 1000,
-  })
+    // 并行加载所有数据
+    Promise.all([
+      previewApi.getThemeSettings().catch(() => null),
+      previewApi.getHomePageSettings().catch(() => null),
+      previewApi.getBanners('home').catch(() => null),
+      previewApi.getStats().catch(() => null),
+      previewApi.getCategories().catch(() => []),
+      previewApi.getRecommendedServices().catch(() => null),
+    ]).then(([theme, home, banners, stats, categories, recommended]) => {
+      if (theme) setFetchedThemeSettings(theme)
+      if (home) setFetchedHomeSettings(home)
+      if (banners) setFetchedBannerData(banners)
+      if (stats) setFetchedStatsData(stats)
+      if (categories) setFetchedCategories(categories)
+      if (recommended) setFetchedRecommendedServices(recommended)
+    })
+  }, [autoLoad])
 
   // 合并数据（优先使用 override）
   const themeSettings: ThemeSettings = useMemo(
     () => ({ ...defaultThemeSettings, ...fetchedThemeSettings, ...themeSettingsOverride }),
     [fetchedThemeSettings, themeSettingsOverride]
   )
+
+  // 调试：主题设置状态
+  console.log('[TerminalPreview] themeSettings:', {
+    headerLogo: themeSettings.headerLogo,
+    headerLogoDark: themeSettings.headerLogoDark,
+    hasFetchedData: !!fetchedThemeSettings,
+  })
 
   const homeSettings: HomePageSettings = useMemo(
     () => ({
@@ -443,18 +443,37 @@ export function TerminalPreview({
   const tabBarHeight = 56
 
   // 渲染首页内容
+  // 小程序环境需要额外的顶部安全区域（状态栏 + 胶囊按钮区域）
+  const wxSafeAreaTop = isWxEnvironment() ? 45 : 0
+
+  // 小程序环境的整体缩放比例（因为屏幕比 375px 设计稿更宽）
+  const wxScale = isWxEnvironment() ? 1.15 : 1
+
   const renderHomePage = () => (
     <>
       {/* 顶部渐变背景 */}
-      <div
-        className='absolute left-0 right-0 top-0 h-[200px] pointer-events-none'
+      <Box
         style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          top: 0,
+          height: 200 + wxSafeAreaTop,
+          pointerEvents: 'none',
           background: `linear-gradient(180deg, ${themeSettings.primaryColor} 0%, ${themeSettings.primaryColor} 15%, transparent 100%)`,
         }}
       />
 
       {/* 头部区域 - 品牌 */}
-      <div className='relative z-10 px-4 pb-4 pt-6'>
+      <Box
+        className='relative z-10'
+        style={{
+          paddingLeft: 16 * wxScale,
+          paddingRight: 16 * wxScale,
+          paddingTop: 24 * wxScale + wxSafeAreaTop,
+          paddingBottom: 16 * wxScale,
+        }}
+      >
         <BrandSection
           layout={themeSettings.headerLayout}
           lightLogo={themeSettings.headerLogo}
@@ -462,7 +481,7 @@ export function TerminalPreview({
           themeSettings={themeSettings}
           isDarkMode={isDarkMode}
         />
-      </div>
+      </Box>
 
       {/* 搜索框 */}
       <SearchBar isDarkMode={isDarkMode} />
@@ -475,11 +494,12 @@ export function TerminalPreview({
       />
 
       {/* 轮播图 */}
-      <BannerSection
-        bannerData={bannerData}
-        themeSettings={themeSettings}
-        className='pb-3'
-      />
+      <Box style={{ paddingBottom: 12 * wxScale }}>
+        <BannerSection
+          bannerData={bannerData}
+          themeSettings={themeSettings}
+        />
+      </Box>
 
       {/* 统计卡片 */}
       <StatsCard
@@ -509,7 +529,7 @@ export function TerminalPreview({
       />
 
       {/* 底部留白，避免内容被 TabBar 遮挡 */}
-      <div style={{ height: `${tabBarHeight}px` }} />
+      <Box style={{ height: `${tabBarHeight}px` }} />
     </>
   )
 
@@ -807,6 +827,18 @@ export function TerminalPreview({
           />
         )
 
+      // 订单投诉页
+      case 'order-complaint':
+        return (
+          <OrderComplaintPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            orderId={pageParams?.id}
+            onBack={() => navigateToPage('user-order-detail', { id: pageParams?.id || '' })}
+            onNavigate={(page, params) => navigateToPage(page, params)}
+          />
+        )
+
       // 就诊人管理
       case 'patients':
         return (
@@ -943,6 +975,28 @@ export function TerminalPreview({
           />
         )
 
+      case 'user-profile-edit':
+        return (
+          <UserProfileEditPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            onBack={() => navigateToPage('profile')}
+            onNavigate={(page, params) => navigateToPage(page, params)}
+          />
+        )
+
+      case 'escort-profile-edit':
+        return (
+          <EscortProfileEditPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            effectiveViewerRole={effectiveViewerRole}
+            onBack={() => navigateToPage('workbench-settings')}
+            onNavigate={(page, params) => navigateToPage(page, params)}
+            onLogin={() => setShowEscortLoginDialog(true)}
+          />
+        )
+
       case 'home':
       default:
         return renderHomePage()
@@ -950,8 +1004,18 @@ export function TerminalPreview({
   }
 
   // 渲染内容
+  // 小程序中不支持 vh 单位，使用 100% 配合外层容器
   const renderContent = () => (
-    <div className='relative flex flex-col' style={{ height: `${height}px` }}>
+    <Box
+      className='relative flex flex-col'
+      style={
+        isWxEnvironment()
+          ? { height: '100%' }
+          : height
+            ? { height: `${height}px` }
+            : { height: '100%', minHeight: '100vh' }
+      }
+    >
       {/* Step 4: DebugPanel - 仅开发环境显示 */}
       {showDebugPanel && (
         <DebugPanel
@@ -966,7 +1030,7 @@ export function TerminalPreview({
       )}
 
       {/* 可滚动内容区 */}
-      <div
+      <Box
         ref={scrollContainerRef}
         className='terminal-scroll relative flex-1 overflow-y-auto cursor-grab active:cursor-grabbing select-none'
         style={{
@@ -978,15 +1042,18 @@ export function TerminalPreview({
         onMouseLeave={handleMouseLeave}
         onScroll={handleScroll}
       >
-        <style>{`
-          .terminal-scroll::-webkit-scrollbar {
-            display: none;
-          }
-          .terminal-scroll {
-            scrollbar-width: none;
-            -ms-overflow-style: none;
-          }
-        `}</style>
+        {/* 滚动条隐藏样式 - 仅在浏览器环境渲染 */}
+        {isBrowserEnvironment() && (
+          <style>{`
+            .terminal-scroll::-webkit-scrollbar {
+              display: none;
+            }
+            .terminal-scroll {
+              scrollbar-width: none;
+              -ms-overflow-style: none;
+            }
+          `}</style>
+        )}
 
         <PreviewErrorBoundary
           onReset={() => navigateToPage('home')}
@@ -1003,7 +1070,7 @@ export function TerminalPreview({
             </PageTransition>
           </Suspense>
         </PreviewErrorBoundary>
-      </div>
+      </Box>
 
       {/* 底部 TabBar - 固定在底部 */}
       <TabBarNav
@@ -1028,7 +1095,7 @@ export function TerminalPreview({
         themeSettings={themeSettings}
         isDarkMode={isDarkMode}
       />
-    </div>
+    </Box>
   )
 
   // 带手机外框
@@ -1047,9 +1114,15 @@ export function TerminalPreview({
 
   // 无外框
   return (
-    <div className={cn('w-[375px] overflow-hidden rounded-xl', className)}>
+    <Box
+      className={cn('overflow-hidden rounded-xl', className)}
+      style={{
+        width: isWxEnvironment() ? '100%' : (height ? '375px' : '100%'),
+        height: isWxEnvironment() ? '100%' : undefined,
+      }}
+    >
       {renderContent()}
-    </div>
+    </Box>
   )
 }
 

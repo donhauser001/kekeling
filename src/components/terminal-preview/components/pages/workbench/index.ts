@@ -41,3 +41,7 @@ export type { ServiceTypesPageProps } from './ServiceTypesPage'
 // 我的订单（Step 14.13 FIX-P3-01）
 export { MyOrdersPage } from './MyOrdersPage'
 export type { MyOrdersPageProps } from './MyOrdersPage'
+
+// 陪诊员资料编辑页
+export { EscortProfileEditPage } from './EscortProfileEditPage'
+export type { EscortProfileEditPageProps } from './EscortProfileEditPage'

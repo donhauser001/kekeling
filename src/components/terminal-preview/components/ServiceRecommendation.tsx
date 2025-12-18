@@ -1,12 +1,37 @@
 /**
  * 服务推荐组件
+ *
+ * 使用跨宿主原语组件，支持 Web 和小程序
  */
 
 import { useState } from 'react'
-import { Stethoscope, ChevronRight, LayoutGrid, List } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Box, Text, Image, Button, Icon } from '../ui/primitives'
+import { isWxEnvironment, isBrowserEnvironment } from '../platform/env'
 import type { RecommendedServicesData, ServiceTabType, ThemeSettings } from '../types'
 import { getResourceUrl } from '../utils'
+
+// 小程序环境的缩放比例
+const wxScale = isWxEnvironment() ? 1.15 : 1
+
+// 内联 SVG 心形图标（Web 端使用，因为 iconfont 字体文件可能缺失）
+function HeartIcon({ size = 24, color = 'currentColor' }: { size?: number; color?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+    </svg>
+  )
+}
 
 type LayoutMode = 'grid' | 'list'
 
@@ -45,13 +70,19 @@ export function ServiceRecommendation({
   const textMuted = isDarkMode ? '#6b7280' : '#9ca3af'
 
   return (
-    <div className='relative z-10 px-3 py-4' style={{ backgroundColor: bgColor }}>
+    <Box
+      className='relative z-10 px-3 py-4'
+      style={{ position: 'relative', zIndex: 10, paddingLeft: 12 * wxScale, paddingRight: 12 * wxScale, paddingTop: 16 * wxScale, paddingBottom: 16 * wxScale, backgroundColor: bgColor }}
+    >
       {/* 选项卡标题栏 */}
-      <div className='mb-3 flex items-center justify-between border-b' style={{ borderColor }}>
+      <Box
+        className='mb-3 flex items-center justify-between border-b'
+        style={{ marginBottom: 12 * wxScale, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderColor }}
+      >
         {/* 左侧：选项卡 */}
-        <div className='flex gap-4'>
+        <Box className='flex gap-4' style={{ display: 'flex', gap: 16 * wxScale }}>
           {recommendedServices.tabs.map((tab) => (
-            <div
+            <Button
               key={tab.key}
               className={cn(
                 'cursor-pointer pb-2 text-sm transition-colors',
@@ -59,225 +90,257 @@ export function ServiceRecommendation({
               )}
               style={{
                 color: activeTab === tab.key ? textPrimary : textMuted,
+                paddingBottom: 8 * wxScale,
+                fontSize: 15 * wxScale,
+                position: activeTab === tab.key ? 'relative' : undefined,
+                fontWeight: activeTab === tab.key ? 600 : 400,
+                background: 'transparent',
               }}
               onClick={() => onTabChange(tab.key)}
             >
-              {tab.title}
+              <Text>{tab.title}</Text>
               {activeTab === tab.key && (
-                <div
+                <Box
                   className='absolute bottom-0 left-1/2 h-0.5 w-5 -translate-x-1/2 rounded-full'
-                  style={{ backgroundColor: themeSettings.primaryColor }}
+                  style={{
+                    position: 'absolute',
+                    bottom: 0,
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    height: 2,
+                    width: 20 * wxScale,
+                    borderRadius: 9999,
+                    backgroundColor: themeSettings.primaryColor,
+                  }}
                 />
               )}
-            </div>
+            </Button>
           ))}
-        </div>
+        </Box>
 
         {/* 右侧：布局切换按钮 */}
-        <div className='flex items-center gap-1 pb-2'>
-          <button
+        <Box className='flex items-center gap-1 pb-2' style={{ display: 'flex', alignItems: 'center', gap: 4 * wxScale, paddingBottom: 8 * wxScale }}>
+          <Button
             onClick={() => setLayoutMode('grid')}
-            className={cn(
-              'rounded p-1 transition-colors',
-              layoutMode === 'grid' ? 'bg-opacity-20' : 'opacity-50'
-            )}
             style={{
               backgroundColor: layoutMode === 'grid' ? `${themeSettings.primaryColor}20` : 'transparent',
               color: layoutMode === 'grid' ? themeSettings.primaryColor : textMuted,
+              padding: 6 * wxScale,
+              borderRadius: 4,
+              width: 28 * wxScale,
+              height: 28 * wxScale,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
-            <LayoutGrid className='h-4 w-4' />
-          </button>
-          <button
+            <Text style={{ fontSize: 14 * wxScale, lineHeight: 1 }}>田</Text>
+          </Button>
+          <Button
             onClick={() => setLayoutMode('list')}
-            className={cn(
-              'rounded p-1 transition-colors',
-              layoutMode === 'list' ? 'bg-opacity-20' : 'opacity-50'
-            )}
             style={{
               backgroundColor: layoutMode === 'list' ? `${themeSettings.primaryColor}20` : 'transparent',
               color: layoutMode === 'list' ? themeSettings.primaryColor : textMuted,
+              padding: 6 * wxScale,
+              borderRadius: 4,
+              width: 28 * wxScale,
+              height: 28 * wxScale,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
-            <List className='h-4 w-4' />
-          </button>
-        </div>
-      </div>
+            <Text style={{ fontSize: 18 * wxScale, lineHeight: 1 }}>≡</Text>
+          </Button>
+        </Box>
+      </Box>
 
       {/* 服务列表 */}
-      <div className={cn(
-        layoutMode === 'grid' ? 'grid grid-cols-2 gap-2' : 'space-y-3'
-      )}>
+      <Box
+        className={cn(layoutMode === 'grid' ? 'grid grid-cols-2 gap-2' : 'space-y-3')}
+        style={layoutMode === 'grid'
+          ? { display: 'flex', flexWrap: 'wrap', gap: 8 * wxScale }
+          : { display: 'flex', flexDirection: 'column', gap: 12 * wxScale }
+        }
+      >
         {activeTabData?.services.map((service) => (
           layoutMode === 'grid' ? (
-            // 网格布局
-            <div
+            // 网格布局 - 一行两个
+            <Box
               key={service.id}
-              className='flex flex-col rounded-xl p-2.5 cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-md active:scale-[0.98]'
-              style={{ backgroundColor: cardBg }}
+              className='flex flex-col rounded-xl p-2.5 cursor-pointer'
+              style={{
+                backgroundColor: cardBg,
+                display: 'flex',
+                flexDirection: 'column',
+                borderRadius: 12,
+                padding: 10 * wxScale,
+                width: `calc(50% - ${4 * wxScale}px)`,
+                boxSizing: 'border-box',
+              }}
               onClick={() => onServiceClick?.(service.id)}
             >
               {service.coverImage ? (
-                <img
-                  src={getResourceUrl(service.coverImage)}
-                  alt={service.name}
-                  className='h-24 w-full rounded-lg object-cover'
-                />
+                <Box style={{
+                  width: '100%',
+                  height: 100 * wxScale, // 固定高度，约为 4:3 比例
+                  borderRadius: 8,
+                  overflow: 'hidden'
+                }}>
+                  <Image
+                    src={getResourceUrl(service.coverImage)}
+                    alt={service.name}
+                    className='h-24 w-full rounded-lg object-cover'
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover'
+                    }}
+                    mode="aspectFill"
+                  />
+                </Box>
               ) : (
-                <div
+                <Box
                   className='flex h-24 w-full items-center justify-center rounded-lg'
-                  style={{ backgroundColor: isDarkMode ? '#4a4a4a' : '#e5e7eb' }}
+                  style={{
+                    backgroundColor: isDarkMode ? '#4a4a4a' : '#e5e7eb',
+                    width: '100%',
+                    height: 100 * wxScale, // 固定高度，约为 4:3 比例
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: 8,
+                  }}
                 >
-                  <Stethoscope className='h-8 w-8' style={{ color: textMuted }} />
-                </div>
+                  {isBrowserEnvironment() ? (
+                    <HeartIcon size={32 * wxScale} color={themeSettings.primaryColor} />
+                  ) : (
+                    <Icon name="heart" size={32 * wxScale} color={themeSettings.primaryColor} />
+                  )}
+                </Box>
               )}
-              <div className='mt-2 min-w-0'>
-                <p className='truncate text-xs font-semibold' style={{ color: textPrimary }}>
+              <Box className='mt-2 min-w-0' style={{ marginTop: 8 * wxScale, minWidth: 0 }}>
+                <Text
+                  className='truncate text-xs font-semibold'
+                  style={{ fontSize: 13 * wxScale, fontWeight: 600, color: textPrimary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                >
                   {service.name}
-                </p>
-                <div className='mt-1 flex items-center justify-between'>
-                  <span
+                </Text>
+                <Box className='mt-1 flex items-center justify-between' style={{ marginTop: 4 * wxScale, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Text
                     className='text-sm font-bold'
-                    style={{ color: themeSettings.primaryColor }}
+                    style={{ fontSize: 15 * wxScale, fontWeight: 'bold', color: themeSettings.primaryColor }}
                   >
                     ¥{service.price}
-                  </span>
-                  <span className='text-[10px]' style={{ color: textMuted }}>
+                  </Text>
+                  <Text className='text-[10px]' style={{ fontSize: 11 * wxScale, color: textMuted }}>
                     {service.orderCount || 0}人已购
-                  </span>
-                </div>
-              </div>
-            </div>
+                  </Text>
+                </Box>
+              </Box>
+            </Box>
           ) : (
             // 列表布局
-            <div
+            <Box
               key={service.id}
-              className='flex gap-3 rounded-xl p-3 cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-md active:scale-[0.98]'
-              style={{ backgroundColor: cardBg }}
+              className='flex gap-3 rounded-xl p-3 cursor-pointer'
+              style={{
+                backgroundColor: cardBg,
+                display: 'flex',
+                gap: 12 * wxScale,
+                borderRadius: 12,
+                padding: 12 * wxScale,
+              }}
               onClick={() => onServiceClick?.(service.id)}
             >
               {service.coverImage ? (
-                <img
+                <Image
                   src={getResourceUrl(service.coverImage)}
                   alt={service.name}
                   className='h-16 w-16 flex-shrink-0 rounded-xl object-cover'
+                  style={{ height: 72 * wxScale, width: 72 * wxScale, flexShrink: 0, borderRadius: 12, objectFit: 'cover' }}
+                  mode="aspectFill"
                 />
               ) : (
-                <div
+                <Box
                   className='flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-xl'
-                  style={{ backgroundColor: isDarkMode ? '#4a4a4a' : '#e5e7eb' }}
+                  style={{
+                    backgroundColor: isDarkMode ? '#4a4a4a' : '#e5e7eb',
+                    height: 72 * wxScale,
+                    width: 72 * wxScale,
+                    flexShrink: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: 12,
+                  }}
                 >
-                  <Stethoscope className='h-6 w-6' style={{ color: textMuted }} />
-                </div>
+                  {isBrowserEnvironment() ? (
+                    <HeartIcon size={28 * wxScale} color={themeSettings.primaryColor} />
+                  ) : (
+                    <Icon name="heart" size={28 * wxScale} color={themeSettings.primaryColor} />
+                  )}
+                </Box>
               )}
-              <div className='flex-1 min-w-0'>
-                <p className='truncate text-sm font-semibold' style={{ color: textPrimary }}>
+              <Box className='flex-1 min-w-0' style={{ flex: 1, minWidth: 0 }}>
+                <Text
+                  className='truncate text-sm font-semibold'
+                  style={{ fontSize: 15 * wxScale, fontWeight: 600, color: textPrimary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                >
                   {service.name}
-                </p>
-                <p className='mt-1 truncate text-xs' style={{ color: textSecondary }}>
+                </Text>
+                <Text
+                  className='mt-1 text-xs'
+                  style={{
+                    marginTop: 4 * wxScale,
+                    fontSize: 13 * wxScale,
+                    color: textSecondary,
+                    lineHeight: 1.4,
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                  }}
+                >
                   {service.description || '专业陪诊服务'}
-                </p>
-                <div className='mt-1.5 flex items-center gap-2'>
-                  <span
+                </Text>
+                <Box className='mt-1.5 flex items-center gap-2' style={{ marginTop: 6 * wxScale, display: 'flex', alignItems: 'center', gap: 8 * wxScale }}>
+                  <Text
                     className='text-sm font-bold'
-                    style={{ color: themeSettings.primaryColor }}
+                    style={{ fontSize: 15 * wxScale, fontWeight: 'bold', color: themeSettings.primaryColor }}
                   >
                     ¥{service.price}
-                  </span>
+                  </Text>
                   {service.originalPrice && service.originalPrice > service.price && (
-                    <span className='text-xs line-through' style={{ color: textMuted }}>
+                    <Text className='text-xs line-through' style={{ fontSize: 12 * wxScale, color: textMuted, textDecoration: 'line-through' }}>
                       ¥{service.originalPrice}
-                    </span>
+                    </Text>
                   )}
-                  <span className='text-xs' style={{ color: textMuted }}>
+                  <Text className='text-xs' style={{ fontSize: 12 * wxScale, color: textMuted }}>
                     {service.orderCount || 0}人已购
-                  </span>
-                </div>
-              </div>
-            </div>
+                  </Text>
+                </Box>
+              </Box>
+            </Box>
           )
         ))}
 
-        {/* 无数据占位 */}
+        {/* 无数据时显示空状态 */}
         {(!activeTabData || activeTabData.services.length === 0) && (
-          layoutMode === 'grid' ? (
-            // 网格占位
-            <>
-              {[1, 2, 3, 4].map((i) => (
-                <div
-                  key={i}
-                  className='flex flex-col rounded-xl p-2.5'
-                  style={{ backgroundColor: cardBg }}
-                >
-                  <div
-                    className='h-24 w-full rounded-lg'
-                    style={{ backgroundColor: isDarkMode ? '#4a4a4a' : '#e5e7eb' }}
-                  />
-                  <div className='mt-2'>
-                    <div
-                      className='h-3 w-16 rounded'
-                      style={{ backgroundColor: isDarkMode ? '#4a4a4a' : '#d1d5db' }}
-                    />
-                    <div className='mt-1.5 flex items-center justify-between'>
-                      <span
-                        className='text-sm font-bold'
-                        style={{ color: themeSettings.primaryColor }}
-                      >
-                        ¥99
-                      </span>
-                      <span className='text-[10px]' style={{ color: textMuted }}>128人已购</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </>
-          ) : (
-            // 列表占位
-            <>
-              {[1, 2].map((i) => (
-                <div
-                  key={i}
-                  className='flex gap-3 rounded-xl p-3'
-                  style={{ backgroundColor: cardBg }}
-                >
-                  <div
-                    className='h-16 w-16 flex-shrink-0 rounded-xl'
-                    style={{ backgroundColor: isDarkMode ? '#4a4a4a' : '#e5e7eb' }}
-                  />
-                  <div className='flex-1'>
-                    <div
-                      className='h-3 w-20 rounded'
-                      style={{ backgroundColor: isDarkMode ? '#4a4a4a' : '#d1d5db' }}
-                    />
-                    <div
-                      className='mt-1.5 h-2.5 w-32 rounded'
-                      style={{ backgroundColor: isDarkMode ? '#3a3a3a' : '#e5e7eb' }}
-                    />
-                    <div className='mt-2 flex items-center gap-2'>
-                      <span
-                        className='text-sm font-bold'
-                        style={{ color: themeSettings.primaryColor }}
-                      >
-                        ¥99
-                      </span>
-                      <span className='text-xs' style={{ color: textMuted }}>128人已购</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </>
-          )
+          <Box style={{ padding: 20 * wxScale, textAlign: 'center' }}>
+            <Text style={{ color: textMuted, fontSize: 14 * wxScale }}>暂无服务数据</Text>
+          </Box>
         )}
-      </div>
+      </Box>
 
       {/* 查看更多 */}
-      <div
+      <Box
         className='mt-3 flex items-center justify-center gap-0.5 text-xs'
-        style={{ color: textMuted }}
+        style={{ marginTop: 12 * wxScale, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 * wxScale }}
       >
-        <span>查看更多服务</span>
-        <ChevronRight className='h-3.5 w-3.5' />
-      </div>
-    </div>
+        <Text style={{ fontSize: 13 * wxScale, color: textMuted }}>查看更多服务</Text>
+        <Text style={{ fontSize: 13 * wxScale, color: textMuted }}>›</Text>
+      </Box>
+    </Box>
   )
 }

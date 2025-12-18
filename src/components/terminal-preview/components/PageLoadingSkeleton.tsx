@@ -1,11 +1,11 @@
 /**
  * 页面加载骨架屏
- * 
- * Step 14.1-B.2: 用于 React.lazy 的 Suspense fallback
- * 保持与页面内容区高度一致，防止切页抖动
+ *
+ * 使用跨宿主原语组件，支持 Web 和小程序
  */
 
 import React from 'react'
+import { Box } from '../ui/primitives'
 
 interface PageLoadingSkeletonProps {
   /** 是否暗色模式 */
@@ -13,50 +13,90 @@ interface PageLoadingSkeletonProps {
 }
 
 export function PageLoadingSkeleton({ isDarkMode = false }: PageLoadingSkeletonProps) {
-  const bgColor = isDarkMode ? 'bg-gray-900' : 'bg-gray-50'
-  const cardColor = isDarkMode ? 'bg-gray-800' : 'bg-white'
-  const shimmerColor = isDarkMode ? 'bg-gray-700' : 'bg-gray-200'
+  const bgColor = isDarkMode ? '#111827' : '#f9fafb'
+  const cardColor = isDarkMode ? '#1f2937' : '#ffffff'
+  const shimmerColor = isDarkMode ? '#374151' : '#e5e7eb'
+  const borderColor = isDarkMode ? '#4b5563' : '#e5e7eb'
 
   return (
-    <div className={`flex flex-col h-full ${bgColor} animate-pulse`}>
+    <Box
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        backgroundColor: bgColor,
+      }}
+    >
       {/* 顶部导航区域骨架 */}
-      {/* Step 14.20 Batch 2: 边框可见性优化 */}
-      <div className={`h-12 ${cardColor} flex items-center px-4 border-b ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}>
-        <div className={`w-6 h-6 rounded ${shimmerColor}`} />
-        <div className={`ml-4 w-24 h-4 rounded ${shimmerColor}`} />
-      </div>
+      <Box
+        style={{
+          height: 48,
+          backgroundColor: cardColor,
+          display: 'flex',
+          alignItems: 'center',
+          paddingLeft: 16,
+          paddingRight: 16,
+          borderBottomWidth: 1,
+          borderBottomColor: borderColor,
+          borderBottomStyle: 'solid',
+        }}
+      >
+        <Box style={{ width: 24, height: 24, borderRadius: 4, backgroundColor: shimmerColor }} />
+        <Box style={{ marginLeft: 16, width: 96, height: 16, borderRadius: 4, backgroundColor: shimmerColor }} />
+      </Box>
 
       {/* 内容区域骨架 */}
-      <div className="flex-1 p-4 space-y-4">
+      <Box style={{ flex: 1, padding: 16 }}>
         {/* 统计卡片区域 */}
-        <div className={`rounded-lg p-4 ${cardColor}`}>
-          <div className={`w-20 h-3 rounded ${shimmerColor} mb-3`} />
-          <div className={`w-32 h-6 rounded ${shimmerColor}`} />
-        </div>
+        <Box
+          style={{
+            borderRadius: 8,
+            padding: 16,
+            backgroundColor: cardColor,
+            marginBottom: 16,
+          }}
+        >
+          <Box style={{ width: 80, height: 12, borderRadius: 4, backgroundColor: shimmerColor, marginBottom: 12 }} />
+          <Box style={{ width: 128, height: 24, borderRadius: 4, backgroundColor: shimmerColor }} />
+        </Box>
 
         {/* 列表区域 */}
-        <div className={`rounded-lg ${cardColor}`}>
+        <Box style={{ borderRadius: 8, backgroundColor: cardColor }}>
           {[1, 2, 3].map((i) => (
-            <div
+            <Box
               key={i}
-              className={`p-4 flex items-center space-x-3 ${i < 3 ? `border-b ${isDarkMode ? 'border-gray-600' : 'border-gray-100'}` : ''}`}
+              style={{
+                padding: 16,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                borderBottomWidth: i < 3 ? 1 : 0,
+                borderBottomColor: isDarkMode ? '#4b5563' : '#f3f4f6',
+                borderBottomStyle: 'solid',
+              }}
             >
-              <div className={`w-10 h-10 rounded-full ${shimmerColor}`} />
-              <div className="flex-1 space-y-2">
-                <div className={`w-24 h-3 rounded ${shimmerColor}`} />
-                <div className={`w-16 h-2 rounded ${shimmerColor}`} />
-              </div>
-              <div className={`w-12 h-4 rounded ${shimmerColor}`} />
-            </div>
+              <Box style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: shimmerColor }} />
+              <Box style={{ flex: 1 }}>
+                <Box style={{ width: 96, height: 12, borderRadius: 4, backgroundColor: shimmerColor, marginBottom: 8 }} />
+                <Box style={{ width: 64, height: 8, borderRadius: 4, backgroundColor: shimmerColor }} />
+              </Box>
+              <Box style={{ width: 48, height: 16, borderRadius: 4, backgroundColor: shimmerColor }} />
+            </Box>
           ))}
-        </div>
+        </Box>
 
         {/* 底部留白 */}
-        <div className={`rounded-lg p-4 ${cardColor}`}>
-          <div className={`w-full h-8 rounded ${shimmerColor}`} />
-        </div>
-      </div>
-    </div>
+        <Box
+          style={{
+            borderRadius: 8,
+            padding: 16,
+            backgroundColor: cardColor,
+            marginTop: 16,
+          }}
+        >
+          <Box style={{ width: '100%', height: 32, borderRadius: 4, backgroundColor: shimmerColor }} />
+        </Box>
+      </Box>
+    </Box>
   )
 }
-

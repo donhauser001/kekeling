@@ -78,7 +78,8 @@ services:
       redis:
         condition: service_started
     healthcheck:
-      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3456/api/home/stats" ]
+      # 使用 HTTPS 并跳过自签名证书验证
+      test: [ "CMD", "wget", "--no-verbose", "--no-check-certificate", "--tries=1", "--spider", "https://localhost:3456/api/home/stats" ]
       interval: 30s
       timeout: 10s
       start_period: 30s

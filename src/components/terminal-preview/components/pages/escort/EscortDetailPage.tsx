@@ -9,7 +9,8 @@
 
 import { useQuery } from '@tanstack/react-query'
 import type { ThemeSettings } from '../../../types'
-import { previewApi, type EscortDetail } from '../../../api'
+import { previewApi } from '../../../api'
+import type { EscortDetail } from '../../../api'
 import { ListSkeleton } from '../../ListSkeleton'
 import { ErrorRetry } from '../../ErrorRetry'
 import { getSecondaryTextClass } from '../../../utils'

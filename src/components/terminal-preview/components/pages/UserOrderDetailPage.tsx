@@ -7,6 +7,7 @@
 
 import { ArrowLeft, MapPin, Clock, Phone, MessageCircle, User, FileText, CheckCircle } from 'lucide-react'
 import type { ThemeSettings } from '../../types'
+import { getWxBridge } from '../../bridge'
 
 // ============================================================================
 // 类型定义
@@ -78,6 +79,7 @@ export function UserOrderDetailPage({
   isDarkMode,
   orderId,
   onBack,
+  onNavigate,
 }: UserOrderDetailPageProps) {
   // 颜色定义
   const bgColor = isDarkMode ? '#1a1a1a' : '#f5f7fa'
@@ -360,21 +362,57 @@ export function UserOrderDetailPage({
               <button
                 className='px-6 py-2 rounded-full text-xs text-white'
                 style={{ backgroundColor: themeSettings.primaryColor }}
+                onClick={async () => {
+                  const wxBridge = getWxBridge()
+                  wxBridge.showLoading('支付中...')
+
+                  // TODO: 调用后端获取订单支付参数
+                  // const payParams = await userRequest<PayParams>(`/orders/${order.id}/pay`)
+
+                  // 宿主能力对接：调用微信支付
+                  // 注：实际支付参数需从后端获取
+                  // const result = await wxBridge.requestPayment({
+                  //   timeStamp: payParams.timeStamp,
+                  //   nonceStr: payParams.nonceStr,
+                  //   package: payParams.package,
+                  //   signType: payParams.signType,
+                  //   paySign: payParams.paySign,
+                  // })
+
+                  wxBridge.hideLoading()
+                  wxBridge.showToast({ title: '支付功能待对接', icon: 'none' })
+                }}
               >
                 立即支付
               </button>
             </>
           )}
           {order.status === 'confirmed' && (
-            <button
-              className='px-4 py-2 rounded-full text-xs border'
-              style={{ borderColor, color: textSecondary }}
-            >
-              联系客服
-            </button>
+            <>
+              <button
+                className='px-4 py-2 rounded-full text-xs border'
+                style={{ borderColor, color: textSecondary }}
+                onClick={() => onNavigate?.('order-complaint', { id: order.id })}
+              >
+                投诉
+              </button>
+              <button
+                className='px-4 py-2 rounded-full text-xs border'
+                style={{ borderColor, color: textSecondary }}
+              >
+                联系客服
+              </button>
+            </>
           )}
           {order.status === 'completed' && (
             <>
+              <button
+                className='px-4 py-2 rounded-full text-xs border'
+                style={{ borderColor, color: textSecondary }}
+                onClick={() => onNavigate?.('order-complaint', { id: order.id })}
+              >
+                投诉
+              </button>
               <button
                 className='px-4 py-2 rounded-full text-xs border'
                 style={{ borderColor, color: textSecondary }}

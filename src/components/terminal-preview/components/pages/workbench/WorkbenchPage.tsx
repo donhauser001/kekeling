@@ -28,7 +28,8 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import type { ThemeSettings, PreviewViewerRole } from '../../../types'
-import { previewApi, type WorkbenchStats, type EscortOnlineStatus, type IncomeTrendItem } from '../../../api'
+import { previewApi } from '../../../api'
+import type { WorkbenchStats, EscortOnlineStatus, IncomeTrendItem } from '../../../api'
 import { PermissionPrompt } from '../../PermissionPrompt'
 import { ListSkeleton } from '../../ListSkeleton'
 import { ErrorRetry } from '../../ErrorRetry'

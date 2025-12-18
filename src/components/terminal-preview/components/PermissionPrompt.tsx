@@ -1,13 +1,11 @@
 /**
  * 统一权限提示组件
  *
- * ⚠️ 强制复用规则：
- * 分销中心/工作台所有私域页，非 escort 视角必须返回同一个 <PermissionPrompt />
- * 不允许每个页面自己写 Alert 或 Card
- *
- * @see docs/终端预览器集成/DEV_NOTES.md - PermissionPrompt 组件约束
+ * 使用跨宿主原语组件，支持 Web 和小程序
  */
 
+import { Box, Text, Button } from '../ui/primitives'
+import { isBrowserEnvironment } from '../platform/env'
 import { setPreviewEscortToken } from '../session'
 
 export interface PermissionPromptProps {
@@ -25,23 +23,6 @@ export interface PermissionPromptProps {
   isDarkMode?: boolean
 }
 
-/**
- * 统一权限提示组件
- *
- * 使用示例：
- * ```tsx
- * if (!isEscort) {
- *   return (
- *     <PermissionPrompt
- *       title="需要陪诊员身份"
- *       description="请先登录陪诊员账号"
- *       onLogin={() => setShowLoginDialog(true)}
- *       showDebugInject={process.env.NODE_ENV === 'development'}
- *     />
- *   )
- * }
- * ```
- */
 export function PermissionPrompt({
   title,
   description,
@@ -55,78 +36,112 @@ export function PermissionPrompt({
     const mockToken = `mock-escort-${Date.now()}`
     setPreviewEscortToken(mockToken)
     // 刷新页面以触发重新渲染
-    window.location.reload()
+    if (isBrowserEnvironment()) {
+      window.location.reload()
+    }
   }
 
   return (
-    <div
-      role="alert"
-      aria-live="polite"
-      className="flex-1 flex flex-col items-center justify-center px-4 py-12"
+    <Box
       style={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingLeft: 16,
+        paddingRight: 16,
+        paddingTop: 48,
+        paddingBottom: 48,
         backgroundColor: isDarkMode ? '#1a1a1a' : '#f5f7fa',
       }}
     >
       {/* 锁图标 */}
-      <div className="text-5xl mb-4" aria-hidden="true">🔒</div>
+      <Text style={{ fontSize: 48, marginBottom: 16 }}>🔒</Text>
 
       {/* 标题 */}
-      <div
-        className={`text-base font-medium text-center ${isDarkMode ? 'text-white' : 'text-gray-900'
-          }`}
+      <Text
+        style={{
+          fontSize: 16,
+          fontWeight: 500,
+          textAlign: 'center',
+          color: isDarkMode ? '#ffffff' : '#111827',
+        }}
       >
         {title}
-      </div>
+      </Text>
 
       {/* 描述 */}
       {description && (
-        <div
-          className={`text-sm text-center mt-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'
-            }`}
+        <Text
+          style={{
+            fontSize: 14,
+            textAlign: 'center',
+            marginTop: 8,
+            color: isDarkMode ? '#9ca3af' : '#6b7280',
+          }}
         >
           {description}
-        </div>
+        </Text>
       )}
 
       {/* 登录按钮 */}
       {onLogin && (
-        <button
+        <Button
           onClick={onLogin}
-          aria-label="去登录陪诊员账号"
-          className="mt-6 px-6 py-2 rounded-lg text-white text-sm font-medium transition-colors hover:opacity-90"
-          style={{ backgroundColor: primaryColor }}
+          style={{
+            marginTop: 24,
+            paddingLeft: 24,
+            paddingRight: 24,
+            paddingTop: 8,
+            paddingBottom: 8,
+            borderRadius: 8,
+            backgroundColor: primaryColor,
+          }}
         >
-          去登录
-        </button>
+          <Text style={{ color: '#ffffff', fontSize: 14, fontWeight: 500 }}>去登录</Text>
+        </Button>
       )}
 
       {/* 开发环境：注入 token 提示 */}
       {showDebugInject && (
-        <div className="mt-6 flex flex-col items-center gap-2">
-          <div
-            className="px-4 py-2 rounded-lg text-xs"
+        <Box style={{ marginTop: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+          <Box
             style={{
-              backgroundColor: isDarkMode ? '#2a2a2a' : '#fff',
-              border: `1px dashed ${primaryColor}`,
-              color: primaryColor,
+              paddingLeft: 16,
+              paddingRight: 16,
+              paddingTop: 8,
+              paddingBottom: 8,
+              borderRadius: 8,
+              backgroundColor: isDarkMode ? '#2a2a2a' : '#ffffff',
+              borderWidth: 1,
+              borderStyle: 'dashed',
+              borderColor: primaryColor,
             }}
           >
-            开发提示：在顶部 DebugPanel 点击「注入 mock escortToken」
-          </div>
+            <Text style={{ fontSize: 12, color: primaryColor }}>
+              开发提示：在顶部 DebugPanel 点击「注入 mock escortToken」
+            </Text>
+          </Box>
 
           {/* 快捷注入按钮 */}
-          <button
+          <Button
             onClick={handleInjectMockToken}
-            className="px-4 py-1.5 rounded text-xs transition-colors"
             style={{
-              backgroundColor: isDarkMode ? '#333' : '#f3f4f6',
-              color: isDarkMode ? '#9ca3af' : '#6b7280',
+              paddingLeft: 16,
+              paddingRight: 16,
+              paddingTop: 6,
+              paddingBottom: 6,
+              borderRadius: 4,
+              backgroundColor: isDarkMode ? '#333333' : '#f3f4f6',
             }}
           >
-            快捷注入 mock token
-          </button>
-        </div>
+            <Text style={{ fontSize: 12, color: isDarkMode ? '#9ca3af' : '#6b7280' }}>
+              快捷注入 mock token
+            </Text>
+          </Button>
+        </Box>
       )}
-    </div>
+    </Box>
   )
 }

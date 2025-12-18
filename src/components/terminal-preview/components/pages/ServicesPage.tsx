@@ -1,5 +1,7 @@
 /**
  * 服务页预览组件
+ * 
+ * 使用跨平台 UI 原语，支持 Web 和小程序
  */
 
 import { useState, useMemo } from 'react'
@@ -20,9 +22,10 @@ import {
   ThumbsUp,
   DollarSign,
   Percent,
-} from 'lucide-react'
+} from '../../ui/lucide-compat'
 import { cn } from '@/lib/utils'
-import type { ThemeSettings, ServiceCategory, ServiceListItem, BannerAreaData, PreviewViewerRole } from '../../types'
+import { Box, Text, Button, Image } from '../../ui/primitives'
+import type { ThemeSettings, ServiceListItem, BannerAreaData, PreviewViewerRole } from '../../types'
 import { previewApi } from '../../api'
 import { formatCount } from '../../utils'
 import { getResourceUrl } from '../../utils'
@@ -140,44 +143,40 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
   const borderColor = isDarkMode ? '#3a3a3a' : '#e5e7eb'
 
   return (
-    <div style={{ backgroundColor: bgColor }} className='min-h-full pb-14'>
+    <Box style={{ backgroundColor: bgColor }} className='min-h-full pb-14'>
       {/* 搜索框 */}
-      <div className='px-3 pt-3 pb-2' style={{ backgroundColor: headerBg }}>
-        <div
+      <Box className='px-3 pt-3 pb-2' style={{ backgroundColor: headerBg }}>
+        <Box
           className='flex items-center gap-2 rounded-full px-4 py-2.5 cursor-pointer transition-all hover:shadow-md active:scale-[0.98]'
           style={{ backgroundColor: isDarkMode ? '#3a3a3a' : '#f3f4f6' }}
         >
           <Search className='h-4 w-4' style={{ color: textMuted }} />
-          <span className='text-sm' style={{ color: textMuted }}>
+          <Text className='text-sm' style={{ color: textMuted }}>
             搜索服务
-          </span>
-        </div>
-      </div>
+          </Text>
+        </Box>
+      </Box>
 
       {/* 轮播图区域 */}
       {bannerData?.enabled && bannerData.items && bannerData.items.length > 0 && (
-        <div style={{ backgroundColor: headerBg }}>
+        <Box style={{ backgroundColor: headerBg }}>
           <BannerSection
             bannerData={bannerData}
             themeSettings={themeSettings}
             autoPlayInterval={3000}
             className='pb-3'
           />
-        </div>
+        </Box>
       )}
 
       {/* 分类 Tab */}
-      <div
+      <Box
         className='sticky top-0 z-10 overflow-x-auto px-3 py-2'
         style={{ backgroundColor: headerBg }}
       >
-        <style>{`
-          .category-scroll::-webkit-scrollbar { display: none; }
-          .category-scroll { scrollbar-width: none; -ms-overflow-style: none; }
-        `}</style>
-        <div className='category-scroll flex gap-2 overflow-x-auto'>
+        <Box className='category-scroll flex gap-2 overflow-x-auto'>
           {categoryList.map(cat => (
-            <div
+            <Box
               key={cat.id}
               className={cn(
                 'flex-shrink-0 px-3.5 py-1.5 rounded-full text-sm cursor-pointer transition-all',
@@ -193,35 +192,35 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
               }}
               onClick={() => setActiveCategory(cat.id)}
             >
-              {cat.name}
-            </div>
+              <Text>{cat.name}</Text>
+            </Box>
           ))}
-        </div>
-      </div>
+        </Box>
+      </Box>
 
       {/* 工具栏：排序 + 布局切换 */}
-      <div
+      <Box
         className='flex items-center justify-between px-3 py-2'
         style={{ backgroundColor: headerBg, borderBottom: `1px solid ${borderColor}` }}
       >
         {/* 排序选择 */}
-        <div className='relative'>
-          <button
+        <Box className='relative'>
+          <Button
             className='flex items-center gap-1.5 text-xs px-2 py-1 rounded transition-colors'
             style={{ color: textSecondary }}
             onClick={() => setShowSortMenu(!showSortMenu)}
           >
             {sortOptions.find(s => s.value === sortType)?.icon}
-            <span>{sortOptions.find(s => s.value === sortType)?.label}</span>
+            <Text>{sortOptions.find(s => s.value === sortType)?.label}</Text>
             <ChevronDown className={cn('h-3 w-3 transition-transform', showSortMenu && 'rotate-180')} />
-          </button>
+          </Button>
           {showSortMenu && (
-            <div
+            <Box
               className='absolute top-full left-0 mt-1 py-1 rounded-lg shadow-lg z-20 min-w-[100px]'
               style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
             >
               {sortOptions.map(option => (
-                <button
+                <Button
                   key={option.value}
                   className={cn(
                     'flex items-center gap-2 w-full px-3 py-1.5 text-xs transition-colors',
@@ -237,16 +236,16 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
                   }}
                 >
                   {option.icon}
-                  {option.label}
-                </button>
+                  <Text>{option.label}</Text>
+                </Button>
               ))}
-            </div>
+            </Box>
           )}
-        </div>
+        </Box>
 
         {/* 布局切换 */}
-        <div className='flex items-center gap-1'>
-          <button
+        <Box className='flex items-center gap-1'>
+          <Button
             onClick={() => setLayoutMode('grid')}
             className='rounded p-1.5 transition-colors'
             style={{
@@ -255,8 +254,8 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
             }}
           >
             <LayoutGrid className='h-4 w-4' />
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => setLayoutMode('list')}
             className='rounded p-1.5 transition-colors'
             style={{
@@ -265,31 +264,31 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
             }}
           >
             <List className='h-4 w-4' />
-          </button>
-        </div>
-      </div>
+          </Button>
+        </Box>
+      </Box>
 
       {/* 服务列表 */}
-      <div className={cn(
+      <Box className={cn(
         'px-3 pt-3',
         layoutMode === 'grid' ? 'grid grid-cols-2 gap-2.5' : 'space-y-3'
       )}>
         {sortedServices.map(service => (
           layoutMode === 'grid' ? (
             // 网格布局
-            <div
+            <Box
               key={service.id}
               className='rounded-xl overflow-hidden cursor-pointer transition-all duration-200 hover:shadow-lg active:scale-[0.98]'
               style={{ backgroundColor: cardBg }}
               onClick={() => onServiceClick?.(service.id)}
             >
               {/* 封面 */}
-              <div
+              <Box
                 className='h-28 relative flex items-center justify-center'
                 style={{ backgroundColor: isDarkMode ? '#3a3a3a' : '#f3f4f6' }}
               >
                 {service.coverImage ? (
-                  <img
+                  <Image
                     src={getResourceUrl(service.coverImage)}
                     alt={service.name}
                     className='w-full h-full object-cover'
@@ -299,17 +298,17 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
                 )}
                 {/* 热门标签 */}
                 {service.orderCount > 5000 && (
-                  <div
+                  <Box
                     className='absolute top-2 left-2 flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-white text-[10px]'
                     style={{ backgroundColor: '#ff4d4f' }}
                   >
                     <Rocket className='h-2.5 w-2.5' />
-                    <span>热门</span>
-                  </div>
+                    <Text>热门</Text>
+                  </Box>
                 )}
                 {/* 操作按钮 */}
-                <div className='absolute top-2 right-2 flex gap-1'>
-                  <button
+                <Box className='absolute top-2 right-2 flex gap-1'>
+                  <Button
                     onClick={(e) => toggleFavorite(service.id, e)}
                     className='p-1 rounded-full backdrop-blur-sm transition-colors'
                     style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}
@@ -321,66 +320,66 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
                         fill: favorites.has(service.id) ? '#ff4d4f' : 'transparent',
                       }}
                     />
-                  </button>
-                </div>
-              </div>
+                  </Button>
+                </Box>
+              </Box>
               {/* 信息 */}
-              <div className='p-2.5'>
-                <p className='text-xs font-semibold truncate' style={{ color: textPrimary }}>
+              <Box className='p-2.5'>
+                <Text className='text-xs font-semibold truncate' style={{ color: textPrimary }}>
                   {service.name}
-                </p>
-                <div className='mt-1.5 flex items-center gap-2 text-[10px]' style={{ color: textMuted }}>
-                  <div className='flex items-center gap-0.5'>
+                </Text>
+                <Box className='mt-1.5 flex items-center gap-2 text-[10px]' style={{ color: textMuted }}>
+                  <Box className='flex items-center gap-0.5'>
                     <Star className='h-2.5 w-2.5 text-amber-400' />
-                    <span>{service.rating}%</span>
-                  </div>
-                  <span>{formatCount(service.orderCount)}人购</span>
-                </div>
-                <div className='mt-1.5 flex items-center justify-between'>
-                  <div className='flex items-baseline gap-0.5'>
-                    <span className='text-[10px]' style={{ color: themeSettings.primaryColor }}>¥</span>
-                    <span className='text-sm font-bold' style={{ color: themeSettings.primaryColor }}>
+                    <Text>{service.rating}%</Text>
+                  </Box>
+                  <Text>{formatCount(service.orderCount)}人购</Text>
+                </Box>
+                <Box className='mt-1.5 flex items-center justify-between'>
+                  <Box className='flex items-baseline gap-0.5'>
+                    <Text className='text-[10px]' style={{ color: themeSettings.primaryColor }}>¥</Text>
+                    <Text className='text-sm font-bold' style={{ color: themeSettings.primaryColor }}>
                       {service.price}
-                    </span>
+                    </Text>
                     {service.originalPrice && service.originalPrice > service.price && (
-                      <span className='text-[10px] line-through' style={{ color: textMuted }}>
+                      <Text className='text-[10px] line-through' style={{ color: textMuted }}>
                         ¥{service.originalPrice}
-                      </span>
+                      </Text>
                     )}
-                  </div>
+                  </Box>
                   {/* 陪诊员视角：分成比例 */}
                   {isEscort && (
-                    <div
+                    <Box
                       className='flex items-center gap-0.5 px-1.5 py-0.5 rounded'
                       style={{
                         backgroundColor: `${themeSettings.primaryColor}15`,
                       }}
                     >
                       <Percent className='h-2.5 w-2.5' style={{ color: themeSettings.primaryColor }} />
-                      <span className='text-[10px] font-medium' style={{ color: themeSettings.primaryColor }}>
+                      <Text className='text-[10px] font-medium' style={{ color: themeSettings.primaryColor }}>
                         {service.commissionRate ?? 70}%
-                      </span>
-                    </div>
+                      </Text>
+                    </Box>
                   )}
-                </div>
-              </div>
-            </div>
+                </Box>
+              </Box>
+            </Box>
           ) : (
             // 列表布局
-            <div
+            <Box
               key={service.id}
               className='rounded-xl overflow-hidden cursor-pointer transition-all duration-200 hover:shadow-lg active:scale-[0.98]'
               style={{ backgroundColor: cardBg }}
               onClick={() => onServiceClick?.(service.id)}
             >
-              <div className='flex'>
+              <Box className='flex'>
                 {/* 左侧封面 */}
-                <div
+                <Box
                   className='w-28 h-28 flex-shrink-0 relative flex items-center justify-center'
                   style={{ backgroundColor: isDarkMode ? '#3a3a3a' : '#f3f4f6' }}
                 >
                   {service.coverImage ? (
-                    <img
+                    <Image
                       src={getResourceUrl(service.coverImage)}
                       alt={service.name}
                       className='w-full h-full object-cover'
@@ -390,25 +389,25 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
                   )}
                   {/* 热门标签 */}
                   {service.orderCount > 5000 && (
-                    <div
+                    <Box
                       className='absolute top-2 left-2 flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-white text-[10px]'
                       style={{ backgroundColor: '#ff4d4f' }}
                     >
                       <Rocket className='h-2.5 w-2.5' />
-                      <span>热门</span>
-                    </div>
+                      <Text>热门</Text>
+                    </Box>
                   )}
-                </div>
+                </Box>
                 {/* 右侧信息 */}
-                <div className='flex-1 p-3 flex flex-col justify-between'>
-                  <div>
-                    <div className='flex items-start justify-between'>
-                      <p className='text-sm font-semibold flex-1 truncate' style={{ color: textPrimary }}>
+                <Box className='flex-1 p-3 flex flex-col justify-between'>
+                  <Box>
+                    <Box className='flex items-start justify-between'>
+                      <Text className='text-sm font-semibold flex-1 truncate' style={{ color: textPrimary }}>
                         {service.name}
-                      </p>
+                      </Text>
                       {/* 操作按钮 */}
-                      <div className='flex gap-1 ml-2'>
-                        <button
+                      <Box className='flex gap-1 ml-2'>
+                        <Button
                           onClick={(e) => toggleFavorite(service.id, e)}
                           className='p-1 transition-colors'
                         >
@@ -419,75 +418,75 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
                               fill: favorites.has(service.id) ? '#ff4d4f' : 'transparent',
                             }}
                           />
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                           onClick={(e) => handleShare(service, e)}
                           className='p-1 transition-colors'
                         >
                           <Share2 className='h-4 w-4' style={{ color: textMuted }} />
-                        </button>
-                      </div>
-                    </div>
-                    <p className='mt-1 text-xs line-clamp-2' style={{ color: textSecondary }}>
+                        </Button>
+                      </Box>
+                    </Box>
+                    <Text className='mt-1 text-xs line-clamp-2' style={{ color: textSecondary }}>
                       {service.description || '专业陪诊服务'}
-                    </p>
-                  </div>
-                  <div className='mt-2'>
-                    <div className='flex items-center gap-3 text-xs' style={{ color: textMuted }}>
+                    </Text>
+                  </Box>
+                  <Box className='mt-2'>
+                    <Box className='flex items-center gap-3 text-xs' style={{ color: textMuted }}>
                       {service.duration && (
-                        <div className='flex items-center gap-1'>
+                        <Box className='flex items-center gap-1'>
                           <Clock className='h-3 w-3' />
-                          <span>{service.duration}</span>
-                        </div>
+                          <Text>{service.duration}</Text>
+                        </Box>
                       )}
-                      <div className='flex items-center gap-1'>
+                      <Box className='flex items-center gap-1'>
                         <Star className='h-3 w-3 text-amber-400' />
-                        <span>{service.rating}%</span>
-                      </div>
-                      <span>{formatCount(service.orderCount)}人购</span>
-                    </div>
-                    <div className='mt-1.5 flex items-center justify-between'>
-                      <div className='flex items-baseline gap-1'>
-                        <span className='text-xs' style={{ color: themeSettings.primaryColor }}>¥</span>
-                        <span className='text-base font-bold' style={{ color: themeSettings.primaryColor }}>
+                        <Text>{service.rating}%</Text>
+                      </Box>
+                      <Text>{formatCount(service.orderCount)}人购</Text>
+                    </Box>
+                    <Box className='mt-1.5 flex items-center justify-between'>
+                      <Box className='flex items-baseline gap-1'>
+                        <Text className='text-xs' style={{ color: themeSettings.primaryColor }}>¥</Text>
+                        <Text className='text-base font-bold' style={{ color: themeSettings.primaryColor }}>
                           {service.price}
-                        </span>
+                        </Text>
                         {service.originalPrice && service.originalPrice > service.price && (
-                          <span className='text-xs line-through' style={{ color: textMuted }}>
+                          <Text className='text-xs line-through' style={{ color: textMuted }}>
                             ¥{service.originalPrice}
-                          </span>
+                          </Text>
                         )}
-                      </div>
+                      </Box>
                       {/* 陪诊员视角：分成比例 */}
                       {isEscort && (
-                        <div
+                        <Box
                           className='flex items-center gap-1 px-2 py-1 rounded'
                           style={{
                             backgroundColor: `${themeSettings.primaryColor}15`,
                           }}
                         >
                           <Percent className='h-3 w-3' style={{ color: themeSettings.primaryColor }} />
-                          <span className='text-xs font-medium' style={{ color: themeSettings.primaryColor }}>
+                          <Text className='text-xs font-medium' style={{ color: themeSettings.primaryColor }}>
                             分成 {service.commissionRate ?? 70}%
-                          </span>
-                        </div>
+                          </Text>
+                        </Box>
                       )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+                    </Box>
+                  </Box>
+                </Box>
+              </Box>
+            </Box>
           )
         ))}
 
         {/* 无数据状态 */}
         {sortedServices.length === 0 && (
-          <div className={cn('py-12 text-center', layoutMode === 'grid' && 'col-span-2')}>
+          <Box className={cn('py-12 text-center', layoutMode === 'grid' && 'col-span-2')}>
             <Stethoscope className='h-12 w-12 mx-auto mb-3' style={{ color: textMuted }} />
-            <p className='text-sm' style={{ color: textMuted }}>暂无服务</p>
-          </div>
+            <Text className='text-sm' style={{ color: textMuted }}>暂无服务</Text>
+          </Box>
         )}
-      </div>
-    </div>
+      </Box>
+    </Box>
   )
 }

@@ -14,26 +14,15 @@ import {
     Trash2,
     PackageSearch,
     Loader2,
-    Hospital,
-    FileText,
-    Heart,
     Pin,
-    Stethoscope,
-    Truck,
-    MessageSquare,
-    Building,
-    Sparkles,
-    Pill,
-    Syringe,
-    Baby,
-    Eye as EyeIcon,
-    Bone,
-    Brain,
     LayoutGrid,
     List,
     ArrowUpCircle,
     ArrowDownCircle,
+    Eye as EyeIcon,
 } from 'lucide-react'
+// 引入 iconfont 样式
+import '@/shared/assets/iconfont/iconfont.css'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
@@ -88,28 +77,40 @@ import {
     ServiceCategoriesTable,
 } from './components'
 
-// 图标选项 - 与小程序 Icon 组件对应
+// 图标选项 - 使用 iconfont 医疗图标
+// value: 保存到数据库的图标名（会被终端预览器的 getIconName 映射）
+// iconClass: iconfont 的 CSS 类名
 const iconOptions = [
-    { value: 'stethoscope', label: '听诊器', icon: Stethoscope },
-    { value: 'truck', label: '卡车', icon: Truck },
-    { value: 'message-square', label: '消息', icon: MessageSquare },
-    { value: 'building', label: '建筑', icon: Building },
-    { value: 'sparkles', label: '闪光', icon: Sparkles },
-    { value: 'hospital', label: '医院', icon: Hospital },
-    { value: 'heart', label: '爱心', icon: Heart },
-    { value: 'pill', label: '药品', icon: Pill },
-    { value: 'syringe', label: '针管', icon: Syringe },
-    { value: 'baby', label: '婴儿', icon: Baby },
-    { value: 'eye', label: '眼睛', icon: EyeIcon },
-    { value: 'bone', label: '骨骼', icon: Bone },
-    { value: 'brain', label: '大脑', icon: Brain },
-    { value: 'file-text', label: '文件', icon: FileText },
+    // 医疗专业图标
+    { value: 'stethoscope', label: '听诊器', iconClass: 'icon-wenyisheng' },
+    { value: 'hospital', label: '医院', iconClass: 'icon-sharpicons_medical-sign' },
+    { value: 'pill', label: '药品', iconClass: 'icon-yiliaoyongpin' },
+    { value: 'syringe', label: '针管', iconClass: 'icon--yiliao-zhushe' },
+    { value: 'baby', label: '儿科', iconClass: 'icon-ertongyule' },
+    { value: 'bone', label: '骨科', iconClass: 'icon-yiliao' },
+    { value: 'brain', label: '脑科', iconClass: 'icon-yiliao1' },
+    { value: 'eye', label: '眼科', iconClass: 'icon-20-a' },
+    { value: 'heart-pulse', label: '心电', iconClass: 'icon-xindiantu' },
+    { value: 'thermometer', label: '体温', iconClass: 'icon-tiwenji' },
+    { value: 'activity', label: '体检', iconClass: 'icon--yiliao-xieyang' },
+    { value: 'ambulance', label: '急救', iconClass: 'icon-sharpicons_ambulance' },
+    { value: 'clipboard', label: '病历', iconClass: 'icon-bingli' },
+    // 通用图标（使用 iconfont）
+    { value: 'heart', label: '爱心', iconClass: 'icon-Heart' },
+    { value: 'briefcase', label: '代办', iconClass: 'icon-filesync' },
+    { value: 'star', label: '特色', iconClass: 'icon-empathize-line' },
+    { value: 'user', label: '陪护', iconClass: 'icon-user-folder' },
+    { value: 'file', label: '报告', iconClass: 'icon-bingan' },
+    { value: 'phone', label: '咨询', iconClass: 'icon-yiliaozixun' },
+    { value: 'map-pin', label: '导医', iconClass: 'icon-first-aid-kit-line' },
+    { value: 'clock', label: '预约', iconClass: 'icon-tubiao_-2' },
+    { value: 'calendar', label: '排班', iconClass: 'icon-tubiao_-' },
 ] as const
 
-// 图标映射
-const getIconComponent = (iconName: string | null) => {
+// 获取图标的 iconfont 类名
+const getIconClass = (iconName: string | null) => {
     const option = iconOptions.find(opt => opt.value === iconName)
-    return option?.icon || Layers
+    return option?.iconClass || 'icon-yiliao'
 }
 
 // 预设颜色选项（扁平化纯色）
@@ -364,7 +365,7 @@ export function ServiceCategories() {
     const renderGridView = () => (
         <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'>
             {categories.map((category) => {
-                const IconComponent = getIconComponent(category.icon)
+                const iconClass = getIconClass(category.icon)
                 const bgStyle = category.color
                     ? { background: category.color }
                     : { backgroundColor: '#6b7280' }
@@ -386,7 +387,7 @@ export function ServiceCategories() {
                                         className='flex h-10 w-10 items-center justify-center rounded-lg'
                                         style={bgStyle}
                                     >
-                                        <IconComponent className='h-5 w-5 text-white' />
+                                        <i className={`iconfont ${iconClass} text-xl text-white`} />
                                     </div>
                                     <div>
                                         <CardTitle className='flex items-center gap-2 text-base'>
@@ -633,27 +634,24 @@ export function ServiceCategories() {
                         <div className='space-y-2'>
                             <Label>分类图标</Label>
                             <div className='flex flex-wrap gap-2'>
-                                {iconOptions.map((opt) => {
-                                    const Icon = opt.icon
-                                    return (
-                                        <button
-                                            key={opt.value}
-                                            type='button'
-                                            className={cn(
-                                                'flex h-10 w-10 items-center justify-center rounded-md border transition-all',
-                                                formData.icon === opt.value
-                                                    ? 'border-primary bg-primary/10'
-                                                    : 'border-border hover:border-primary/50'
-                                            )}
-                                            onClick={() =>
-                                                setFormData({ ...formData, icon: opt.value })
-                                            }
-                                            title={opt.label}
-                                        >
-                                            <Icon className='h-5 w-5' />
-                                        </button>
-                                    )
-                                })}
+                                {iconOptions.map((opt) => (
+                                    <button
+                                        key={opt.value}
+                                        type='button'
+                                        className={cn(
+                                            'flex h-10 w-10 items-center justify-center rounded-md border transition-all',
+                                            formData.icon === opt.value
+                                                ? 'border-primary bg-primary/10'
+                                                : 'border-border hover:border-primary/50'
+                                        )}
+                                        onClick={() =>
+                                            setFormData({ ...formData, icon: opt.value })
+                                        }
+                                        title={opt.label}
+                                    >
+                                        <i className={`iconfont ${opt.iconClass} text-xl`} />
+                                    </button>
+                                ))}
                             </div>
                         </div>
 

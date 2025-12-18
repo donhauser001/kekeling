@@ -87,6 +87,14 @@ export default defineConfig<'webpack5'>(async (merge) => {
       '@': path.resolve(__dirname, '..', 'src'),
     },
     mini: {
+      // 增加模板层级限制（默认 16），防止深层嵌套导致模板缺失
+      baseLevel: 32,
+      // 启用运行时配置
+      runtime: {
+        // 启用内部 HTML 支持，允许使用原生 HTML 标签
+        // 这将把 div/span/img 等标签映射到小程序组件
+        enableInnerHTML: true,
+      },
       // 将主仓目录纳入 babel 编译链
       // 解决通过 alias 引入的外部 .ts/.tsx 文件未被转译的问题
       compile: {

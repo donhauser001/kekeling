@@ -4,6 +4,10 @@
  * Step 4/7: 增加陪诊员入口
  * - 普通用户视角：显示入口但需要二次登录
  * - 陪诊员视角：显示"进入工作台"
+ *
+ * 个人资料管理：
+ * - 接入 getUserProfile API 获取真实数据
+ * - 设置按钮点击跳转到 user-profile-edit 页面
  */
 
 import { useQuery } from '@tanstack/react-query'
@@ -79,6 +83,12 @@ export function ProfilePage({
     queryFn: () => previewApi.getBanners('profile'),
   })
 
+  // 获取用户资料
+  const { data: userProfile } = useQuery({
+    queryKey: ['preview', 'user', 'profile'],
+    queryFn: () => previewApi.getUserProfile(),
+  })
+
   // 优先使用覆盖数据
   const bannerData = bannerDataOverride !== undefined ? bannerDataOverride : apiBannerData
 
@@ -120,23 +130,38 @@ export function ProfilePage({
 
         <div className='flex items-center gap-3'>
           {/* 头像 */}
-          <div className='h-16 w-16 rounded-full bg-white/20 flex items-center justify-center'>
-            <User className='h-8 w-8 text-white' />
+          <div className='h-16 w-16 rounded-full bg-white/20 flex items-center justify-center overflow-hidden'>
+            {userProfile?.avatar ? (
+              <img
+                src={userProfile.avatar}
+                alt="头像"
+                className='w-full h-full object-cover'
+              />
+            ) : (
+              <User className='h-8 w-8 text-white' />
+            )}
           </div>
           {/* 用户信息 */}
           <div className='flex-1'>
             <div className='flex items-center gap-2'>
-              <span className='text-lg font-semibold text-white'>微信用户</span>
+              <span className='text-lg font-semibold text-white'>
+                {userProfile?.nickname || '微信用户'}
+              </span>
               {isEscort && (
                 <span className='px-1.5 py-0.5 rounded text-[10px] bg-white/20 text-white'>
                   陪诊员
                 </span>
               )}
             </div>
-            <span className='text-sm text-white/80'>138****8888</span>
+            <span className='text-sm text-white/80'>
+              {userProfile?.phone || '未绑定手机'}
+            </span>
           </div>
-          {/* 设置按钮 */}
-          <div className='p-2 cursor-pointer'>
+          {/* 设置按钮 - 跳转到资料编辑页 */}
+          <div
+            className='p-2 cursor-pointer hover:bg-white/10 rounded-full transition-colors'
+            onClick={() => onNavigate?.('user-profile-edit')}
+          >
             <Settings className='h-5 w-5 text-white' />
           </div>
         </div>

@@ -2,11 +2,11 @@
  * 错误重试组件
  *
  * Step 14.5 UI-B-2: 提供统一的错误 UI + 重试按钮
- * 参考 DistributionPage.tsx 的现有实现
+ * 使用跨宿主原语组件，支持 Web 和小程序
  */
 
 import React from 'react'
-import { RefreshCw } from 'lucide-react'
+import { Box, Text, Button } from '../ui/primitives'
 
 // ============================================================================
 // 类型定义
@@ -40,25 +40,53 @@ export function ErrorRetry({
   className = '',
 }: ErrorRetryProps) {
   return (
-    <div className={`flex flex-col items-center justify-center py-12 ${className}`}>
+    <Box
+      className={`flex flex-col items-center justify-center py-12 ${className}`}
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingTop: 48,
+        paddingBottom: 48,
+      }}
+    >
       {/* 图标 */}
-      <div className="text-4xl mb-2">{icon}</div>
+      <Text style={{ fontSize: 40, marginBottom: 8 }}>{icon}</Text>
 
       {/* 错误消息 */}
-      <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+      <Text
+        style={{
+          fontSize: 14,
+          color: isDarkMode ? '#9ca3af' : '#6b7280',
+        }}
+      >
         {message}
-      </div>
+      </Text>
 
       {/* 重试按钮 */}
-      <button
+      <Button
         onClick={onRetry}
-        className="mt-3 flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-white transition-opacity hover:opacity-90 active:opacity-80"
-        style={{ backgroundColor: primaryColor }}
+        style={{
+          marginTop: 12,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          paddingLeft: 16,
+          paddingRight: 16,
+          paddingTop: 8,
+          paddingBottom: 8,
+          borderRadius: 8,
+          fontSize: 14,
+          fontWeight: 500,
+          color: '#ffffff',
+          backgroundColor: primaryColor,
+        }}
       >
-        <RefreshCw className="w-4 h-4" />
-        重试
-      </button>
-    </div>
+        <Text style={{ fontSize: 14, marginRight: 4 }}>↻</Text>
+        <Text style={{ color: '#ffffff' }}>重试</Text>
+      </Button>
+    </Box>
   )
 }
 
