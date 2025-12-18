@@ -110,6 +110,11 @@ export class ServiceGuaranteesService {
    * 更新服务保障
    */
   async update(id: string, dto: UpdateServiceGuaranteeDto) {
+    // 调试：打印接收到的 DTO
+    console.log('[ServiceGuarantees] 更新请求 - ID:', id);
+    console.log('[ServiceGuarantees] 更新请求 - DTO:', JSON.stringify(dto, null, 2));
+    console.log('[ServiceGuarantees] 更新请求 - DTO keys:', Object.keys(dto));
+
     // 检查是否存在
     const existing = await this.prisma.serviceGuarantee.findUnique({
       where: { id },
@@ -133,10 +138,13 @@ export class ServiceGuaranteesService {
       }
     }
 
-    return this.prisma.serviceGuarantee.update({
+    const result = await this.prisma.serviceGuarantee.update({
       where: { id },
       data: dto,
     });
+
+    console.log('[ServiceGuarantees] 更新结果:', JSON.stringify(result, null, 2));
+    return result;
   }
 
   /**

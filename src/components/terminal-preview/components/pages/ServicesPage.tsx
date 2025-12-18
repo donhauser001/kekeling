@@ -12,17 +12,11 @@
 import { useState, useMemo, useEffect } from 'react'
 import {
   Search,
-  Clock,
-  Star,
   Rocket,
-  Stethoscope,
-  ChevronDown,
-  Heart,
-  Share2,
   Percent,
 } from '../../ui/lucide-compat'
 import { cn } from '@/lib/utils'
-import { Box, Text, Button, Image } from '../../ui/primitives'
+import { Box, Text, Button, Image, Icon } from '../../ui/primitives'
 import { isWxEnvironment } from '../../platform/env'
 import type { ThemeSettings, ServiceListItem, BannerAreaData, PreviewViewerRole } from '../../types'
 import { previewApi } from '../../api'
@@ -316,7 +310,8 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
             onClick={() => setShowSortMenu(!showSortMenu)}
           >
             <Text style={{ fontSize: 12 * wxScale }}>{sortOptionConfigs.find(s => s.value === sortType)?.label}</Text>
-            <ChevronDown
+            <Icon
+              name="down"
               size={12 * wxScale}
               color={textMuted}
               style={{ transform: showSortMenu ? 'rotate(180deg)' : 'rotate(0deg)' }}
@@ -386,7 +381,6 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
             onClick={() => setLayoutMode('grid')}
             style={{
               backgroundColor: layoutMode === 'grid' ? `${themeSettings.primaryColor}15` : 'transparent',
-              color: layoutMode === 'grid' ? themeSettings.primaryColor : textMuted,
               padding: 4 * wxScale,
               borderRadius: 4,
               width: 24 * wxScale,
@@ -396,13 +390,16 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
               justifyContent: 'center',
             }}
           >
-            <Text style={{ fontSize: 12 * wxScale, lineHeight: 1 }}>田</Text>
+            <Icon
+              name="grid-four"
+              size={14 * wxScale}
+              color={layoutMode === 'grid' ? themeSettings.primaryColor : textMuted}
+            />
           </Button>
           <Button
             onClick={() => setLayoutMode('list')}
             style={{
               backgroundColor: layoutMode === 'list' ? `${themeSettings.primaryColor}15` : 'transparent',
-              color: layoutMode === 'list' ? themeSettings.primaryColor : textMuted,
               padding: 4 * wxScale,
               borderRadius: 4,
               width: 24 * wxScale,
@@ -412,7 +409,11 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
               justifyContent: 'center',
             }}
           >
-            <Text style={{ fontSize: 14 * wxScale, lineHeight: 1 }}>≡</Text>
+            <Icon
+              name="list"
+              size={14 * wxScale}
+              color={layoutMode === 'list' ? themeSettings.primaryColor : textMuted}
+            />
           </Button>
         </Box>
       </Box>
@@ -472,7 +473,7 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
                     mode="aspectFill"
                   />
                 ) : (
-                  <Stethoscope size={40 * wxScale} color={themeSettings.primaryColor} />
+                  <Icon name="stethoscope" size={40 * wxScale} color={themeSettings.primaryColor} />
                 )}
                 {/* 热门标签 */}
                 {service.orderCount > 5000 && (
@@ -518,7 +519,8 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
                       justifyContent: 'center',
                     }}
                   >
-                    <Heart
+                    <Icon
+                      name="like"
                       size={12}
                       color={favorites.has(service.id) ? '#ff4d4f' : '#fff'}
                     />
@@ -559,7 +561,7 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
                     className='flex items-center gap-0.5'
                     style={{ display: 'flex', alignItems: 'center', gap: 2 * wxScale }}
                   >
-                    <Star size={10 * wxScale} color="#fbbf24" />
+                    <Icon name="good-one" size={10 * wxScale} color="#fbbf24" />
                     <Text style={{ fontSize: 10 * wxScale, color: textMuted }}>{service.rating}%</Text>
                   </Box>
                   <Text style={{ fontSize: 10 * wxScale, color: textMuted }}>{formatCount(service.orderCount)}人购</Text>
@@ -654,7 +656,7 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
                       mode="aspectFill"
                     />
                   ) : (
-                    <Stethoscope size={40 * wxScale} color={themeSettings.primaryColor} />
+                    <Icon name="stethoscope" size={40 * wxScale} color={themeSettings.primaryColor} />
                   )}
                   {/* 热门标签 */}
                   {service.orderCount > 5000 && (
@@ -685,10 +687,12 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
                   className='flex-1 p-3 flex flex-col justify-between'
                   style={{
                     flex: 1,
+                    minWidth: 0,
                     padding: 12 * wxScale,
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'space-between',
+                    overflow: 'hidden',
                   }}
                 >
                   <Box>
@@ -701,15 +705,14 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
                       }}
                     >
                       <Text
-                        className='text-sm font-semibold flex-1 truncate'
+                        className='text-sm font-semibold'
                         style={{
                           fontSize: 14 * wxScale,
                           fontWeight: 600,
                           flex: 1,
                           color: textPrimary,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
+                          lineHeight: 1.3,
+                          wordBreak: 'break-word',
                         }}
                       >
                         {service.name}
@@ -719,6 +722,7 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
                         className='flex gap-1 ml-2'
                         style={{
                           display: 'flex',
+                          flexShrink: 0,
                           gap: 4 * wxScale,
                           marginLeft: 8 * wxScale,
                         }}
@@ -728,7 +732,8 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
                           className='transition-colors'
                           style={{ padding: 4 * wxScale }}
                         >
-                          <Heart
+                          <Icon
+                            name="like"
                             size={14 * wxScale}
                             color={favorites.has(service.id) ? '#ff4d4f' : textMuted}
                           />
@@ -738,52 +743,54 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
                           className='transition-colors'
                           style={{ padding: 4 * wxScale }}
                         >
-                          <Share2 size={14 * wxScale} color={textMuted} />
+                          <Icon name="share-three" size={14 * wxScale} color={textMuted} />
                         </Button>
                       </Box>
                     </Box>
                     <Text
-                      className='mt-1 text-xs line-clamp-2'
+                      className='mt-1 text-xs'
                       style={{
                         marginTop: 4 * wxScale,
                         fontSize: 12 * wxScale,
                         color: textSecondary,
-                        overflow: 'hidden',
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
                       }}
                     >
-                      {service.description || '专业陪诊服务'}
+                      {(() => {
+                        const desc = service.description || '专业陪诊服务'
+                        const maxLen = 14
+                        return desc.length > maxLen ? desc.slice(0, maxLen) + '…' : desc
+                      })()}
                     </Text>
                   </Box>
                   <Box style={{ marginTop: 8 * wxScale }}>
                     <Box
-                      className='flex items-center gap-3 text-xs'
+                      className='flex items-center text-xs'
                       style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: 12 * wxScale,
+                        flexWrap: 'nowrap',
+                        gap: 8 * wxScale,
                         color: textMuted,
+                        overflow: 'hidden',
                       }}
                     >
                       {service.duration && (
                         <Box
                           className='flex items-center gap-1'
-                          style={{ display: 'flex', alignItems: 'center', gap: 3 * wxScale }}
+                          style={{ display: 'flex', alignItems: 'center', flexShrink: 0, gap: 2 * wxScale }}
                         >
-                          <Clock size={10 * wxScale} color={textMuted} />
-                          <Text style={{ fontSize: 12 * wxScale, color: textMuted }}>{service.duration}</Text>
+                          <Icon name="time" size={10 * wxScale} color={textMuted} />
+                          <Text style={{ fontSize: 11 * wxScale, color: textMuted, whiteSpace: 'nowrap' }}>{service.duration}</Text>
                         </Box>
                       )}
                       <Box
                         className='flex items-center gap-1'
-                        style={{ display: 'flex', alignItems: 'center', gap: 3 * wxScale }}
+                        style={{ display: 'flex', alignItems: 'center', flexShrink: 0, gap: 2 * wxScale }}
                       >
-                        <Star size={12 * wxScale} color="#fbbf24" />
-                        <Text style={{ fontSize: 12 * wxScale, color: textMuted }}>{service.rating}%</Text>
+                        <Icon name="good-one" size={10 * wxScale} color="#fbbf24" />
+                        <Text style={{ fontSize: 11 * wxScale, color: textMuted, whiteSpace: 'nowrap' }}>{service.rating}%</Text>
                       </Box>
-                      <Text style={{ fontSize: 12 * wxScale, color: textMuted }}>{formatCount(service.orderCount)}人购</Text>
+                      <Text style={{ fontSize: 11 * wxScale, color: textMuted, whiteSpace: 'nowrap', flexShrink: 0 }}>{formatCount(service.orderCount)}人购</Text>
                     </Box>
                     <Box
                       className='mt-1.5 flex items-center justify-between'
@@ -852,14 +859,14 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
               ...(layoutMode === 'grid' && { gridColumn: 'span 2' }),
             }}
           >
-            <Stethoscope
+            <Icon
+              name="stethoscope"
+              size={48 * wxScale}
+              color={textMuted}
               style={{
-                width: 48 * wxScale,
-                height: 48 * wxScale,
                 marginLeft: 'auto',
                 marginRight: 'auto',
                 marginBottom: 12 * wxScale,
-                color: textMuted,
               }}
             />
             <Text style={{ fontSize: 14 * wxScale, color: textMuted }}>暂无服务</Text>

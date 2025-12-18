@@ -26,17 +26,17 @@ export function isWxEnvironment(): boolean {
   // @ts-expect-error Taro 环境变量
   if (typeof process !== 'undefined' && process.env?.TARO_ENV === 'weapp') {
     console.log('[isWxEnvironment] 检测到 TARO_ENV=weapp')
-    _isWxEnvCached = true
-    return true
-  }
+      _isWxEnvCached = true
+      return true
+    }
 
   // 方法 2：检测 wx 全局对象
   // @ts-expect-error wx 在小程序环境中存在
   if (typeof wx !== 'undefined' && typeof wx.request === 'function') {
     console.log('[isWxEnvironment] 检测到 wx.request')
-    _isWxEnvCached = true
-    return true
-  }
+      _isWxEnvCached = true
+      return true
+    }
 
   // 方法 3：检测 Taro 全局对象（某些情况下 wx 可能被重命名）
   // @ts-expect-error Taro 全局对象

@@ -29,9 +29,7 @@ function ServicesPageContent() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    // 调试：打印环境信息
     console.log('[ServicesPage] 页面加载')
-    console.log('[ServicesPage] TARO_ENV:', process.env.TARO_ENV)
 
     previewApi.getThemeSettings()
       .then((settings) => {

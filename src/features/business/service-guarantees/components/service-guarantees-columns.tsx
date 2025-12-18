@@ -1,19 +1,6 @@
-import { type ReactNode } from 'react'
 import { DotsHorizontalIcon } from '@radix-ui/react-icons'
 import { type ColumnDef } from '@tanstack/react-table'
-import {
-  Eye,
-  Pencil,
-  Trash2,
-  Shield,
-  Check,
-  Star,
-  Heart,
-  Clock,
-  Banknote,
-  Lock,
-  ThumbsUp,
-} from 'lucide-react'
+import { Eye, Pencil, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -26,37 +13,15 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { DataTableColumnHeader } from '@/components/data-table'
+import { AppIcon } from '@/components/ui/icon-picker'
 import { type ServiceGuarantee } from '@/lib/api'
+import type { IconName } from '@/shared/types/icon'
 
 // 状态颜色映射
 const statusColors = new Map<string, string>([
   ['active', 'bg-teal-100/30 text-teal-900 dark:text-teal-200 border-teal-200'],
   ['inactive', 'bg-neutral-300/40 border-neutral-300'],
 ])
-
-// 根据图标名称获取图标组件
-const getIconByName = (iconName: string, className = 'h-4 w-4'): ReactNode => {
-  switch (iconName) {
-    case 'shield':
-      return <Shield className={className} />
-    case 'check':
-      return <Check className={className} />
-    case 'star':
-      return <Star className={className} />
-    case 'heart':
-      return <Heart className={className} />
-    case 'clock':
-      return <Clock className={className} />
-    case 'money':
-      return <Banknote className={className} />
-    case 'lock':
-      return <Lock className={className} />
-    case 'thumbs-up':
-      return <ThumbsUp className={className} />
-    default:
-      return <Shield className={className} />
-  }
-}
 
 interface ServiceGuaranteesColumnsProps {
   onView: (item: ServiceGuarantee) => void
@@ -77,11 +42,14 @@ export function getServiceGuaranteesColumns({
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title='图标' />
       ),
-      cell: ({ row }) => (
+      cell: ({ row }) => {
+        const iconName = row.getValue('icon') as IconName
+        return (
         <span className='text-emerald-500'>
-          {getIconByName(row.getValue('icon'))}
+            <AppIcon name={iconName || 'shield'} size={18} />
         </span>
-      ),
+        )
+      },
       meta: { title: '图标' },
       enableSorting: false,
     },

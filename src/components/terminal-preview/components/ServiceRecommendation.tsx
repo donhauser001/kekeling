@@ -7,31 +7,12 @@
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import { Box, Text, Image, Button, Icon } from '../ui/primitives'
-import { isWxEnvironment, isBrowserEnvironment } from '../platform/env'
+import { isWxEnvironment } from '../platform/env'
 import type { RecommendedServicesData, ServiceTabType, ThemeSettings } from '../types'
 import { getResourceUrl } from '../utils'
 
 // 小程序环境的缩放比例
 const wxScale = isWxEnvironment() ? 1.15 : 1
-
-// 内联 SVG 心形图标（Web 端使用，因为 iconfont 字体文件可能缺失）
-function HeartIcon({ size = 24, color = 'currentColor' }: { size?: number; color?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke={color}
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
-    </svg>
-  )
-}
 
 type LayoutMode = 'grid' | 'list'
 
@@ -124,7 +105,6 @@ export function ServiceRecommendation({
             onClick={() => setLayoutMode('grid')}
             style={{
               backgroundColor: layoutMode === 'grid' ? `${themeSettings.primaryColor}20` : 'transparent',
-              color: layoutMode === 'grid' ? themeSettings.primaryColor : textMuted,
               padding: 6 * wxScale,
               borderRadius: 4,
               width: 28 * wxScale,
@@ -134,13 +114,16 @@ export function ServiceRecommendation({
               justifyContent: 'center',
             }}
           >
-            <Text style={{ fontSize: 14 * wxScale, lineHeight: 1 }}>田</Text>
+            <Icon
+              name="grid-four"
+              size={16 * wxScale}
+              color={layoutMode === 'grid' ? themeSettings.primaryColor : textMuted}
+            />
           </Button>
           <Button
             onClick={() => setLayoutMode('list')}
             style={{
               backgroundColor: layoutMode === 'list' ? `${themeSettings.primaryColor}20` : 'transparent',
-              color: layoutMode === 'list' ? themeSettings.primaryColor : textMuted,
               padding: 6 * wxScale,
               borderRadius: 4,
               width: 28 * wxScale,
@@ -150,7 +133,11 @@ export function ServiceRecommendation({
               justifyContent: 'center',
             }}
           >
-            <Text style={{ fontSize: 18 * wxScale, lineHeight: 1 }}>≡</Text>
+            <Icon
+              name="list"
+              size={16 * wxScale}
+              color={layoutMode === 'list' ? themeSettings.primaryColor : textMuted}
+            />
           </Button>
         </Box>
       </Box>
@@ -212,11 +199,7 @@ export function ServiceRecommendation({
                     borderRadius: 8,
                   }}
                 >
-                  {isBrowserEnvironment() ? (
-                    <HeartIcon size={32 * wxScale} color={themeSettings.primaryColor} />
-                  ) : (
-                    <Icon name="heart" size={32 * wxScale} color={themeSettings.primaryColor} />
-                  )}
+                  <Icon name="stethoscope" size={32 * wxScale} color={themeSettings.primaryColor} />
                 </Box>
               )}
               <Box className='mt-2 min-w-0' style={{ marginTop: 8 * wxScale, minWidth: 0 }}>
@@ -275,11 +258,7 @@ export function ServiceRecommendation({
                     borderRadius: 12,
                   }}
                 >
-                  {isBrowserEnvironment() ? (
-                    <HeartIcon size={28 * wxScale} color={themeSettings.primaryColor} />
-                  ) : (
-                    <Icon name="heart" size={28 * wxScale} color={themeSettings.primaryColor} />
-                  )}
+                  <Icon name="stethoscope" size={28 * wxScale} color={themeSettings.primaryColor} />
                 </Box>
               )}
               <Box className='flex-1 min-w-0' style={{ flex: 1, minWidth: 0 }}>

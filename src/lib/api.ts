@@ -28,6 +28,7 @@ interface PaginatedData<T> {
 // 请求配置
 interface RequestConfig extends RequestInit {
   params?: Record<string, string | number | boolean | undefined>
+  data?: unknown  // 请求体数据，会自动转换为 JSON body
 }
 
 // 获取 token（从 cookie 获取，与 auth-store 保持一致）
@@ -45,7 +46,7 @@ const getToken = (): string | null => {
 
 // 通用请求函数
 async function request<T>(endpoint: string, config: RequestConfig = {}): Promise<T> {
-  const { params, ...init } = config
+  const { params, data, ...init } = config
 
   // 构建 URL
   let url = `${API_BASE_URL}${endpoint}`
@@ -62,9 +63,15 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
     }
   }
 
+  // 处理请求体：如果传了 data，转换为 JSON body
+  let body = init.body
+  if (data !== undefined && body === undefined) {
+    body = JSON.stringify(data)
+  }
+
   // 设置默认 headers
   const headers = new Headers(init.headers)
-  if (!headers.has('Content-Type') && init.body) {
+  if (!headers.has('Content-Type') && body) {
     headers.set('Content-Type', 'application/json')
   }
 
@@ -77,6 +84,7 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
   const response = await fetch(url, {
     ...init,
     headers,
+    body,
   })
 
   if (!response.ok) {

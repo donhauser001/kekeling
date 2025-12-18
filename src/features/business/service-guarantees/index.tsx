@@ -1,22 +1,11 @@
-import { useState, useMemo, type ReactNode } from 'react'
+import { useState, useMemo } from 'react'
 import {
     useReactTable,
     getCoreRowModel,
     getFilteredRowModel,
     type ColumnFiltersState,
 } from '@tanstack/react-table'
-import {
-    Shield,
-    Plus,
-    Loader2,
-    Check,
-    Star,
-    Heart,
-    Clock,
-    Banknote,
-    Lock,
-    ThumbsUp,
-} from 'lucide-react'
+import { Plus, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
@@ -56,23 +45,12 @@ import {
     useDeleteServiceGuarantee,
 } from '@/hooks/use-api'
 import type { ServiceGuarantee } from '@/lib/api'
+import { AppIcon, IconPicker, type IconName } from '@/components/ui/icon-picker'
 import {
     ServiceGuaranteesTable,
     ServiceGuaranteesDetailSheet,
     getServiceGuaranteesColumns,
 } from './components'
-
-// 图标选项
-const iconOptions: { value: string; label: string; icon: ReactNode }[] = [
-    { value: 'shield', label: '盾牌', icon: <Shield className='h-4 w-4' /> },
-    { value: 'check', label: '对勾', icon: <Check className='h-4 w-4' /> },
-    { value: 'star', label: '星星', icon: <Star className='h-4 w-4' /> },
-    { value: 'heart', label: '爱心', icon: <Heart className='h-4 w-4' /> },
-    { value: 'clock', label: '时钟', icon: <Clock className='h-4 w-4' /> },
-    { value: 'money', label: '金钱', icon: <Banknote className='h-4 w-4' /> },
-    { value: 'lock', label: '锁', icon: <Lock className='h-4 w-4' /> },
-    { value: 'thumbs-up', label: '点赞', icon: <ThumbsUp className='h-4 w-4' /> },
-]
 
 // 状态选项
 const statusOptions = [
@@ -186,28 +164,37 @@ export function ServiceGuarantees() {
             return
         }
 
+        // 确保图标有值
+        const iconValue = formData.icon || 'shield'
+
         const submitData = {
             name: formData.name.trim(),
-            icon: formData.icon,
+            icon: iconValue,
             description: formData.description.trim() || undefined,
             sort: parseInt(formData.sort) || 0,
             status: formData.status as 'active' | 'inactive',
         }
 
+        // 调试：打印提交数据
+        console.log('[ServiceGuarantees] 保存数据:', submitData)
+
         try {
             if (currentRow) {
-                await updateMutation.mutateAsync({
+                const result = await updateMutation.mutateAsync({
                     id: currentRow.id,
                     data: submitData,
                 })
+                console.log('[ServiceGuarantees] 更新结果:', result)
                 toast.success('更新成功')
             } else {
-                await createMutation.mutateAsync(submitData)
+                const result = await createMutation.mutateAsync(submitData)
+                console.log('[ServiceGuarantees] 创建结果:', result)
                 toast.success('创建成功')
             }
             setDialogOpen(false)
         } catch (err: unknown) {
             const error = err as Error
+            console.error('[ServiceGuarantees] 保存失败:', error)
             toast.error(error.message || '操作失败')
         }
     }
@@ -304,7 +291,7 @@ export function ServiceGuarantees() {
                 <DialogContent className='max-w-lg'>
                     <DialogHeader>
                         <DialogTitle className='flex items-center gap-2'>
-                            <Shield className='h-5 w-5' />
+                            <AppIcon name='shield' size={20} />
                             {currentRow ? '编辑保障' : '添加保障'}
                         </DialogTitle>
                         <DialogDescription>
@@ -328,26 +315,14 @@ export function ServiceGuarantees() {
                             </div>
                             <div className='space-y-2'>
                                 <Label>图标</Label>
-                                <Select
-                                    value={formData.icon}
-                                    onValueChange={v =>
+                                <IconPicker
+                                    value={formData.icon as IconName}
+                                    onChange={v => {
+                                        console.log('[ServiceGuarantees] 选择图标:', v, '原值:', formData.icon)
                                         setFormData({ ...formData, icon: v })
-                                    }
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {iconOptions.map(opt => (
-                                            <SelectItem key={opt.value} value={opt.value}>
-                                                <span className='flex items-center gap-2'>
-                                                    <span className='text-emerald-500'>{opt.icon}</span>
-                                                    <span>{opt.label}</span>
-                                                </span>
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                    }}
+                                    placeholder='选择图标'
+                                />
                             </div>
                         </div>
 

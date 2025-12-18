@@ -16,7 +16,6 @@ import { forwardRef } from 'react'
 const TaroComponents = require('@tarojs/components')
 const View = TaroComponents.View
 const TaroText = TaroComponents.Text
-const TaroButton = TaroComponents.Button
 const TaroImage = TaroComponents.Image
 const TaroInput = TaroComponents.Input
 const TaroTextarea = TaroComponents.Textarea
@@ -31,6 +30,7 @@ import type {
   ScrollViewProps,
 } from './types'
 import type { IconName } from '@/shared/types/icon'
+import { iconUnicodeMap } from '@/shared/constants/icon-unicode'
 
 // 重新导出类型供外部使用
 export type { IconName }
@@ -283,147 +283,6 @@ export const ScrollView = forwardRef<any, ScrollViewProps>(function ScrollView(
 // Icon 组件 - 小程序端使用 Iconfont 字体
 // ============================================================================
 
-/**
- * Iconfont Unicode 映射
- * 来源：src/shared/assets/iconfont/iconfont.json
- *
- * 使用 Unicode 方式渲染图标，与 Web 端保持一致
- */
-const iconfontUnicodeMap: Record<IconName, string> = {
-  // === 基础图标 ===
-  'home': '\ue600',
-  'search': '\ue615',
-
-  // === 导航类（使用 Material Icons 备用）===
-  'grid': '\ue6e6',       // 使用医疗图标代替
-  'file': '\ue657',       // 使用病历图标代替
-  'user': '\ue611',       // 使用 user-folder 代替
-
-  // === 操作类（使用通用符号）===
-  'plus': '+',
-  'minus': '-',
-  'check': '✓',
-  'x': '×',
-
-  // === 方向类（使用箭头符号）===
-  'chevron-right': '›',
-  'chevron-left': '‹',
-  'chevron-down': '∨',
-  'chevron-up': '∧',
-  'arrow-left': '←',
-  'arrow-right': '→',
-
-  // === 状态类 ===
-  'alert': '⚠',
-  'info': 'ℹ',
-  'star': '★',
-  'heart': '♥',           // 实心心形（替换空心 iconfont）
-
-  // === 通讯类 ===
-  'phone': '\ue711',      // 医疗咨询图标
-  'map-pin': '\ue812',    // first-aid-kit-line
-  'clock': '\ue700',      // tubiao_-2
-  'calendar': '\ue6fe',   // tubiao_-
-
-  // === 设置类 ===
-  'settings': '⚙',
-  'logout': '↪',
-  'edit': '✎',
-  'trash': '🗑',
-
-  // === 媒体类 ===
-  'camera': '📷',
-  'image': '🖼',
-  'upload': '↑',
-  'download': '↓',
-
-  // === 其他基础 ===
-  'refresh': '↻',
-  'loader': '⟳',
-  'eye': '👁',
-  'eye-off': '🙈',
-  'lock': '🔒',
-  'briefcase': '\ue7b4',  // filesync
-  'share': '↗',
-  'more': '⋯',
-
-  // === 医疗专业图标（Iconfont）===
-  // 医疗通用
-  'yiliao': '\ue6e6',
-  'yiliao1': '\ue74c',
-  'jiankangyuyiliao-yiliao': '\uea2e',
-
-  // 听诊器/问诊
-  'wenyisheng': '\ue608',
-  'yiliaozixun': '\ue711',
-
-  // 医院/急救
-  'sharpicons_ambulance': '\ue80b',
-  'sharpicons_medical-sign': '\ue810',
-  'first-aid-kit-line': '\ue812',
-  'yaoxiangyiliao': '\ue62e',
-
-  // 药品/注射
-  'yiliaoyongpin': '\ue630',
-  '-yiliao-zhushe': '\ue62b',
-  'mazuike--': '\ue6d1',
-
-  // 病历/处方
-  'bingli': '\ue657',
-  'bingan': '\ue610',
-  'tubiao_-': '\ue6fe',
-
-  // 儿科
-  'ertongyule': '\ue60c',
-  'ertongpiao': '\ue60a',
-  'kefangyongrenfangertongfang': '\ue6b2',
-
-  // 心电图/体检
-  'xindiantu': '\ue7a6',
-  'xindiantu1': '\ue61c',
-  '-yiliao-xieyang': '\ue62d',
-
-  // 体温
-  'tiwenji': '\ue707',
-  'thermometer-line': '\ue82f',
-
-  // CT/检查
-  '-yiliao-ct': '\ue62a',
-  '-yiliao': '\ue62c',
-
-  // 医疗器械
-  'icon_yiliaoqixie': '\ue602',
-
-  // 病毒/病菌
-  'bingdu': '\ue6a0',
-  'tubiao_-1': '\ue6ff',
-
-  // 医疗险/卡片
-  'yiliaoxian': '\ue65d',
-  'tubiao_-2': '\ue700',
-
-  // 爱心/关怀
-  'Heart': '\ue68b',
-  'Hearts': '\ue68c',
-  'empathize-line': '\ue811',
-
-  // 创可贴
-  'Patch': '\ue68d',
-
-  // 其他医疗
-  '20-a': '\ue607',
-  'filesync': '\ue7b4',
-  'user-folder': '\ue611',
-  'nanxing': '\uee2c',
-  'yiliaofeiwulajitong_2': '\ue65e',
-}
-
-// 判断是否是 iconfont 图标（Unicode 私有区域）
-function isIconfontIcon(unicode: string): boolean {
-  const code = unicode.charCodeAt(0)
-  return code >= 0xe000 && code <= 0xf8ff
-}
-
 export interface IconProps {
   name: IconName
   size?: number
@@ -436,33 +295,33 @@ export interface IconProps {
  * 小程序 Icon 组件 - Iconfont 字体实现
  *
  * 使用 Unicode 方式渲染图标，与 Web 端保持一致
+ * 支持 775 个图标
+ *
  * 注意：需要在 app.tsx 中调用 wx.loadFontFace 加载 iconfont 字体
  */
 export const Icon = forwardRef<any, IconProps>(function Icon(
   { name, size = 24, color = '#000000', className = '', style },
   _ref
 ) {
-  const unicode = iconfontUnicodeMap[name]
+  const unicode = iconUnicodeMap[name]
 
   if (!unicode) {
     console.warn(`[Icon] 图标 "${name}" 未定义`)
     return null
   }
 
-  // 判断是否使用 iconfont 字体（Unicode 字符）
-  const useIconfont = unicode.charCodeAt(0) >= 0xe000 && unicode.charCodeAt(0) <= 0xf8ff
-
   return (
     <TaroText
       className={className}
       style={{
-        fontFamily: useIconfont ? 'iconfont' : 'inherit',
+        fontFamily: 'iconfont',
         fontSize: size,
         color,
         lineHeight: 1,
         display: 'inline-flex',
         alignItems: 'center',
         justifyContent: 'center',
+        fontStyle: 'normal',
         ...style,
       }}
     >
