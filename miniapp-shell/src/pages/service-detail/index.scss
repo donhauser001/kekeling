@@ -1,0 +1,50 @@
+.page-container {
+  min-height: 100vh;
+  background-color: #f5f7fa;
+}
+
+.page-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background-color: #f5f7fa;
+}
+
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.page-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background-color: #f5f7fa;
+}
+
+.error-text {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.error-btn {
+  margin-top: 16px;
+  padding: 8px 24px;
+  background-color: #3b82f6;
+  color: #fff;
+  font-size: 14px;
+  border-radius: 20px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

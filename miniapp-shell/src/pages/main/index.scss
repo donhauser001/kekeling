@@ -1,0 +1,12 @@
+/**
+ * 主页面样式
+ *
+ * 说明：页面特定样式（全局样式在 app.scss 中定义）
+ */
+
+/* 页面容器 - 确保全屏 */
+.main-container {
+  display: flex;
+  flex-direction: column;
+  background-color: #f5f7fa;
+}
