@@ -8,21 +8,6 @@ import {
     ArrowDownCircle,
     PackageSearch,
     Pin,
-    Layers,
-    Hospital,
-    FileText,
-    Heart,
-    Stethoscope,
-    Truck,
-    MessageSquare,
-    Building,
-    Sparkles,
-    Pill,
-    Syringe,
-    Baby,
-    Eye as EyeIcon,
-    Bone,
-    Brain,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -36,29 +21,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { DataTableColumnHeader } from '@/components/data-table'
 import { type ServiceCategory } from '@/lib/api'
-
-// 图标映射
-const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
-    stethoscope: Stethoscope,
-    truck: Truck,
-    'message-square': MessageSquare,
-    building: Building,
-    sparkles: Sparkles,
-    hospital: Hospital,
-    heart: Heart,
-    pill: Pill,
-    syringe: Syringe,
-    baby: Baby,
-    eye: EyeIcon,
-    bone: Bone,
-    brain: Brain,
-    'file-text': FileText,
-}
-
-const getIconComponent = (iconName: string | null) => {
-    if (!iconName) return Layers
-    return iconMap[iconName] || Layers
-}
+import { AppIcon, type IconName } from '@/components/ui/icon-picker'
 
 interface ColumnsProps {
     onView: (item: ServiceCategory) => void
@@ -82,7 +45,6 @@ export function getServiceCategoriesColumns({
             meta: { title: '分类名称' },
             cell: ({ row }) => {
                 const category = row.original
-                const IconComponent = getIconComponent(category.icon)
                 const bgStyle = category.color
                     ? { background: category.color }
                     : { backgroundColor: '#6b7280' }
@@ -93,7 +55,7 @@ export function getServiceCategoriesColumns({
                             className='flex h-8 w-8 items-center justify-center rounded-lg'
                             style={bgStyle}
                         >
-                            <IconComponent className='h-4 w-4 text-white' />
+                            <AppIcon name={(category.icon || 'stethoscope') as IconName} size={16} className='text-white' />
                         </div>
                         <div className='flex flex-col'>
                             <div className='flex items-center gap-1.5 font-medium'>

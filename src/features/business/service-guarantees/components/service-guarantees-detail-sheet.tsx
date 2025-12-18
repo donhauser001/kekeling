@@ -1,14 +1,3 @@
-import { type ReactNode } from 'react'
-import {
-  Shield,
-  Check,
-  Star,
-  Heart,
-  Clock,
-  Banknote,
-  Lock,
-  ThumbsUp,
-} from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -20,49 +9,15 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
+import { AppIcon } from '@/components/ui/icon-picker'
 import { type ServiceGuarantee } from '@/lib/api'
+import type { IconName } from '@/shared/types/icon'
 
 // 状态颜色映射
 const statusColors = new Map<string, string>([
   ['active', 'bg-teal-100/30 text-teal-900 dark:text-teal-200 border-teal-200'],
   ['inactive', 'bg-neutral-300/40 border-neutral-300'],
 ])
-
-// 根据图标名称获取图标组件
-const getIconByName = (iconName: string, className = 'h-5 w-5'): ReactNode => {
-  switch (iconName) {
-    case 'shield':
-      return <Shield className={className} />
-    case 'check':
-      return <Check className={className} />
-    case 'star':
-      return <Star className={className} />
-    case 'heart':
-      return <Heart className={className} />
-    case 'clock':
-      return <Clock className={className} />
-    case 'money':
-      return <Banknote className={className} />
-    case 'lock':
-      return <Lock className={className} />
-    case 'thumbs-up':
-      return <ThumbsUp className={className} />
-    default:
-      return <Shield className={className} />
-  }
-}
-
-// 图标名称映射
-const iconLabels: Record<string, string> = {
-  shield: '盾牌',
-  check: '对勾',
-  star: '星星',
-  heart: '爱心',
-  clock: '时钟',
-  money: '金钱',
-  lock: '锁',
-  'thumbs-up': '点赞',
-}
 
 interface ServiceGuaranteesDetailSheetProps {
   open: boolean
@@ -80,6 +35,7 @@ export function ServiceGuaranteesDetailSheet({
   if (!item) return null
 
   const statusColor = statusColors.get(item.status)
+  const iconName = (item.icon || 'shield') as IconName
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -87,7 +43,7 @@ export function ServiceGuaranteesDetailSheet({
         <SheetHeader>
           <SheetTitle className='flex items-center gap-2'>
             <span className='text-emerald-500'>
-              {getIconByName(item.icon)}
+              <AppIcon name={iconName} size={20} />
             </span>
             {item.name}
           </SheetTitle>
@@ -104,9 +60,9 @@ export function ServiceGuaranteesDetailSheet({
                   <span className='text-sm text-muted-foreground'>图标</span>
                   <p className='mt-1 flex items-center gap-2'>
                     <span className='text-emerald-500'>
-                      {getIconByName(item.icon, 'h-4 w-4')}
+                      <AppIcon name={iconName} size={16} />
                     </span>
-                    <span className='text-sm'>{iconLabels[item.icon] || item.icon}</span>
+                    <span className='text-sm'>{iconName}</span>
                   </p>
                 </div>
                 <div>

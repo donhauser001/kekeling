@@ -10,7 +10,7 @@ import { ApiResponse } from '../../common/response/api-response';
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly usersService: UsersService) { }
 
   @Get('profile')
   @ApiOperation({ summary: '获取当前用户信息' })
@@ -23,9 +23,30 @@ export class UsersController {
   @ApiOperation({ summary: '更新用户资料' })
   async updateProfile(
     @CurrentUser('sub') userId: string,
-    @Body() data: { nickname?: string; avatar?: string },
+    @Body() data: {
+      nickname?: string;
+      avatar?: string;
+      gender?: string;
+      birthday?: string;
+    },
   ) {
-    const user = await this.usersService.updateProfile(userId, data);
+    // 转换 birthday 字符串为 Date 对象
+    const updateData: {
+      nickname?: string;
+      avatar?: string;
+      gender?: string;
+      birthday?: Date;
+    } = {
+      nickname: data.nickname,
+      avatar: data.avatar,
+      gender: data.gender,
+    };
+
+    if (data.birthday) {
+      updateData.birthday = new Date(data.birthday);
+    }
+
+    const user = await this.usersService.updateProfile(userId, updateData);
     return ApiResponse.success(user);
   }
 }

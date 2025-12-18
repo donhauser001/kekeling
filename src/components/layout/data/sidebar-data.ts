@@ -254,6 +254,11 @@ export const sidebarData: SidebarData = {
               icon: Users,
             },
             {
+              title: '就诊人管理',
+              url: '/users/patients',
+              icon: Users,
+            },
+            {
               title: '用户分类',
               url: '/roles',
               icon: Layers,

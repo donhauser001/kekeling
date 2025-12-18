@@ -4,10 +4,12 @@ on:
   push:
     branches:
       - main
+      - dev
 
   pull_request:
     branches:
       - main
+      - dev
 
 jobs:
   install-lint-build:
@@ -31,11 +33,63 @@ jobs:
       - name: Lint the code
         run: pnpm lint
 
-      # - name: Analyze unused files and dependencies
-      #   run: pnpm knip
-
       - name: Run Prettier check
         run: pnpm format:check
 
       - name: Build the project
         run: pnpm build
+
+  # ============================================
+      # Step 14.2: 终端预览器护栏检查
+      # @see docs/终端预览器集成/DEV_NOTES.md
+      # ============================================
+      - name: Preview Guardrails Check
+        run: pnpm lint:preview-guard
+
+  # ============================================
+  # P2-16: Semgrep SAST 安全扫描
+  # P2-17: 依赖漏洞扫描
+  # @see docs/终端预览器集成/安全审计报告-2024-12-13.md
+  # ============================================
+
+  security-scan:
+    runs-on: ubuntu-latest
+    needs: install-lint-build
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run dependency audit (frontend)
+        run: pnpm audit --registry=https://registry.npmjs.org || true
+        continue-on-error: true
+
+      - name: Run dependency audit (server)
+        working-directory: ./server
+        run: pnpm audit --registry=https://registry.npmjs.org || true
+        continue-on-error: true
+
+  semgrep:
+    runs-on: ubuntu-latest
+    needs: install-lint-build
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Semgrep SAST
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: p/security-audit p/secrets p/javascript p/typescript
+        continue-on-error: true

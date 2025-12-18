@@ -54,12 +54,15 @@ import { Route as AuthenticatedChatsIndexRouteImport } from './routes/_authentic
 import { Route as ClerkAuthenticatedUserManagementRouteImport } from './routes/clerk/_authenticated/user-management'
 import { Route as ClerkauthSignUpRouteImport } from './routes/clerk/(auth)/sign-up'
 import { Route as ClerkauthSignInRouteImport } from './routes/clerk/(auth)/sign-in'
+import { Route as AuthenticatedUsersPatientsRouteImport } from './routes/_authenticated/users/patients'
+import { Route as AuthenticatedUsersUserIdRouteImport } from './routes/_authenticated/users/$userId'
 import { Route as AuthenticatedSettingsPaymentRouteImport } from './routes/_authenticated/settings/payment'
 import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings/notifications'
 import { Route as AuthenticatedSettingsDisplayRouteImport } from './routes/_authenticated/settings/display'
 import { Route as AuthenticatedSettingsAppearanceRouteImport } from './routes/_authenticated/settings/appearance'
 import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated/settings/account'
 import { Route as AuthenticatedServicesIdRouteImport } from './routes/_authenticated/services/$id'
+import { Route as AuthenticatedEscortsWithdrawRecordsRouteImport } from './routes/_authenticated/escorts/withdraw-records'
 import { Route as AuthenticatedEscortsEscortIdRouteImport } from './routes/_authenticated/escorts/$escortId'
 import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
 import { Route as AuthenticatedDistributionSettingsRouteImport } from './routes/_authenticated/distribution/settings'
@@ -72,6 +75,11 @@ import { Route as AuthenticatedMarketingPointsIndexRouteImport } from './routes/
 import { Route as AuthenticatedMarketingMembershipIndexRouteImport } from './routes/_authenticated/marketing/membership/index'
 import { Route as AuthenticatedMarketingCouponsIndexRouteImport } from './routes/_authenticated/marketing/coupons/index'
 import { Route as AuthenticatedMarketingCampaignsIndexRouteImport } from './routes/_authenticated/marketing/campaigns/index'
+import { Route as AuthenticatedCmsPagesIndexRouteImport } from './routes/_authenticated/cms/pages/index'
+import { Route as AuthenticatedCmsArticlesIndexRouteImport } from './routes/_authenticated/cms/articles/index'
+import { Route as AuthenticatedCmsArticleCategoriesIndexRouteImport } from './routes/_authenticated/cms/article-categories/index'
+import { Route as AuthenticatedCmsPagesIdRouteImport } from './routes/_authenticated/cms/pages/$id'
+import { Route as AuthenticatedCmsArticlesIdRouteImport } from './routes/_authenticated/cms/articles/$id'
 import { Route as AuthenticatedAppSettingsHomepageRouteImport } from './routes/_authenticated/app/settings/homepage'
 import { Route as AuthenticatedAppSettingsBrandRouteImport } from './routes/_authenticated/app/settings/brand'
 
@@ -320,6 +328,18 @@ const ClerkauthSignInRoute = ClerkauthSignInRouteImport.update({
   path: '/sign-in',
   getParentRoute: () => ClerkauthRouteRoute,
 } as any)
+const AuthenticatedUsersPatientsRoute =
+  AuthenticatedUsersPatientsRouteImport.update({
+    id: '/users/patients',
+    path: '/users/patients',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedUsersUserIdRoute =
+  AuthenticatedUsersUserIdRouteImport.update({
+    id: '/users/$userId',
+    path: '/users/$userId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSettingsPaymentRoute =
   AuthenticatedSettingsPaymentRouteImport.update({
     id: '/payment',
@@ -355,6 +375,12 @@ const AuthenticatedServicesIdRoute = AuthenticatedServicesIdRouteImport.update({
   path: '/services/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedEscortsWithdrawRecordsRoute =
+  AuthenticatedEscortsWithdrawRecordsRouteImport.update({
+    id: '/escorts/withdraw-records',
+    path: '/escorts/withdraw-records',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedEscortsEscortIdRoute =
   AuthenticatedEscortsEscortIdRouteImport.update({
     id: '/escorts/$escortId',
@@ -426,6 +452,35 @@ const AuthenticatedMarketingCampaignsIndexRoute =
     path: '/marketing/campaigns/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedCmsPagesIndexRoute =
+  AuthenticatedCmsPagesIndexRouteImport.update({
+    id: '/cms/pages/',
+    path: '/cms/pages/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCmsArticlesIndexRoute =
+  AuthenticatedCmsArticlesIndexRouteImport.update({
+    id: '/cms/articles/',
+    path: '/cms/articles/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCmsArticleCategoriesIndexRoute =
+  AuthenticatedCmsArticleCategoriesIndexRouteImport.update({
+    id: '/cms/article-categories/',
+    path: '/cms/article-categories/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCmsPagesIdRoute = AuthenticatedCmsPagesIdRouteImport.update({
+  id: '/cms/pages/$id',
+  path: '/cms/pages/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedCmsArticlesIdRoute =
+  AuthenticatedCmsArticlesIdRouteImport.update({
+    id: '/cms/articles/$id',
+    path: '/cms/articles/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAppSettingsHomepageRoute =
   AuthenticatedAppSettingsHomepageRouteImport.update({
     id: '/app/settings/homepage',
@@ -459,12 +514,15 @@ export interface FileRoutesByFullPath {
   '/distribution/settings': typeof AuthenticatedDistributionSettingsRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/escorts/$escortId': typeof AuthenticatedEscortsEscortIdRoute
+  '/escorts/withdraw-records': typeof AuthenticatedEscortsWithdrawRecordsRoute
   '/services/$id': typeof AuthenticatedServicesIdRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/settings/payment': typeof AuthenticatedSettingsPaymentRoute
+  '/users/$userId': typeof AuthenticatedUsersUserIdRoute
+  '/users/patients': typeof AuthenticatedUsersPatientsRoute
   '/clerk/sign-in': typeof ClerkauthSignInRoute
   '/clerk/sign-up': typeof ClerkauthSignUpRoute
   '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
@@ -496,6 +554,11 @@ export interface FileRoutesByFullPath {
   '/workflows': typeof AuthenticatedWorkflowsIndexRoute
   '/app/settings/brand': typeof AuthenticatedAppSettingsBrandRoute
   '/app/settings/homepage': typeof AuthenticatedAppSettingsHomepageRoute
+  '/cms/articles/$id': typeof AuthenticatedCmsArticlesIdRoute
+  '/cms/pages/$id': typeof AuthenticatedCmsPagesIdRoute
+  '/cms/article-categories': typeof AuthenticatedCmsArticleCategoriesIndexRoute
+  '/cms/articles': typeof AuthenticatedCmsArticlesIndexRoute
+  '/cms/pages': typeof AuthenticatedCmsPagesIndexRoute
   '/marketing/campaigns': typeof AuthenticatedMarketingCampaignsIndexRoute
   '/marketing/coupons': typeof AuthenticatedMarketingCouponsIndexRoute
   '/marketing/membership': typeof AuthenticatedMarketingMembershipIndexRoute
@@ -522,12 +585,15 @@ export interface FileRoutesByTo {
   '/distribution/settings': typeof AuthenticatedDistributionSettingsRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/escorts/$escortId': typeof AuthenticatedEscortsEscortIdRoute
+  '/escorts/withdraw-records': typeof AuthenticatedEscortsWithdrawRecordsRoute
   '/services/$id': typeof AuthenticatedServicesIdRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/settings/payment': typeof AuthenticatedSettingsPaymentRoute
+  '/users/$userId': typeof AuthenticatedUsersUserIdRoute
+  '/users/patients': typeof AuthenticatedUsersPatientsRoute
   '/clerk/sign-in': typeof ClerkauthSignInRoute
   '/clerk/sign-up': typeof ClerkauthSignUpRoute
   '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
@@ -559,6 +625,11 @@ export interface FileRoutesByTo {
   '/workflows': typeof AuthenticatedWorkflowsIndexRoute
   '/app/settings/brand': typeof AuthenticatedAppSettingsBrandRoute
   '/app/settings/homepage': typeof AuthenticatedAppSettingsHomepageRoute
+  '/cms/articles/$id': typeof AuthenticatedCmsArticlesIdRoute
+  '/cms/pages/$id': typeof AuthenticatedCmsPagesIdRoute
+  '/cms/article-categories': typeof AuthenticatedCmsArticleCategoriesIndexRoute
+  '/cms/articles': typeof AuthenticatedCmsArticlesIndexRoute
+  '/cms/pages': typeof AuthenticatedCmsPagesIndexRoute
   '/marketing/campaigns': typeof AuthenticatedMarketingCampaignsIndexRoute
   '/marketing/coupons': typeof AuthenticatedMarketingCouponsIndexRoute
   '/marketing/membership': typeof AuthenticatedMarketingMembershipIndexRoute
@@ -590,12 +661,15 @@ export interface FileRoutesById {
   '/_authenticated/distribution/settings': typeof AuthenticatedDistributionSettingsRoute
   '/_authenticated/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/_authenticated/escorts/$escortId': typeof AuthenticatedEscortsEscortIdRoute
+  '/_authenticated/escorts/withdraw-records': typeof AuthenticatedEscortsWithdrawRecordsRoute
   '/_authenticated/services/$id': typeof AuthenticatedServicesIdRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/_authenticated/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/_authenticated/settings/display': typeof AuthenticatedSettingsDisplayRoute
   '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/_authenticated/settings/payment': typeof AuthenticatedSettingsPaymentRoute
+  '/_authenticated/users/$userId': typeof AuthenticatedUsersUserIdRoute
+  '/_authenticated/users/patients': typeof AuthenticatedUsersPatientsRoute
   '/clerk/(auth)/sign-in': typeof ClerkauthSignInRoute
   '/clerk/(auth)/sign-up': typeof ClerkauthSignUpRoute
   '/clerk/_authenticated/user-management': typeof ClerkAuthenticatedUserManagementRoute
@@ -627,6 +701,11 @@ export interface FileRoutesById {
   '/_authenticated/workflows/': typeof AuthenticatedWorkflowsIndexRoute
   '/_authenticated/app/settings/brand': typeof AuthenticatedAppSettingsBrandRoute
   '/_authenticated/app/settings/homepage': typeof AuthenticatedAppSettingsHomepageRoute
+  '/_authenticated/cms/articles/$id': typeof AuthenticatedCmsArticlesIdRoute
+  '/_authenticated/cms/pages/$id': typeof AuthenticatedCmsPagesIdRoute
+  '/_authenticated/cms/article-categories/': typeof AuthenticatedCmsArticleCategoriesIndexRoute
+  '/_authenticated/cms/articles/': typeof AuthenticatedCmsArticlesIndexRoute
+  '/_authenticated/cms/pages/': typeof AuthenticatedCmsPagesIndexRoute
   '/_authenticated/marketing/campaigns/': typeof AuthenticatedMarketingCampaignsIndexRoute
   '/_authenticated/marketing/coupons/': typeof AuthenticatedMarketingCouponsIndexRoute
   '/_authenticated/marketing/membership/': typeof AuthenticatedMarketingMembershipIndexRoute
@@ -656,12 +735,15 @@ export interface FileRouteTypes {
     | '/distribution/settings'
     | '/errors/$error'
     | '/escorts/$escortId'
+    | '/escorts/withdraw-records'
     | '/services/$id'
     | '/settings/account'
     | '/settings/appearance'
     | '/settings/display'
     | '/settings/notifications'
     | '/settings/payment'
+    | '/users/$userId'
+    | '/users/patients'
     | '/clerk/sign-in'
     | '/clerk/sign-up'
     | '/clerk/user-management'
@@ -693,6 +775,11 @@ export interface FileRouteTypes {
     | '/workflows'
     | '/app/settings/brand'
     | '/app/settings/homepage'
+    | '/cms/articles/$id'
+    | '/cms/pages/$id'
+    | '/cms/article-categories'
+    | '/cms/articles'
+    | '/cms/pages'
     | '/marketing/campaigns'
     | '/marketing/coupons'
     | '/marketing/membership'
@@ -719,12 +806,15 @@ export interface FileRouteTypes {
     | '/distribution/settings'
     | '/errors/$error'
     | '/escorts/$escortId'
+    | '/escorts/withdraw-records'
     | '/services/$id'
     | '/settings/account'
     | '/settings/appearance'
     | '/settings/display'
     | '/settings/notifications'
     | '/settings/payment'
+    | '/users/$userId'
+    | '/users/patients'
     | '/clerk/sign-in'
     | '/clerk/sign-up'
     | '/clerk/user-management'
@@ -756,6 +846,11 @@ export interface FileRouteTypes {
     | '/workflows'
     | '/app/settings/brand'
     | '/app/settings/homepage'
+    | '/cms/articles/$id'
+    | '/cms/pages/$id'
+    | '/cms/article-categories'
+    | '/cms/articles'
+    | '/cms/pages'
     | '/marketing/campaigns'
     | '/marketing/coupons'
     | '/marketing/membership'
@@ -786,12 +881,15 @@ export interface FileRouteTypes {
     | '/_authenticated/distribution/settings'
     | '/_authenticated/errors/$error'
     | '/_authenticated/escorts/$escortId'
+    | '/_authenticated/escorts/withdraw-records'
     | '/_authenticated/services/$id'
     | '/_authenticated/settings/account'
     | '/_authenticated/settings/appearance'
     | '/_authenticated/settings/display'
     | '/_authenticated/settings/notifications'
     | '/_authenticated/settings/payment'
+    | '/_authenticated/users/$userId'
+    | '/_authenticated/users/patients'
     | '/clerk/(auth)/sign-in'
     | '/clerk/(auth)/sign-up'
     | '/clerk/_authenticated/user-management'
@@ -823,6 +921,11 @@ export interface FileRouteTypes {
     | '/_authenticated/workflows/'
     | '/_authenticated/app/settings/brand'
     | '/_authenticated/app/settings/homepage'
+    | '/_authenticated/cms/articles/$id'
+    | '/_authenticated/cms/pages/$id'
+    | '/_authenticated/cms/article-categories/'
+    | '/_authenticated/cms/articles/'
+    | '/_authenticated/cms/pages/'
     | '/_authenticated/marketing/campaigns/'
     | '/_authenticated/marketing/coupons/'
     | '/_authenticated/marketing/membership/'
@@ -1163,6 +1266,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClerkauthSignInRouteImport
       parentRoute: typeof ClerkauthRouteRoute
     }
+    '/_authenticated/users/patients': {
+      id: '/_authenticated/users/patients'
+      path: '/users/patients'
+      fullPath: '/users/patients'
+      preLoaderRoute: typeof AuthenticatedUsersPatientsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/users/$userId': {
+      id: '/_authenticated/users/$userId'
+      path: '/users/$userId'
+      fullPath: '/users/$userId'
+      preLoaderRoute: typeof AuthenticatedUsersUserIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/settings/payment': {
       id: '/_authenticated/settings/payment'
       path: '/payment'
@@ -1203,6 +1320,13 @@ declare module '@tanstack/react-router' {
       path: '/services/$id'
       fullPath: '/services/$id'
       preLoaderRoute: typeof AuthenticatedServicesIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/escorts/withdraw-records': {
+      id: '/_authenticated/escorts/withdraw-records'
+      path: '/escorts/withdraw-records'
+      fullPath: '/escorts/withdraw-records'
+      preLoaderRoute: typeof AuthenticatedEscortsWithdrawRecordsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/escorts/$escortId': {
@@ -1289,6 +1413,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMarketingCampaignsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/cms/pages/': {
+      id: '/_authenticated/cms/pages/'
+      path: '/cms/pages'
+      fullPath: '/cms/pages'
+      preLoaderRoute: typeof AuthenticatedCmsPagesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/cms/articles/': {
+      id: '/_authenticated/cms/articles/'
+      path: '/cms/articles'
+      fullPath: '/cms/articles'
+      preLoaderRoute: typeof AuthenticatedCmsArticlesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/cms/article-categories/': {
+      id: '/_authenticated/cms/article-categories/'
+      path: '/cms/article-categories'
+      fullPath: '/cms/article-categories'
+      preLoaderRoute: typeof AuthenticatedCmsArticleCategoriesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/cms/pages/$id': {
+      id: '/_authenticated/cms/pages/$id'
+      path: '/cms/pages/$id'
+      fullPath: '/cms/pages/$id'
+      preLoaderRoute: typeof AuthenticatedCmsPagesIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/cms/articles/$id': {
+      id: '/_authenticated/cms/articles/$id'
+      path: '/cms/articles/$id'
+      fullPath: '/cms/articles/$id'
+      preLoaderRoute: typeof AuthenticatedCmsArticlesIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/app/settings/homepage': {
       id: '/_authenticated/app/settings/homepage'
       path: '/app/settings/homepage'
@@ -1340,7 +1499,10 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDistributionSettingsRoute: typeof AuthenticatedDistributionSettingsRoute
   AuthenticatedErrorsErrorRoute: typeof AuthenticatedErrorsErrorRoute
   AuthenticatedEscortsEscortIdRoute: typeof AuthenticatedEscortsEscortIdRoute
+  AuthenticatedEscortsWithdrawRecordsRoute: typeof AuthenticatedEscortsWithdrawRecordsRoute
   AuthenticatedServicesIdRoute: typeof AuthenticatedServicesIdRoute
+  AuthenticatedUsersUserIdRoute: typeof AuthenticatedUsersUserIdRoute
+  AuthenticatedUsersPatientsRoute: typeof AuthenticatedUsersPatientsRoute
   AuthenticatedChatsIndexRoute: typeof AuthenticatedChatsIndexRoute
   AuthenticatedDepartmentsIndexRoute: typeof AuthenticatedDepartmentsIndexRoute
   AuthenticatedDoctorsIndexRoute: typeof AuthenticatedDoctorsIndexRoute
@@ -1368,6 +1530,11 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedWorkflowsIndexRoute: typeof AuthenticatedWorkflowsIndexRoute
   AuthenticatedAppSettingsBrandRoute: typeof AuthenticatedAppSettingsBrandRoute
   AuthenticatedAppSettingsHomepageRoute: typeof AuthenticatedAppSettingsHomepageRoute
+  AuthenticatedCmsArticlesIdRoute: typeof AuthenticatedCmsArticlesIdRoute
+  AuthenticatedCmsPagesIdRoute: typeof AuthenticatedCmsPagesIdRoute
+  AuthenticatedCmsArticleCategoriesIndexRoute: typeof AuthenticatedCmsArticleCategoriesIndexRoute
+  AuthenticatedCmsArticlesIndexRoute: typeof AuthenticatedCmsArticlesIndexRoute
+  AuthenticatedCmsPagesIndexRoute: typeof AuthenticatedCmsPagesIndexRoute
   AuthenticatedMarketingCampaignsIndexRoute: typeof AuthenticatedMarketingCampaignsIndexRoute
   AuthenticatedMarketingCouponsIndexRoute: typeof AuthenticatedMarketingCouponsIndexRoute
   AuthenticatedMarketingMembershipIndexRoute: typeof AuthenticatedMarketingMembershipIndexRoute
@@ -1387,7 +1554,11 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedDistributionSettingsRoute,
   AuthenticatedErrorsErrorRoute: AuthenticatedErrorsErrorRoute,
   AuthenticatedEscortsEscortIdRoute: AuthenticatedEscortsEscortIdRoute,
+  AuthenticatedEscortsWithdrawRecordsRoute:
+    AuthenticatedEscortsWithdrawRecordsRoute,
   AuthenticatedServicesIdRoute: AuthenticatedServicesIdRoute,
+  AuthenticatedUsersUserIdRoute: AuthenticatedUsersUserIdRoute,
+  AuthenticatedUsersPatientsRoute: AuthenticatedUsersPatientsRoute,
   AuthenticatedChatsIndexRoute: AuthenticatedChatsIndexRoute,
   AuthenticatedDepartmentsIndexRoute: AuthenticatedDepartmentsIndexRoute,
   AuthenticatedDoctorsIndexRoute: AuthenticatedDoctorsIndexRoute,
@@ -1419,6 +1590,12 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedWorkflowsIndexRoute: AuthenticatedWorkflowsIndexRoute,
   AuthenticatedAppSettingsBrandRoute: AuthenticatedAppSettingsBrandRoute,
   AuthenticatedAppSettingsHomepageRoute: AuthenticatedAppSettingsHomepageRoute,
+  AuthenticatedCmsArticlesIdRoute: AuthenticatedCmsArticlesIdRoute,
+  AuthenticatedCmsPagesIdRoute: AuthenticatedCmsPagesIdRoute,
+  AuthenticatedCmsArticleCategoriesIndexRoute:
+    AuthenticatedCmsArticleCategoriesIndexRoute,
+  AuthenticatedCmsArticlesIndexRoute: AuthenticatedCmsArticlesIndexRoute,
+  AuthenticatedCmsPagesIndexRoute: AuthenticatedCmsPagesIndexRoute,
   AuthenticatedMarketingCampaignsIndexRoute:
     AuthenticatedMarketingCampaignsIndexRoute,
   AuthenticatedMarketingCouponsIndexRoute:

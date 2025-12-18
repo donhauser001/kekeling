@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useNavigate } from '@tanstack/react-router'
 import {
     useReactTable,
     getCoreRowModel,
@@ -39,18 +40,17 @@ import { ThemeSwitch } from '@/components/theme-switch'
 import {
     useUsers,
     useUserStats,
-    useUser,
     useUpdateUser,
-    useUserOrders,
 } from '@/hooks/use-api'
 import type { User } from '@/lib/api'
 
 // 导入新组件
 import { getUsersColumns } from './components/users-columns-new'
 import { UsersTableNew } from './components/users-table-new'
-import { UsersDetailSheet } from './components/users-detail-sheet'
 
 export function Users() {
+    const navigate = useNavigate()
+
     // 分页和筛选状态
     const [page, setPage] = useState(1)
     const [pageSize, setPageSize] = useState(10)
@@ -64,7 +64,6 @@ export function Users() {
     }, [columnFilters, globalFilter])
 
     // 对话框状态
-    const [detailOpen, setDetailOpen] = useState(false)
     const [editDialogOpen, setEditDialogOpen] = useState(false)
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
     const [editForm, setEditForm] = useState({ nickname: '', phone: '' })
@@ -76,17 +75,14 @@ export function Users() {
         pageSize,
     })
     const { data: stats } = useUserStats()
-    const { data: userDetail, isLoading: detailLoading } = useUser(selectedUserId || '')
-    const { data: userOrders } = useUserOrders(selectedUserId || '')
     const updateMutation = useUpdateUser()
 
     const users = data?.data || []
     const total = data?.total || 0
 
-    // 查看详情
+    // 查看详情 - 跳转到详情页
     const handleView = (user: User) => {
-        setSelectedUserId(user.id)
-        setDetailOpen(true)
+        navigate({ to: '/users/$userId', params: { userId: user.id } })
     }
 
     // 打开编辑
@@ -262,15 +258,6 @@ export function Users() {
                 {/* 分页 */}
                 <DataTablePagination table={table} className='mt-auto' />
             </Main>
-
-            {/* 用户详情抽屉 */}
-            <UsersDetailSheet
-                user={userDetail || null}
-                isLoading={detailLoading}
-                open={detailOpen}
-                onOpenChange={setDetailOpen}
-                orders={userOrders?.data}
-            />
 
             {/* 编辑对话框 */}
             <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>

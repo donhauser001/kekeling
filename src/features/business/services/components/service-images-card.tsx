@@ -23,7 +23,7 @@ export function ServiceImagesCard({ formData, onFormChange }: ServiceImagesCardP
                     服务图片
                 </CardTitle>
                 <CardDescription>
-                    建议尺寸 750×500，第一张将作为列表封面图
+                    建议尺寸 750×500，第一张将作为列表封面图，单张图片不超过 5MB
                 </CardDescription>
             </CardHeader>
             <CardContent>

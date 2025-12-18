@@ -27,6 +27,7 @@ import {
   Redo,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { sanitizeHTML } from '@/components/ui/safe-html'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import {
@@ -100,10 +101,11 @@ export function RichEditor({
     },
   })
 
-  // 初始化内容
+  // 初始化内容（使用 sanitizeHTML 防止 XSS）
   useEffect(() => {
     if (editorRef.current && editorRef.current.innerHTML !== value) {
-      editorRef.current.innerHTML = value
+      // 净化外部传入的 HTML 内容
+      editorRef.current.innerHTML = sanitizeHTML(value)
       updateCharCount()
     }
   }, [value])

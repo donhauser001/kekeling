@@ -9,7 +9,11 @@
 
 import { useQuery } from '@tanstack/react-query'
 import type { ThemeSettings } from '../../../types'
-import { previewApi, type EscortDetail } from '../../../api'
+import { previewApi } from '../../../api'
+import type { EscortDetail } from '../../../api'
+import { ListSkeleton } from '../../ListSkeleton'
+import { ErrorRetry } from '../../ErrorRetry'
+import { getSecondaryTextClass } from '../../../utils'
 
 // ============================================================================
 // 类型定义
@@ -62,7 +66,7 @@ export function EscortDetailPage({
         {/* 无 ID 提示 */}
         <div className="flex-1 flex flex-col items-center justify-center">
           <div className="text-4xl mb-2">❓</div>
-          <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+          <div className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>
             未指定陪诊员
           </div>
           <button
@@ -82,6 +86,7 @@ export function EscortDetailPage({
     data: escort,
     isLoading,
     isError,
+    refetch,
   } = useQuery({
     queryKey: ['preview', 'escorts', escortId],
     queryFn: () => previewApi.getEscortDetail(escortId),
@@ -113,20 +118,19 @@ export function EscortDetailPage({
       </div>
 
       {/* 内容区 */}
-      <div>
-        {/* 加载中 */}
+      <div className="px-4 py-4">
+        {/* 加载中 - 骨架屏 */}
         {isLoading && (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-gray-400 text-sm">加载中...</div>
-          </div>
+          <ListSkeleton count={1} variant="detail" isDarkMode={isDarkMode} />
         )}
 
-        {/* 请求失败 */}
+        {/* 请求失败 - 带重试按钮 */}
         {isError && (
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="text-4xl mb-2">😔</div>
-            <div className="text-gray-400 text-sm">加载失败，请稍后重试</div>
-          </div>
+          <ErrorRetry
+            onRetry={() => refetch()}
+            isDarkMode={isDarkMode}
+            primaryColor={themeSettings.primaryColor}
+          />
         )}
 
         {/* 陪诊员详情 */}
@@ -195,9 +199,8 @@ function EscortContent({ escort, themeSettings, isDarkMode }: EscortContentProps
         {/* 状态 */}
         <div className="mt-2">
           <span
-            className={`text-sm ${
-              escort.status === 'available' ? 'text-green-500' : 'text-gray-400'
-            }`}
+            className={`text-sm ${escort.status === 'available' ? 'text-green-500' : 'text-gray-400'
+              }`}
           >
             {escort.status === 'available' ? '● 在线可预约' : '○ 暂时离线'}
           </span>
@@ -212,9 +215,9 @@ function EscortContent({ escort, themeSettings, isDarkMode }: EscortContentProps
             backgroundColor: isDarkMode ? '#2a2a2a' : '#fff',
           }}
         >
-          <StatItem label="服务次数" value={escort.serviceCount} />
-          <StatItem label="好评率" value={`${escort.rating}%`} />
-          <StatItem label="从业年限" value={`${escort.experience}年`} />
+          <StatItem label="服务次数" value={escort.serviceCount} isDarkMode={isDarkMode} />
+          <StatItem label="好评率" value={`${escort.rating}%`} isDarkMode={isDarkMode} />
+          <StatItem label="从业年限" value={`${escort.experience}年`} isDarkMode={isDarkMode} />
         </div>
       </div>
 
@@ -229,7 +232,7 @@ function EscortContent({ escort, themeSettings, isDarkMode }: EscortContentProps
             backgroundColor: isDarkMode ? '#2a2a2a' : '#fff',
           }}
         >
-          <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+          <p className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>
             {escort.bio || '这位陪诊员还没有填写个人简介。'}
           </p>
         </div>
@@ -270,7 +273,7 @@ function EscortContent({ escort, themeSettings, isDarkMode }: EscortContentProps
               backgroundColor: isDarkMode ? '#2a2a2a' : '#fff',
             }}
           >
-            <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+            <p className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>
               {escort.serviceAreas.join('、')}
             </p>
           </div>
@@ -300,13 +303,14 @@ function EscortContent({ escort, themeSettings, isDarkMode }: EscortContentProps
 interface StatItemProps {
   label: string
   value: string | number
+  isDarkMode: boolean
 }
 
-function StatItem({ label, value }: StatItemProps) {
+function StatItem({ label, value, isDarkMode }: StatItemProps) {
   return (
     <div className="text-center">
-      <div className="text-xl font-bold text-gray-900">{value}</div>
-      <div className="text-xs text-gray-500 mt-1">{label}</div>
+      <div className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{value}</div>
+      <div className={`text-xs mt-1 ${getSecondaryTextClass(isDarkMode)}`}>{label}</div>
     </div>
   )
 }

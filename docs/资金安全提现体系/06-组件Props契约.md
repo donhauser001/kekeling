@@ -1,9 +1,11 @@
 # Admin 资金域组件 Props 契约
 
-> **版本**: v1.0  
+> **版本**: v2.0  
+> **最后更新**: 2025-12-13  
+> **状态**: ✅ 已完成实现  
 > **适用范围**: 陪诊员提现审核/打款（P2）  
-> **代码位置**: `src/features/withdrawals/contracts.ts`  
-> **关联文档**: [05-前端组件规范.md](./05-前端组件规范.md) · [03-任务卡拆解.md](./03-任务卡拆解.md)
+> **代码位置**: `src/features/escort-withdraw-records/`  
+> **关联文档**: [05-前端组件规范.md](./05-前端组件规范.md) · [03-任务卡拆解.md](./03-任务卡拆解.md) · [07-安全审计报告.md](./07-安全审计报告.md)
 
 ---
 
@@ -470,16 +472,25 @@ export interface PayoutWithdrawFormValues {
 
 ---
 
-## 附录：组件与 Props 对应表
+## 附录：组件与文件对应表（实际实现）
 
-| 组件 | Props 接口 | 说明 |
-|------|------------|------|
-| `WithdrawActionBar` | `WithdrawActionBarProps` | 操作区容器 |
-| `ReviewWithdrawButton` | `ReviewWithdrawButtonProps` | 审核入口按钮 |
-| `PayoutWithdrawButton` | `PayoutWithdrawButtonProps` | 打款入口按钮 |
-| `ReviewWithdrawDrawer` | `ReviewWithdrawDrawerProps` | 审核抽屉 |
-| `PayoutConfirmModal` | `PayoutConfirmModalProps` | 打款确认 Modal |
-| `WithdrawRecordDrawer` | `WithdrawRecordDrawerProps` | 详情抽屉 |
-| `WithdrawRecordsTable` | `WithdrawRecordsTableProps` | 提现记录列表 |
-| `WithdrawExportButton` | `WithdrawExportButtonProps` | 导出按钮 |
-| `EscortWithdrawRecordsTab` | `EscortWithdrawRecordsTabProps` | 陪诊员详情页 Tab |
+| 组件 | 文件 | 说明 | 状态 |
+|------|------|------|------|
+| `WithdrawDetailDrawer` | `components/WithdrawDetailDrawer.tsx` | 详情抽屉（只读）| ✅ |
+| `WithdrawReviewDrawer` | `components/WithdrawReviewDrawer.tsx` | 审核抽屉 | ✅ |
+| `WithdrawPayoutModal` | `components/WithdrawPayoutModal.tsx` | 打款确认 Modal | ✅ |
+| `WithdrawLogsTimeline` | `components/WithdrawLogsTimeline.tsx` | 操作日志时间线 | ✅ |
+| `WithdrawExportButton` | `components/WithdrawExportButton.tsx` | 导出按钮 | ✅ |
+| `WithdrawRecordList` | `components/WithdrawRecordList.tsx` | 可复用列表组件 | ✅ |
+| `canShowAction` | `utils/withdrawPermissions.ts` | 权限控制工具函数 | ✅ |
+| `getPermissionsFromRole` | `utils/withdrawPermissions.ts` | 角色权限获取 | ✅ |
+
+### API 接口（实际实现）
+
+| 接口 | 文件 | 说明 |
+|------|------|------|
+| `adminEscortWithdrawApi` | `src/lib/api.ts` | 提现 API 客户端 |
+| `useAdminEscortWithdrawRecords` | `src/hooks/use-api.ts` | 列表 Hook |
+| `useAdminEscortWithdrawDetail` | `src/hooks/use-api.ts` | 详情（含日志）Hook |
+| `useAdminWithdrawReview` | `src/hooks/use-api.ts` | 审核 Mutation |
+| `useAdminWithdrawPayout` | `src/hooks/use-api.ts` | 打款 Mutation |

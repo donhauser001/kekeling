@@ -19,6 +19,8 @@ model User {
   nickname    String?
   avatar      String?
   phone       String?  @unique
+  gender      String?  // male, female, unknown
+  birthday    DateTime?
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
@@ -38,8 +40,44 @@ model User {
   campaignParticipations CampaignParticipation[]
   complaints     Complaint[]
   messages       Message[]
+  addresses      UserAddress[]
 
   @@map("users")
+}
+
+// 用户地址
+model UserAddress {
+  id          String    @id @default(uuid())
+  userId      String    @map("user_id")
+  
+  // 联系信息
+  name        String                           // 收货人姓名
+  phone       String                           // 联系电话
+  
+  // 地址信息
+  province    String                           // 省
+  city        String                           // 市
+  district    String                           // 区/县
+  address     String                           // 详细地址
+  
+  // 位置信息（可选，用于定位）
+  latitude    Float?                           // 纬度
+  longitude   Float?                           // 经度
+  
+  // 标签
+  tag         String?                          // 家、公司、学校 等
+  
+  // 状态
+  isDefault   Boolean   @default(false) @map("is_default")  // 是否默认地址
+  
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, isDefault])
+  @@map("user_addresses")
 }
 
 // 就诊人
@@ -131,7 +169,9 @@ model Service {
   needIdCard       Boolean   @default(false) @map("need_id_card")       // 需要身份证
   needGender       Boolean   @default(false) @map("need_gender")        // 需要性别
   needEmergencyContact Boolean @default(false) @map("need_emergency_contact") // 需要紧急联系人
+  needMedicalRecord Boolean  @default(false) @map("need_medical_record") // 需要选择病历
   allowPostOrder   Boolean   @default(false) @map("allow_post_order")  // 允许先下单后填写信息
+  builtinFieldsRequired Json? @map("builtin_fields_required") // 内置字段必填配置 { fieldKey: boolean }
   customFields     Json?     @map("custom_fields")   // 自定义字段配置 [{ id, type, label, placeholder, required, options }]
   fieldOrder       Json?     @map("field_order")     // 字段排序 ['needPatient', 'custom_xxx', ...]
   
@@ -878,9 +918,67 @@ model Withdrawal {
   updatedAt    DateTime  @updatedAt @map("updated_at")
 
   wallet       EscortWallet @relation(fields: [walletId], references: [id])
+  logs         WithdrawLog[]
 
   @@index([walletId, status])
   @@map("withdrawals")
+}
+
+// 提现操作日志
+// @see docs/资金安全提现体系/02-API接口契约.md
+model WithdrawLog {
+  id           String    @id @default(uuid())
+  withdrawId   String    @map("withdraw_id")
+  
+  // 操作信息
+  action       String    // create(提交申请), approve(审核通过), reject(驳回), payout(发起打款), complete(打款成功), fail(打款失败)
+  operator     String    // system, admin
+  operatorId   String?   @map("operator_id")   // 操作人ID
+  operatorName String?   @map("operator_name") // 操作人名称（脱敏）
+  
+  // 操作详情
+  message      String?   // 操作备注/失败原因
+  oldStatus    String?   @map("old_status")    // 变更前状态
+  newStatus    String?   @map("new_status")    // 变更后状态
+  
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  withdrawal   Withdrawal @relation(fields: [withdrawId], references: [id], onDelete: Cascade)
+
+  @@index([withdrawId, createdAt])
+  @@map("withdraw_logs")
+}
+
+// 管理员审计日志（资金域专用）
+// @see docs/资金安全提现体系/02-API接口契约.md
+model AdminAuditLog {
+  id           String    @id @default(uuid())
+  
+  // 操作人
+  adminId      String?   @map("admin_id")
+  adminName    String?   @map("admin_name")
+  
+  // 操作类型
+  module       String    // withdraw, refund, settlement
+  action       String    // export, review, payout, etc.
+  
+  // 操作对象
+  targetId     String?   @map("target_id")
+  targetType   String?   @map("target_type")
+  
+  // 操作详情
+  detail       String?   // JSON: 操作详情
+  filters      String?   // JSON: 导出时的筛选条件
+  
+  // 来源信息
+  ip           String?
+  userAgent    String?   @map("user_agent")
+  
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  @@index([module, action, createdAt])
+  @@index([adminId, createdAt])
+  @@map("admin_audit_logs")
 }
 
 // 钱包负债记录 (用于退款扣回)
@@ -1828,4 +1926,83 @@ model NotificationLog {
   @@index([recipientId, createdAt])
   @@index([templateCode, createdAt])
   @@map("notification_logs")
+}
+
+// ========== CMS 内容管理模块 ==========
+
+// 静态页面（关于我们、用户协议、隐私政策等）
+model Page {
+  id          String    @id @default(uuid())
+  title       String                          // 页面标题
+  slug        String    @unique               // URL 别名（如: about, privacy, terms）
+  content     String    @db.Text              // 富文本内容
+  excerpt     String?   @db.Text              // 摘要/描述
+  coverImage  String?   @map("cover_image")   // 封面图
+  seoTitle    String?   @map("seo_title")     // SEO 标题
+  seoDesc     String?   @map("seo_desc")      // SEO 描述
+  seoKeywords String?   @map("seo_keywords")  // SEO 关键词
+  sort        Int       @default(0)           // 排序权重
+  status      String    @default("draft")     // draft=草稿, published=已发布
+  publishedAt DateTime? @map("published_at")  // 发布时间
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@index([slug])
+  @@index([status])
+  @@map("cms_pages")
+}
+
+// 文章分类
+model ArticleCategory {
+  id          String    @id @default(uuid())
+  name        String                          // 分类名称
+  slug        String    @unique               // URL 别名（如: help, news, guide）
+  description String?   @db.Text              // 分类描述
+  icon        String?                         // 图标（Lucide 图标名）
+  coverImage  String?   @map("cover_image")   // 封面图
+  sort        Int       @default(0)           // 排序权重
+  status      String    @default("active")    // active=启用, inactive=禁用
+  isSystem    Boolean   @default(false) @map("is_system")  // 是否系统内置分类（不可删除）
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  articles    Article[]
+
+  @@index([slug])
+  @@index([status])
+  @@map("cms_article_categories")
+}
+
+// 文章
+model Article {
+  id          String    @id @default(uuid())
+  categoryId  String?   @map("category_id")   // 分类ID
+  title       String                          // 文章标题
+  slug        String    @unique               // URL 别名
+  summary     String?   @db.Text              // 摘要
+  content     String    @db.Text              // 富文本内容
+  coverImage  String?   @map("cover_image")   // 封面图
+  author      String?                         // 作者
+  source      String?                         // 来源
+  tags        String[]  @default([])          // 标签
+  viewCount   Int       @default(0) @map("view_count")  // 阅读量
+  isTop       Boolean   @default(false) @map("is_top")  // 置顶
+  isHot       Boolean   @default(false) @map("is_hot")  // 热门
+  seoTitle    String?   @map("seo_title")     // SEO 标题
+  seoDesc     String?   @map("seo_desc")      // SEO 描述
+  seoKeywords String?   @map("seo_keywords")  // SEO 关键词
+  sort        Int       @default(0)           // 排序权重
+  status      String    @default("draft")     // draft=草稿, published=已发布, archived=已归档
+  publishedAt DateTime? @map("published_at")  // 发布时间
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  category    ArticleCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@index([categoryId])
+  @@index([slug])
+  @@index([status])
+  @@index([isTop, sort])
+  @@index([publishedAt])
+  @@map("cms_articles")
 }

@@ -5,11 +5,18 @@
  * - page key: 'points'
  * - API: previewApi.getMyPoints()
  * - 数据通道: userRequest
+ *
+ * Step 14.8 UI-D-1: 支持 marketingData.points 覆盖
  */
 
+import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import type { ThemeSettings } from '../../../types'
-import { previewApi, type PointsInfo } from '../../../api'
+import type { ThemeSettings, PointsDataOverride, PointRuleOverride } from '../../../types'
+import { previewApi } from '../../../api'
+import type { PointsInfo } from '../../../api'
+import { ListSkeleton } from '../../ListSkeleton'
+import { ErrorRetry } from '../../ErrorRetry'
+import { getSecondaryTextClass } from '../../../utils'
 
 // ============================================================================
 // 类型定义
@@ -19,23 +26,47 @@ export interface PointsPageProps {
   themeSettings: ThemeSettings
   isDarkMode: boolean
   onNavigate?: (page: string) => void
+  /** 积分数据覆盖（管理后台实时预览用） */
+  pointsOverride?: PointsDataOverride
 }
 
 // ============================================================================
 // 组件实现
 // ============================================================================
 
-export function PointsPage({ themeSettings, isDarkMode, onNavigate }: PointsPageProps) {
-  // 获取积分信息
+export function PointsPage({ themeSettings, isDarkMode, onNavigate, pointsOverride }: PointsPageProps) {
+  // 获取积分信息（当有覆盖数据时不发起请求）
   const {
-    data: pointsInfo,
-    isLoading,
-    isError,
+    data: apiPointsInfo,
+    isLoading: isApiLoading,
+    isError: isApiError,
+    refetch,
   } = useQuery({
     queryKey: ['preview', 'points', 'my'],
     queryFn: previewApi.getMyPoints,
     staleTime: 60 * 1000,
+    enabled: !pointsOverride, // 有覆盖数据时禁用 API 请求
   })
+
+  // 合并数据：覆盖优先
+  const pointsInfo = useMemo<PointsInfo | undefined>(() => {
+    if (pointsOverride) {
+      return {
+        balance: pointsOverride.balance ?? 0,
+        totalEarned: 0,
+        totalUsed: 0,
+        expiringSoon: 0,
+      }
+    }
+    return apiPointsInfo
+  }, [pointsOverride, apiPointsInfo])
+
+  // 积分规则（覆盖数据）
+  const overrideRules = pointsOverride?.rules
+
+  // 加载状态
+  const isLoading = !pointsOverride && isApiLoading
+  const isError = !pointsOverride && isApiError
 
   return (
     <div
@@ -58,19 +89,18 @@ export function PointsPage({ themeSettings, isDarkMode, onNavigate }: PointsPage
 
       {/* 积分卡片 */}
       <div className="px-4 py-4">
-        {/* 加载中 */}
+        {/* 加载中 - 骨架屏 */}
         {isLoading && (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-gray-400 text-sm">加载中...</div>
-          </div>
+          <ListSkeleton count={4} variant="row" isDarkMode={isDarkMode} />
         )}
 
-        {/* 请求失败 */}
+        {/* 请求失败 - 带重试按钮 */}
         {isError && (
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="text-4xl mb-2">😔</div>
-            <div className="text-gray-400 text-sm">加载失败，请稍后重试</div>
-          </div>
+          <ErrorRetry
+            onRetry={() => refetch()}
+            isDarkMode={isDarkMode}
+            primaryColor={themeSettings.primaryColor}
+          />
         )}
 
         {/* 积分信息 */}
@@ -84,20 +114,33 @@ export function PointsPage({ themeSettings, isDarkMode, onNavigate }: PointsPage
               onViewRecords={() => onNavigate?.('points-records')}
             />
 
-            {/* 积分任务 */}
+            {/* 积分规则（覆盖数据）或积分任务（默认） */}
             <div className="mt-4">
               <div className={`text-sm font-medium mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                赚取积分
+                {overrideRules ? '积分规则' : '赚取积分'}
               </div>
               <div className="space-y-2">
-                {POINTS_TASKS.map((task) => (
-                  <TaskItem
-                    key={task.id}
-                    task={task}
-                    themeSettings={themeSettings}
-                    isDarkMode={isDarkMode}
-                  />
-                ))}
+                {overrideRules ? (
+                  // 显示覆盖的积分规则
+                  overrideRules.map((rule) => (
+                    <RuleItem
+                      key={rule.id}
+                      rule={rule}
+                      themeSettings={themeSettings}
+                      isDarkMode={isDarkMode}
+                    />
+                  ))
+                ) : (
+                  // 显示默认积分任务
+                  POINTS_TASKS.map((task) => (
+                    <TaskItem
+                      key={task.id}
+                      task={task}
+                      themeSettings={themeSettings}
+                      isDarkMode={isDarkMode}
+                    />
+                  ))
+                )}
               </div>
             </div>
 
@@ -118,12 +161,12 @@ export function PointsPage({ themeSettings, isDarkMode, onNavigate }: PointsPage
                     <div className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                       积分商城
                     </div>
-                    <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    <div className={`text-xs ${getSecondaryTextClass(isDarkMode)}`}>
                       用积分兑换精美礼品
                     </div>
                   </div>
                 </div>
-                <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                <span className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>
                   →
                 </span>
               </div>
@@ -214,7 +257,7 @@ function TaskItem({ task, themeSettings, isDarkMode }: TaskItemProps) {
           <div className={`text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
             {task.name}
           </div>
-          <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+          <div className={`text-xs ${getSecondaryTextClass(isDarkMode)}`}>
             +{task.points} 积分
           </div>
         </div>
@@ -225,6 +268,57 @@ function TaskItem({ task, themeSettings, isDarkMode }: TaskItemProps) {
       >
         {task.completed ? '已完成' : '去完成'}
       </button>
+    </div>
+  )
+}
+
+// ============================================================================
+// 积分规则项子组件（管理后台预览用）
+// ============================================================================
+
+interface RuleItemProps {
+  rule: PointRuleOverride
+  themeSettings: ThemeSettings
+  isDarkMode: boolean
+}
+
+function RuleItem({ rule, themeSettings, isDarkMode }: RuleItemProps) {
+  const isEarn = rule.type === 'earn'
+  const icon = isEarn ? '📥' : '📤'
+  const pointsText = isEarn ? `+${rule.points}` : `-${rule.points}`
+
+  return (
+    <div
+      className="flex items-center justify-between p-3 rounded-lg"
+      style={{
+        backgroundColor: isDarkMode ? '#2a2a2a' : '#fff',
+      }}
+    >
+      <div className="flex items-center gap-3">
+        <span className="text-xl">{icon}</span>
+        <div>
+          <div className={`text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+            {rule.name}
+          </div>
+          {rule.description && (
+            <div className={`text-xs ${getSecondaryTextClass(isDarkMode)}`}>
+              {rule.description}
+            </div>
+          )}
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <span
+          className={`text-sm font-medium ${isEarn ? 'text-green-500' : 'text-red-500'}`}
+        >
+          {pointsText} 积分
+        </span>
+        {rule.isActive === false && (
+          <span className="px-2 py-0.5 rounded text-xs bg-gray-200 text-gray-500">
+            已禁用
+          </span>
+        )}
+      </div>
     </div>
   )
 }

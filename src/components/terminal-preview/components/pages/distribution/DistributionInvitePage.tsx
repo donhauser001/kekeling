@@ -13,6 +13,7 @@ import { ChevronLeft, RefreshCw, Copy, Share2, Gift, Users } from 'lucide-react'
 import type { ThemeSettings, PreviewViewerRole } from '../../../types'
 import { previewApi } from '../../../api'
 import { PermissionPrompt } from '../../PermissionPrompt'
+import { formatMoney } from '../../../utils'
 
 // ============================================================================
 // 类型定义
@@ -23,7 +24,7 @@ export interface DistributionInvitePageProps {
   isDarkMode: boolean
   effectiveViewerRole: PreviewViewerRole
   onNavigate?: (page: string, params?: Record<string, string>) => void
-  onLoginClick?: () => void
+  onLogin?: () => void
 }
 
 // ============================================================================
@@ -35,7 +36,7 @@ export function DistributionInvitePage({
   isDarkMode,
   effectiveViewerRole,
   onNavigate,
-  onLoginClick,
+  onLogin,
 }: DistributionInvitePageProps) {
   const isEscort = effectiveViewerRole === 'escort'
 
@@ -90,7 +91,7 @@ export function DistributionInvitePage({
         <PermissionPrompt
           title="需要陪诊员身份"
           description="请先登录陪诊员账号获取邀请信息"
-          onLogin={onLoginClick}
+          onLogin={onLogin}
           showDebugInject={process.env.NODE_ENV === 'development'}
           primaryColor={themeSettings.primaryColor}
           isDarkMode={isDarkMode}
@@ -174,7 +175,7 @@ export function DistributionInvitePage({
                     <span>每次奖励</span>
                   </div>
                   <div className="text-white text-2xl font-bold mt-1">
-                    ¥{inviteData.rewardPerInvite.toFixed(2)}
+                    ¥{formatMoney(inviteData.rewardPerInvite)}
                   </div>
                 </div>
               </div>
@@ -292,7 +293,7 @@ export function DistributionInvitePage({
               </div>
               <ul className={`text-xs space-y-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                 <li>• 好友通过您的邀请码或链接注册成为陪诊员</li>
-                <li>• 好友完成首单后，您将获得 ¥{inviteData.rewardPerInvite.toFixed(2)} 奖励</li>
+                <li>• 好友完成首单后，您将获得 ¥{formatMoney(inviteData.rewardPerInvite)} 奖励</li>
                 <li>• 奖励将在好友首单完成后 7 个工作日内发放</li>
                 <li>• 邀请无上限，多邀多得</li>
               </ul>

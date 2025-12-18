@@ -25,6 +25,7 @@ import { MessageButton } from '@/components/message-button'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { ProfileDropdown } from '@/components/profile-dropdown'
+import { TerminalPreview } from '@/components/terminal-preview'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -304,143 +305,158 @@ export function DistributionSettings() {
           </div>
         </div>
 
-        {/* 等级列表 */}
-        {isLoading ? (
-          <div className="flex h-64 items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
-        ) : error ? (
-          <Card>
-            <CardContent className="flex h-64 items-center justify-center">
-              <div className="text-center">
-                <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground" />
-                <p className="mt-2 text-muted-foreground">加载失败</p>
+        {/* 双栏布局：左侧设置 + 右侧预览 */}
+        <div className='flex gap-6'>
+          {/* 左侧：分销等级设置 */}
+          <div className='flex-1'>
+            {/* 等级列表 */}
+            {isLoading ? (
+              <div className="flex h-64 items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
-            </CardContent>
-          </Card>
-        ) : !levels || levels.length === 0 ? (
-          <Card>
-            <CardContent className="flex h-64 flex-col items-center justify-center">
-              <Settings className="h-12 w-12 text-muted-foreground" />
-              <p className="mt-4 text-lg font-medium">暂无分销等级</p>
-              <p className="text-muted-foreground">点击上方按钮初始化默认等级或手动添加</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {levels.map((level) => (
-              <Card key={level.id} className="relative overflow-hidden">
-                {/* 顶部颜色条 */}
-                <div
-                  className="absolute top-0 left-0 right-0 h-1"
-                  style={{ backgroundColor: level.color }}
-                />
-
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="flex h-10 w-10 items-center justify-center rounded-lg"
-                        style={{
-                          backgroundColor: level.bgColor || '#f3f4f6',
-                          color: level.color,
-                        }}
-                      >
-                        {getIconComponent(level.icon)}
-                      </div>
-                      <div>
-                        <CardTitle className="text-lg">{level.name}</CardTitle>
-                        <p className="text-sm text-muted-foreground">
-                          Level {level.level} · {level.code}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex gap-1">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8"
-                        onClick={() => handleEdit(level)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8 text-destructive hover:text-destructive"
-                        onClick={() => {
-                          setSelectedLevel(level)
-                          setDeleteDialogOpen(true)
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+            ) : error ? (
+              <Card>
+                <CardContent className="flex h-64 items-center justify-center">
+                  <div className="text-center">
+                    <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground" />
+                    <p className="mt-2 text-muted-foreground">加载失败</p>
                   </div>
-                </CardHeader>
-
-                <CardContent>
-                  {level.description && (
-                    <p className="mb-3 text-sm text-muted-foreground">
-                      {level.description}
-                    </p>
-                  )}
-
-                  <div className="flex flex-wrap gap-2">
-                    <Badge variant="secondary">
-                      分润 {level.commissionRate}%
-                    </Badge>
-                    <Badge variant="outline">
-                      {level.memberCount} 名成员
-                    </Badge>
-                    {level.isDefault && (
-                      <Badge variant="default">默认等级</Badge>
-                    )}
-                    {level.status === 'inactive' && (
-                      <Badge variant="destructive">已禁用</Badge>
-                    )}
-                  </div>
-
-                  {level.promotionConfig && (
-                    <div className="mt-3 rounded-md bg-muted/50 p-2 text-xs text-muted-foreground">
-                      <p className="font-medium mb-1">晋升条件：</p>
-                      <ul className="space-y-0.5">
-                        {level.promotionConfig.minOrders && (
-                          <li>• 完成 {level.promotionConfig.minOrders} 单</li>
-                        )}
-                        {level.promotionConfig.minRating && (
-                          <li>• 评分 ≥ {level.promotionConfig.minRating}</li>
-                        )}
-                        {level.promotionConfig.minDirectInvites && (
-                          <li>• 直推 ≥ {level.promotionConfig.minDirectInvites} 人（仅注册）</li>
-                        )}
-                        {level.promotionConfig.minValidDirectInvites && (
-                          <li>• 有效直推 ≥ {level.promotionConfig.minValidDirectInvites} 人
-                            {level.promotionConfig.directInviteMinOrders && level.promotionConfig.directInviteMinOrders > 1
-                              ? `（每人≥${level.promotionConfig.directInviteMinOrders}单）`
-                              : '（每人≥1单）'}
-                          </li>
-                        )}
-                        {level.promotionConfig.minActiveMonths && (
-                          <li>• 活跃 ≥ {level.promotionConfig.minActiveMonths} 个月</li>
-                        )}
-                        {level.promotionConfig.minTeamSize && (
-                          <li>• 团队 ≥ {level.promotionConfig.minTeamSize} 人</li>
-                        )}
-                        {level.promotionConfig.minTeamMonthlyOrders && (
-                          <li>• 团队月订单 ≥ {level.promotionConfig.minTeamMonthlyOrders} 单</li>
-                        )}
-                        {level.promotionConfig.requireReview && (
-                          <li>• 需要平台审核</li>
-                        )}
-                      </ul>
-                    </div>
-                  )}
                 </CardContent>
               </Card>
-            ))}
+            ) : !levels || levels.length === 0 ? (
+              <Card>
+                <CardContent className="flex h-64 flex-col items-center justify-center">
+                  <Settings className="h-12 w-12 text-muted-foreground" />
+                  <p className="mt-4 text-lg font-medium">暂无分销等级</p>
+                  <p className="text-muted-foreground">点击上方按钮初始化默认等级或手动添加</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {levels.map((level) => (
+                  <Card key={level.id} className="relative overflow-hidden">
+                    {/* 顶部颜色条 */}
+                    <div
+                      className="absolute top-0 left-0 right-0 h-1"
+                      style={{ backgroundColor: level.color }}
+                    />
+
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="flex h-10 w-10 items-center justify-center rounded-lg"
+                            style={{
+                              backgroundColor: level.bgColor || '#f3f4f6',
+                              color: level.color,
+                            }}
+                          >
+                            {getIconComponent(level.icon)}
+                          </div>
+                          <div>
+                            <CardTitle className="text-lg">{level.name}</CardTitle>
+                            <p className="text-sm text-muted-foreground">
+                              Level {level.level} · {level.code}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8"
+                            onClick={() => handleEdit(level)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 text-destructive hover:text-destructive"
+                            onClick={() => {
+                              setSelectedLevel(level)
+                              setDeleteDialogOpen(true)
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardHeader>
+
+                    <CardContent>
+                      {level.description && (
+                        <p className="mb-3 text-sm text-muted-foreground">
+                          {level.description}
+                        </p>
+                      )}
+
+                      <div className="flex flex-wrap gap-2">
+                        <Badge variant="secondary">
+                          分润 {level.commissionRate}%
+                        </Badge>
+                        <Badge variant="outline">
+                          {level.memberCount} 名成员
+                        </Badge>
+                        {level.isDefault && (
+                          <Badge variant="default">默认等级</Badge>
+                        )}
+                        {level.status === 'inactive' && (
+                          <Badge variant="destructive">已禁用</Badge>
+                        )}
+                      </div>
+
+                      {level.promotionConfig && (
+                        <div className="mt-3 rounded-md bg-muted/50 p-2 text-xs text-muted-foreground">
+                          <p className="font-medium mb-1">晋升条件：</p>
+                          <ul className="space-y-0.5">
+                            {level.promotionConfig.minOrders && (
+                              <li>• 完成 {level.promotionConfig.minOrders} 单</li>
+                            )}
+                            {level.promotionConfig.minRating && (
+                              <li>• 评分 ≥ {level.promotionConfig.minRating}</li>
+                            )}
+                            {level.promotionConfig.minDirectInvites && (
+                              <li>• 直推 ≥ {level.promotionConfig.minDirectInvites} 人（仅注册）</li>
+                            )}
+                            {level.promotionConfig.minValidDirectInvites && (
+                              <li>• 有效直推 ≥ {level.promotionConfig.minValidDirectInvites} 人
+                                {level.promotionConfig.directInviteMinOrders && level.promotionConfig.directInviteMinOrders > 1
+                                  ? `（每人≥${level.promotionConfig.directInviteMinOrders}单）`
+                                  : '（每人≥1单）'}
+                              </li>
+                            )}
+                            {level.promotionConfig.minActiveMonths && (
+                              <li>• 活跃 ≥ {level.promotionConfig.minActiveMonths} 个月</li>
+                            )}
+                            {level.promotionConfig.minTeamSize && (
+                              <li>• 团队 ≥ {level.promotionConfig.minTeamSize} 人</li>
+                            )}
+                            {level.promotionConfig.minTeamMonthlyOrders && (
+                              <li>• 团队月订单 ≥ {level.promotionConfig.minTeamMonthlyOrders} 单</li>
+                            )}
+                            {level.promotionConfig.requireReview && (
+                              <li>• 需要平台审核</li>
+                            )}
+                          </ul>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </div>
-        )}
+
+          {/* 右侧：终端预览器 */}
+          <div className='hidden xl:block sticky top-4 h-fit'>
+            <TerminalPreview
+              page='distribution'
+              containerWidth={375}
+              containerHeight={680}
+            />
+          </div>
+        </div>
       </Main>
 
       {/* 编辑/创建对话框 */}

@@ -1,100 +1,44 @@
 # ============================================
 # 科科灵陪诊平台 Docker Compose (开发环境)
 # ============================================
-# 启动全部:  docker-compose -f docker-compose.dev.yml up -d
-# 只启动DB:  docker-compose -f docker-compose.dev.yml up -d postgres adminer
-# 停止:      docker-compose -f docker-compose.dev.yml down
-# 查看日志:  docker-compose -f docker-compose.dev.yml logs -f
+# ⚠️ 警告：此配置仅用于本地开发，禁止在生产环境使用！
+# 包含：
+# - PostgreSQL 数据库
+# - 后端 API 服务（热重载）
+# - Adminer 数据库管理工具
+#
+# 使用方法：
+# ./start.sh              # 一键启动全部
+# docker-compose -f docker-compose.dev.yml up -d
 # ============================================
 
 services:
   # ==========================================
-  # PostgreSQL 数据库 (开发)
+  # PostgreSQL 数据库 (开发环境)
   # ==========================================
   postgres:
     image: postgres:15-alpine
     container_name: kekeling-postgres-dev
     restart: unless-stopped
     environment:
-      POSTGRES_USER: kekeling
-      POSTGRES_PASSWORD: kekeling123
-      POSTGRES_DB: kekeling
+      POSTGRES_USER: ${POSTGRES_USER:-kekeling}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-kekeling_dev_123}
+      POSTGRES_DB: ${POSTGRES_DB:-kekeling}
       TZ: Asia/Shanghai
     volumes:
-      - postgres_dev_data:/var/lib/postgresql/data
+      - postgres_data_dev:/var/lib/postgresql/data
     ports:
-      - "5434:5432"
+      - "${POSTGRES_PORT:-5434}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U kekeling -d kekeling"]
+      test: [ "CMD-SHELL", "pg_isready -U kekeling -d kekeling" ]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - kekeling-dev-network
+      - kekeling-network-dev
 
   # ==========================================
-  # Adminer - 数据库管理工具
-  # ==========================================
-  adminer:
-    image: adminer:latest
-    container_name: kekeling-adminer-dev
-    restart: unless-stopped
-    ports:
-      - "8080:8080"
-    depends_on:
-      - postgres
-    environment:
-      ADMINER_DEFAULT_SERVER: postgres
-    networks:
-      - kekeling-dev-network
-
-  # ==========================================
-  # 后端 API 服务 (开发环境)
-  # ==========================================
-  api:
-    build:
-      context: ./server
-      dockerfile: Dockerfile
-    container_name: kekeling-api-dev
-    restart: unless-stopped
-    environment:
-      NODE_ENV: development
-      PORT: 3000
-      DATABASE_URL: postgresql://kekeling:kekeling123@postgres:5432/kekeling?schema=public
-      JWT_SECRET: kekeling-jwt-secret-dev
-      JWT_EXPIRES_IN: 7d
-    ports:
-      - "3000:3000"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - kekeling-dev-network
-    profiles:
-      - full
-
-  # ==========================================
-  # 管理后台 (开发环境)
-  # ==========================================
-  admin:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        - VITE_API_BASE_URL=/api
-    container_name: kekeling-admin-dev
-    restart: unless-stopped
-    ports:
-      - "80:80"
-    depends_on:
-      - api
-    networks:
-      - kekeling-dev-network
-    profiles:
-      - full
-
-  # ==========================================
-  # Redis (可选，用于缓存)
+  # Redis 缓存 (开发环境)
   # ==========================================
   redis:
     image: redis:7-alpine
@@ -102,25 +46,75 @@ services:
     restart: unless-stopped
     ports:
       - "6379:6379"
-    volumes:
-      - redis_dev_data:/data
     networks:
-      - kekeling-dev-network
-    profiles:
-      - cache
+      - kekeling-network-dev
+
+  # ==========================================
+  # 后端 API 服务 (开发环境 - 热重载)
+  # ==========================================
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile.dev
+    container_name: kekeling-backend-dev
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://kekeling:kekeling_dev_123@postgres:5432/kekeling
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:-kekeling_jwt_secret_dev_only}
+      PORT: 3456
+      TZ: Asia/Shanghai
+    volumes:
+      # 映射整个 server 目录实现热重载
+      - ./server:/app:delegated
+      # 使用命名卷保存 node_modules（避免 host/container 冲突）
+      - backend_node_modules:/app/node_modules
+    ports:
+      - "3456:3456"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    healthcheck:
+      # 使用 HTTPS 并跳过自签名证书验证
+      test: [ "CMD", "wget", "--no-verbose", "--no-check-certificate", "--tries=1", "--spider", "https://localhost:3456/api/home/stats" ]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+    networks:
+      - kekeling-network-dev
+
+  # ==========================================
+  # Adminer - 数据库管理工具 (开发环境)
+  # ==========================================
+  adminer:
+    image: adminer:latest
+    container_name: kekeling-adminer-dev
+    restart: unless-stopped
+    ports:
+      - "${ADMINER_PORT:-8080}:8080"
+    depends_on:
+      - postgres
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+    networks:
+      - kekeling-network-dev
 
 # ==========================================
 # 数据卷
 # ==========================================
 volumes:
-  postgres_dev_data:
+  postgres_data_dev:
     driver: local
-  redis_dev_data:
+  backend_node_modules:
     driver: local
 
 # ==========================================
 # 网络
 # ==========================================
 networks:
-  kekeling-dev-network:
+  kekeling-network-dev:
     driver: bridge

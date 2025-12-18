@@ -12,6 +12,7 @@ import {
 
 type DataTableViewOptionsProps<TData> = {
   table: Table<TData>
+  className?: string
 }
 
 /**
@@ -39,6 +40,7 @@ function getColumnDisplayName<TData>(
 
 export function DataTableViewOptions<TData>({
   table,
+  className,
 }: DataTableViewOptionsProps<TData>) {
   return (
     <DropdownMenu modal={false}>
@@ -46,7 +48,7 @@ export function DataTableViewOptions<TData>({
         <Button
           variant='outline'
           size='sm'
-          className='ms-auto hidden h-8 lg:flex'
+          className={className || 'ms-auto hidden h-8 lg:flex'}
         >
           <MixerHorizontalIcon className='size-4' />
           显示列

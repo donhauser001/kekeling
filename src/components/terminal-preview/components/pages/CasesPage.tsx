@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils'
 import type { ThemeSettings, BannerAreaData } from '../../types'
 import { previewApi } from '../../api'
 import { BannerSection } from '../BannerSection'
+import { isBrowserEnvironment } from '../../platform/env'
 
 interface CasesPageProps {
   themeSettings: ThemeSettings
@@ -138,6 +139,7 @@ export function CasesPage({ themeSettings, isDarkMode = false, bannerData: banne
             bannerData={bannerData}
             themeSettings={themeSettings}
             autoPlayInterval={3000}
+            className='pb-3'
           />
         </div>
       )}
@@ -147,10 +149,12 @@ export function CasesPage({ themeSettings, isDarkMode = false, bannerData: banne
         className='sticky top-0 z-10 overflow-x-auto px-3 py-2'
         style={{ backgroundColor: headerBg, borderBottom: `1px solid ${borderColor}` }}
       >
-        <style>{`
-          .case-tab-scroll::-webkit-scrollbar { display: none; }
-          .case-tab-scroll { scrollbar-width: none; -ms-overflow-style: none; }
-        `}</style>
+        {isBrowserEnvironment() && (
+          <style>{`
+            .case-tab-scroll::-webkit-scrollbar { display: none; }
+            .case-tab-scroll { scrollbar-width: none; -ms-overflow-style: none; }
+          `}</style>
+        )}
         <div className='case-tab-scroll flex gap-2 overflow-x-auto'>
           {caseTabs.map(tab => (
             <div

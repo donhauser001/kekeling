@@ -138,6 +138,29 @@ export class EscortAppService {
     return escort;
   }
 
+  // 更新陪诊员资料
+  async updateProfile(
+    userId: string,
+    data: {
+      name?: string;
+      avatar?: string;
+      gender?: string;
+      introduction?: string;
+    },
+  ) {
+    const escortId = await this.getEscortId(userId);
+
+    return this.prisma.escort.update({
+      where: { id: escortId },
+      data: {
+        name: data.name,
+        avatar: data.avatar,
+        gender: data.gender,
+        introduction: data.introduction,
+      },
+    });
+  }
+
   // 获取陪诊员统计数据
   async getStats(userId: string) {
     const escort = await this.prisma.escort.findFirst({

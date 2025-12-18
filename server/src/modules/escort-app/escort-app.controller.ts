@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Param, Query, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Put, Param, Query, Body, UseGuards, Request } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { EscortAppService } from './escort-app.service';
 
@@ -11,6 +11,20 @@ export class EscortAppController {
   @Get('profile')
   async getProfile(@Request() req) {
     return this.escortAppService.getProfile(req.user.userId);
+  }
+
+  // 更新陪诊员资料
+  @Put('profile')
+  async updateProfile(
+    @Request() req,
+    @Body() data: {
+      name?: string;
+      avatar?: string;
+      gender?: string;
+      introduction?: string;
+    },
+  ) {
+    return this.escortAppService.updateProfile(req.user.userId, data);
   }
 
   // 获取统计数据

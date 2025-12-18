@@ -1,8 +1,11 @@
 /**
  * 滚动指示器组件
+ *
+ * 使用跨宿主原语组件实现，支持 Web 和小程序环境
  */
 
 import { cn } from '@/lib/utils'
+import { Box } from '../ui/primitives'
 import type { ThemeSettings } from '../types'
 
 interface ScrollIndicatorProps {
@@ -13,15 +16,15 @@ interface ScrollIndicatorProps {
 
 export function ScrollIndicator({ show, progress, themeSettings }: ScrollIndicatorProps) {
   return (
-    <div
+    <Box
       className={cn(
         'absolute right-1.5 top-1/2 -translate-y-1/2 transition-opacity duration-300',
         show ? 'opacity-100' : 'opacity-0'
       )}
     >
-      <div className='flex flex-col gap-1'>
+      <Box className='flex flex-col gap-1'>
         {[0, 0.25, 0.5, 0.75, 1].map((pos, i) => (
-          <div
+          <Box
             key={i}
             className={cn(
               'h-1.5 w-1.5 rounded-full transition-all duration-200',
@@ -36,7 +39,7 @@ export function ScrollIndicator({ show, progress, themeSettings }: ScrollIndicat
             }}
           />
         ))}
-      </div>
-    </div>
+      </Box>
+    </Box>
   )
 }

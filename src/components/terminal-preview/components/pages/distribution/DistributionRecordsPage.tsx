@@ -14,6 +14,8 @@ import { ChevronLeft, RefreshCw, Clock, CheckCircle2, XCircle } from 'lucide-rea
 import type { ThemeSettings, PreviewViewerRole, DistributionRecord } from '../../../types'
 import { previewApi } from '../../../api'
 import { PermissionPrompt } from '../../PermissionPrompt'
+import { formatMoney, getSecondaryTextClass, getTertiaryTextClass } from '../../../utils'
+import { getRefreshingClass } from '../../PageTransition'
 
 // ============================================================================
 // 类型定义
@@ -26,7 +28,7 @@ export interface DistributionRecordsPageProps {
   /** 路由参数：range/status 筛选 */
   pageParams?: Record<string, string>
   onNavigate?: (page: string, params?: Record<string, string>) => void
-  onLoginClick?: () => void
+  onLogin?: () => void
 }
 
 type RangeFilter = '7d' | '30d' | 'all'
@@ -42,7 +44,7 @@ export function DistributionRecordsPage({
   effectiveViewerRole,
   pageParams,
   onNavigate,
-  onLoginClick,
+  onLogin,
 }: DistributionRecordsPageProps) {
   const isEscort = effectiveViewerRole === 'escort'
 
@@ -59,6 +61,7 @@ export function DistributionRecordsPage({
     data: recordsData,
     isLoading,
     isError,
+    isFetching,
     refetch,
   } = useQuery({
     queryKey: ['preview', 'distribution', 'records', rangeFilter, statusFilter],
@@ -98,7 +101,7 @@ export function DistributionRecordsPage({
         <PermissionPrompt
           title="需要陪诊员身份"
           description="请先登录陪诊员账号查看分润记录"
-          onLogin={onLoginClick}
+          onLogin={onLogin}
           showDebugInject={process.env.NODE_ENV === 'development'}
           primaryColor={themeSettings.primaryColor}
           isDarkMode={isDarkMode}
@@ -198,7 +201,7 @@ export function DistributionRecordsPage({
         {isError && (
           <div className="flex flex-col items-center justify-center py-12">
             <div className="text-4xl mb-2">😔</div>
-            <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            <div className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>
               加载失败
             </div>
             <button
@@ -212,19 +215,28 @@ export function DistributionRecordsPage({
           </div>
         )}
 
-        {/* 空态 */}
+        {/* 空态 - Step 14.21: 添加查看规则按钮 */}
         {!isLoading && !isError && recordsData && recordsData.items.length === 0 && (
           <div className="flex flex-col items-center justify-center py-12">
             <div className="text-4xl mb-2">📋</div>
-            <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            <div className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>
               暂无分润记录
             </div>
+            {onNavigate && (
+              <button
+                onClick={() => onNavigate('distribution-promotion')}
+                className="mt-4 px-4 py-2 rounded-lg text-sm font-medium text-white"
+                style={{ backgroundColor: themeSettings.primaryColor }}
+              >
+                查看分润规则
+              </button>
+            )}
           </div>
         )}
 
-        {/* 记录列表 */}
+        {/* 记录列表 - Step 14.10-C: 刷新过渡效果 */}
         {!isLoading && !isError && recordsData && recordsData.items.length > 0 && (
-          <div className="space-y-3 pb-4">
+          <div className={`space-y-3 pb-4 ${getRefreshingClass(isFetching, recordsData.items.length > 0)}`}>
             {recordsData.items.map((record) => (
               <RecordCard
                 key={record.id}
@@ -254,8 +266,8 @@ interface RecordCardProps {
 }
 
 function RecordCard({ record, themeSettings, isDarkMode }: RecordCardProps) {
-  // 状态图标和颜色
-  const statusConfig = {
+  // 状态图标和颜色 - Step 14.14: 添加 default 处理未知枚举值
+  const statusConfig: Record<string, { icon: React.ReactNode; color: string; label: string }> = {
     pending: {
       icon: <Clock className="w-4 h-4" />,
       color: '#f59e0b',
@@ -271,9 +283,15 @@ function RecordCard({ record, themeSettings, isDarkMode }: RecordCardProps) {
       color: '#ef4444',
       label: '已取消',
     },
+    // Step 14.14: 未知状态降级
+    default: {
+      icon: <Clock className="w-4 h-4" />,
+      color: '#9ca3af',
+      label: '未知状态',
+    },
   }
 
-  const config = statusConfig[record.status]
+  const config = statusConfig[record.status] ?? statusConfig.default
 
   // 类型标签
   const typeLabels: Record<string, string> = {
@@ -307,20 +325,20 @@ function RecordCard({ record, themeSettings, isDarkMode }: RecordCardProps) {
 
           {/* 来源信息 */}
           {record.sourceEscortName && (
-            <div className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            <div className={`text-xs mt-1 ${getSecondaryTextClass(isDarkMode)}`}>
               来自：{record.sourceEscortName}
             </div>
           )}
 
           {/* 订单号 */}
           {record.orderNo && (
-            <div className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            <div className={`text-xs mt-1 ${getSecondaryTextClass(isDarkMode)}`}>
               订单号：{record.orderNo}
             </div>
           )}
 
           {/* 时间 */}
-          <div className={`text-xs mt-2 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+          <div className={`text-xs mt-2 ${getTertiaryTextClass(isDarkMode)}`}>
             {record.createdAt}
             {record.settledAt && ` · 结算于 ${record.settledAt}`}
           </div>
@@ -335,7 +353,7 @@ function RecordCard({ record, themeSettings, isDarkMode }: RecordCardProps) {
               textDecoration: record.status === 'cancelled' ? 'line-through' : 'none',
             }}
           >
-            +¥{record.amount.toFixed(2)}
+            +¥{formatMoney(record.amount)}
           </span>
           <div
             className="flex items-center gap-1 mt-1"

@@ -12,22 +12,29 @@
  * @see src/components/terminal-preview/DEV_NOTES.md
  */
 
-import { useState, useEffect, useMemo, useCallback } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useState, useEffect, useMemo, useCallback, Suspense, useRef } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { cn } from '@/lib/utils'
 import { previewApi } from './api'
+import { Box } from './ui/primitives'
+import { isBrowserEnvironment, isWxEnvironment } from './platform/env'
 import {
   type TerminalPreviewProps,
   type ThemeSettings,
   type HomePageSettings,
   type StatsData,
   type ServiceTabType,
+  type BannerAreaData,
+  type ServiceCategory,
+  type RecommendedServicesData,
   defaultThemeSettings,
   defaultHomeSettings,
   defaultStatsData,
+  VALID_PAGE_KEYS,
 } from './types'
 import { useScrollDrag } from './hooks/useScrollDrag'
 import { useViewerRole } from './hooks/useViewerRole'
+import { useScrollRestore } from './hooks/useScrollRestore'
 import {
   BrandSection,
   SearchBar,
@@ -43,6 +50,8 @@ import {
   DebugPanel,
   shouldShowDebugPanel,
   EscortLoginDialog,
+  PreviewErrorBoundary,
+  PageTransition,
 } from './components'
 import { getUserToken } from './api'
 import {
@@ -50,7 +59,10 @@ import {
   setPreviewEscortToken,
   clearPreviewEscortToken,
 } from './session'
+import { validatePageParams, validateInitialPage } from './utils'
+import { PageLoadingSkeleton } from './components/PageLoadingSkeleton'
 import {
+  // 所有页面组件现在是 lazy 导入
   ServicesPage,
   ServiceDetailPage,
   CasesPage,
@@ -71,6 +83,27 @@ import {
   WorkbenchEarningsPage,
   WorkbenchWithdrawPage,
   OrderDetailPage,
+  WorkbenchSettingsPage,
+  ServiceTypesPage,
+  MyOrdersPage,
+  UserOrdersPage,
+  UserOrderDetailPage,
+  OrderComplaintPage,
+  // 就诊人管理
+  PatientsPage,
+  PatientEditPage,
+  // 下单页
+  CreateOrderPage,
+  // CMS 页面
+  CmsPageDetailPage,
+  HelpCenterPage,
+  ArticleDetailPage,
+  // 地址管理
+  AddressListPage,
+  AddressEditPage,
+  // 个人资料编辑
+  UserProfileEditPage,
+  EscortProfileEditPage,
   // 分销中心页面（Step 11.3-11.5）
   DistributionPage,
   DistributionMembersPage,
@@ -100,10 +133,19 @@ export function TerminalPreview({
   height = 680,
   showFrame = true,
   className,
+  // 服务详情预览
+  initialServiceId,
 }: TerminalPreviewProps) {
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<ServiceTabType>('recommended')
   const [isDarkMode, setIsDarkMode] = useState(false)
+
+  // ============================================================================
+  // 开发环境校验：初始页面是否允许作为入口
+  // ============================================================================
+  useEffect(() => {
+    validateInitialPage(initialPage)
+  }, [initialPage])
 
   // ============================================================================
   // Step 3 & 4: 视角角色推导 + DebugPanel 状态
@@ -160,7 +202,7 @@ export function TerminalPreview({
 
   // Step 4/7: 陪诊员登录成功处理
   const handleEscortLoginSuccess = useCallback((escortToken: string) => {
-    console.log('[TerminalPreview] 陪诊员登录成功，escortToken:', escortToken)
+    console.log('[TerminalPreview] 陪诊员登录成功，escortToken:', escortToken ? `${escortToken.slice(0, 6)}...${escortToken.slice(-4)}` : '无')
     setPreviewEscortToken(escortToken) // 持久化
     setLocalEscortToken(escortToken)   // 更新状态
     // useViewerRole 会自动触发验证并切换视角
@@ -169,20 +211,6 @@ export function TerminalPreview({
   // Step 4/7: 陪诊员入口点击处理
   const handleEscortEntryClick = useCallback(() => {
     setShowEscortLoginDialog(true)
-  }, [])
-
-  // Step 4/7: 进入工作台处理
-  const handleWorkbenchClick = useCallback(() => {
-    setCurrentPage('workbench')
-  }, [])
-
-  // Step 5/7: 退出陪诊员视角
-  const handleExitEscortMode = useCallback(() => {
-    console.log('[TerminalPreview] 退出陪诊员视角')
-    clearPreviewEscortToken()    // 清除持久化
-    setLocalEscortToken(null)    // 更新状态
-    setCurrentPage('profile')    // 回到我的页
-    // useViewerRole 会自动检测到 token 清除并切换回 user 视角
   }, [])
 
   // 获取 token 用于 DebugPanel 显示
@@ -197,43 +225,19 @@ export function TerminalPreview({
   void escortContext
 
   const [currentPage, setCurrentPage] = useState(initialPage)
-  const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null)
+  const [selectedServiceId, setSelectedServiceId] = useState<string | null>(initialServiceId ?? null)
+
+  // 同步外部 initialServiceId 的变化（用于服务编辑页面）
+  useEffect(() => {
+    if (initialServiceId !== undefined) {
+      setSelectedServiceId(initialServiceId)
+    }
+  }, [initialServiceId])
 
   // Step 9: 路由参数状态（用于传递 id 等参数到详情页）
   const [pageParams, setPageParams] = useState<Record<string, string>>({})
 
-  // 带参数的页面跳转
-  const navigateToPage = useCallback((page: string, params?: Record<string, string>) => {
-    setCurrentPage(page as typeof currentPage)
-    setPageParams(params ?? {})
-  }, [])
-
-  // 切换深色/浅色模式
-  const toggleDarkMode = () => setIsDarkMode(!isDarkMode)
-
-  // 刷新预览数据
-  const handleRefresh = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ['preview'] })
-    queryClient.invalidateQueries({ queryKey: ['homepageSettings'] })
-  }, [queryClient])
-
-  // 打开服务详情
-  const handleServiceClick = useCallback((serviceId: string) => {
-    setSelectedServiceId(serviceId)
-  }, [])
-
-  // 返回上一页（从服务详情页返回）
-  const handleBackFromDetail = useCallback(() => {
-    setSelectedServiceId(null)
-  }, [])
-
-  // 切换页面（同时清除服务详情页状态）
-  const handlePageChange = useCallback((page: typeof currentPage) => {
-    setSelectedServiceId(null)
-    setCurrentPage(page)
-  }, [])
-
-  // 触控滚动相关
+  // 触控滚动相关（必须在使用 scrollContainerRef 的 hooks 之前声明）
   const {
     scrollContainerRef,
     showScrollIndicator,
@@ -245,59 +249,158 @@ export function TerminalPreview({
     handleScroll,
   } = useScrollDrag()
 
-  // 获取主题设置
-  const { data: fetchedThemeSettings } = useQuery({
-    queryKey: ['preview', 'theme'],
-    queryFn: previewApi.getThemeSettings,
-    enabled: autoLoad,
-    staleTime: 60 * 1000,
-  })
+  // Step 14.11: 滚动位置恢复（必须在 useScrollDrag 之后，在使用 saveScrollPosition 的回调之前声明）
+  const {
+    saveScrollPosition,
+    restoreScrollPosition,
+    scrollToTop,
+  } = useScrollRestore(scrollContainerRef)
 
-  // 获取首页设置
-  const { data: fetchedHomeSettings } = useQuery({
-    queryKey: ['preview', 'homeSettings'],
-    queryFn: previewApi.getHomePageSettings,
-    enabled: autoLoad,
-    staleTime: 60 * 1000,
-  })
+  // 记录上一个页面，用于滚动位置恢复
+  const previousPageRef = useRef<string>(initialPage)
 
-  // 获取轮播图
-  const { data: fetchedBannerData } = useQuery({
-    queryKey: ['preview', 'banners', 'home'],
-    queryFn: () => previewApi.getBanners('home'),
-    enabled: autoLoad,
-    staleTime: 60 * 1000,
-  })
+  // 带参数的页面跳转（支持滚动位置恢复）
+  const navigateToPage = useCallback((page: string, params?: Record<string, string>) => {
+    // 开发环境校验参数
+    validatePageParams(page, params)
 
-  // 获取统计数据
-  const { data: fetchedStatsData } = useQuery({
-    queryKey: ['preview', 'stats'],
-    queryFn: previewApi.getStats,
-    enabled: autoLoad,
-    staleTime: 60 * 1000,
-  })
+    // Step 14.11: 保存当前页面的滚动位置
+    const currentPageKey = selectedServiceId
+      ? `${currentPage}-service-${selectedServiceId}`
+      : currentPage
+    saveScrollPosition(currentPageKey)
+    previousPageRef.current = currentPageKey
 
-  // 获取服务分类
-  const { data: fetchedCategories } = useQuery({
-    queryKey: ['preview', 'categories'],
-    queryFn: previewApi.getCategories,
-    enabled: autoLoad,
-    staleTime: 60 * 1000,
-  })
+    // 切换页面
+    setCurrentPage(page as typeof currentPage)
+    setPageParams(params ?? {})
 
-  // 获取推荐服务
-  const { data: fetchedRecommendedServices } = useQuery({
-    queryKey: ['preview', 'recommendedServices'],
-    queryFn: previewApi.getRecommendedServices,
-    enabled: autoLoad,
-    staleTime: 60 * 1000,
-  })
+    // 恢复目标页面的滚动位置（延迟执行，等待页面渲染）
+    const targetPageKey = page
+    restoreScrollPosition(targetPageKey, { delay: 50, fallbackToTop: true })
+  }, [currentPage, selectedServiceId, saveScrollPosition, restoreScrollPosition])
+
+  // Step 4/7: 进入工作台处理
+  const handleWorkbenchClick = useCallback(() => {
+    navigateToPage('workbench')
+  }, [navigateToPage])
+
+  // Step 5/7: 退出陪诊员视角
+  const handleExitEscortMode = useCallback(() => {
+    console.log('[TerminalPreview] 退出陪诊员视角')
+    clearPreviewEscortToken()    // 清除持久化
+    setLocalEscortToken(null)    // 更新状态
+    navigateToPage('profile')    // 回到我的页（同时清空 pageParams）
+    // useViewerRole 会自动检测到 token 清除并切换回 user 视角
+  }, [navigateToPage])
+
+  // 切换深色/浅色模式
+  const toggleDarkMode = () => setIsDarkMode(!isDarkMode)
+
+  // 刷新预览数据
+  const handleRefresh = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['preview'] })
+    queryClient.invalidateQueries({ queryKey: ['homepageSettings'] })
+  }, [queryClient])
+
+  // 打开服务详情
+  // Step 14.11: 保存列表页滚动位置
+  const handleServiceClick = useCallback((serviceId: string) => {
+    // 保存当前页面的滚动位置
+    saveScrollPosition(currentPage)
+    previousPageRef.current = currentPage
+
+    setSelectedServiceId(serviceId)
+
+    // 服务详情页默认滚动到顶部
+    scrollToTop()
+  }, [currentPage, saveScrollPosition, scrollToTop])
+
+  // 返回上一页（从服务详情页返回）
+  // Step 14.11: 恢复列表页滚动位置
+  const handleBackFromDetail = useCallback(() => {
+    // 保存服务详情页的滚动位置（以便再次进入时恢复）
+    if (selectedServiceId) {
+      const detailPageKey = `${currentPage}-service-${selectedServiceId}`
+      saveScrollPosition(detailPageKey)
+    }
+
+    setSelectedServiceId(null)
+
+    // 恢复列表页的滚动位置
+    restoreScrollPosition(currentPage, { delay: 50, fallbackToTop: true })
+  }, [currentPage, selectedServiceId, saveScrollPosition, restoreScrollPosition])
+
+  // 切换页面（同时清除服务详情页状态和 pageParams）
+  // Step 14.11: TabBar 切换时保持各 Tab 独立滚动位置
+  const handlePageChange = useCallback((page: typeof currentPage) => {
+    // 如果有服务详情页打开，保存其滚动位置
+    if (selectedServiceId) {
+      const detailPageKey = `${currentPage}-service-${selectedServiceId}`
+      saveScrollPosition(detailPageKey)
+    } else {
+      // 保存当前 Tab 的滚动位置
+      saveScrollPosition(currentPage)
+    }
+    previousPageRef.current = selectedServiceId
+      ? `${currentPage}-service-${selectedServiceId}`
+      : currentPage
+
+    // 清除服务详情状态
+    setSelectedServiceId(null)
+
+    // 切换页面
+    setCurrentPage(page)
+    setPageParams({})
+
+    // 恢复目标 Tab 的滚动位置
+    restoreScrollPosition(page, { delay: 50, fallbackToTop: true })
+  }, [currentPage, selectedServiceId, saveScrollPosition, restoreScrollPosition])
+
+  // ============================================================================
+  // 数据获取 - 使用 useState + useEffect（小程序环境 React Query 兼容性问题）
+  // ============================================================================
+  const [fetchedThemeSettings, setFetchedThemeSettings] = useState<ThemeSettings | null>(null)
+  const [fetchedHomeSettings, setFetchedHomeSettings] = useState<HomePageSettings | null>(null)
+  const [fetchedBannerData, setFetchedBannerData] = useState<BannerAreaData | null>(null)
+  const [fetchedStatsData, setFetchedStatsData] = useState<StatsData | null>(null)
+  const [fetchedCategories, setFetchedCategories] = useState<ServiceCategory[]>([])
+  const [fetchedRecommendedServices, setFetchedRecommendedServices] = useState<RecommendedServicesData | null>(null)
+
+  // 加载首页数据
+  useEffect(() => {
+    if (!autoLoad) return
+
+    // 并行加载所有数据
+    Promise.all([
+      previewApi.getThemeSettings().catch(() => null),
+      previewApi.getHomePageSettings().catch(() => null),
+      previewApi.getBanners('home').catch(() => null),
+      previewApi.getStats().catch(() => null),
+      previewApi.getCategories().catch(() => []),
+      previewApi.getRecommendedServices().catch(() => null),
+    ]).then(([theme, home, banners, stats, categories, recommended]) => {
+      if (theme) setFetchedThemeSettings(theme)
+      if (home) setFetchedHomeSettings(home)
+      if (banners) setFetchedBannerData(banners)
+      if (stats) setFetchedStatsData(stats)
+      if (categories) setFetchedCategories(categories)
+      if (recommended) setFetchedRecommendedServices(recommended)
+    })
+  }, [autoLoad])
 
   // 合并数据（优先使用 override）
   const themeSettings: ThemeSettings = useMemo(
     () => ({ ...defaultThemeSettings, ...fetchedThemeSettings, ...themeSettingsOverride }),
     [fetchedThemeSettings, themeSettingsOverride]
   )
+
+  // 调试：主题设置状态
+  console.log('[TerminalPreview] themeSettings:', {
+    headerLogo: themeSettings.headerLogo,
+    headerLogoDark: themeSettings.headerLogoDark,
+    hasFetchedData: !!fetchedThemeSettings,
+  })
 
   const homeSettings: HomePageSettings = useMemo(
     () => ({
@@ -340,18 +443,37 @@ export function TerminalPreview({
   const tabBarHeight = 56
 
   // 渲染首页内容
+  // 小程序环境需要额外的顶部安全区域（状态栏 + 胶囊按钮区域）
+  const wxSafeAreaTop = isWxEnvironment() ? 45 : 0
+
+  // 小程序环境的整体缩放比例（因为屏幕比 375px 设计稿更宽）
+  const wxScale = isWxEnvironment() ? 1.15 : 1
+
   const renderHomePage = () => (
     <>
       {/* 顶部渐变背景 */}
-      <div
-        className='absolute left-0 right-0 top-0 h-[200px] pointer-events-none'
+      <Box
         style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          top: 0,
+          height: 200 + wxSafeAreaTop,
+          pointerEvents: 'none',
           background: `linear-gradient(180deg, ${themeSettings.primaryColor} 0%, ${themeSettings.primaryColor} 15%, transparent 100%)`,
         }}
       />
 
       {/* 头部区域 - 品牌 */}
-      <div className='relative z-10 px-4 pb-4 pt-6'>
+      <Box
+        className='relative z-10'
+        style={{
+          paddingLeft: 16 * wxScale,
+          paddingRight: 16 * wxScale,
+          paddingTop: 24 * wxScale + wxSafeAreaTop,
+          paddingBottom: 16 * wxScale,
+        }}
+      >
         <BrandSection
           layout={themeSettings.headerLayout}
           lightLogo={themeSettings.headerLogo}
@@ -359,7 +481,7 @@ export function TerminalPreview({
           themeSettings={themeSettings}
           isDarkMode={isDarkMode}
         />
-      </div>
+      </Box>
 
       {/* 搜索框 */}
       <SearchBar isDarkMode={isDarkMode} />
@@ -372,10 +494,12 @@ export function TerminalPreview({
       />
 
       {/* 轮播图 */}
-      <BannerSection
-        bannerData={bannerData}
-        themeSettings={themeSettings}
-      />
+      <Box style={{ paddingBottom: 12 * wxScale }}>
+        <BannerSection
+          bannerData={bannerData}
+          themeSettings={themeSettings}
+        />
+      </Box>
 
       {/* 统计卡片 */}
       <StatsCard
@@ -405,12 +529,22 @@ export function TerminalPreview({
       />
 
       {/* 底部留白，避免内容被 TabBar 遮挡 */}
-      <div style={{ height: `${tabBarHeight}px` }} />
+      <Box style={{ height: `${tabBarHeight}px` }} />
     </>
   )
 
   // 根据页面类型渲染不同内容
   const renderPageContent = () => {
+    // 开发环境校验：未知 page key 警告
+    if (process.env.NODE_ENV === 'development') {
+      if (!VALID_PAGE_KEYS.includes(currentPage as typeof VALID_PAGE_KEYS[number])) {
+        console.warn(
+          `[TerminalPreview] Unknown page key: "${currentPage}". ` +
+          `Valid keys: ${VALID_PAGE_KEYS.join(', ')}`
+        )
+      }
+    }
+
     // 如果选中了服务，显示服务详情页
     if (selectedServiceId) {
       return (
@@ -419,6 +553,13 @@ export function TerminalPreview({
           themeSettings={themeSettings}
           isDarkMode={isDarkMode}
           onBack={handleBackFromDetail}
+          onServiceClick={handleServiceClick}
+          onNavigate={(page, params) => {
+            // 离开服务详情页时清除选中状态
+            setSelectedServiceId(null)
+            navigateToPage(page, params)
+          }}
+          effectiveViewerRole={effectiveViewerRole}
         />
       )
     }
@@ -430,6 +571,7 @@ export function TerminalPreview({
             themeSettings={themeSettings}
             isDarkMode={isDarkMode}
             onServiceClick={handleServiceClick}
+            effectiveViewerRole={effectiveViewerRole}
           />
         )
       case 'cases':
@@ -443,6 +585,7 @@ export function TerminalPreview({
             onEscortEntryClick={handleEscortEntryClick}
             onWorkbenchClick={handleWorkbenchClick}
             onExitEscortMode={handleExitEscortMode}
+            onNavigate={(page, params) => navigateToPage(page, params)}
           />
         )
 
@@ -460,7 +603,7 @@ export function TerminalPreview({
           <MembershipPage
             themeSettings={themeSettings}
             isDarkMode={isDarkMode}
-            onNavigate={(page) => setCurrentPage(page as typeof currentPage)}
+            onNavigate={(page) => navigateToPage(page)}
             membershipOverride={marketingData?.membership}
           />
         )
@@ -469,7 +612,7 @@ export function TerminalPreview({
           <MembershipPlansPage
             themeSettings={themeSettings}
             isDarkMode={isDarkMode}
-            onBack={() => setCurrentPage('membership')}
+            onBack={() => navigateToPage('membership')}
             plansOverride={marketingData?.membershipPlans}
           />
         )
@@ -478,7 +621,8 @@ export function TerminalPreview({
           <PointsPage
             themeSettings={themeSettings}
             isDarkMode={isDarkMode}
-            onNavigate={(page) => setCurrentPage(page as typeof currentPage)}
+            onNavigate={(page) => navigateToPage(page)}
+            pointsOverride={marketingData?.points}
           />
         )
       case 'points-records':
@@ -486,7 +630,7 @@ export function TerminalPreview({
           <PointsRecordsPage
             themeSettings={themeSettings}
             isDarkMode={isDarkMode}
-            onBack={() => setCurrentPage('points')}
+            onBack={() => navigateToPage('points')}
           />
         )
       case 'referrals':
@@ -494,6 +638,7 @@ export function TerminalPreview({
           <ReferralsPage
             themeSettings={themeSettings}
             isDarkMode={isDarkMode}
+            referralsOverride={marketingData?.referrals}
           />
         )
       case 'campaigns':
@@ -502,6 +647,7 @@ export function TerminalPreview({
             themeSettings={themeSettings}
             isDarkMode={isDarkMode}
             onNavigate={(page, params) => navigateToPage(page, params)}
+            campaignsOverride={marketingData?.campaigns}
           />
         )
       case 'campaigns-detail':
@@ -510,7 +656,7 @@ export function TerminalPreview({
             themeSettings={themeSettings}
             isDarkMode={isDarkMode}
             campaignId={pageParams.id}
-            onBack={() => setCurrentPage('campaigns')}
+            onBack={() => navigateToPage('campaigns')}
           />
         )
       case 'coupons-available':
@@ -518,7 +664,7 @@ export function TerminalPreview({
           <CouponsAvailablePage
             themeSettings={themeSettings}
             isDarkMode={isDarkMode}
-            onBack={() => setCurrentPage('coupons')}
+            onBack={() => navigateToPage('coupons')}
             availableCouponsOverride={marketingData?.availableCoupons}
           />
         )
@@ -538,7 +684,7 @@ export function TerminalPreview({
             themeSettings={themeSettings}
             isDarkMode={isDarkMode}
             escortId={pageParams.id}
-            onBack={() => setCurrentPage('escort-list')}
+            onBack={() => navigateToPage('escort-list')}
           />
         )
 
@@ -561,7 +707,7 @@ export function TerminalPreview({
             themeSettings={themeSettings}
             isDarkMode={isDarkMode}
             effectiveViewerRole={effectiveViewerRole}
-            onBack={() => setCurrentPage('workbench')}
+            onBack={() => navigateToPage('workbench')}
             onNavigate={(page, params) => navigateToPage(page, params)}
           />
         )
@@ -573,7 +719,7 @@ export function TerminalPreview({
             themeSettings={themeSettings}
             isDarkMode={isDarkMode}
             effectiveViewerRole={effectiveViewerRole}
-            onBack={() => setCurrentPage('workbench')}
+            onBack={() => navigateToPage('workbench')}
             onNavigate={(page, params) => navigateToPage(page, params)}
           />
         )
@@ -585,7 +731,7 @@ export function TerminalPreview({
             themeSettings={themeSettings}
             isDarkMode={isDarkMode}
             effectiveViewerRole={effectiveViewerRole}
-            onBack={() => setCurrentPage('workbench-earnings')}
+            onBack={() => navigateToPage('workbench-earnings')}
             onNavigate={(page, params) => navigateToPage(page, params)}
           />
         )
@@ -598,7 +744,118 @@ export function TerminalPreview({
             isDarkMode={isDarkMode}
             effectiveViewerRole={effectiveViewerRole}
             orderId={pageParams?.id}
-            onBack={() => setCurrentPage('workbench-orders-pool')}
+            onBack={() => navigateToPage('workbench-orders-pool')}
+            onNavigate={(page, params) => navigateToPage(page, params)}
+          />
+        )
+
+      // Step 13: 工作台设置
+      case 'workbench-settings':
+        return (
+          <WorkbenchSettingsPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            effectiveViewerRole={effectiveViewerRole}
+            onNavigate={(page, params) => navigateToPage(page, params)}
+            onLogin={() => setShowEscortLoginDialog(true)}
+          />
+        )
+
+      // 服务项目选择
+      case 'workbench-service-types':
+        return (
+          <ServiceTypesPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            onNavigate={(page: string, params?: Record<string, string>) => navigateToPage(page, params)}
+          />
+        )
+
+      // Step 14.13 FIX-P3-01: 我的订单页面（陪诊员）
+      case 'my-orders':
+        return (
+          <MyOrdersPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            effectiveViewerRole={effectiveViewerRole}
+            pageParams={pageParams}
+            onBack={() => navigateToPage('workbench')}
+            onNavigate={(page, params) => navigateToPage(page, params)}
+            onLogin={() => setShowEscortLoginDialog(true)}
+          />
+        )
+
+      // 下单页
+      case 'create-order':
+        return (
+          <CreateOrderPage
+            serviceId={pageParams?.serviceId || ''}
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            onBack={() => {
+              // 返回服务详情页
+              if (pageParams?.serviceId) {
+                setSelectedServiceId(pageParams.serviceId)
+              }
+              navigateToPage('services')
+            }}
+            onNavigate={(page, params) => navigateToPage(page, params)}
+          />
+        )
+
+      // 用户订单页面（普通用户）
+      case 'user-orders':
+        return (
+          <UserOrdersPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            pageParams={pageParams}
+            onBack={() => navigateToPage('profile')}
+            onNavigate={(page, params) => navigateToPage(page, params)}
+          />
+        )
+
+      // 用户订单详情页
+      case 'user-order-detail':
+        return (
+          <UserOrderDetailPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            orderId={pageParams?.id}
+            onBack={() => navigateToPage('user-orders')}
+            onNavigate={(page, params) => navigateToPage(page, params)}
+          />
+        )
+
+      // 订单投诉页
+      case 'order-complaint':
+        return (
+          <OrderComplaintPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            orderId={pageParams?.id}
+            onBack={() => navigateToPage('user-order-detail', { id: pageParams?.id || '' })}
+            onNavigate={(page, params) => navigateToPage(page, params)}
+          />
+        )
+
+      // 就诊人管理
+      case 'patients':
+        return (
+          <PatientsPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            onBack={() => navigateToPage('profile')}
+            onNavigate={(page, params) => navigateToPage(page, params)}
+          />
+        )
+      case 'patient-edit':
+        return (
+          <PatientEditPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            patientId={pageParams?.id}
+            onBack={() => navigateToPage('patients')}
             onNavigate={(page, params) => navigateToPage(page, params)}
           />
         )
@@ -611,7 +868,7 @@ export function TerminalPreview({
             isDarkMode={isDarkMode}
             effectiveViewerRole={effectiveViewerRole}
             onNavigate={(page, params) => navigateToPage(page, params)}
-            onLoginClick={() => setShowEscortLoginDialog(true)}
+            onLogin={() => setShowEscortLoginDialog(true)}
           />
         )
       case 'distribution-members':
@@ -622,7 +879,7 @@ export function TerminalPreview({
             effectiveViewerRole={effectiveViewerRole}
             pageParams={pageParams}
             onNavigate={(page, params) => navigateToPage(page, params)}
-            onLoginClick={() => setShowEscortLoginDialog(true)}
+            onLogin={() => setShowEscortLoginDialog(true)}
           />
         )
 
@@ -635,7 +892,7 @@ export function TerminalPreview({
             effectiveViewerRole={effectiveViewerRole}
             pageParams={pageParams}
             onNavigate={(page, params) => navigateToPage(page, params)}
-            onLoginClick={() => setShowEscortLoginDialog(true)}
+            onLogin={() => setShowEscortLoginDialog(true)}
           />
         )
 
@@ -646,7 +903,7 @@ export function TerminalPreview({
             isDarkMode={isDarkMode}
             effectiveViewerRole={effectiveViewerRole}
             onNavigate={(page, params) => navigateToPage(page, params)}
-            onLoginClick={() => setShowEscortLoginDialog(true)}
+            onLogin={() => setShowEscortLoginDialog(true)}
           />
         )
 
@@ -658,7 +915,85 @@ export function TerminalPreview({
             isDarkMode={isDarkMode}
             effectiveViewerRole={effectiveViewerRole}
             onNavigate={(page, params) => navigateToPage(page, params)}
-            onLoginClick={() => setShowEscortLoginDialog(true)}
+            onLogin={() => setShowEscortLoginDialog(true)}
+          />
+        )
+
+      // CMS 页面（关于我们等）
+      case 'cms-page':
+        return (
+          <CmsPageDetailPage
+            slug={pageParams?.slug || 'about'}
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            onBack={() => navigateToPage('profile')}
+          />
+        )
+
+      // 帮助中心（文章分类）
+      case 'help-center':
+        return (
+          <HelpCenterPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            onBack={() => navigateToPage('profile')}
+            onNavigate={(page, params) => navigateToPage(page, params)}
+          />
+        )
+
+      // 文章详情
+      case 'article-detail':
+        return (
+          <ArticleDetailPage
+            articleId={pageParams?.id || ''}
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            onBack={() => navigateToPage('help-center')}
+          />
+        )
+
+      // 地址管理
+      case 'address-list':
+        return (
+          <AddressListPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            onBack={() => navigateToPage('profile')}
+            onNavigate={(page, params) => navigateToPage(page, params)}
+          />
+        )
+
+      case 'address-edit':
+        return (
+          <AddressEditPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            addressId={pageParams?.id}
+            mode={pageParams?.mode as 'create' | 'edit' || (pageParams?.id ? 'edit' : 'create')}
+            onBack={() => navigateToPage('address-list')}
+            onNavigate={(page, params) => navigateToPage(page, params)}
+          />
+        )
+
+      case 'user-profile-edit':
+        return (
+          <UserProfileEditPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            onBack={() => navigateToPage('profile')}
+            onNavigate={(page, params) => navigateToPage(page, params)}
+          />
+        )
+
+      case 'escort-profile-edit':
+        return (
+          <EscortProfileEditPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            effectiveViewerRole={effectiveViewerRole}
+            onBack={() => navigateToPage('workbench-settings')}
+            onNavigate={(page, params) => navigateToPage(page, params)}
+            onLogin={() => setShowEscortLoginDialog(true)}
           />
         )
 
@@ -669,8 +1004,18 @@ export function TerminalPreview({
   }
 
   // 渲染内容
+  // 小程序中不支持 vh 单位，使用 100% 配合外层容器
   const renderContent = () => (
-    <div className='relative flex flex-col' style={{ height: `${height}px` }}>
+    <Box
+      className='relative flex flex-col'
+      style={
+        isWxEnvironment()
+          ? { height: '100%' }
+          : height
+            ? { height: `${height}px` }
+            : { height: '100%', minHeight: '100vh' }
+      }
+    >
       {/* Step 4: DebugPanel - 仅开发环境显示 */}
       {showDebugPanel && (
         <DebugPanel
@@ -685,7 +1030,7 @@ export function TerminalPreview({
       )}
 
       {/* 可滚动内容区 */}
-      <div
+      <Box
         ref={scrollContainerRef}
         className='terminal-scroll relative flex-1 overflow-y-auto cursor-grab active:cursor-grabbing select-none'
         style={{
@@ -697,18 +1042,35 @@ export function TerminalPreview({
         onMouseLeave={handleMouseLeave}
         onScroll={handleScroll}
       >
-        <style>{`
-          .terminal-scroll::-webkit-scrollbar {
-            display: none;
-          }
-          .terminal-scroll {
-            scrollbar-width: none;
-            -ms-overflow-style: none;
-          }
-        `}</style>
+        {/* 滚动条隐藏样式 - 仅在浏览器环境渲染 */}
+        {isBrowserEnvironment() && (
+          <style>{`
+            .terminal-scroll::-webkit-scrollbar {
+              display: none;
+            }
+            .terminal-scroll {
+              scrollbar-width: none;
+              -ms-overflow-style: none;
+            }
+          `}</style>
+        )}
 
-        {renderPageContent()}
-      </div>
+        <PreviewErrorBoundary
+          onReset={() => navigateToPage('home')}
+          themeSettings={themeSettings}
+          isDarkMode={isDarkMode}
+        >
+          <Suspense fallback={<PageLoadingSkeleton isDarkMode={isDarkMode} />}>
+            {/* Step 14.10-A/B: 页面切换 + 锁态/解锁态过渡动画 */}
+            <PageTransition
+              pageKey={`${currentPage}-${selectedServiceId ?? ''}-${effectiveViewerRole}`}
+              duration={200}
+            >
+              {renderPageContent()}
+            </PageTransition>
+          </Suspense>
+        </PreviewErrorBoundary>
+      </Box>
 
       {/* 底部 TabBar - 固定在底部 */}
       <TabBarNav
@@ -733,7 +1095,7 @@ export function TerminalPreview({
         themeSettings={themeSettings}
         isDarkMode={isDarkMode}
       />
-    </div>
+    </Box>
   )
 
   // 带手机外框
@@ -752,9 +1114,15 @@ export function TerminalPreview({
 
   // 无外框
   return (
-    <div className={cn('w-[375px] overflow-hidden rounded-xl', className)}>
+    <Box
+      className={cn('overflow-hidden rounded-xl', className)}
+      style={{
+        width: isWxEnvironment() ? '100%' : (height ? '375px' : '100%'),
+        height: isWxEnvironment() ? '100%' : undefined,
+      }}
+    >
       {renderContent()}
-    </div>
+    </Box>
   )
 }
 

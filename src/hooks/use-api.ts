@@ -17,12 +17,30 @@ import {
   doctorApi,
   configApi,
   workflowApi,
+  escortLevelApi,
+  escortTagApi,
+  withdrawalApi,
+  adminEscortWithdrawApi,
+  serviceGuaranteeApi,
+  patientApi,
+  cmsPageApi,
+  articleCategoryApi,
+  articleApi,
   type OrderQuery,
   type EscortQuery,
   type DoctorQuery,
   type ServiceCategoryQuery,
   type ServiceQuery,
   type WorkflowQuery,
+  type WithdrawalQuery,
+  type AdminEscortWithdrawRecordQuery,
+  type PatientQuery,
+  type CreatePatientData,
+  type UpdatePatientData,
+  operationGuideCategoryApi,
+  operationGuideApi,
+  type OperationGuideCategoryQuery,
+  type OperationGuideQuery,
 } from '@/lib/api'
 
 // ============================================
@@ -302,7 +320,7 @@ export function useReviewEscort() {
 // 陪诊员等级
 // ============================================
 
-import { escortLevelApi, escortTagApi, withdrawalApi, adminEscortWithdrawApi, type WithdrawalQuery, type AdminEscortWithdrawRecordQuery } from '@/lib/api'
+// 陪诊员等级和标签 API (imports moved to top)
 
 export function useEscortLevels() {
   return useQuery({
@@ -458,6 +476,48 @@ export function useAdminEscortWithdrawRecord(id: string) {
   })
 }
 
+// P2: 获取提现详情（含日志）
+export function useAdminEscortWithdrawDetail(id: string) {
+  return useQuery({
+    queryKey: ['admin', 'escort-withdraw-records', id, 'detail'],
+    queryFn: () => adminEscortWithdrawApi.getDetailWithLogs(id),
+    enabled: !!id,
+  })
+}
+
+// P2: 获取提现操作日志
+export function useAdminEscortWithdrawLogs(id: string) {
+  return useQuery({
+    queryKey: ['admin', 'escort-withdraw-records', id, 'logs'],
+    queryFn: () => adminEscortWithdrawApi.getLogs(id),
+    enabled: !!id,
+  })
+}
+
+// P2: 审核提现
+export function useAdminWithdrawReview() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: import('@/lib/api').AdminWithdrawReviewRequest }) =>
+      adminEscortWithdrawApi.review(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'escort-withdraw-records'] })
+    },
+  })
+}
+
+// P2: 打款
+export function useAdminWithdrawPayout() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: import('@/lib/api').AdminWithdrawPayoutRequest }) =>
+      adminEscortWithdrawApi.payout(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'escort-withdraw-records'] })
+    },
+  })
+}
+
 // ============================================
 // 服务分类
 // ============================================
@@ -552,6 +612,21 @@ export function useCreateService() {
   })
 }
 
+/**
+ * 创建草稿服务（WordPress 风格自动草稿）
+ * 用于新建服务时自动获取 ID，便于图片上传等关联操作
+ */
+export function useCreateServiceDraft() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: serviceApi.createDraft,
+    onSuccess: () => {
+      // 草稿创建不刷新列表，避免显示未完成的草稿
+    },
+  })
+}
+
 export function useUpdateService() {
   const queryClient = useQueryClient()
 
@@ -580,7 +655,7 @@ export function useDeleteService() {
 // 服务保障
 // ============================================
 
-import { serviceGuaranteeApi } from '@/lib/api'
+// 服务保障 API (imports moved to top)
 
 export function useServiceGuarantees(query?: { status?: string; keyword?: string }) {
   return useQuery({
@@ -747,6 +822,83 @@ export function useUserOrders(userId: string, query: { page?: number; pageSize?:
     queryKey: ['users', userId, 'orders', query],
     queryFn: () => userApi.getOrders(userId, query),
     enabled: !!userId,
+  })
+}
+
+// ============================================
+// 就诊人管理
+// ============================================
+
+// 就诊人 API (imports moved to top)
+
+export function usePatients(query: PatientQuery = {}) {
+  return useQuery({
+    queryKey: ['patients', query],
+    queryFn: () => patientApi.getList(query),
+    staleTime: 30 * 1000,
+  })
+}
+
+export function usePatientStats() {
+  return useQuery({
+    queryKey: ['patients', 'stats'],
+    queryFn: () => patientApi.getStats(),
+    staleTime: 60 * 1000,
+  })
+}
+
+export function usePatient(id: string) {
+  return useQuery({
+    queryKey: ['patients', id],
+    queryFn: () => patientApi.getById(id),
+    enabled: !!id,
+  })
+}
+
+export function useUpdatePatient() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdatePatientData }) =>
+      patientApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['patients'] })
+    },
+  })
+}
+
+export function useDeletePatient() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) => patientApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['patients'] })
+    },
+  })
+}
+
+export function useSetPatientDefault() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) => patientApi.setDefault(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['patients'] })
+    },
+  })
+}
+
+export function useCreatePatientForUser() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ userId, data }: { userId: string; data: CreatePatientData }) =>
+      patientApi.createForUser(userId, data),
+    onSuccess: (_, { userId }) => {
+      queryClient.invalidateQueries({ queryKey: ['patients'] })
+      queryClient.invalidateQueries({ queryKey: ['users', userId, 'patients'] })
+    },
   })
 }
 
@@ -1022,12 +1174,7 @@ export function useDeleteWorkflow() {
 // 操作规范分类
 // ============================================
 
-import {
-  operationGuideCategoryApi,
-  operationGuideApi,
-  type OperationGuideCategoryQuery,
-  type OperationGuideQuery,
-} from '@/lib/api'
+// 操作规范 API (imports moved to top)
 
 export function useOperationGuideCategories(query?: OperationGuideCategoryQuery) {
   return useQuery({
@@ -1139,6 +1286,235 @@ export function useDeleteOperationGuide() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['operationGuides'] })
       queryClient.invalidateQueries({ queryKey: ['operationGuideCategories'] })
+    },
+  })
+}
+
+// ============================================
+// CMS 页面管理
+// ============================================
+
+// CMS 页面 API (imports moved to top)
+
+export function useCmsPages(query?: { status?: string; keyword?: string }) {
+  return useQuery({
+    queryKey: ['cmsPages', query],
+    queryFn: () => cmsPageApi.getAll(query),
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useCmsPage(id: string | undefined) {
+  return useQuery({
+    queryKey: ['cmsPages', id],
+    queryFn: () => cmsPageApi.getById(id!),
+    enabled: !!id,
+  })
+}
+
+export function useCreateCmsPage() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: cmsPageApi.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cmsPages'] })
+    },
+  })
+}
+
+export function useUpdateCmsPage() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Parameters<typeof cmsPageApi.update>[1] }) =>
+      cmsPageApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cmsPages'] })
+    },
+  })
+}
+
+export function useDeleteCmsPage() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: cmsPageApi.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cmsPages'] })
+    },
+  })
+}
+
+export function usePublishCmsPage() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: cmsPageApi.publish,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cmsPages'] })
+    },
+  })
+}
+
+export function useUnpublishCmsPage() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: cmsPageApi.unpublish,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cmsPages'] })
+    },
+  })
+}
+
+// ============================================
+// CMS 文章分类管理
+// ============================================
+
+// 文章分类和文章 API (imports moved to top)
+
+export function useArticleCategories(query?: { status?: string; keyword?: string }) {
+  return useQuery({
+    queryKey: ['articleCategories', query],
+    queryFn: () => articleCategoryApi.getAll(query),
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useActiveArticleCategories() {
+  return useQuery({
+    queryKey: ['articleCategories', 'active'],
+    queryFn: () => articleCategoryApi.getActive(),
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useArticleCategory(id: string | undefined) {
+  return useQuery({
+    queryKey: ['articleCategories', id],
+    queryFn: () => articleCategoryApi.getById(id!),
+    enabled: !!id,
+  })
+}
+
+export function useCreateArticleCategory() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: articleCategoryApi.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['articleCategories'] })
+    },
+  })
+}
+
+export function useUpdateArticleCategory() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Parameters<typeof articleCategoryApi.update>[1] }) =>
+      articleCategoryApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['articleCategories'] })
+    },
+  })
+}
+
+export function useDeleteArticleCategory() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: articleCategoryApi.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['articleCategories'] })
+    },
+  })
+}
+
+// ============================================
+// CMS 文章管理
+// ============================================
+
+export function useArticles(query: Parameters<typeof articleApi.getList>[0] = {}) {
+  return useQuery({
+    queryKey: ['articles', query],
+    queryFn: () => articleApi.getList(query),
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useArticle(id: string | undefined) {
+  return useQuery({
+    queryKey: ['articles', id],
+    queryFn: () => articleApi.getById(id!),
+    enabled: !!id,
+  })
+}
+
+export function useCreateArticle() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: articleApi.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['articles'] })
+    },
+  })
+}
+
+export function useUpdateArticle() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Parameters<typeof articleApi.update>[1] }) =>
+      articleApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['articles'] })
+    },
+  })
+}
+
+export function useDeleteArticle() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: articleApi.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['articles'] })
+    },
+  })
+}
+
+export function usePublishArticle() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: articleApi.publish,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['articles'] })
+    },
+  })
+}
+
+export function useUnpublishArticle() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: articleApi.unpublish,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['articles'] })
+    },
+  })
+}
+
+export function useToggleArticleTop() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: articleApi.toggleTop,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['articles'] })
     },
   })
 }

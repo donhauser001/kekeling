@@ -55,8 +55,8 @@ export function PhoneFrame({
             <span>刷新</span>
           </button>
         </div>
-        {/* 手机屏幕 */}
-        <div className='overflow-hidden rounded-b-[32px]'>
+        {/* 手机屏幕 - transform 创建新的包含块使 fixed 定位相对于此容器 */}
+        <div className='relative overflow-hidden rounded-b-[32px]' style={{ transform: 'translateZ(0)' }}>
           {children}
         </div>
       </div>

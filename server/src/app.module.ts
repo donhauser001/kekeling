@@ -34,6 +34,10 @@ import { ReferralsModule } from './modules/referrals/referrals.module';
 import { CampaignsModule } from './modules/campaigns/campaigns.module';
 import { DistributionModule } from './modules/distribution/distribution.module';
 import { RedisModule } from './modules/redis/redis.module';
+import { PagesModule } from './modules/cms/pages/pages.module';
+import { ArticleCategoriesModule } from './modules/cms/article-categories/article-categories.module';
+import { ArticlesModule } from './modules/cms/articles/articles.module';
+import { UserAddressesModule } from './modules/user-addresses/user-addresses.module';
 
 @Module({
   imports: [
@@ -82,6 +86,10 @@ import { RedisModule } from './modules/redis/redis.module';
     ReferralsModule,    // 邀请系统
     CampaignsModule,    // 活动系统
     DistributionModule, // 分销系统
+    PagesModule,            // CMS 页面管理
+    ArticleCategoriesModule, // CMS 文章分类管理
+    ArticlesModule,         // CMS 文章管理
+    UserAddressesModule,    // 用户地址管理
     TestModule, // ⚠️ 仅开发环境，生产环境请注释
   ],
 })

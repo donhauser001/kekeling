@@ -4,23 +4,31 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Image as ImageIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { BannerAreaData, ThemeSettings } from '../types'
 import { getResourceUrl } from '../utils'
+import { isBrowserEnvironment, isWxEnvironment } from '../platform/env'
+import { Box, Button, Image, ScrollView, Text } from '../ui/primitives'
+
+// 小程序环境的缩放比例
+const wxScale = isWxEnvironment() ? 1.15 : 1
 
 interface BannerSectionProps {
   bannerData: BannerAreaData | null
   themeSettings: ThemeSettings
   /** 自动播放间隔（毫秒），0 表示不自动播放 */
   autoPlayInterval?: number
+  /** 自定义类名（用于控制间距等） */
+  className?: string
 }
 
 export function BannerSection({
   bannerData,
   themeSettings,
   autoPlayInterval = 3000,
+  className,
 }: BannerSectionProps) {
+  const isWeb = isBrowserEnvironment()
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
   const [dragStartX, setDragStartX] = useState(0)
@@ -117,19 +125,64 @@ export function BannerSection({
   // 空状态
   if (!bannerData?.enabled || itemCount === 0) {
     return (
-      <div className='relative z-10 px-3 pb-3'>
-        <div
-          className='flex h-20 items-center justify-center rounded-xl'
+      <Box
+        className={cn('relative z-10 px-3', className)}
+        style={{ position: 'relative', zIndex: 10, paddingLeft: 12 * wxScale, paddingRight: 12 * wxScale }}
+      >
+        <Box
           style={{
+            display: 'flex',
+            height: 80,
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: 12,
             background: `linear-gradient(135deg, ${themeSettings.primaryColor}20 0%, ${themeSettings.primaryColor}40 100%)`,
           }}
         >
-          <div className='flex flex-col items-center' style={{ color: `${themeSettings.primaryColor}80` }}>
-            <ImageIcon className='h-6 w-6' />
-            <span className='mt-1 text-[9px]'>轮播图区域</span>
-          </div>
-        </div>
-      </div>
+          <Box style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <Text style={{ fontSize: 10, color: `${themeSettings.primaryColor}80` }}>图</Text>
+            <Text style={{ marginTop: 4, fontSize: 9, color: `${themeSettings.primaryColor}80` }}>轮播图区域</Text>
+          </Box>
+        </Box>
+      </Box>
+    )
+  }
+
+  // 小程序端：简化轮播，使用 bannerData 的宽高比
+  if (!isWeb) {
+    return (
+      <Box
+        className={cn('relative z-10 px-3', className)}
+        style={{ position: 'relative', zIndex: 10, paddingLeft: 12 * wxScale, paddingRight: 12 * wxScale }}
+      >
+        <Box
+          style={{
+            position: 'relative',
+            overflow: 'hidden',
+            borderRadius: 12,
+            // 使用 aspectRatio 计算高度（基于屏幕宽度减去左右间距）
+            aspectRatio: `${bannerData.width}/${bannerData.height}`,
+          }}
+        >
+          <ScrollView scrollX style={{ display: 'flex', height: '100%', width: '100%' }}>
+            <Box style={{ display: 'flex', height: '100%' }}>
+              {items.map((item, index) => (
+                <Box
+                  key={item.id || index}
+                  style={{ height: '100%', flexShrink: 0, width: `calc(100vw - ${24 * wxScale}px)` }}
+                >
+                  <Image
+                    src={getResourceUrl(item.imageUrl)}
+                    alt={item.title || `轮播图 ${index + 1}`}
+                    mode="aspectFill"
+                    style={{ width: '100%', height: '100%', borderRadius: 12 }}
+                  />
+                </Box>
+              ))}
+            </Box>
+          </ScrollView>
+        </Box>
+      </Box>
     )
   }
 
@@ -137,8 +190,8 @@ export function BannerSection({
   const translateX = -currentIndex * 100 + (dragOffset / (containerRef.current?.offsetWidth || 375)) * 100
 
   return (
-    <div className='relative z-10 px-3 pb-3'>
-      <div
+    <Box className={cn('relative z-10 px-3', className)}>
+      <Box
         ref={containerRef}
         className='relative overflow-hidden rounded-xl cursor-grab active:cursor-grabbing'
         style={{
@@ -153,7 +206,7 @@ export function BannerSection({
         onTouchEnd={handleTouchEnd}
       >
         {/* 轮播内容 */}
-        <div
+        <Box
           className='flex h-full'
           style={{
             transform: `translateX(${translateX}%)`,
@@ -161,28 +214,37 @@ export function BannerSection({
           }}
         >
           {items.map((item, index) => (
-            <div key={item.id || index} className='h-full w-full flex-shrink-0'>
-              <img
+            <Box key={item.id || index} className='h-full w-full flex-shrink-0'>
+              <Image
                 src={getResourceUrl(item.imageUrl)}
                 alt={item.title || `轮播图 ${index + 1}`}
                 className='h-full w-full object-cover pointer-events-none select-none'
-                draggable={false}
+                mode="aspectFill"
               />
-            </div>
+            </Box>
           ))}
-        </div>
+        </Box>
 
         {/* 指示器 */}
         {itemCount > 1 && (
-          <div className='absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1.5'>
+          <Box
+            style={{
+              position: 'absolute',
+              bottom: 8,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              display: 'flex',
+              gap: 6,
+            }}
+          >
             {items.map((_, index) => (
-              <button
+              <Button
                 key={index}
-                className={cn(
-                  'h-1.5 rounded-full transition-all duration-300',
-                  index === currentIndex ? 'w-4' : 'w-1.5'
-                )}
                 style={{
+                  height: 6,
+                  width: index === currentIndex ? 16 : 6,
+                  borderRadius: 3,
+                  transition: 'all 0.3s',
                   backgroundColor: index === currentIndex
                     ? themeSettings.primaryColor
                     : 'rgba(255, 255, 255, 0.6)',
@@ -193,9 +255,9 @@ export function BannerSection({
                 }}
               />
             ))}
-          </div>
+          </Box>
         )}
-      </div>
-    </div>
+      </Box>
+    </Box>
   )
 }

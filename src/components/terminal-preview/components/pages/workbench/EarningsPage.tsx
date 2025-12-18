@@ -9,7 +9,10 @@
 import { useQuery } from '@tanstack/react-query'
 import { TrendingUp, TrendingDown, Gift, RefreshCw } from 'lucide-react'
 import type { ThemeSettings, PreviewViewerRole } from '../../../types'
-import { previewApi, type EarningsItem } from '../../../api'
+import { previewApi } from '../../../api'
+import type { EarningsItem } from '../../../api'
+import { PermissionPrompt } from '../../PermissionPrompt'
+import { formatMoney, safeNumber, getSecondaryTextClass, getTertiaryTextClass } from '../../../utils'
 
 // ============================================================================
 // 类型定义
@@ -21,6 +24,8 @@ export interface EarningsPageProps {
   effectiveViewerRole: PreviewViewerRole
   onBack?: () => void
   onNavigate?: (page: string, params?: Record<string, string>) => void
+  /** 显示登录弹窗回调 */
+  onLogin?: () => void
 }
 
 // ============================================================================
@@ -33,6 +38,7 @@ export function EarningsPage({
   effectiveViewerRole,
   onBack,
   onNavigate,
+  onLogin,
 }: EarningsPageProps) {
   const isEscort = effectiveViewerRole === 'escort'
 
@@ -48,7 +54,7 @@ export function EarningsPage({
     enabled: isEscort,
   })
 
-  // 非 escort 视角：显示提示
+  // 非 escort 视角：显示统一的 PermissionPrompt
   if (!isEscort) {
     return (
       <div
@@ -73,14 +79,16 @@ export function EarningsPage({
           </h1>
         </div>
 
-        <div className="flex-1 flex flex-col items-center justify-center px-4">
-          <div className="text-5xl mb-4">🔒</div>
-          <div className={`text-base font-medium text-center ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-            需要陪诊员身份
-          </div>
-          <div className={`text-sm text-center mt-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-            请先登录陪诊员账号后再查看收入明细。
-          </div>
+        {/* 权限提示 */}
+        <div className="flex-1">
+          <PermissionPrompt
+            title="需要陪诊员身份"
+            description="请先登录陪诊员账号查看收入明细"
+            onLogin={onLogin}
+            showDebugInject={process.env.NODE_ENV === 'development'}
+            primaryColor={themeSettings.primaryColor}
+            isDarkMode={isDarkMode}
+          />
         </div>
       </div>
     )
@@ -124,25 +132,25 @@ export function EarningsPage({
           >
             <div className="text-white/80 text-sm">可提现余额</div>
             <div className="text-white text-3xl font-bold mt-1">
-              ¥{earnings.balance.toFixed(2)}
+              ¥{formatMoney(earnings.balance)}
             </div>
             <div className="flex gap-4 mt-4">
               <div className="flex-1">
                 <div className="text-white/60 text-xs">累计收入</div>
                 <div className="text-white text-sm font-medium">
-                  ¥{earnings.totalEarned.toFixed(2)}
+                  ¥{formatMoney(earnings.totalEarned)}
                 </div>
               </div>
               <div className="flex-1">
                 <div className="text-white/60 text-xs">累计提现</div>
                 <div className="text-white text-sm font-medium">
-                  ¥{earnings.totalWithdrawn.toFixed(2)}
+                  ¥{formatMoney(earnings.totalWithdrawn)}
                 </div>
               </div>
               <div className="flex-1">
                 <div className="text-white/60 text-xs">待结算</div>
                 <div className="text-white text-sm font-medium">
-                  ¥{earnings.pendingSettlement.toFixed(2)}
+                  ¥{formatMoney(earnings.pendingSettlement)}
                 </div>
               </div>
             </div>
@@ -167,7 +175,7 @@ export function EarningsPage({
         {/* 加载中 */}
         {isLoading && (
           <div className="flex items-center justify-center py-12">
-            <div className="text-gray-400 text-sm">加载中...</div>
+            <div className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>加载中...</div>
           </div>
         )}
 
@@ -175,7 +183,7 @@ export function EarningsPage({
         {isError && (
           <div className="flex flex-col items-center justify-center py-12">
             <div className="text-4xl mb-2">😔</div>
-            <div className="text-gray-400 text-sm">加载失败，请稍后重试</div>
+            <div className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>加载失败，请稍后重试</div>
           </div>
         )}
 
@@ -183,7 +191,7 @@ export function EarningsPage({
         {isEmpty && !isError && (
           <div className="flex flex-col items-center justify-center py-12">
             <div className="text-5xl mb-3">📊</div>
-            <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            <div className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>
               暂无收支记录
             </div>
           </div>
@@ -240,7 +248,7 @@ interface EarningsItemRowProps {
 }
 
 function EarningsItemRow({ item, themeSettings, isDarkMode, isLast }: EarningsItemRowProps) {
-  const isIncome = item.amount > 0
+  const isIncome = safeNumber(item.amount) > 0
   const IconComponent = getItemIcon(item.type)
 
   return (
@@ -272,7 +280,7 @@ function EarningsItemRow({ item, themeSettings, isDarkMode, isLast }: EarningsIt
         <div className={`text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
           {item.title}
         </div>
-        <div className={`text-xs mt-0.5 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+        <div className={`text-xs mt-0.5 ${getTertiaryTextClass(isDarkMode)}`}>
           {item.createdAt}
           {item.orderNo && ` · ${item.orderNo}`}
         </div>
@@ -280,11 +288,10 @@ function EarningsItemRow({ item, themeSettings, isDarkMode, isLast }: EarningsIt
 
       {/* 金额 */}
       <div
-        className={`text-sm font-medium ${
-          isIncome ? 'text-green-500' : isDarkMode ? 'text-gray-400' : 'text-gray-500'
-        }`}
+        className={`text-sm font-medium ${isIncome ? 'text-green-500' : getSecondaryTextClass(isDarkMode)
+          }`}
       >
-        {isIncome ? '+' : ''}{item.amount.toFixed(2)}
+        {isIncome ? '+' : ''}{formatMoney(item.amount)}
       </div>
     </div>
   )

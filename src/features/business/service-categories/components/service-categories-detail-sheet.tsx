@@ -1,21 +1,4 @@
-import {
-  Layers,
-  Stethoscope,
-  Truck,
-  MessageSquare,
-  Building,
-  Sparkles,
-  Hospital,
-  Heart,
-  Pill,
-  Syringe,
-  Baby,
-  Eye,
-  Bone,
-  Brain,
-  FileText,
-  Pin,
-} from 'lucide-react'
+import { Pin } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -28,6 +11,7 @@ import {
 } from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
 import { type ServiceCategory } from '@/lib/api'
+import { AppIcon, getFlatRecommendedIcons, type IconName } from '@/components/ui/icon-picker'
 
 // 状态颜色映射
 const statusColors = new Map<string, string>([
@@ -35,40 +19,12 @@ const statusColors = new Map<string, string>([
   ['inactive', 'bg-neutral-300/40 border-neutral-300'],
 ])
 
-// 图标映射
-const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
-  stethoscope: Stethoscope,
-  truck: Truck,
-  'message-square': MessageSquare,
-  building: Building,
-  sparkles: Sparkles,
-  hospital: Hospital,
-  heart: Heart,
-  pill: Pill,
-  syringe: Syringe,
-  baby: Baby,
-  eye: Eye,
-  bone: Bone,
-  brain: Brain,
-  'file-text': FileText,
-}
-
-// 图标名称映射
-const iconLabels: Record<string, string> = {
-  stethoscope: '听诊器',
-  truck: '卡车',
-  'message-square': '消息',
-  building: '建筑',
-  sparkles: '闪光',
-  hospital: '医院',
-  heart: '爱心',
-  pill: '药品',
-  syringe: '针管',
-  baby: '婴儿',
-  eye: '眼睛',
-  bone: '骨骼',
-  brain: '大脑',
-  'file-text': '文件',
+// 获取图标中文名称
+const getIconLabel = (iconName: string | null) => {
+  if (!iconName) return '默认'
+  const flatIcons = getFlatRecommendedIcons()
+  const found = flatIcons.find(i => i.name === iconName)
+  return found?.label || iconName
 }
 
 interface ServiceCategoriesDetailSheetProps {
@@ -87,7 +43,6 @@ export function ServiceCategoriesDetailSheet({
   if (!category) return null
 
   const statusColor = statusColors.get(category.status)
-  const IconComponent = iconMap[category.icon || ''] || Layers
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -98,7 +53,7 @@ export function ServiceCategoriesDetailSheet({
               className='flex h-8 w-8 items-center justify-center rounded-lg'
               style={{ background: category.color || '#6b7280' }}
             >
-              <IconComponent className='h-4 w-4 text-white' />
+              <AppIcon name={(category.icon || 'stethoscope') as IconName} size={16} className='text-white' />
             </div>
             {category.name}
             {category.isPinned && (
@@ -117,8 +72,8 @@ export function ServiceCategoriesDetailSheet({
                 <div>
                   <span className='text-sm text-muted-foreground'>图标</span>
                   <p className='mt-1 flex items-center gap-2'>
-                    <IconComponent className='h-4 w-4' />
-                    <span className='text-sm'>{iconLabels[category.icon || ''] || category.icon}</span>
+                    <AppIcon name={(category.icon || 'stethoscope') as IconName} size={16} />
+                    <span className='text-sm'>{getIconLabel(category.icon)}</span>
                   </p>
                 </div>
                 <div>

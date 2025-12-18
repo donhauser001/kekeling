@@ -2,14 +2,20 @@
  * 邀请好友页面（预览器版本）
  *
  * Step 8 批次 C: referrals
+ * Step 14.13 FIX-P3-02: 支持 referralsOverride 数据覆盖
  * - page key: 'referrals'
  * - API: previewApi.getReferralInfo()
  * - 数据通道: userRequest
  */
 
+import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import type { ThemeSettings } from '../../../types'
-import { previewApi, type ReferralInfo } from '../../../api'
+import type { ThemeSettings, ReferralsDataOverride } from '../../../types'
+import { previewApi } from '../../../api'
+import type { ReferralInfo } from '../../../api'
+import { ListSkeleton } from '../../ListSkeleton'
+import { ErrorRetry } from '../../ErrorRetry'
+import { getSecondaryTextClass, getTertiaryTextClass } from '../../../utils'
 
 // ============================================================================
 // 类型定义
@@ -18,23 +24,51 @@ import { previewApi, type ReferralInfo } from '../../../api'
 export interface ReferralsPageProps {
   themeSettings: ThemeSettings
   isDarkMode: boolean
+  /**
+   * 邀请信息覆盖数据（用于实时预览）
+   * Step 14.13 FIX-P3-02: 邀请奖励弹窗实时预览
+   */
+  referralsOverride?: ReferralsDataOverride
 }
 
 // ============================================================================
 // 组件实现
 // ============================================================================
 
-export function ReferralsPage({ themeSettings, isDarkMode }: ReferralsPageProps) {
-  // 获取邀请信息
+export function ReferralsPage({ themeSettings, isDarkMode, referralsOverride }: ReferralsPageProps) {
+  // 获取邀请信息（如果没有 override 数据才请求）
   const {
-    data: referralInfo,
+    data: apiReferralInfo,
     isLoading,
     isError,
+    refetch,
   } = useQuery({
     queryKey: ['preview', 'referrals', 'info'],
     queryFn: previewApi.getReferralInfo,
     staleTime: 60 * 1000,
+    // 如果有 override 数据，不需要请求 API
+    enabled: !referralsOverride,
   })
+
+  // 合并覆盖数据：override > API 数据 > 默认值
+  const referralInfo: ReferralInfo | null = useMemo(() => {
+    // 如果有 override 数据，使用 override
+    if (referralsOverride) {
+      return {
+        inviteCode: referralsOverride.inviteCode ?? 'ABC123',
+        invitedCount: referralsOverride.invitedCount ?? 0,
+        earnedPoints: referralsOverride.earnedPoints ?? 0,
+        pendingPoints: referralsOverride.pendingPoints ?? 0,
+        rewardPoints: referralsOverride.rewardPoints ?? 100,
+      }
+    }
+    // 否则使用 API 数据
+    return apiReferralInfo ?? null
+  }, [referralsOverride, apiReferralInfo])
+
+  // 如果有 override 数据，不显示 loading/error
+  const showLoading = !referralsOverride && isLoading
+  const showError = !referralsOverride && isError
 
   return (
     <div
@@ -57,23 +91,22 @@ export function ReferralsPage({ themeSettings, isDarkMode }: ReferralsPageProps)
 
       {/* 内容区 */}
       <div className="px-4 py-4">
-        {/* 加载中 */}
-        {isLoading && (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-gray-400 text-sm">加载中...</div>
-          </div>
+        {/* 加载中 - 骨架屏 */}
+        {showLoading && (
+          <ListSkeleton count={3} variant="card" isDarkMode={isDarkMode} />
         )}
 
-        {/* 请求失败 */}
-        {isError && (
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="text-4xl mb-2">😔</div>
-            <div className="text-gray-400 text-sm">加载失败，请稍后重试</div>
-          </div>
+        {/* 请求失败 - 带重试按钮 */}
+        {showError && (
+          <ErrorRetry
+            onRetry={() => refetch()}
+            isDarkMode={isDarkMode}
+            primaryColor={themeSettings.primaryColor}
+          />
         )}
 
         {/* 邀请信息 */}
-        {!isLoading && !isError && referralInfo && (
+        {!showLoading && !showError && referralInfo && (
           <>
             {/* 邀请海报区 */}
             <div
@@ -86,7 +119,7 @@ export function ReferralsPage({ themeSettings, isDarkMode }: ReferralsPageProps)
               <div className="text-sm opacity-80 mb-4">
                 每邀请1位好友，双方各得{referralInfo.rewardPoints}积分
               </div>
-              
+
               {/* 邀请码 */}
               <div className="bg-white/20 rounded-lg p-3 mb-4">
                 <div className="text-xs opacity-80 mb-1">我的邀请码</div>
@@ -139,7 +172,7 @@ export function ReferralsPage({ themeSettings, isDarkMode }: ReferralsPageProps)
                     <span className="text-xs" style={{ color: themeSettings.primaryColor }}>
                       {index + 1}.
                     </span>
-                    <span className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                    <span className={`text-xs ${getSecondaryTextClass(isDarkMode)}`}>
                       {rule}
                     </span>
                   </div>
@@ -161,7 +194,7 @@ export function ReferralsPage({ themeSettings, isDarkMode }: ReferralsPageProps)
                     邀请记录
                   </span>
                 </div>
-                <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                <span className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>
                   →
                 </span>
               </div>
@@ -198,7 +231,7 @@ function StatCard({ label, value, unit, isDarkMode }: StatCardProps) {
       <div className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
         {value}{unit}
       </div>
-      <div className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+      <div className={`text-xs mt-1 ${getSecondaryTextClass(isDarkMode)}`}>
         {label}
       </div>
     </div>

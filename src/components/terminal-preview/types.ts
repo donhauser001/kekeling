@@ -55,6 +55,15 @@ export type PreviewPage =
   | 'referrals'
   | 'campaigns'
   | 'campaigns-detail'
+  // 下单
+  | 'create-order'
+  // 用户订单
+  | 'user-orders'
+  | 'user-order-detail'
+  | 'order-complaint'
+  // 就诊人管理
+  | 'patients'
+  | 'patient-edit'
   // 陪诊员（用户视角可查看）
   | 'escort-list'
   | 'escort-detail'
@@ -64,12 +73,171 @@ export type PreviewPage =
   | 'workbench-order-detail'
   | 'workbench-earnings'
   | 'workbench-withdraw'
+  | 'workbench-settings'
+  | 'workbench-service-types'
+  | 'my-orders'
   // 分销中心（陪诊员视角）
   | 'distribution'
   | 'distribution-members'
   | 'distribution-records'
   | 'distribution-invite'
   | 'distribution-promotion'
+  // CMS 页面
+  | 'cms-page'
+  | 'help-center'
+  | 'article-detail'
+  // 地址管理
+  | 'address-list'
+  | 'address-edit'
+  // 个人资料编辑
+  | 'user-profile-edit'
+  | 'escort-profile-edit'
+
+/**
+ * 有效的页面 key 列表（用于开发环境校验）
+ * ⚠️ 保持与 PreviewPage 类型同步
+ */
+export const VALID_PAGE_KEYS: readonly PreviewPage[] = [
+  // 现有页面（TabBar）
+  'home',
+  'services',
+  'cases',
+  'profile',
+  // 营销中心
+  'membership',
+  'membership-plans',
+  'coupons',
+  'coupons-available',
+  'points',
+  'points-records',
+  'referrals',
+  'campaigns',
+  'campaigns-detail',
+  // 下单
+  'create-order',
+  // 用户订单
+  'user-orders',
+  'user-order-detail',
+  'order-complaint',
+  // 就诊人管理
+  'patients',
+  'patient-edit',
+  // 陪诊员（用户视角可查看）
+  'escort-list',
+  'escort-detail',
+  // 工作台（陪诊员视角）
+  'workbench',
+  'workbench-orders-pool',
+  'workbench-order-detail',
+  'workbench-earnings',
+  'workbench-withdraw',
+  'workbench-settings',
+  'workbench-service-types',
+  'my-orders',
+  // 分销中心（陪诊员视角）
+  'distribution',
+  'distribution-members',
+  'distribution-records',
+  'distribution-invite',
+  'distribution-promotion',
+  // CMS 页面
+  'cms-page',
+  'help-center',
+  'article-detail',
+  // 地址管理
+  'address-list',
+  'address-edit',
+  // 个人资料编辑
+  'user-profile-edit',
+  'escort-profile-edit',
+] as const
+
+// ============================================================================
+// 页面分类元数据（Step 14.7 P3-TYPE-02）
+// ============================================================================
+
+/**
+ * 页面元数据接口
+ */
+export interface PageMetadata {
+  /** 是否允许作为初始入口页面 */
+  entryAllowed: boolean
+  /** 必填参数列表（用于开发环境校验） */
+  requiredParams?: readonly string[]
+  /** 页面描述（用于开发调试） */
+  description?: string
+}
+
+/**
+ * 页面分类元数据
+ * 
+ * - entryAllowed: true  - 可作为 `page={xxx}` 初始入口
+ * - entryAllowed: false - 仅允许通过 navigateToPage 导航进入（依赖 pageParams）
+ */
+export const PAGE_METADATA: Record<PreviewPage, PageMetadata> = {
+  // TabBar 页面（允许作为入口）
+  'home': { entryAllowed: true, description: '首页' },
+  'services': { entryAllowed: true, description: '服务列表' },
+  'cases': { entryAllowed: true, description: '案例' },
+  'profile': { entryAllowed: true, description: '我的' },
+
+  // 营销中心（大部分允许作为入口）
+  'membership': { entryAllowed: true, description: '会员中心' },
+  'membership-plans': { entryAllowed: false, description: '会员方案' },
+  'coupons': { entryAllowed: true, description: '我的优惠券' },
+  'coupons-available': { entryAllowed: false, description: '可领优惠券' },
+  'points': { entryAllowed: true, description: '积分中心' },
+  'points-records': { entryAllowed: false, description: '积分记录' },
+  'referrals': { entryAllowed: true, description: '邀请有礼' },
+  'campaigns': { entryAllowed: true, description: '活动列表' },
+  'campaigns-detail': { entryAllowed: false, requiredParams: ['id'], description: '活动详情' },
+
+  // 下单
+  'create-order': { entryAllowed: false, requiredParams: ['serviceId'], description: '创建订单' },
+
+  // 用户订单
+  'user-orders': { entryAllowed: false, description: '用户订单' },
+  'user-order-detail': { entryAllowed: false, requiredParams: ['id'], description: '用户订单详情' },
+  'order-complaint': { entryAllowed: false, requiredParams: ['id'], description: '订单投诉' },
+
+  // 就诊人管理
+  'patients': { entryAllowed: false, description: '就诊人列表' },
+  'patient-edit': { entryAllowed: false, description: '就诊人编辑' },
+
+  // 陪诊员公开页
+  'escort-list': { entryAllowed: true, description: '陪诊员列表' },
+  'escort-detail': { entryAllowed: false, requiredParams: ['id'], description: '陪诊员详情' },
+
+  // 工作台（主入口允许，子页面不允许）
+  'workbench': { entryAllowed: true, description: '工作台首页' },
+  'workbench-orders-pool': { entryAllowed: false, description: '订单池' },
+  'workbench-order-detail': { entryAllowed: false, requiredParams: ['id'], description: '订单详情' },
+  'workbench-earnings': { entryAllowed: false, description: '收入明细' },
+  'workbench-withdraw': { entryAllowed: false, description: '提现' },
+  'workbench-settings': { entryAllowed: false, description: '工作台设置' },
+  'workbench-service-types': { entryAllowed: false, description: '服务项目选择' },
+  'my-orders': { entryAllowed: false, description: '我的订单' },
+
+  // 分销中心（主入口允许，子页面不允许）
+  'distribution': { entryAllowed: true, description: '分销中心首页' },
+  'distribution-members': { entryAllowed: false, description: '团队成员' },
+  'distribution-records': { entryAllowed: false, description: '分润记录' },
+  'distribution-invite': { entryAllowed: false, description: '邀请好友' },
+  'distribution-promotion': { entryAllowed: false, description: '晋升进度' },
+
+  // CMS 页面
+  'cms-page': { entryAllowed: false, requiredParams: ['slug'], description: 'CMS 页面' },
+  'help-center': { entryAllowed: false, description: '帮助中心' },
+  'article-detail': { entryAllowed: false, requiredParams: ['id'], description: '文章详情' },
+
+  // 地址管理
+  'address-list': { entryAllowed: false, description: '地址列表' },
+  'address-edit': { entryAllowed: false, description: '地址编辑' },
+
+  // 个人资料编辑
+  'user-profile-edit': { entryAllowed: false, description: '用户资料编辑' },
+  'escort-profile-edit': { entryAllowed: false, description: '陪诊员资料编辑' },
+} as const
 
 /**
  * 预览器视角角色
@@ -78,20 +246,95 @@ export type PreviewPage =
 export type PreviewViewerRole = 'user' | 'escort'
 
 // ============================================================================
-// 分销中心类型定义（Step 11.1）
+// 页面路由参数类型定义
 // ============================================================================
 
 /**
- * 分销中心路由参数类型映射
- * 用于 navigateToPage 泛型约束，减少写错 key / 写错 params
+ * 页面路由参数类型映射
+ * 用于 navigateToPage 泛型约束和开发环境运行时校验
+ * 
+ * 参数类型说明：
+ * - Record<string, never>: 不需要任何参数
+ * - { id: string }: 需要 id 参数（详情页）
+ * - { key?: value }: 可选参数
  */
 export interface PreviewPageParamsMap {
+  // TabBar 页面（不需要参数）
+  'home': Record<string, never>
+  'services': Record<string, never>
+  'cases': Record<string, never>
+  'profile': Record<string, never>
+
+  // 营销中心
+  'membership': Record<string, never>
+  'membership-plans': Record<string, never>
+  'coupons': Record<string, never>
+  'coupons-available': Record<string, never>
+  'points': Record<string, never>
+  'points-records': Record<string, never>
+  'referrals': Record<string, never>
+  'campaigns': Record<string, never>
+  'campaigns-detail': { id: string }
+
+  // 下单
+  'create-order': { serviceId: string }
+
+  // 用户订单
+  'user-orders': Record<string, never>
+  'user-order-detail': { id: string }
+  'order-complaint': { id: string }
+
+  // 陪诊员公开页
+  'escort-list': Record<string, never>
+  'escort-detail': { id: string }
+
+  // 工作台
+  'workbench': Record<string, never>
+  'workbench-orders-pool': Record<string, never>
+  'workbench-order-detail': { id: string }
+  'workbench-earnings': Record<string, never>
+  'workbench-withdraw': Record<string, never>
+  'workbench-settings': Record<string, never>
+  'workbench-service-types': Record<string, never>
+  'my-orders': { status?: 'all' | 'pending' | 'ongoing' | 'completed' | 'cancelled' }
+
+  // 就诊人管理
+  'patients': Record<string, never>
+  'patient-edit': { id?: string }
+
+  // 分销中心
   'distribution': Record<string, never>
   'distribution-members': { relation?: 'direct' | 'indirect' }
   'distribution-records': { range?: '7d' | '30d' | 'all'; status?: 'pending' | 'settled' }
   'distribution-invite': Record<string, never>
   'distribution-promotion': Record<string, never>
+
+  // CMS 页面
+  'cms-page': { slug: string }
+  'help-center': Record<string, never>
+  'article-detail': { id: string }
+
+  // 地址管理
+  'address-list': Record<string, never>
+  'address-edit': { id?: string }
+
+  // 个人资料编辑
+  'user-profile-edit': Record<string, never>
+  'escort-profile-edit': Record<string, never>
 }
+
+/**
+ * 需要必填参数的页面列表（用于运行时校验）
+ */
+export const PAGES_REQUIRING_PARAMS: Partial<Record<PreviewPage, readonly string[]>> = {
+  'campaigns-detail': ['id'],
+  'escort-detail': ['id'],
+  'workbench-order-detail': ['id'],
+} as const
+
+// ============================================================================
+// 分销中心类型定义（Step 11.1）
+// ============================================================================
 
 /**
  * 分销统计数据
@@ -410,6 +653,89 @@ export interface AvailableCouponOverride {
 }
 
 /**
+ * 积分规则项（预览器覆盖用）
+ */
+export interface PointRuleOverride {
+  id: string
+  /** 规则名称 */
+  name: string
+  /** 规则编码 */
+  code?: string
+  /** 类型: earn=获取, spend=消耗 */
+  type: 'earn' | 'spend'
+  /** 积分数 */
+  points: number
+  /** 描述 */
+  description?: string
+  /** 是否启用 */
+  isActive?: boolean
+}
+
+/**
+ * 积分数据覆盖（预览器覆盖用）
+ */
+export interface PointsDataOverride {
+  /** 当前积分余额 */
+  balance?: number
+  /** 积分规则列表 */
+  rules?: PointRuleOverride[]
+}
+
+/**
+ * 活动项（预览器覆盖用）
+ */
+export interface CampaignOverride {
+  id: string
+  /** 活动名称 */
+  name: string
+  /** 活动类型 */
+  type: 'flash_sale' | 'seckill' | 'threshold' | 'newcomer'
+  /** 状态 */
+  status: 'pending' | 'active' | 'ended' | 'cancelled'
+  /** 开始时间 */
+  startAt?: string
+  /** 结束时间 */
+  endAt?: string
+  /** 优惠类型 */
+  discountType?: 'amount' | 'percent'
+  /** 优惠值 */
+  discountValue?: number
+  /** 门槛金额 */
+  minAmount?: number
+  /** Banner URL */
+  bannerUrl?: string
+  /** 活动说明 */
+  description?: string
+}
+
+/**
+ * 活动数据覆盖（预览器覆盖用）
+ */
+export interface CampaignsDataOverride {
+  /** 活动列表 */
+  items?: CampaignOverride[]
+  /** 总数 */
+  total?: number
+}
+
+/**
+ * 邀请信息覆盖（预览器覆盖用）
+ * Step 14.13 FIX-P3-02: 邀请奖励弹窗实时预览
+ */
+export interface ReferralsDataOverride {
+  /** 邀请码 */
+  inviteCode?: string
+  /** 已邀请人数 */
+  invitedCount?: number
+  /** 已获得积分 */
+  earnedPoints?: number
+  /** 待领取积分 */
+  pendingPoints?: number
+  /** 每次邀请奖励积分 */
+  rewardPoints?: number
+}
+
+/**
  * 营销中心数据覆盖
  *
  * ⚠️ 用于管理后台预览，支持 Partial 覆盖
@@ -448,6 +774,28 @@ export interface MarketingDataOverride {
    * - array: 覆盖数据
    */
   availableCoupons?: AvailableCouponOverride[]
+
+  /**
+   * 积分数据覆盖
+   * - undefined: 不覆盖，使用 API 数据
+   * - object: 覆盖数据
+   */
+  points?: PointsDataOverride
+
+  /**
+   * 活动数据覆盖
+   * - undefined: 不覆盖，使用 API 数据
+   * - object: 覆盖数据
+   */
+  campaigns?: CampaignsDataOverride
+
+  /**
+   * 邀请信息覆盖
+   * Step 14.13 FIX-P3-02: 邀请奖励弹窗实时预览
+   * - undefined: 不覆盖，使用 API 数据
+   * - object: 覆盖数据
+   */
+  referrals?: ReferralsDataOverride
 }
 
 // 主题设置
@@ -594,6 +942,8 @@ export interface ServiceListItem {
     name: string
     icon?: string
   }
+  // 陪诊员视角专属字段（仅陪诊员可见）
+  commissionRate?: number  // 分成比例 0-100
 }
 
 // 服务列表响应
@@ -683,6 +1033,17 @@ export interface TerminalPreviewProps {
   showFrame?: boolean
   /** 自定义类名 */
   className?: string
+
+  // ============================================================================
+  // 服务详情预览（服务编辑页面专用）
+  // ============================================================================
+
+  /**
+   * 初始服务 ID
+   * 设置后预览器将直接显示该服务的详情页
+   * 用于服务编辑页面实时预览
+   */
+  initialServiceId?: string
 }
 
 // 默认主题设置

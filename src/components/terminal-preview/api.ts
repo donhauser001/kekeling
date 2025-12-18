@@ -13,11 +13,16 @@
  * - 用户 API 禁止走 escortRequest
  * - mock token（以 'mock-' 开头）不允许调真实后端
  *
+ * 平台适配（Task 3）：
+ * - 使用 platformRequest 替代 fetch，支持小程序环境
+ * - 业务层代码无需感知运行环境差异
+ *
  * @see src/components/terminal-preview/DEV_NOTES.md
  * @see docs/终端预览器集成/02-双身份会话与视角切换规格.md
  */
 
 import { getCookie } from '@/lib/cookies'
+import { platformRequest } from './platform'
 import type {
   ThemeSettings,
   HomePageSettings,
@@ -38,10 +43,58 @@ import type {
   DistributionPromotion,
 } from './types'
 
+// Mock 数据导入（Step 14.1-A 模块化）
+import {
+  // 营销中心
+  getMockMembershipData,
+  getMockMembershipPlans,
+  getMockPointsData,
+  getMockPointsRecords,
+  getMockReferralInfo,
+  getMockCampaigns,
+  getMockCampaignDetail,
+  getMockAvailableCoupons,
+  getMockCouponsData,
+  getMockEscorts,
+  getMockEscortDetail,
+  // 工作台
+  getMockWorkbenchStats,
+  getMockWorkbenchSummary,
+  getMockOrdersPool,
+  getMockEarnings,
+  getMockEarningsStats,
+  getMockWithdrawInfo,
+  getMockWithdrawStats,
+  getMockWorkbenchOrderDetail,
+  getMockWorkbenchSettings,
+  getMockMyOrders,
+  // 分销中心
+  getMockDistributionStats,
+  getMockDistributionMembers,
+  getMockDistributionRecords,
+  getMockDistributionInvite,
+  getMockDistributionPromotion,
+  getMockDistributionPromotionMaxLevel,
+} from './mocks'
+
 // ============================================================================
 // 常量定义
 // ============================================================================
 
+import { getApiBaseUrl } from './platform'
+
+/**
+ * 获取 API 基础 URL
+ *
+ * - 浏览器环境：返回 '/api'（由 Vite 代理处理）
+ * - 小程序环境：返回完整 URL（如 'http://localhost:3456/api'）
+ */
+function getApiUrl(): string {
+  const baseUrl = getApiBaseUrl()
+  return baseUrl ? `${baseUrl}/api` : '/api'
+}
+
+// 兼容现有代码的常量
 const API_BASE_URL = '/api'
 
 /**
@@ -174,16 +227,23 @@ export async function userRequest<T>(
   endpoint: string,
   options?: RequestOptions
 ): Promise<T> {
-  const headers = new Headers(options?.headers)
+  // 构建 headers（使用普通对象，兼容 platformRequest）
+  const headers: Record<string, string> = { ...options?.headers }
   const userToken = getUserToken()
 
   if (userToken) {
-    headers.set('Authorization', `Bearer ${userToken}`)
+    headers['Authorization'] = `Bearer ${userToken}`
   }
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
+  const fullUrl = `${getApiUrl()}${endpoint}`
+
+  // 调试日志：帮助追踪 API 请求
+  console.log(`[userRequest] ${options?.method || 'GET'} ${fullUrl}`)
+
+  const response = await platformRequest(fullUrl, {
+    method: options?.method as string,
     headers,
+    body: options?.body as string,
   })
 
   // 统一错误处理
@@ -199,7 +259,7 @@ export async function userRequest<T>(
     throw new ApiError(response.status, `HTTP ${response.status}`, endpoint)
   }
 
-  const result = await response.json()
+  const result = await response.json() as { data: T }
   return result.data
 }
 
@@ -218,7 +278,8 @@ export async function escortRequest<T>(
   endpoint: string,
   options?: RequestOptions
 ): Promise<T> {
-  const headers = new Headers(options?.headers)
+  // 构建 headers（使用普通对象，兼容 platformRequest）
+  const headers: Record<string, string> = { ...options?.headers }
   const escortToken = getEscortToken()
 
   // 无 token 时直接报错
@@ -226,11 +287,12 @@ export async function escortRequest<T>(
     throw new ApiError(401, '需要陪诊员登录', endpoint)
   }
 
-  headers.set('Authorization', `Bearer ${escortToken}`)
+  headers['Authorization'] = `Bearer ${escortToken}`
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
+  const response = await platformRequest(`${getApiUrl()}${endpoint}`, {
+    method: options?.method as string,
     headers,
+    body: options?.body as string,
   })
 
   // 统一错误处理
@@ -248,7 +310,7 @@ export async function escortRequest<T>(
     throw new ApiError(response.status, `HTTP ${response.status}`, endpoint)
   }
 
-  const result = await response.json()
+  const result = await response.json() as { data: T }
   return result.data
 }
 
@@ -294,6 +356,17 @@ export interface ServiceGuarantee {
 }
 
 // 服务详情类型（与后端一致）
+// 自定义字段类型
+export interface CustomField {
+  id: string
+  label: string
+  type: 'text' | 'textarea' | 'select' | 'checkbox' | 'radio' | 'datetime' | 'image'
+  required: boolean
+  options?: string[]  // select/checkbox/radio 的选项
+  placeholder?: string
+  maxImages?: number  // 图片类型时，最大上传数量
+}
+
 export interface ServiceDetail {
   id: string
   name: string
@@ -329,6 +402,39 @@ export interface ServiceDetail {
       sort: number
     }>
   }
+  category?: {
+    id: string
+    name: string
+    icon?: string
+  }
+  // 业务配置字段
+  needPatient?: boolean           // 需要填写就诊人
+  needHospital?: boolean          // 需要选择医院
+  needDepartment?: boolean        // 需要选择科室
+  needDoctor?: boolean            // 需要选择医生
+  needAppointment?: boolean       // 需要预约时间
+  needIdCard?: boolean            // 需要身份证
+  needGender?: boolean            // 需要性别
+  needEmergencyContact?: boolean  // 需要紧急联系人
+  needMedicalRecord?: boolean     // 需要上传病历
+  allowPostOrder?: boolean        // 允许先下单后填写信息
+  customFields?: CustomField[]    // 自定义字段
+  fieldOrder?: string[]           // 字段排序
+  builtinFieldsRequired?: Record<string, boolean>  // 内置字段必填配置
+  // 陪诊员视角专属字段（仅陪诊员可见）
+  commissionRate?: number         // 分成比例 0-100（如 70 表示陪诊员得 70%）
+  commissionNote?: string         // 分成说明
+  operationGuides?: OperationGuide[]  // 操作规范列表
+}
+
+// 操作规范类型
+export interface OperationGuide {
+  id: string
+  title: string
+  summary?: string          // 摘要
+  content: string           // 富文本内容
+  coverImage?: string
+  tags?: string[]
   category?: {
     id: string
     name: string
@@ -400,55 +506,7 @@ export interface MembershipPlan {
   isRecommended?: boolean
 }
 
-/**
- * Mock 会员信息
- */
-function getMockMembershipData(): MembershipInfo | null {
-  // 模拟 50% 概率已开通会员
-  if (Math.random() > 0.5) {
-    return {
-      id: 'mock-membership-1',
-      level: 'gold',
-      levelName: '黄金会员',
-      expireAt: '2025-06-30',
-      points: 1280,
-    }
-  }
-  return null
-}
-
-/**
- * Mock 会员套餐列表
- */
-function getMockMembershipPlans(): MembershipPlan[] {
-  return [
-    {
-      id: 'plan-1',
-      name: '月度会员',
-      description: '适合短期体验',
-      price: 29,
-      originalPrice: 39,
-      durationDays: 30,
-    },
-    {
-      id: 'plan-2',
-      name: '季度会员',
-      description: '超值推荐',
-      price: 79,
-      originalPrice: 117,
-      durationDays: 90,
-      isRecommended: true,
-    },
-    {
-      id: 'plan-3',
-      name: '年度会员',
-      description: '最划算的选择',
-      price: 268,
-      originalPrice: 468,
-      durationDays: 365,
-    },
-  ]
-}
+// getMockMembershipData, getMockMembershipPlans - 已迁移到 ./mocks/marketing.ts
 
 /**
  * 积分信息
@@ -489,63 +547,7 @@ export interface PointsRecordsResponse {
   total: number
 }
 
-/**
- * Mock 积分信息
- */
-function getMockPointsData(): PointsInfo {
-  return {
-    balance: 1280,
-    totalEarned: 2500,
-    totalUsed: 1220,
-    expiringSoon: 100,
-  }
-}
-
-/**
- * Mock 积分记录
- */
-function getMockPointsRecords(): PointsRecordsResponse {
-  return {
-    items: [
-      {
-        id: 'record-1',
-        title: '每日签到',
-        points: 10,
-        type: 'earn',
-        createdAt: '2024-12-12 09:00',
-      },
-      {
-        id: 'record-2',
-        title: '完成订单奖励',
-        points: 50,
-        type: 'earn',
-        createdAt: '2024-12-11 15:30',
-      },
-      {
-        id: 'record-3',
-        title: '兑换优惠券',
-        points: 100,
-        type: 'use',
-        createdAt: '2024-12-10 12:00',
-      },
-      {
-        id: 'record-4',
-        title: '邀请好友奖励',
-        points: 200,
-        type: 'earn',
-        createdAt: '2024-12-09 18:00',
-      },
-      {
-        id: 'record-5',
-        title: '抵扣订单',
-        points: 50,
-        type: 'use',
-        createdAt: '2024-12-08 10:30',
-      },
-    ],
-    total: 5,
-  }
-}
+// getMockPointsData, getMockPointsRecords - 已迁移到 ./mocks/marketing.ts
 
 /**
  * 邀请信息
@@ -584,50 +586,7 @@ export interface Campaign {
   status: 'upcoming' | 'ongoing' | 'ended'
 }
 
-/**
- * Mock 邀请信息
- */
-function getMockReferralInfo(): ReferralInfo {
-  return {
-    inviteCode: 'KKL2024',
-    invitedCount: 5,
-    earnedPoints: 500,
-    pendingPoints: 100,
-    rewardPoints: 100,
-  }
-}
-
-/**
- * Mock 活动列表
- */
-function getMockCampaigns(): Campaign[] {
-  return [
-    {
-      id: 'campaign-1',
-      title: '新年特惠活动',
-      description: '全场服务8折起，会员更享折上折',
-      startTime: '2024-12-20',
-      endTime: '2025-01-20',
-      status: 'ongoing',
-    },
-    {
-      id: 'campaign-2',
-      title: '邀请好友送好礼',
-      description: '邀请好友注册，双方各得100积分',
-      startTime: '2024-12-01',
-      endTime: '2025-03-01',
-      status: 'ongoing',
-    },
-    {
-      id: 'campaign-3',
-      title: '双十一狂欢节',
-      description: '限时秒杀，超值优惠券等你领',
-      startTime: '2024-11-01',
-      endTime: '2024-11-15',
-      status: 'ended',
-    },
-  ]
-}
+// getMockReferralInfo, getMockCampaigns - 已迁移到 ./mocks/marketing.ts
 
 /**
  * 活动详情
@@ -656,64 +615,50 @@ export interface AvailableCoupon {
   remaining: number
 }
 
-/**
- * Mock 活动详情
- */
-function getMockCampaignDetail(id: string): CampaignDetail {
-  const campaigns = getMockCampaigns()
-  const found = campaigns.find(c => c.id === id)
+// getMockCampaignDetail - 已迁移到 ./mocks/marketing.ts
 
-  if (found) {
-    return {
-      ...found,
-      rules: `1. 活动期间，全场服务享受优惠价格\n2. 会员可叠加使用会员折扣\n3. 优惠券可与活动同时使用\n4. 每位用户限参与一次\n5. 最终解释权归平台所有`,
-      rewards: ['满减优惠券 x3', '双倍积分', '专属客服通道'],
-    }
-  }
+// getMockAvailableCoupons - 已迁移到 ./mocks/marketing.ts
 
-  // 未找到时返回默认 mock
-  return {
-    id: id,
-    title: '活动详情',
-    description: '这是一个精彩的活动',
-    startTime: '2024-12-01',
-    endTime: '2025-01-01',
-    status: 'ongoing',
-    rules: '活动规则说明...',
-    rewards: ['奖励1', '奖励2'],
-  }
+// ==========================================================================
+// 用户资料类型
+// ==========================================================================
+
+/** 用户资料 */
+export interface UserProfile {
+  id: string
+  nickname?: string | null
+  avatar?: string | null
+  phone?: string | null
+  gender?: string | null
+  birthday?: string | null
 }
 
-/**
- * Mock 可领取优惠券列表
- */
-function getMockAvailableCoupons(): AvailableCoupon[] {
-  return [
-    {
-      id: 'avail-1',
-      name: '新人专享券',
-      description: '限新用户领取',
-      amount: 50,
-      minAmount: 200,
-      remaining: 100,
-    },
-    {
-      id: 'avail-2',
-      name: '限时折扣券',
-      description: '全场通用',
-      amount: 30,
-      minAmount: 100,
-      remaining: 50,
-    },
-    {
-      id: 'avail-3',
-      name: '会员专属券',
-      description: '限会员领取',
-      amount: 20,
-      minAmount: 80,
-      remaining: 0,
-    },
-  ]
+/** 陪诊员资料 */
+export interface EscortProfile {
+  id: string
+  name: string
+  avatar?: string | null
+  phone: string
+  gender: string
+  introduction?: string | null
+  levelCode?: string | null
+  rating: number
+  orderCount: number
+}
+
+/** Mock 陪诊员资料 */
+function getMockEscortProfile(): EscortProfile {
+  return {
+    id: 'mock-escort-id',
+    name: '张小明',
+    avatar: null,
+    phone: '138****8888',
+    gender: 'male',
+    introduction: '从事陪诊服务3年，熟悉各大医院就诊流程，服务态度好，耐心细致。',
+    levelCode: 'gold',
+    rating: 4.9,
+    orderCount: 328,
+  }
 }
 
 // ==========================================================================
@@ -740,26 +685,22 @@ export interface EscortDetail extends EscortListItem {
   serviceAreas?: string[]
 }
 
-function getMockEscorts(): EscortListItem[] {
-  return [
-    { id: 'escort-1', name: '王丽华', level: '金牌', serviceCount: 328, rating: 99, tags: ['全程陪诊', '代取报告'], status: 'available' },
-    { id: 'escort-2', name: '张明', level: '银牌', serviceCount: 156, rating: 97, tags: ['产检陪护', '儿科陪诊'], status: 'available' },
-    { id: 'escort-3', name: '李秀英', level: '金牌', serviceCount: 412, rating: 98, tags: ['肿瘤科', '慢病管理'], status: 'offline' },
-  ]
-}
-
-function getMockEscortDetail(id: string): EscortDetail {
-  const escorts = getMockEscorts()
-  const found = escorts.find(e => e.id === id)
-  if (found) {
-    return { ...found, bio: `从事陪诊服务多年，累计服务${found.serviceCount}位客户。`, experience: found.level === '金牌' ? 5 : 3, serviceAreas: ['北京朝阳区', '北京海淀区'] }
-  }
-  return { id, name: '陪诊员', serviceCount: 0, rating: 0, status: 'offline', bio: '暂无简介', experience: 0, serviceAreas: [] }
-}
+// getMockEscorts, getMockEscortDetail - 已迁移到 ./mocks/marketing.ts
 
 // ==========================================================================
 // 工作台类型（陪诊员端，需 escortToken）
 // ==========================================================================
+
+/** 陪诊员接单状态 */
+export type EscortOnlineStatus = 'online' | 'busy' | 'rest' | 'offline'
+
+/** 收入趋势数据点 */
+export interface IncomeTrendItem {
+  /** 日期标签（如：周一、12/10） */
+  label: string
+  /** 收入金额 */
+  amount: number
+}
 
 /** 工作台统计数据 */
 export interface WorkbenchStats {
@@ -775,21 +716,25 @@ export interface WorkbenchStats {
   monthIncome: number
   /** 可提现金额 */
   withdrawable: number
-  /** 是否在线 */
-  isOnline: boolean
+  /** 接单状态 */
+  onlineStatus: EscortOnlineStatus
+  /** 近7天收入趋势 */
+  incomeTrend?: IncomeTrendItem[]
+  /** 陪诊员姓名 */
+  escortName?: string
+  /** 陪诊员头像 */
+  escortAvatar?: string
+  /** 陪诊员手机号（脱敏） */
+  escortPhone?: string
+  /** 认证等级（如：金牌陪诊员） */
+  escortLevel?: string
+  /** 评分 */
+  rating?: number
+  /** 服务订单数 */
+  orderCount?: number
 }
 
-function getMockWorkbenchStats(): WorkbenchStats {
-  return {
-    pendingOrders: 3,
-    ongoingOrders: 1,
-    completedOrders: 12,
-    todayIncome: 580.0,
-    monthIncome: 8650.0,
-    withdrawable: 6200.0,
-    isOnline: true,
-  }
-}
+// getMockWorkbenchStats - 已迁移到 ./mocks/workbench.ts
 
 // ==========================================================================
 // Step 6/7: 工作台扩展类型
@@ -860,6 +805,60 @@ export interface OrdersPoolResponse {
 }
 
 /**
+ * 我的订单项
+ * 对应接口: GET /escort-app/my-orders
+ */
+export interface MyOrderItem {
+  id: string
+  /** 订单号 */
+  orderNo: string
+  /** 服务类型 */
+  serviceType: string
+  /** 服务名称 */
+  serviceName: string
+  /** 预约时间 */
+  appointmentTime: string
+  /** 医院名称 */
+  hospitalName: string
+  /** 科室 */
+  department?: string
+  /** 订单金额 */
+  amount: number
+  /** 预计佣金 */
+  commission: number
+  /** 订单状态 */
+  status: 'pending' | 'accepted' | 'ongoing' | 'completed' | 'cancelled'
+  /** 创建时间 */
+  createdAt: string
+  /** 用户名称（脱敏） */
+  userName?: string
+  /** 用户电话（脱敏） */
+  userPhone?: string
+}
+
+/**
+ * 我的订单响应
+ * 对应接口: GET /escort-app/my-orders
+ */
+export interface MyOrdersResponse {
+  items: MyOrderItem[]
+  total: number
+  hasMore: boolean
+}
+
+/**
+ * 我的订单查询参数
+ */
+export interface MyOrdersParams {
+  /** 订单状态筛选 */
+  status?: 'pending' | 'ongoing' | 'completed' | 'cancelled'
+  /** 页码 */
+  page?: number
+  /** 每页数量 */
+  pageSize?: number
+}
+
+/**
  * 工作台订单详情
  * 对应接口: GET /escort-app/orders/:id
  */
@@ -906,6 +905,53 @@ export interface WorkbenchOrderDetail {
   createdAt: string
   /** 更新时间 */
   updatedAt: string
+}
+
+/**
+ * 工作台设置
+ * 对应接口: GET /escort-app/workbench/settings
+ * 通道: escortRequest（⚠️ 必须 escortToken）
+ */
+export interface WorkbenchSettings {
+  /** 是否在线（接单开关） */
+  isOnline: boolean
+  /** 自动接单 */
+  autoAcceptOrders: boolean
+  /** 接单偏好 */
+  preferences: {
+    /** 服务类型偏好 */
+    serviceTypes: string[]
+    /** 服务医院 */
+    serviceAreas: string[]
+    /** 擅长科室 */
+    departments?: string[]
+    /** 最大接单距离（km） */
+    maxDistance?: number
+    /** 工作时间段 */
+    workingHours?: {
+      start: string // HH:mm
+      end: string   // HH:mm
+    }
+  }
+  /** 通知设置 */
+  notifications: {
+    /** 新订单通知 */
+    newOrder: boolean
+    /** 订单状态变更通知 */
+    orderStatus: boolean
+    /** 系统通知 */
+    system: boolean
+    /** 营销通知 */
+    marketing: boolean
+  }
+  /** 个人资料 */
+  profile: {
+    name: string
+    avatar?: string
+    phone: string
+    level: string
+    rating: number
+  }
 }
 
 /**
@@ -1072,289 +1118,12 @@ export interface WithdrawStats {
   recentRecords: WithdrawRecord[]
 }
 
-function getMockWorkbenchSummary(): WorkbenchSummary {
-  return {
-    todayOrders: 3,
-    weekOrders: 18,
-    monthOrders: 45,
-    totalOrders: 328,
-    todayIncome: 580.0,
-    weekIncome: 3200.0,
-    monthIncome: 8650.0,
-    totalIncome: 52800.0,
-    rating: 4.9,
-    satisfactionRate: 98,
-  }
-}
+// getMockWorkbenchSummary, getMockOrdersPool - 已迁移到 ./mocks/workbench.ts
 
-function getMockOrdersPool(): OrdersPoolResponse {
-  return {
-    items: [
-      {
-        id: 'pool-1',
-        orderNo: 'PZ202412120001',
-        serviceType: 'accompany',
-        serviceName: '全程陪诊',
-        appointmentTime: '2024-12-13 09:00',
-        hospitalName: '北京协和医院',
-        department: '内科',
-        amount: 299,
-        commission: 180,
-        distance: 3.2,
-        createdAt: '2024-12-12 14:30',
-      },
-      {
-        id: 'pool-2',
-        orderNo: 'PZ202412120002',
-        serviceType: 'report',
-        serviceName: '代取报告',
-        appointmentTime: '2024-12-13 14:00',
-        hospitalName: '北京朝阳医院',
-        amount: 99,
-        commission: 60,
-        distance: 5.8,
-        createdAt: '2024-12-12 15:20',
-      },
-      {
-        id: 'pool-3',
-        orderNo: 'PZ202412120003',
-        serviceType: 'accompany',
-        serviceName: '产检陪护',
-        appointmentTime: '2024-12-14 08:30',
-        hospitalName: '北京妇产医院',
-        department: '产科',
-        amount: 399,
-        commission: 240,
-        distance: 2.1,
-        createdAt: '2024-12-12 16:00',
-      },
-    ],
-    total: 3,
-    hasMore: false,
-  }
-}
+// getMockEarnings, getMockEarningsStats, getMockWithdrawInfo - 已迁移到 ./mocks/workbench.ts
 
-function getMockEarnings(): EarningsResponse {
-  return {
-    balance: 6200.0,
-    totalEarned: 52800.0,
-    totalWithdrawn: 46000.0,
-    pendingSettlement: 580.0,
-    items: [
-      { id: 'e1', type: 'order', title: '订单收入', amount: 180, createdAt: '2024-12-12 16:00', orderNo: 'PZ202412120001' },
-      { id: 'e2', type: 'order', title: '订单收入', amount: 240, createdAt: '2024-12-11 18:30', orderNo: 'PZ202412110003' },
-      { id: 'e3', type: 'bonus', title: '周冠军奖励', amount: 100, createdAt: '2024-12-10 10:00' },
-      { id: 'e4', type: 'withdraw', title: '提现', amount: -1000, createdAt: '2024-12-08 14:00' },
-      { id: 'e5', type: 'order', title: '订单收入', amount: 160, createdAt: '2024-12-07 17:20', orderNo: 'PZ202412070002' },
-    ],
-    hasMore: true,
-  }
-}
-
-/**
- * Mock 收入统计数据
- * 用于 WorkbenchEarningsPage 展示
- */
-function getMockEarningsStats(): EarningsStats {
-  return {
-    totalEarnings: 28650.00,
-    monthlyEarnings: 4280.50,
-    withdrawable: 3650.00,
-    pendingWithdraw: 500.00,
-    totalOrders: 186,
-    monthlyOrders: 23,
-    monthlyOrdersGrowth: 12,
-    recentRecords: [
-      {
-        id: '1',
-        type: 'order',
-        title: '全程陪诊服务',
-        amount: 280.00,
-        orderNo: 'PZ2024121201',
-        createdAt: '2024-12-12 14:30',
-        status: 'completed',
-      },
-      {
-        id: '2',
-        type: 'bonus',
-        title: '好评奖励',
-        amount: 20.00,
-        orderNo: 'PZ2024121101',
-        createdAt: '2024-12-11 18:20',
-        status: 'completed',
-      },
-      {
-        id: '3',
-        type: 'order',
-        title: '代问诊服务',
-        amount: 150.00,
-        orderNo: 'PZ2024121102',
-        createdAt: '2024-12-11 10:15',
-        status: 'completed',
-      },
-      {
-        id: '4',
-        type: 'withdraw',
-        title: '提现至微信',
-        amount: -500.00,
-        createdAt: '2024-12-10 16:45',
-        status: 'pending',
-      },
-      {
-        id: '5',
-        type: 'order',
-        title: '检查陪同服务',
-        amount: 200.00,
-        orderNo: 'PZ2024121001',
-        createdAt: '2024-12-10 09:30',
-        status: 'completed',
-      },
-    ],
-  }
-}
-
-function getMockWithdrawInfo(): WithdrawInfo {
-  return {
-    withdrawable: 6200.0,
-    minWithdrawAmount: 100,
-    feeRate: 0,
-    estimatedHours: 24,
-    bankCards: [
-      { id: 'card-1', bankName: '招商银行', cardNo: '6789', isDefault: true },
-      { id: 'card-2', bankName: '工商银行', cardNo: '1234', isDefault: false },
-    ],
-  }
-}
-
-/**
- * Mock 提现统计数据
- * 用于 WorkbenchWithdrawPage 展示
- */
-function getMockWithdrawStats(): WithdrawStats {
-  return {
-    withdrawable: 3650.00,
-    pendingAmount: 500.00,
-    minAmount: 100,
-    maxAmount: 50000,
-    feeRate: 0,
-    estimatedHours: 24,
-    remainingTimes: 3,
-    accounts: [
-      {
-        id: 'acc-1',
-        type: 'bank',
-        name: '储蓄卡',
-        accountNo: '****6789',
-        bankName: '招商银行',
-        isDefault: true,
-      },
-      {
-        id: 'acc-2',
-        type: 'bank',
-        name: '储蓄卡',
-        accountNo: '****1234',
-        bankName: '工商银行',
-        isDefault: false,
-      },
-      {
-        id: 'acc-3',
-        type: 'alipay',
-        name: '支付宝',
-        accountNo: '138****8888',
-        isDefault: false,
-      },
-    ],
-    recentRecords: [
-      {
-        id: 'wd-1',
-        amount: 500.00,
-        fee: 0,
-        actualAmount: 500.00,
-        accountName: '招商银行 ****6789',
-        createdAt: '2024-12-10 16:45',
-        status: 'processing',
-      },
-      {
-        id: 'wd-2',
-        amount: 1000.00,
-        fee: 0,
-        actualAmount: 1000.00,
-        accountName: '招商银行 ****6789',
-        createdAt: '2024-12-05 10:20',
-        completedAt: '2024-12-05 18:30',
-        status: 'completed',
-      },
-      {
-        id: 'wd-3',
-        amount: 2000.00,
-        fee: 0,
-        actualAmount: 2000.00,
-        accountName: '工商银行 ****1234',
-        createdAt: '2024-11-28 14:15',
-        completedAt: '2024-11-29 09:00',
-        status: 'completed',
-      },
-      {
-        id: 'wd-4',
-        amount: 800.00,
-        fee: 0,
-        actualAmount: 800.00,
-        accountName: '支付宝 138****8888',
-        createdAt: '2024-11-20 09:30',
-        completedAt: '2024-11-20 10:15',
-        status: 'completed',
-      },
-      {
-        id: 'wd-5',
-        amount: 500.00,
-        fee: 0,
-        actualAmount: 500.00,
-        accountName: '招商银行 ****6789',
-        createdAt: '2024-11-15 16:00',
-        status: 'failed',
-      },
-    ],
-  }
-}
-
-/**
- * Mock 优惠券数据
- * 用于接口不存在时的降级显示
- */
-function getMockCouponsData(): CouponsResponse {
-  return {
-    items: [
-      {
-        id: 'mock-1',
-        name: '新人专享券',
-        description: '全场通用',
-        amount: 50,
-        minAmount: 200,
-        expireAt: '2025-01-31',
-        status: 'available',
-      },
-      {
-        id: 'mock-2',
-        name: '会员折扣券',
-        description: '限指定服务使用',
-        amount: 30,
-        minAmount: 100,
-        expireAt: '2025-02-28',
-        status: 'available',
-      },
-      {
-        id: 'mock-3',
-        name: '节日优惠券',
-        description: '全场通用',
-        amount: 20,
-        minAmount: 80,
-        expireAt: '2024-12-01',
-        status: 'expired',
-      },
-    ],
-    total: 3,
-  }
-}
+// getMockWithdrawStats - 已迁移到 ./mocks/workbench.ts
+// getMockCouponsData - 已迁移到 ./mocks/marketing.ts
 
 // ============================================================================
 // 预览器 API
@@ -1377,11 +1146,243 @@ export const previewApi = {
   // ==========================================================================
 
   // 主题与首页
-  getThemeSettings: () => userRequest<ThemeSettings>('/config/theme/settings'),
+  getThemeSettings: () => {
+    console.log('[previewApi.getThemeSettings] 开始获取主题设置')
+    return userRequest<ThemeSettings>('/config/theme/settings')
+  },
   getHomePageSettings: () => userRequest<HomePageSettings>('/home/page-settings'),
   getBanners: (area: string = 'home') =>
     userRequest<BannerAreaData>(`/home/banners?position=${area}`),
   getStats: () => userRequest<StatsData>('/home/stats'),
+
+  // ==========================================================================
+  // 用户资料
+  // ==========================================================================
+
+  /**
+   * 获取当前用户资料
+   * 接口: GET /users/profile
+   * 通道: userRequest
+   */
+  getUserProfile: async (): Promise<UserProfile | null> => {
+    try {
+      return await userRequest<UserProfile>('/users/profile')
+    } catch (error) {
+      console.warn('[previewApi.getUserProfile] 获取用户资料失败:', error)
+      // 返回 mock 数据用于预览
+      return {
+        id: 'mock-user-id',
+        nickname: '微信用户',
+        avatar: null,
+        phone: '138****8888',
+        gender: null,
+        birthday: null,
+      }
+    }
+  },
+
+  /**
+   * 更新用户资料
+   * 接口: PUT /users/profile
+   * 通道: userRequest
+   */
+  updateUserProfile: async (data: {
+    nickname?: string
+    avatar?: string
+    gender?: string
+    birthday?: string
+  }): Promise<UserProfile | null> => {
+    try {
+      return await userRequest<UserProfile>('/users/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+    } catch (error) {
+      console.warn('[previewApi.updateUserProfile] 更新用户资料失败:', error)
+      return null
+    }
+  },
+
+  // CMS 页面（公开接口）
+  getCmsPageBySlug: async (slug: string) => {
+    try {
+      return await userRequest<{
+        id: string
+        title: string
+        slug: string
+        content: string
+        excerpt?: string
+        coverImage?: string
+        status: string
+        publishedAt?: string
+      }>(`/cms/pages/public/${slug}`)
+    } catch (error) {
+      console.warn(`[previewApi.getCmsPageBySlug] 页面 ${slug} 不存在或未发布`)
+      return null
+    }
+  },
+
+  // CMS 文章（公开接口）
+  getArticlesByCategory: async (categorySlug: string) => {
+    try {
+      const result = await userRequest<{
+        list: Array<{
+          id: string
+          title: string
+          slug: string
+          summary?: string
+          coverImage?: string
+          publishedAt?: string
+        }>
+        total: number
+      }>(`/cms/articles/public?categorySlug=${categorySlug}`)
+      // 适配返回格式
+      return {
+        items: result.list.map(item => ({
+          ...item,
+          excerpt: item.summary,
+        })),
+        total: result.total,
+      }
+    } catch (error) {
+      console.warn(`[previewApi.getArticlesByCategory] 获取分类 ${categorySlug} 文章失败`)
+      return { items: [], total: 0 }
+    }
+  },
+
+  getArticleBySlug: async (slug: string) => {
+    try {
+      return await userRequest<{
+        id: string
+        title: string
+        slug: string
+        content: string
+        excerpt?: string
+        coverImage?: string
+        publishedAt?: string
+        category?: {
+          id: string
+          name: string
+          slug: string
+        }
+      }>(`/cms/articles/public/${slug}`)
+    } catch (error) {
+      console.warn(`[previewApi.getArticleBySlug] 文章 ${slug} 不存在或未发布`)
+      return null
+    }
+  },
+
+  getArticleById: async (id: string) => {
+    try {
+      return await userRequest<{
+        id: string
+        title: string
+        slug: string
+        content: string
+        excerpt?: string
+        coverImage?: string
+        publishedAt?: string
+        category?: {
+          id: string
+          name: string
+          slug: string
+        }
+      }>(`/cms/articles/public/detail/${id}`)
+    } catch (error) {
+      console.warn(`[previewApi.getArticleById] 文章 ${id} 不存在或未发布`)
+      return null
+    }
+  },
+
+  // 用户地址
+  getAddresses: async () => {
+    try {
+      return await userRequest<Array<{
+        id: string
+        name: string
+        phone: string
+        province: string
+        city: string
+        district: string
+        address: string
+        latitude?: number
+        longitude?: number
+        tag?: string
+        isDefault: boolean
+        createdAt: string
+        updatedAt: string
+      }>>('/user/addresses')
+    } catch (error) {
+      console.warn('[previewApi.getAddresses] 获取地址失败')
+      return []
+    }
+  },
+
+  getDefaultAddress: async () => {
+    try {
+      return await userRequest<{
+        id: string
+        name: string
+        phone: string
+        province: string
+        city: string
+        district: string
+        address: string
+        tag?: string
+        isDefault: boolean
+      } | null>('/user/addresses/default')
+    } catch (error) {
+      console.warn('[previewApi.getDefaultAddress] 获取默认地址失败')
+      return null
+    }
+  },
+
+  createAddress: async (data: {
+    name: string
+    phone: string
+    province: string
+    city: string
+    district: string
+    address: string
+    tag?: string
+    isDefault?: boolean
+  }) => {
+    return await userRequest<{ id: string }>('/user/addresses', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    })
+  },
+
+  updateAddress: async (id: string, data: {
+    name?: string
+    phone?: string
+    province?: string
+    city?: string
+    district?: string
+    address?: string
+    tag?: string
+    isDefault?: boolean
+  }) => {
+    return await userRequest<{ id: string }>(`/user/addresses/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    })
+  },
+
+  deleteAddress: async (id: string) => {
+    return await userRequest<{ success: boolean }>(`/user/addresses/${id}`, {
+      method: 'DELETE',
+    })
+  },
+
+  setDefaultAddress: async (id: string) => {
+    return await userRequest<{ id: string }>(`/user/addresses/${id}/default`, {
+      method: 'POST',
+    })
+  },
 
   // 服务
   getCategories: () => userRequest<ServiceCategory[]>('/services/categories'),
@@ -1406,17 +1407,20 @@ export const previewApi = {
    * 获取我的优惠券
    * 接口: GET /marketing/coupons/my
    * 通道: userRequest
+   * Step 14.19 UI-B-3: 所有错误降级到 mock，保证预览器稳定性
    */
   getMyCoupons: async (): Promise<CouponsResponse> => {
     try {
       return await userRequest<CouponsResponse>('/marketing/coupons/my')
     } catch (error) {
-      // 接口不存在时返回 mock 数据（开发阶段）
+      // 404/500 降级到 mock 数据
       if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
-        console.warn('[previewApi.getMyCoupons] 使用 mock 数据')
+        console.warn('[previewApi.getMyCoupons] 接口错误，使用 mock 数据')
         return getMockCouponsData()
       }
-      throw error
+      // 其他错误也降级，保证预览器可用
+      console.warn('[previewApi.getMyCoupons] 请求失败，降级 mock:', error)
+      return getMockCouponsData()
     }
   },
 
@@ -1424,16 +1428,18 @@ export const previewApi = {
    * 获取我的会员信息
    * 接口: GET /marketing/membership/my
    * 通道: userRequest
+   * Step 14.19 UI-B-3: 所有错误降级到 mock，保证预览器稳定性
    */
   getMyMembership: async (): Promise<MembershipInfo | null> => {
     try {
       return await userRequest<MembershipInfo | null>('/marketing/membership/my')
     } catch (error) {
       if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
-        console.warn('[previewApi.getMyMembership] 使用 mock 数据')
+        console.warn('[previewApi.getMyMembership] 接口错误，使用 mock 数据')
         return getMockMembershipData()
       }
-      throw error
+      console.warn('[previewApi.getMyMembership] 请求失败，降级 mock:', error)
+      return getMockMembershipData()
     }
   },
 
@@ -1441,16 +1447,18 @@ export const previewApi = {
    * 获取会员套餐列表
    * 接口: GET /marketing/membership/plans
    * 通道: userRequest
+   * Step 14.19 UI-B-3: 所有错误降级到 mock，保证预览器稳定性
    */
   getMembershipPlans: async (): Promise<MembershipPlan[]> => {
     try {
       return await userRequest<MembershipPlan[]>('/marketing/membership/plans')
     } catch (error) {
       if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
-        console.warn('[previewApi.getMembershipPlans] 使用 mock 数据')
+        console.warn('[previewApi.getMembershipPlans] 接口错误，使用 mock 数据')
         return getMockMembershipPlans()
       }
-      throw error
+      console.warn('[previewApi.getMembershipPlans] 请求失败，降级 mock:', error)
+      return getMockMembershipPlans()
     }
   },
 
@@ -1458,16 +1466,18 @@ export const previewApi = {
    * 获取我的积分信息
    * 接口: GET /marketing/points/my
    * 通道: userRequest
+   * Step 14.19 UI-B-3: 所有错误降级到 mock，保证预览器稳定性
    */
   getMyPoints: async (): Promise<PointsInfo> => {
     try {
       return await userRequest<PointsInfo>('/marketing/points/my')
     } catch (error) {
       if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
-        console.warn('[previewApi.getMyPoints] 使用 mock 数据')
+        console.warn('[previewApi.getMyPoints] 接口错误，使用 mock 数据')
         return getMockPointsData()
       }
-      throw error
+      console.warn('[previewApi.getMyPoints] 请求失败，降级 mock:', error)
+      return getMockPointsData()
     }
   },
 
@@ -1475,6 +1485,7 @@ export const previewApi = {
    * 获取积分记录
    * 接口: GET /marketing/points/records
    * 通道: userRequest
+   * Step 14.19 UI-B-3: 所有错误降级到 mock，保证预览器稳定性
    */
   getPointsRecords: async (params?: { page?: number; pageSize?: number }): Promise<PointsRecordsResponse> => {
     try {
@@ -1485,10 +1496,11 @@ export const previewApi = {
       return await userRequest<PointsRecordsResponse>(`/marketing/points/records${query ? `?${query}` : ''}`)
     } catch (error) {
       if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
-        console.warn('[previewApi.getPointsRecords] 使用 mock 数据')
+        console.warn('[previewApi.getPointsRecords] 接口错误，使用 mock 数据')
         return getMockPointsRecords()
       }
-      throw error
+      console.warn('[previewApi.getPointsRecords] 请求失败，降级 mock:', error)
+      return getMockPointsRecords()
     }
   },
 
@@ -1496,16 +1508,18 @@ export const previewApi = {
    * 获取邀请信息
    * 接口: GET /marketing/referrals/info
    * 通道: userRequest
+   * Step 14.19 UI-B-3: 所有错误降级到 mock，保证预览器稳定性
    */
   getReferralInfo: async (): Promise<ReferralInfo> => {
     try {
       return await userRequest<ReferralInfo>('/marketing/referrals/info')
     } catch (error) {
       if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
-        console.warn('[previewApi.getReferralInfo] 使用 mock 数据')
+        console.warn('[previewApi.getReferralInfo] 接口错误，使用 mock 数据')
         return getMockReferralInfo()
       }
-      throw error
+      console.warn('[previewApi.getReferralInfo] 请求失败，降级 mock:', error)
+      return getMockReferralInfo()
     }
   },
 
@@ -1513,16 +1527,18 @@ export const previewApi = {
    * 获取活动列表
    * 接口: GET /marketing/campaigns
    * 通道: userRequest
+   * Step 14.19 UI-B-3: 所有错误降级到 mock，保证预览器稳定性
    */
   getCampaigns: async (): Promise<Campaign[]> => {
     try {
       return await userRequest<Campaign[]>('/marketing/campaigns')
     } catch (error) {
       if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
-        console.warn('[previewApi.getCampaigns] 使用 mock 数据')
+        console.warn('[previewApi.getCampaigns] 接口错误，使用 mock 数据')
         return getMockCampaigns()
       }
-      throw error
+      console.warn('[previewApi.getCampaigns] 请求失败，降级 mock:', error)
+      return getMockCampaigns()
     }
   },
 
@@ -1530,16 +1546,18 @@ export const previewApi = {
    * 获取活动详情
    * 接口: GET /marketing/campaigns/:id
    * 通道: userRequest
+   * Step 14.19 UI-B-3: 所有错误降级到 mock，保证预览器稳定性
    */
   getCampaignDetail: async (id: string): Promise<CampaignDetail> => {
     try {
       return await userRequest<CampaignDetail>(`/marketing/campaigns/${id}`)
     } catch (error) {
       if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
-        console.warn('[previewApi.getCampaignDetail] 使用 mock 数据, id:', id)
+        console.warn('[previewApi.getCampaignDetail] 接口错误，使用 mock 数据, id:', id)
         return getMockCampaignDetail(id)
       }
-      throw error
+      console.warn('[previewApi.getCampaignDetail] 请求失败，降级 mock:', error)
+      return getMockCampaignDetail(id)
     }
   },
 
@@ -1547,16 +1565,18 @@ export const previewApi = {
    * 获取可领取优惠券列表
    * 接口: GET /marketing/coupons/available
    * 通道: userRequest
+   * Step 14.19 UI-B-3: 所有错误降级到 mock，保证预览器稳定性
    */
   getAvailableCoupons: async (): Promise<AvailableCoupon[]> => {
     try {
       return await userRequest<AvailableCoupon[]>('/marketing/coupons/available')
     } catch (error) {
       if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
-        console.warn('[previewApi.getAvailableCoupons] 使用 mock 数据')
+        console.warn('[previewApi.getAvailableCoupons] 接口错误，使用 mock 数据')
         return getMockAvailableCoupons()
       }
-      throw error
+      console.warn('[previewApi.getAvailableCoupons] 请求失败，降级 mock:', error)
+      return getMockAvailableCoupons()
     }
   },
 
@@ -1564,16 +1584,18 @@ export const previewApi = {
    * 获取陪诊员列表（公开信息）
    * 接口: GET /escorts
    * 通道: userRequest（⚠️ 公开接口，不需要 escortToken）
+   * Step 14.19 UI-B-3: 所有错误降级到 mock，保证预览器稳定性
    */
   getEscorts: async (): Promise<EscortListItem[]> => {
     try {
       return await userRequest<EscortListItem[]>('/escorts')
     } catch (error) {
       if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
-        console.warn('[previewApi.getEscorts] 使用 mock 数据')
+        console.warn('[previewApi.getEscorts] 接口错误，使用 mock 数据')
         return getMockEscorts()
       }
-      throw error
+      console.warn('[previewApi.getEscorts] 请求失败，降级 mock:', error)
+      return getMockEscorts()
     }
   },
 
@@ -1581,16 +1603,51 @@ export const previewApi = {
    * 获取陪诊员详情（公开信息）
    * 接口: GET /escorts/:id
    * 通道: userRequest（⚠️ 公开接口，不需要 escortToken）
+   * Step 14.19 UI-B-3: 所有错误降级到 mock，保证预览器稳定性
    */
   getEscortDetail: async (id: string): Promise<EscortDetail> => {
     try {
       return await userRequest<EscortDetail>(`/escorts/${id}`)
     } catch (error) {
       if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
-        console.warn('[previewApi.getEscortDetail] 使用 mock 数据, id:', id)
+        console.warn('[previewApi.getEscortDetail] 接口错误，使用 mock 数据, id:', id)
         return getMockEscortDetail(id)
       }
-      throw error
+      console.warn('[previewApi.getEscortDetail] 请求失败，降级 mock:', error)
+      return getMockEscortDetail(id)
+    }
+  },
+
+  // ==========================================================================
+  // 订单投诉（用户端）
+  // ==========================================================================
+
+  /**
+   * 提交订单投诉
+   * 接口: POST /orders/:id/complaint
+   * 通道: userRequest
+   */
+  submitComplaint: async (
+    orderId: string,
+    data: {
+      type: string
+      content: string
+      evidence?: string[]
+    }
+  ): Promise<{ id: string; status: string }> => {
+    try {
+      return await userRequest<{ id: string; status: string }>(
+        `/orders/${orderId}/complaint`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        }
+      )
+    } catch (error) {
+      console.warn('[previewApi.submitComplaint] 提交投诉失败:', error)
+      // Mock 模式下模拟成功
+      return { id: `complaint-${Date.now()}`, status: 'pending' }
     }
   },
 
@@ -1653,6 +1710,7 @@ export const previewApi = {
    * 通道: escortRequest（⚠️ 必须 escortToken）
    *
    * Mock Token 规则：token 以 'mock-' 开头时直接返回 mock 数据
+   * Step 14.19 UI-B-3: 所有错误降级到 mock，保证预览器稳定性
    */
   getWorkbenchStats: async (): Promise<WorkbenchStats> => {
     const escortToken = getEscortToken()
@@ -1667,10 +1725,11 @@ export const previewApi = {
       return await escortRequest<WorkbenchStats>('/escort-app/workbench/stats')
     } catch (error) {
       if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
-        console.warn('[previewApi.getWorkbenchStats] 使用 mock 数据')
+        console.warn('[previewApi.getWorkbenchStats] 接口错误，使用 mock 数据')
         return getMockWorkbenchStats()
       }
-      throw error
+      console.warn('[previewApi.getWorkbenchStats] 请求失败，降级 mock:', error)
+      return getMockWorkbenchStats()
     }
   },
 
@@ -1680,6 +1739,7 @@ export const previewApi = {
    * 通道: escortRequest（⚠️ 必须 escortToken）
    *
    * Mock Token 规则：token 以 'mock-' 开头时直接返回 mock 数据
+   * Step 14.19 UI-B-3: 所有错误降级到 mock，保证预览器稳定性
    */
   getWorkbenchSummary: async (): Promise<WorkbenchSummary> => {
     const escortToken = getEscortToken()
@@ -1694,10 +1754,11 @@ export const previewApi = {
       return await escortRequest<WorkbenchSummary>('/escort-app/workbench/summary')
     } catch (error) {
       if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
-        console.warn('[previewApi.getWorkbenchSummary] 使用 mock 数据')
+        console.warn('[previewApi.getWorkbenchSummary] 接口错误，使用 mock 数据')
         return getMockWorkbenchSummary()
       }
-      throw error
+      console.warn('[previewApi.getWorkbenchSummary] 请求失败，降级 mock:', error)
+      return getMockWorkbenchSummary()
     }
   },
 
@@ -1707,6 +1768,7 @@ export const previewApi = {
    * 通道: escortRequest（⚠️ 必须 escortToken）
    *
    * Mock Token 规则：token 以 'mock-' 开头时直接返回 mock 数据
+   * Step 14.19 UI-B-3: 所有错误降级到 mock，保证预览器稳定性
    */
   getWorkbenchOrdersPool: async (): Promise<OrdersPoolResponse> => {
     const escortToken = getEscortToken()
@@ -1721,10 +1783,54 @@ export const previewApi = {
       return await escortRequest<OrdersPoolResponse>('/escort-app/orders/pool')
     } catch (error) {
       if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
-        console.warn('[previewApi.getWorkbenchOrdersPool] 使用 mock 数据')
+        console.warn('[previewApi.getWorkbenchOrdersPool] 接口错误，使用 mock 数据')
         return getMockOrdersPool()
       }
-      throw error
+      console.warn('[previewApi.getWorkbenchOrdersPool] 请求失败，降级 mock:', error)
+      return getMockOrdersPool()
+    }
+  },
+
+  /**
+   * 获取我的订单列表
+   * 接口: GET /escort-app/my-orders
+   * 通道: escortRequest（⚠️ 必须 escortToken）
+   *
+   * Step 14.13 FIX-P3-01: 实现 my-orders 页面组件
+   * Mock Token 规则：token 以 'mock-' 开头时直接返回 mock 数据
+   */
+  getMyOrders: async (params?: MyOrdersParams): Promise<MyOrdersResponse> => {
+    const escortToken = getEscortToken()
+
+    // 无 token 时返回 mock 数据（非 escort 视角）
+    if (!escortToken) {
+      console.log('[previewApi.getMyOrders] 无 escortToken，返回 mock 数据')
+      return getMockMyOrders(params?.status)
+    }
+
+    // mock token 直接返回 mock 数据，不请求真实后端
+    if (escortToken.startsWith('mock-')) {
+      console.log('[previewApi.getMyOrders] mock token, 返回 mock 数据')
+      return getMockMyOrders(params?.status)
+    }
+
+    try {
+      const searchParams = new URLSearchParams()
+      if (params?.status) searchParams.set('status', params.status)
+      if (params?.page) searchParams.set('page', params.page.toString())
+      if (params?.pageSize) searchParams.set('pageSize', params.pageSize.toString())
+      const query = searchParams.toString()
+      return await escortRequest<MyOrdersResponse>(
+        `/escort-app/my-orders${query ? `?${query}` : ''}`
+      )
+    } catch (error) {
+      if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
+        console.warn('[previewApi.getMyOrders] 接口错误，使用 mock 数据')
+        return getMockMyOrders(params?.status)
+      }
+      // 其他错误也降级到 mock，保证预览器可用
+      console.warn('[previewApi.getMyOrders] 请求失败，降级 mock:', error)
+      return getMockMyOrders(params?.status)
     }
   },
 
@@ -1734,6 +1840,7 @@ export const previewApi = {
    * 通道: escortRequest（⚠️ 必须 escortToken）
    *
    * Mock Token 规则：token 以 'mock-' 开头时直接返回 mock 数据
+   * Step 14.19 UI-B-3: 所有错误降级到 mock，保证预览器稳定性
    */
   getWorkbenchEarnings: async (): Promise<EarningsResponse> => {
     const escortToken = getEscortToken()
@@ -1748,10 +1855,11 @@ export const previewApi = {
       return await escortRequest<EarningsResponse>('/escort-app/earnings')
     } catch (error) {
       if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
-        console.warn('[previewApi.getWorkbenchEarnings] 使用 mock 数据')
+        console.warn('[previewApi.getWorkbenchEarnings] 接口错误，使用 mock 数据')
         return getMockEarnings()
       }
-      throw error
+      console.warn('[previewApi.getWorkbenchEarnings] 请求失败，降级 mock:', error)
+      return getMockEarnings()
     }
   },
 
@@ -1798,6 +1906,7 @@ export const previewApi = {
    * 通道: escortRequest（⚠️ 必须 escortToken）
    *
    * Mock Token 规则：token 以 'mock-' 开头时直接返回 mock 数据
+   * Step 14.19 UI-B-3: 所有错误降级到 mock，保证预览器稳定性
    */
   getWorkbenchWithdrawInfo: async (): Promise<WithdrawInfo> => {
     const escortToken = getEscortToken()
@@ -1812,10 +1921,11 @@ export const previewApi = {
       return await escortRequest<WithdrawInfo>('/escort-app/withdraw/info')
     } catch (error) {
       if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
-        console.warn('[previewApi.getWorkbenchWithdrawInfo] 使用 mock 数据')
+        console.warn('[previewApi.getWorkbenchWithdrawInfo] 接口错误，使用 mock 数据')
         return getMockWithdrawInfo()
       }
-      throw error
+      console.warn('[previewApi.getWorkbenchWithdrawInfo] 请求失败，降级 mock:', error)
+      return getMockWithdrawInfo()
     }
   },
 
@@ -1860,6 +1970,7 @@ export const previewApi = {
    * 获取工作台订单详情
    * 接口: GET /escort-app/orders/:id
    * 通道: escortRequest（⚠️ 必须 escortToken）
+   * Step 14.19 UI-B-3: 所有错误降级到 mock，保证预览器稳定性
    */
   getWorkbenchOrderDetail: async (orderId: string): Promise<WorkbenchOrderDetail> => {
     const currentEscortToken = getEscortToken()
@@ -1871,10 +1982,138 @@ export const previewApi = {
       return await escortRequest<WorkbenchOrderDetail>(`/escort-app/orders/${orderId}`)
     } catch (error) {
       if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
-        console.warn('[previewApi.getWorkbenchOrderDetail] 使用 mock 数据')
+        console.warn('[previewApi.getWorkbenchOrderDetail] 接口错误，使用 mock 数据')
         return getMockWorkbenchOrderDetail(orderId)
       }
-      throw error
+      console.warn('[previewApi.getWorkbenchOrderDetail] 请求失败，降级 mock:', error)
+      return getMockWorkbenchOrderDetail(orderId)
+    }
+  },
+
+  /**
+   * 获取工作台设置
+   * 接口: GET /escort-app/workbench/settings
+   * 通道: escortRequest（⚠️ 必须 escortToken）
+   */
+  getWorkbenchSettings: async (): Promise<WorkbenchSettings> => {
+    const currentEscortToken = getEscortToken()
+
+    // 无 token 直接返回 mock
+    if (!currentEscortToken) {
+      console.log('[previewApi.getWorkbenchSettings] 无 escortToken, 返回 mock')
+      return getMockWorkbenchSettings()
+    }
+
+    // mock token 直接返回 mock，不请求真实后端
+    if (currentEscortToken.startsWith('mock-')) {
+      console.log('[previewApi.getWorkbenchSettings] mock token, 返回 mock')
+      return getMockWorkbenchSettings()
+    }
+
+    try {
+      return await escortRequest<WorkbenchSettings>('/escort-app/workbench/settings')
+    } catch (error) {
+      if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
+        console.warn('[previewApi.getWorkbenchSettings] 使用 mock 数据')
+        return getMockWorkbenchSettings()
+      }
+      // 其他错误也降级到 mock，保证预览器可用
+      console.warn('[previewApi.getWorkbenchSettings] 请求失败，降级 mock:', error)
+      return getMockWorkbenchSettings()
+    }
+  },
+
+  /**
+   * 更新工作台设置（接单状态/自动接单）
+   * 接口: PATCH /escort-app/workbench/settings
+   * 通道: escortRequest（⚠️ 必须 escortToken）
+   */
+  updateWorkbenchSettings: async (
+    updates: {
+      onlineStatus?: EscortOnlineStatus
+      autoAcceptOrders?: boolean
+    }
+  ): Promise<{ success: boolean }> => {
+    const currentEscortToken = getEscortToken()
+
+    // 无 token 或 mock token 时，模拟成功
+    if (!currentEscortToken || currentEscortToken.startsWith('mock-')) {
+      console.log('[previewApi.updateWorkbenchSettings] mock 模式，模拟更新成功')
+      return { success: true }
+    }
+
+    try {
+      return await escortRequest<{ success: boolean }>(
+        '/escort-app/workbench/settings',
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updates),
+        }
+      )
+    } catch (error) {
+      // 预览器模式，即使后端接口不存在也返回成功，保证 UI 可用
+      console.warn('[previewApi.updateWorkbenchSettings] 请求失败，模拟成功:', error)
+      return { success: true }
+    }
+  },
+
+  /**
+   * 获取陪诊员资料
+   * 接口: GET /escort/profile
+   * 通道: escortRequest（⚠️ 必须 escortToken）
+   */
+  getEscortProfile: async (): Promise<EscortProfile | null> => {
+    const currentEscortToken = getEscortToken()
+
+    // 无 token 直接返回 mock
+    if (!currentEscortToken) {
+      console.log('[previewApi.getEscortProfile] 无 escortToken, 返回 mock')
+      return getMockEscortProfile()
+    }
+
+    // mock token 直接返回 mock，不请求真实后端
+    if (currentEscortToken.startsWith('mock-')) {
+      console.log('[previewApi.getEscortProfile] mock token, 返回 mock')
+      return getMockEscortProfile()
+    }
+
+    try {
+      return await escortRequest<EscortProfile>('/escort/profile')
+    } catch (error) {
+      console.warn('[previewApi.getEscortProfile] 请求失败，降级 mock:', error)
+      return getMockEscortProfile()
+    }
+  },
+
+  /**
+   * 更新陪诊员资料
+   * 接口: PUT /escort/profile
+   * 通道: escortRequest（⚠️ 必须 escortToken）
+   */
+  updateEscortProfile: async (data: {
+    name?: string
+    avatar?: string
+    gender?: string
+    introduction?: string
+  }): Promise<EscortProfile | null> => {
+    const currentEscortToken = getEscortToken()
+
+    // 无 token 或 mock token 时，模拟成功
+    if (!currentEscortToken || currentEscortToken.startsWith('mock-')) {
+      console.log('[previewApi.updateEscortProfile] mock 模式，模拟更新成功')
+      return getMockEscortProfile()
+    }
+
+    try {
+      return await escortRequest<EscortProfile>('/escort/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+    } catch (error) {
+      console.warn('[previewApi.updateEscortProfile] 请求失败:', error)
+      return null
     }
   },
 
@@ -2061,290 +2300,14 @@ export const previewApi = {
 }
 
 // ============================================================================
-// Mock 数据：工作台订单详情
-// ============================================================================
-
-function getMockWorkbenchOrderDetail(orderId: string): WorkbenchOrderDetail {
-  return {
-    id: orderId || 'mock-order-001',
-    orderNo: 'ORD202412120001',
-    status: 'accepted',
-    statusText: '已接单',
-    service: {
-      id: 'svc-001',
-      name: '门诊陪诊服务',
-      type: 'outpatient',
-      duration: 120,
-    },
-    appointment: {
-      date: '2024-12-15',
-      time: '09:00',
-      hospitalName: '北京协和医院',
-      department: '心内科',
-      address: '北京市东城区帅府园1号',
-    },
-    user: {
-      id: 'user-001',
-      name: '张先生',
-      phone: '13800138001',
-      maskedPhone: '138****8001',
-      avatar: undefined,
-    },
-    payment: {
-      amount: 299,
-      commission: 239.2,
-      tip: 20,
-    },
-    remark: '请准时到达，老人行动不便需要轮椅',
-    createdAt: '2024-12-12 10:30:00',
-    updatedAt: '2024-12-12 11:00:00',
-  }
-}
+// getMockWorkbenchOrderDetail, getMockWorkbenchSettings - 已迁移到 ./mocks/workbench.ts
 
 // ============================================================================
-// Mock 数据：分销中心（Step 11.2）
+// Mock 数据：分销中心 - 已迁移到 ./mocks/distribution.ts
 // ============================================================================
+// getMockDistributionStats, getMockDistributionMembers, getMockDistributionRecords,
+// getMockDistributionInvite, getMockDistributionPromotion, getMockDistributionPromotionMaxLevel
+// 均已迁移，通过 import 引入
 
-/**
- * Mock 分销统计数据
- * 覆盖场景：promotionProgress = 42（有进度）
- * ⚠️ 另见 getMockDistributionPromotion 覆盖 promotionProgress = 0 场景
- */
-function getMockDistributionStats(): DistributionStats {
-  return {
-    totalTeamSize: 28,
-    directCount: 12,
-    indirectCount: 16,
-    totalDistribution: 15680.50,
-    monthlyDistribution: 2340.00,
-    pendingDistribution: 580.00,
-    currentLevel: '银牌合伙人',
-    nextLevel: '金牌合伙人',
-    promotionProgress: 42, // 有进度场景
-  }
-}
-
-/**
- * Mock 分销成员数据
- * 覆盖场景：direct 2 条 + indirect 2 条
- */
-function getMockDistributionMembers(params?: DistributionMembersParams): DistributionMembersResponse {
-  const allMembers: DistributionMember[] = [
-    // 直属成员 2 条
-    {
-      id: 'member-1',
-      name: '王小明',
-      avatar: undefined,
-      phone: '138****1234',
-      level: '普通会员',
-      relation: 'direct',
-      joinedAt: '2024-11-15',
-      totalOrders: 23,
-      totalDistribution: 1260.00,
-    },
-    {
-      id: 'member-2',
-      name: '李芳芳',
-      avatar: undefined,
-      phone: '139****5678',
-      level: '银牌会员',
-      relation: 'direct',
-      joinedAt: '2024-10-20',
-      totalOrders: 45,
-      totalDistribution: 2890.50,
-    },
-    // 间接成员 2 条
-    {
-      id: 'member-3',
-      name: '张三丰',
-      avatar: undefined,
-      phone: '136****9012',
-      level: '普通会员',
-      relation: 'indirect',
-      joinedAt: '2024-12-01',
-      totalOrders: 8,
-      totalDistribution: 420.00,
-    },
-    {
-      id: 'member-4',
-      name: '赵敏敏',
-      avatar: undefined,
-      phone: '137****3456',
-      level: '普通会员',
-      relation: 'indirect',
-      joinedAt: '2024-12-05',
-      totalOrders: 5,
-      totalDistribution: 280.00,
-    },
-  ]
-
-  // 根据 relation 筛选
-  let filteredMembers = allMembers
-  if (params?.relation) {
-    filteredMembers = allMembers.filter(m => m.relation === params.relation)
-  }
-
-  return {
-    items: filteredMembers,
-    total: filteredMembers.length,
-    hasMore: false,
-  }
-}
-
-/**
- * Mock 分润记录数据
- * 覆盖场景：pending 2 条 + settled 2 条 + 有 orderNo 2 条 + 无 orderNo 1 条
- */
-function getMockDistributionRecords(params?: DistributionRecordsParams): DistributionRecordsResponse {
-  const allRecords: DistributionRecord[] = [
-    // pending 记录 2 条（1 条有 orderNo，1 条无）
-    {
-      id: 'record-1',
-      type: 'order',
-      title: '订单分润',
-      amount: 28.00,
-      status: 'pending',
-      sourceEscortName: '王小明',
-      orderNo: 'ORD202412120001',
-      createdAt: '2024-12-12 14:30',
-    },
-    {
-      id: 'record-2',
-      type: 'invite',
-      title: '邀请奖励',
-      amount: 50.00,
-      status: 'pending',
-      sourceEscortName: '新成员张三',
-      // 无 orderNo
-      createdAt: '2024-12-11 10:00',
-    },
-    // settled 记录 2 条
-    {
-      id: 'record-3',
-      type: 'order',
-      title: '订单分润',
-      amount: 35.50,
-      status: 'settled',
-      sourceEscortName: '李芳芳',
-      orderNo: 'ORD202412100002',
-      createdAt: '2024-12-10 16:20',
-      settledAt: '2024-12-11 00:00',
-    },
-    {
-      id: 'record-4',
-      type: 'bonus',
-      title: '月度团队奖励',
-      amount: 200.00,
-      status: 'settled',
-      createdAt: '2024-12-01 00:00',
-      settledAt: '2024-12-01 12:00',
-    },
-    // cancelled 记录 1 条（额外覆盖）
-    {
-      id: 'record-5',
-      type: 'order',
-      title: '订单分润（已取消）',
-      amount: 15.00,
-      status: 'cancelled',
-      sourceEscortName: '张三丰',
-      orderNo: 'ORD202412080003',
-      createdAt: '2024-12-08 09:00',
-    },
-  ]
-
-  // 根据 status 筛选
-  let filteredRecords = allRecords
-  if (params?.status) {
-    filteredRecords = allRecords.filter(r => r.status === params.status)
-  }
-
-  // 根据 range 筛选（简化处理）
-  // 实际应该根据 createdAt 筛选，这里仅作示意
-
-  return {
-    items: filteredRecords,
-    total: filteredRecords.length,
-    hasMore: false,
-  }
-}
-
-/**
- * Mock 邀请信息
- */
-function getMockDistributionInvite(): DistributionInvite {
-  return {
-    inviteCode: 'KKL2024DIST',
-    inviteLink: 'https://kekeling.com/invite/KKL2024DIST',
-    qrCodeUrl: undefined, // 可选
-    totalInvited: 12,
-    rewardPerInvite: 50.00,
-  }
-}
-
-/**
- * Mock 晋升信息
- * 覆盖场景：
- * - 可晋升（有 nextLevel + requirements）
- * - promotionProgress = 0 场景
- */
-function getMockDistributionPromotion(): DistributionPromotion {
-  return {
-    currentLevel: {
-      code: 'silver',
-      name: '银牌合伙人',
-      commissionRate: 0.08,
-      benefits: [
-        '订单分润 8%',
-        '团队管理功能',
-        '专属客服支持',
-      ],
-    },
-    nextLevel: {
-      code: 'gold',
-      name: '金牌合伙人',
-      commissionRate: 0.12,
-      benefits: [
-        '订单分润 12%',
-        '团队管理功能',
-        '专属客服支持',
-        '优先派单权',
-        '月度团队奖励',
-      ],
-      requirements: [
-        {
-          type: 'team_size',
-          current: 28,
-          required: 50,
-        },
-        {
-          type: 'monthly_orders',
-          current: 45,
-          required: 100,
-        },
-      ],
-    },
-  }
-}
-
-/**
- * Mock 晋升信息（已达最高级场景）
- * 用于测试 nextLevel = undefined 的 UI 展示
- */
-export function getMockDistributionPromotionMaxLevel(): DistributionPromotion {
-  return {
-    currentLevel: {
-      code: 'diamond',
-      name: '钻石合伙人',
-      commissionRate: 0.15,
-      benefits: [
-        '订单分润 15%',
-        '团队管理功能',
-        '专属客服支持',
-        '优先派单权',
-        '月度团队奖励',
-        '年度分红权益',
-      ],
-    },
-    nextLevel: undefined, // 已达最高级
-  }
-}
+// 为向后兼容，re-export getMockDistributionPromotionMaxLevel
+export { getMockDistributionPromotionMaxLevel }

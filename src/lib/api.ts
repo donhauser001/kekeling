@@ -28,6 +28,7 @@ interface PaginatedData<T> {
 // 请求配置
 interface RequestConfig extends RequestInit {
   params?: Record<string, string | number | boolean | undefined>
+  data?: unknown  // 请求体数据，会自动转换为 JSON body
 }
 
 // 获取 token（从 cookie 获取，与 auth-store 保持一致）
@@ -45,7 +46,7 @@ const getToken = (): string | null => {
 
 // 通用请求函数
 async function request<T>(endpoint: string, config: RequestConfig = {}): Promise<T> {
-  const { params, ...init } = config
+  const { params, data, ...init } = config
 
   // 构建 URL
   let url = `${API_BASE_URL}${endpoint}`
@@ -62,9 +63,15 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
     }
   }
 
+  // 处理请求体：如果传了 data，转换为 JSON body
+  let body = init.body
+  if (data !== undefined && body === undefined) {
+    body = JSON.stringify(data)
+  }
+
   // 设置默认 headers
   const headers = new Headers(init.headers)
-  if (!headers.has('Content-Type') && init.body) {
+  if (!headers.has('Content-Type') && body) {
     headers.set('Content-Type', 'application/json')
   }
 
@@ -77,6 +84,7 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
   const response = await fetch(url, {
     ...init,
     headers,
+    body,
   })
 
   if (!response.ok) {
@@ -916,6 +924,113 @@ export const userApi = {
 }
 
 // ============================================
+// 就诊人管理 API
+// ============================================
+
+export interface Patient {
+  id: string
+  name: string
+  gender: string
+  birthday?: string | null
+  age?: number | null
+  phone: string
+  idCard?: string | null
+  relation: string
+  isDefault: boolean
+  orderCount?: number
+  user?: {
+    id: string
+    nickname: string | null
+    phone: string | null
+  }
+  createdAt: string
+  updatedAt: string
+}
+
+export interface PatientDetail extends Patient {
+  orders?: Array<{
+    id: string
+    orderNo: string
+    status: string
+    totalAmount: number
+    createdAt: string
+    service?: { name: string }
+    hospital?: { name: string }
+  }>
+}
+
+export interface PatientQuery {
+  keyword?: string
+  userId?: string
+  page?: number
+  pageSize?: number
+}
+
+export interface PatientStats {
+  total: number
+  withIdCard: number
+  withIdCardRate: number
+  relationStats: Array<{
+    relation: string
+    count: number
+  }>
+}
+
+export interface CreatePatientData {
+  name: string
+  gender: string
+  birthday?: string
+  phone: string
+  idCard?: string
+  relation: string
+  isDefault?: boolean
+}
+
+export interface UpdatePatientData extends Partial<CreatePatientData> { }
+
+export const patientApi = {
+  // 获取列表
+  getList: (query: PatientQuery = {}) =>
+    request<PaginatedData<Patient>>('/admin/patients', {
+      params: query as Record<string, string | number | boolean | undefined>,
+    }),
+
+  // 获取统计
+  getStats: () =>
+    request<PatientStats>('/admin/patients/stats'),
+
+  // 获取详情
+  getById: (id: string) =>
+    request<PatientDetail>(`/admin/patients/${id}`),
+
+  // 更新就诊人
+  update: (id: string, data: UpdatePatientData) =>
+    request<Patient>(`/admin/patients/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // 删除就诊人
+  delete: (id: string) =>
+    request<null>(`/admin/patients/${id}`, {
+      method: 'DELETE',
+    }),
+
+  // 设为默认
+  setDefault: (id: string) =>
+    request<Patient>(`/admin/patients/${id}/default`, {
+      method: 'POST',
+    }),
+
+  // 为用户添加就诊人
+  createForUser: (userId: string, data: CreatePatientData) =>
+    request<Patient>(`/admin/users/${userId}/patients`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+}
+
+// ============================================
 // 首页配置 API
 // ============================================
 
@@ -1279,11 +1394,12 @@ export interface ServiceNoteItem {
 // 自定义字段配置
 export interface CustomField {
   id: string
-  type: 'text' | 'textarea' | 'select' | 'checkbox' | 'radio' | 'datetime'
+  type: 'text' | 'textarea' | 'select' | 'checkbox' | 'radio' | 'datetime' | 'image'
   label: string
   placeholder?: string
   required: boolean
   options?: string[]
+  maxImages?: number  // 图片类型时，最大上传数量
 }
 
 // 服务保障（独立模块）
@@ -1351,9 +1467,11 @@ export interface Service {
   needIdCard: boolean           // 需要身份证
   needGender: boolean           // 需要性别
   needEmergencyContact: boolean // 需要紧急联系人
+  needMedicalRecord: boolean    // 需要上传病历
   allowPostOrder: boolean       // 允许先下单后填写信息
   customFields: CustomField[] | null  // 自定义字段配置
   fieldOrder: string[] | null         // 字段排序
+  builtinFieldsRequired: Record<string, boolean> | null  // 内置字段必填配置
   orderCount: number
   rating: number
   tags: string[]
@@ -1402,9 +1520,11 @@ export interface CreateServiceData {
   needIdCard?: boolean           // 需要身份证
   needGender?: boolean           // 需要性别
   needEmergencyContact?: boolean // 需要紧急联系人
+  needMedicalRecord?: boolean    // 需要上传病历
   allowPostOrder?: boolean       // 允许先下单后填写信息
   customFields?: CustomField[]   // 自定义字段配置
   fieldOrder?: string[]          // 字段排序
+  builtinFieldsRequired?: Record<string, boolean>  // 内置字段必填配置
   tags?: string[]
   sort?: number
   status?: string
@@ -1476,6 +1596,19 @@ export const serviceApi = {
     request<Service>('/services', {
       method: 'POST',
       body: JSON.stringify(data),
+    }),
+
+  // 创建草稿服务（WordPress 风格自动草稿）
+  // 用于新建服务时自动获取 ID，便于图片上传等关联操作
+  createDraft: (categoryId: string) =>
+    request<Service>('/services', {
+      method: 'POST',
+      body: JSON.stringify({
+        name: '未命名服务',
+        categoryId,
+        price: 0,
+        status: 'draft',
+      }),
     }),
 
   // 更新服务
@@ -2645,11 +2778,43 @@ export interface AdminEscortWithdrawRecordQuery {
   pageSize?: number
   status?: AdminWithdrawStatus
   method?: AdminWithdrawMethod
-  keyword?: string                // escortId / 手机号 / 提现单号
+  escortId?: string               // 陪诊员 ID（精确匹配）
+  keyword?: string                // 手机号 / 提现单号
   startAt?: string                // 申请时间起
   endAt?: string                  // 申请时间止
   minAmount?: number
   maxAmount?: number
+}
+
+// P2 新增类型：审核请求
+export interface AdminWithdrawReviewRequest {
+  action: 'approve' | 'reject'
+  rejectReason?: string // reject 时必填
+}
+
+// P2 新增类型：打款请求
+export interface AdminWithdrawPayoutRequest {
+  payoutMethod: 'manual' | 'channel'
+  operatorConfirmText: 'CONFIRM' // 必须完全匹配
+  transactionNo?: string // 手动打款时填写
+}
+
+// P2 新增类型：操作日志
+export interface AdminWithdrawLog {
+  id: string
+  action: 'create' | 'approve' | 'reject' | 'payout' | 'complete' | 'fail'
+  operator: 'system' | 'admin'
+  operatorName?: string // 脱敏展示
+  message?: string
+  createdAt: string
+}
+
+// P2 新增类型：详情扩展（含日志）
+export interface AdminEscortWithdrawDetail extends AdminEscortWithdrawRecord {
+  transactionNo?: string // 第三方交易号
+  channel?: 'alipay' | 'wechat' | 'bank'
+  channelResponse?: string // 原始回执（脱敏）
+  logs: AdminWithdrawLog[]
 }
 
 export const adminEscortWithdrawApi = {
@@ -2662,6 +2827,94 @@ export const adminEscortWithdrawApi = {
   // 获取单条提现记录详情
   getById: (id: string) =>
     request<AdminEscortWithdrawRecord>(`/admin/escorts/withdraw-records/${id}`),
+
+  /**
+   * 获取提现记录详情（含操作日志）- P2 扩展
+   */
+  getDetailWithLogs: (id: string) =>
+    request<AdminEscortWithdrawDetail>(`/admin/escorts/withdraw-records/${id}/detail`),
+
+  /**
+   * 获取提现操作日志 - P2
+   */
+  getLogs: (id: string) =>
+    request<AdminWithdrawLog[]>(`/admin/escorts/withdraw-records/${id}/logs`),
+
+  /**
+   * 导出提现记录（走后端 API）
+   * 
+   * @see docs/资金安全提现体系/03-任务卡拆解.md - CARD ADMIN-WD-03
+   * 
+   * - 导出走后端 API，禁止前端拼 CSV
+   * - 使用 fetch 下载文件流
+   * - 导出当前筛选条件下的数据
+   * - 导出行为写入审计日志（后端处理）
+   */
+  export: async (
+    query: Omit<AdminEscortWithdrawRecordQuery, 'page' | 'pageSize'>,
+    format: 'csv' | 'xlsx' = 'csv'
+  ): Promise<Blob> => {
+    const params = new URLSearchParams()
+
+    // 添加筛选参数
+    if (query.status) params.append('status', query.status)
+    if (query.method) params.append('method', query.method)
+    if (query.escortId) params.append('escortId', query.escortId)
+    if (query.keyword) params.append('keyword', query.keyword)
+    if (query.startAt) params.append('startAt', query.startAt)
+    if (query.endAt) params.append('endAt', query.endAt)
+    if (query.minAmount) params.append('minAmount', String(query.minAmount))
+    if (query.maxAmount) params.append('maxAmount', String(query.maxAmount))
+    params.append('format', format)
+
+    const token = getToken()
+    const response = await fetch(
+      `${API_BASE_URL}/admin/escorts/withdraw-records/export?${params}`,
+      {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : '',
+        },
+      }
+    )
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: '导出失败' }))
+      throw new Error(error.message || `导出失败: HTTP ${response.status}`)
+    }
+
+    return response.blob()
+  },
+
+  /**
+   * P2: 审核提现（通过/驳回）
+   * 
+   * @see docs/资金安全提现体系/03-任务卡拆解.md - BE-WD-P2-02
+   * 
+   * - 前置状态：仅 status === 'pending' 可操作
+   * - 驳回原因：reject 必须填写 rejectReason
+   * - 副作用：写 withdraw_logs + admin_audit_log
+   */
+  review: (id: string, data: AdminWithdrawReviewRequest) =>
+    request<AdminEscortWithdrawRecord>(`/admin/escorts/withdraw-records/${id}/review`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  /**
+   * P2: 打款（高危）
+   * 
+   * @see docs/资金安全提现体系/03-任务卡拆解.md - BE-WD-P2-03
+   * 
+   * - 前置状态：仅 status === 'approved'
+   * - 二次确认：operatorConfirmText 必须是 'CONFIRM'
+   * - 事务：状态变更 + Ledger 在同一事务内完成
+   * - 幂等：transactionNo 唯一约束，防重复打款
+   */
+  payout: (id: string, data: AdminWithdrawPayoutRequest) =>
+    request<AdminEscortWithdrawRecord>(`/admin/escorts/withdraw-records/${id}/payout`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
 }
 
 // ============================================
@@ -3017,5 +3270,297 @@ export const distributionApi = {
 
   // 获取等级统计
   getLevelStats: () => request<DistributionLevelWithStats[]>('/admin/distribution/settings/levels/stats'),
+}
+
+// ============================================
+// CMS 页面管理
+// ============================================
+
+export interface CmsPage {
+  id: string
+  title: string
+  slug: string
+  content: string
+  excerpt: string | null
+  coverImage: string | null
+  seoTitle: string | null
+  seoDesc: string | null
+  seoKeywords: string | null
+  sort: number
+  status: 'draft' | 'published'
+  publishedAt: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateCmsPageData {
+  title: string
+  slug: string
+  content: string
+  excerpt?: string
+  coverImage?: string
+  seoTitle?: string
+  seoDesc?: string
+  seoKeywords?: string
+  sort?: number
+  status?: 'draft' | 'published'
+}
+
+export interface UpdateCmsPageData extends Partial<CreateCmsPageData> { }
+
+export interface CmsPageQuery {
+  status?: string
+  keyword?: string
+}
+
+export const cmsPageApi = {
+  // 获取页面列表
+  getAll: (query?: CmsPageQuery) =>
+    request<CmsPage[]>('/cms/pages', { params: query }),
+
+  // 获取页面详情
+  getById: (id: string) => request<CmsPage>(`/cms/pages/${id}`),
+
+  // 创建页面
+  create: (data: CreateCmsPageData) =>
+    request<CmsPage>('/cms/pages', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // 更新页面
+  update: (id: string, data: UpdateCmsPageData) =>
+    request<CmsPage>(`/cms/pages/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // 删除页面
+  delete: (id: string) =>
+    request<void>(`/cms/pages/${id}`, {
+      method: 'DELETE',
+    }),
+
+  // 发布页面
+  publish: (id: string) =>
+    request<CmsPage>(`/cms/pages/${id}/publish`, {
+      method: 'POST',
+    }),
+
+  // 取消发布
+  unpublish: (id: string) =>
+    request<CmsPage>(`/cms/pages/${id}/unpublish`, {
+      method: 'POST',
+    }),
+
+  // 公开接口：获取已发布页面列表
+  getPublished: () =>
+    request<Pick<CmsPage, 'id' | 'title' | 'slug' | 'excerpt' | 'coverImage' | 'publishedAt'>[]>('/cms/pages/public'),
+
+  // 公开接口：根据 slug 获取页面
+  getBySlug: (slug: string) =>
+    request<CmsPage>(`/cms/pages/public/${slug}`),
+}
+
+// ============================================
+// CMS 文章分类管理
+// ============================================
+
+export interface ArticleCategory {
+  id: string
+  name: string
+  slug: string
+  description: string | null
+  icon: string | null
+  coverImage: string | null
+  sort: number
+  status: 'active' | 'inactive'
+  isSystem?: boolean  // 是否系统内置分类
+  articleCount?: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateArticleCategoryData {
+  name: string
+  slug: string
+  description?: string
+  icon?: string
+  coverImage?: string
+  sort?: number
+  status?: 'active' | 'inactive'
+}
+
+export interface UpdateArticleCategoryData extends Partial<CreateArticleCategoryData> { }
+
+export const articleCategoryApi = {
+  // 获取启用的分类
+  getActive: () =>
+    request<ArticleCategory[]>('/cms/article-categories/active'),
+
+  // 获取分类列表
+  getAll: (query?: { status?: string; keyword?: string }) =>
+    request<ArticleCategory[]>('/cms/article-categories', { params: query }),
+
+  // 获取分类详情
+  getById: (id: string) =>
+    request<ArticleCategory>(`/cms/article-categories/${id}`),
+
+  // 创建分类
+  create: (data: CreateArticleCategoryData) =>
+    request<ArticleCategory>('/cms/article-categories', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // 更新分类
+  update: (id: string, data: UpdateArticleCategoryData) =>
+    request<ArticleCategory>(`/cms/article-categories/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // 删除分类
+  delete: (id: string) =>
+    request<void>(`/cms/article-categories/${id}`, {
+      method: 'DELETE',
+    }),
+}
+
+// ============================================
+// CMS 文章管理
+// ============================================
+
+export interface Article {
+  id: string
+  categoryId: string | null
+  title: string
+  slug: string
+  summary: string | null
+  content: string
+  coverImage: string | null
+  author: string | null
+  source: string | null
+  tags: string[]
+  viewCount: number
+  isTop: boolean
+  isHot: boolean
+  seoTitle: string | null
+  seoDesc: string | null
+  seoKeywords: string | null
+  sort: number
+  status: 'draft' | 'published' | 'archived'
+  publishedAt: string | null
+  createdAt: string
+  updatedAt: string
+  category?: {
+    id: string
+    name: string
+    slug: string
+  } | null
+}
+
+export interface CreateArticleData {
+  categoryId?: string
+  title: string
+  slug: string
+  summary?: string
+  content: string
+  coverImage?: string
+  author?: string
+  source?: string
+  tags?: string[]
+  isTop?: boolean
+  isHot?: boolean
+  seoTitle?: string
+  seoDesc?: string
+  seoKeywords?: string
+  sort?: number
+  status?: 'draft' | 'published' | 'archived'
+}
+
+export interface UpdateArticleData extends Partial<CreateArticleData> { }
+
+export interface ArticleQuery {
+  categoryId?: string
+  categorySlug?: string
+  status?: string
+  isTop?: boolean
+  isHot?: boolean
+  keyword?: string
+  page?: number
+  pageSize?: number
+}
+
+export const articleApi = {
+  // 获取文章列表
+  getList: (query: ArticleQuery = {}) =>
+    request<{
+      list: Article[]
+      total: number
+      page: number
+      pageSize: number
+      totalPages: number
+    }>('/cms/articles', {
+      params: query as Record<string, string | number | boolean | undefined>,
+    }),
+
+  // 获取文章详情
+  getById: (id: string) =>
+    request<Article>(`/cms/articles/${id}`),
+
+  // 创建文章
+  create: (data: CreateArticleData) =>
+    request<Article>('/cms/articles', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // 更新文章
+  update: (id: string, data: UpdateArticleData) =>
+    request<Article>(`/cms/articles/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // 删除文章
+  delete: (id: string) =>
+    request<void>(`/cms/articles/${id}`, {
+      method: 'DELETE',
+    }),
+
+  // 发布文章
+  publish: (id: string) =>
+    request<Article>(`/cms/articles/${id}/publish`, {
+      method: 'POST',
+    }),
+
+  // 取消发布
+  unpublish: (id: string) =>
+    request<Article>(`/cms/articles/${id}/unpublish`, {
+      method: 'POST',
+    }),
+
+  // 置顶/取消置顶
+  toggleTop: (id: string) =>
+    request<Article>(`/cms/articles/${id}/toggle-top`, {
+      method: 'POST',
+    }),
+
+  // 公开接口：获取已发布文章列表
+  getPublished: (query: ArticleQuery = {}) =>
+    request<{
+      list: Pick<Article, 'id' | 'title' | 'slug' | 'summary' | 'coverImage' | 'author' | 'tags' | 'viewCount' | 'isTop' | 'isHot' | 'publishedAt' | 'category'>[]
+      total: number
+      page: number
+      pageSize: number
+      totalPages: number
+    }>('/cms/articles/public', {
+      params: query as Record<string, string | number | boolean | undefined>,
+    }),
+
+  // 公开接口：根据 slug 获取文章
+  getBySlug: (slug: string) =>
+    request<Article>(`/cms/articles/public/${slug}`),
 }
 

@@ -1,8 +1,12 @@
 /**
  * 底部导航栏组件
+ *
+ * 使用跨宿主原语组件实现，支持 Web 和小程序环境
  */
 
-import { tabList, type TabKey } from '../constants'
+import { Box, Text, Button, Icon } from '../ui/primitives'
+import { tabList } from '../constants'
+import type { TabKey } from '../constants'
 import type { ThemeSettings } from '../types'
 
 interface TabBarNavProps {
@@ -25,38 +29,59 @@ export function TabBarNav({
   }
 
   return (
-    <div
-      className='flex-shrink-0 flex items-center justify-around border-t py-2'
+    <Box
+      role='tablist'
+      aria-label='主导航'
       style={{
+        flexShrink: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-around',
+        borderTopWidth: 1,
+        borderTopStyle: 'solid',
+        paddingTop: 8,
+        paddingBottom: 8,
         backgroundColor: isDarkMode ? '#1f1f1f' : '#ffffff',
         borderColor: isDarkMode ? '#2a2a2a' : '#e5e7eb',
       }}
     >
       {tabList.map((item) => {
         const isActive = item.key === activePage
-        const IconComponent = item.icon
+
         return (
-          <div
+          <Button
             key={item.key}
-            className='flex flex-col items-center gap-1 cursor-pointer transition-transform duration-150 active:scale-90'
+            aria-selected={isActive}
+            aria-label={item.text}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 4,
+              backgroundColor: 'transparent',
+              border: 'none',
+              padding: 4,
+              borderRadius: 8,
+            }}
             onClick={() => handleTabClick(item.key)}
           >
-            <IconComponent
-              className='h-5 w-5 transition-colors duration-200'
-              style={{ color: isActive ? themeSettings.primaryColor : inactiveColor }}
+            <Icon
+              name={item.icon}
+              size={22}
+              color={isActive ? themeSettings.primaryColor : inactiveColor}
             />
-            <span
-              className='text-xs transition-colors duration-200'
+            <Text
               style={{
+                fontSize: 11,
                 color: isActive ? themeSettings.primaryColor : inactiveColor,
                 fontWeight: isActive ? 500 : 400,
               }}
             >
               {item.text}
-            </span>
-          </div>
+            </Text>
+          </Button>
         )
       })}
-    </div>
+    </Box>
   )
 }

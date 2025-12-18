@@ -207,154 +207,153 @@ export function MembershipActionDialog({
           <div className='flex gap-6'>
             {/* 左侧：表单区域 */}
             <div className='flex-1 max-h-[60vh] min-h-[300px] overflow-y-auto py-1 px-1'>
-            <Form {...form}>
-              <form id='membership-form' onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>
-                <div className='grid grid-cols-2 items-start gap-4'>
-                  <FormField
-                    control={form.control}
-                    name='name'
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>等级名称 *</FormLabel>
-                        <FormControl>
-                          <Input placeholder='如：黄金会员' {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name='level'
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>等级 *</FormLabel>
-                        <FormControl>
-                          <Input type='number' placeholder='数值越大等级越高' {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+              <Form {...form}>
+                <form id='membership-form' onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>
+                  <div className='grid grid-cols-2 items-start gap-4'>
+                    <FormField
+                      control={form.control}
+                      name='name'
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>等级名称 *</FormLabel>
+                          <FormControl>
+                            <Input placeholder='如：黄金会员' {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name='level'
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>等级 *</FormLabel>
+                          <FormControl>
+                            <Input type='number' placeholder='数值越大等级越高' {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
-                <div className='grid grid-cols-2 items-start gap-4'>
+                  <div className='grid grid-cols-2 items-start gap-4'>
+                    <FormField
+                      control={form.control}
+                      name='discount'
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>折扣 (%) *</FormLabel>
+                          <FormControl>
+                            <Input type='number' placeholder='如：90 表示 9 折' {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name='price'
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>价格 (元) *</FormLabel>
+                          <FormControl>
+                            <Input type='number' {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className='grid grid-cols-2 items-start gap-4'>
+                    <FormField
+                      control={form.control}
+                      name='duration'
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>时长 (天) *</FormLabel>
+                          <FormControl>
+                            <Input type='number' {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name='bonusDays'
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>赠送天数</FormLabel>
+                          <FormControl>
+                            <Input type='number' {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
                   <FormField
                     control={form.control}
-                    name='discount'
+                    name='status'
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>折扣 (%) *</FormLabel>
-                        <FormControl>
-                          <Input type='number' placeholder='如：90 表示 9 折' {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name='price'
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>价格 (元) *</FormLabel>
-                        <FormControl>
-                          <Input type='number' {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className='grid grid-cols-2 items-start gap-4'>
-                  <FormField
-                    control={form.control}
-                    name='duration'
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>时长 (天) *</FormLabel>
-                        <FormControl>
-                          <Input type='number' {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name='bonusDays'
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>赠送天数</FormLabel>
-                        <FormControl>
-                          <Input type='number' {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name='status'
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>状态</FormLabel>
-                      <SelectDropdown
-                        defaultValue={field.value}
-                        onValueChange={field.onChange}
-                        placeholder='请选择状态'
-                        items={[
-                          { label: '启用', value: 'active' },
-                          { label: '禁用', value: 'inactive' },
-                        ]}
-                      />
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name='description'
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>描述</FormLabel>
-                      <FormControl>
-                        <Textarea placeholder='可选' className='resize-none' {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name='benefits'
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>权益（每行一个）</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder='如：&#10;专属客服&#10;优先预约&#10;生日礼券'
-                          className='resize-none'
-                          rows={4}
-                          {...field}
+                        <FormLabel>状态</FormLabel>
+                        <SelectDropdown
+                          defaultValue={field.value}
+                          onValueChange={field.onChange}
+                          placeholder='请选择状态'
+                          items={[
+                            { label: '启用', value: 'active' },
+                            { label: '禁用', value: 'inactive' },
+                          ]}
                         />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </form>
-            </Form>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name='description'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>描述</FormLabel>
+                        <FormControl>
+                          <Textarea placeholder='可选' className='resize-none' {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name='benefits'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>权益（每行一个）</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder='如：&#10;专属客服&#10;优先预约&#10;生日礼券'
+                            className='resize-none'
+                            rows={4}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </form>
+              </Form>
             </div>
 
             {/* 右侧：预览器 */}
             <div className='w-[375px] flex-shrink-0'>
-              <div className='text-sm text-muted-foreground mb-2'>终端预览</div>
               <TerminalPreview
                 page='membership'
                 marketingData={marketingData}

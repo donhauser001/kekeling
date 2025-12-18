@@ -219,7 +219,7 @@ export function Doctors() {
             return
         }
         try {
-            const res = await fetch(`http://localhost:3000/api/hospitals/${hospitalId}`)
+            const res = await fetch(`/api/hospitals/${hospitalId}`)
             const json = await res.json()
             if (json.code === 0 && json.data?.departments) {
                 setAvailableDepartments(json.data.departments.map((d: any) => ({ id: d.id, name: d.name })))

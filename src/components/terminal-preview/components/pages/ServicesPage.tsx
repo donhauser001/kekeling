@@ -1,30 +1,31 @@
 /**
  * 服务页预览组件
+ * 
+ * 使用跨平台 UI 原语，支持 Web 和小程序
+ * 
+ * 样式规范：
+ * - 规则 1：布局属性必须在 style 中完整表达
+ * - 规则 2：className 只承载 Web 优化，不作为唯一来源
+ * - 规则 3：wxScale 只作用于视觉尺寸，不作用于逻辑布局
  */
 
-import { useState, useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useState, useMemo, useEffect } from 'react'
 import {
   Search,
-  Clock,
-  Star,
   Rocket,
-  Stethoscope,
-  LayoutGrid,
-  List,
-  ChevronDown,
-  Heart,
-  Share2,
-  ArrowUpDown,
-  TrendingUp,
-  ThumbsUp,
-  DollarSign,
-} from 'lucide-react'
+  Percent,
+} from '../../ui/lucide-compat'
 import { cn } from '@/lib/utils'
-import type { ThemeSettings, ServiceCategory, ServiceListItem, BannerAreaData } from '../../types'
+import { Box, Text, Button, Image, Icon } from '../../ui/primitives'
+import { isWxEnvironment } from '../../platform/env'
+import type { ThemeSettings, ServiceListItem, BannerAreaData, PreviewViewerRole } from '../../types'
 import { previewApi } from '../../api'
+import { formatCount } from '../../utils'
 import { getResourceUrl } from '../../utils'
 import { BannerSection } from '../BannerSection'
+
+// 小程序缩放比例（规则 3：只用于视觉尺寸）
+const wxScale = isWxEnvironment() ? 1.15 : 1
 
 type LayoutMode = 'grid' | 'list'
 type SortType = 'default' | 'sales' | 'rating' | 'price-asc' | 'price-desc'
@@ -36,51 +37,80 @@ interface ServicesPageProps {
   bannerData?: BannerAreaData | null
   /** 服务点击回调 */
   onServiceClick?: (serviceId: string) => void
+  /** 当前视角角色（用于显示陪诊员专属信息） */
+  effectiveViewerRole?: PreviewViewerRole
 }
 
-// 排序选项
-const sortOptions: { value: SortType; label: string; icon: React.ReactNode }[] = [
-  { value: 'default', label: '综合', icon: <ArrowUpDown className='h-3 w-3' /> },
-  { value: 'sales', label: '销量', icon: <TrendingUp className='h-3 w-3' /> },
-  { value: 'rating', label: '好评', icon: <ThumbsUp className='h-3 w-3' /> },
-  { value: 'price-asc', label: '价格↑', icon: <DollarSign className='h-3 w-3' /> },
-  { value: 'price-desc', label: '价格↓', icon: <DollarSign className='h-3 w-3' /> },
+// 排序选项配置（纯文字，无图标）
+const sortOptionConfigs: { value: SortType; label: string }[] = [
+  { value: 'default', label: '综合' },
+  { value: 'sales', label: '销量' },
+  { value: 'rating', label: '好评' },
+  { value: 'price-asc', label: '价格↑' },
+  { value: 'price-desc', label: '价格↓' },
 ]
 
-export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: bannerDataOverride, onServiceClick }: ServicesPageProps) {
+export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: bannerDataOverride, onServiceClick, effectiveViewerRole = 'user' }: ServicesPageProps) {
+  // 调试日志
+  console.log('[ServicesPage] 组件渲染')
+
+  // 是否为陪诊员视角
+  const isEscort = effectiveViewerRole === 'escort'
   const [activeCategory, setActiveCategory] = useState('all')
   const [layoutMode, setLayoutMode] = useState<LayoutMode>('grid')
   const [sortType, setSortType] = useState<SortType>('default')
   const [showSortMenu, setShowSortMenu] = useState(false)
   const [favorites, setFavorites] = useState<Set<string>>(new Set())
 
-  // 获取服务页轮播图
-  const { data: fetchedBannerData } = useQuery({
-    queryKey: ['preview', 'banners', 'services'],
-    queryFn: () => previewApi.getBanners('services'),
-    staleTime: 60 * 1000,
-  })
+  // ============================================================================
+  // 数据获取（使用 useState + useEffect 绕过 React Query 兼容性问题）
+  // TODO: 后续排查 React Query 在小程序中的问题后，改回 useQuery
+  // ============================================================================
 
-  const bannerData = bannerDataOverride ?? fetchedBannerData ?? null
+  // 轮播图数据
+  const [fetchedBannerData, setFetchedBannerData] = useState<BannerAreaData | null>(null)
 
-  // 获取服务分类
-  const { data: categories = [] } = useQuery({
-    queryKey: ['preview', 'serviceCategories'],
-    queryFn: previewApi.getCategories,
-    staleTime: 60 * 1000,
-  })
+  // 分类数据
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([])
 
-  // 获取服务列表
-  const { data: servicesData } = useQuery({
-    queryKey: ['preview', 'servicesList', activeCategory],
-    queryFn: () => previewApi.getServices({
+  // 服务列表数据
+  const [services, setServices] = useState<ServiceListItem[]>([])
+  const [servicesLoading, setServicesLoading] = useState(true)
+
+  // 获取轮播图
+  useEffect(() => {
+    previewApi.getBanners('services')
+      .then(data => setFetchedBannerData(data))
+      .catch(err => console.error('[ServicesPage] 轮播图加载失败:', err))
+  }, [])
+
+  // 获取分类
+  useEffect(() => {
+    previewApi.getCategories()
+      .then(data => {
+        console.log('[ServicesPage] 分类加载成功:', data?.length)
+        setCategories(data || [])
+      })
+      .catch(err => console.error('[ServicesPage] 分类加载失败:', err))
+  }, [])
+
+  // 获取服务列表（依赖 activeCategory）
+  useEffect(() => {
+    setServicesLoading(true)
+    console.log('[ServicesPage] 🚀 请求服务列表, categoryId:', activeCategory)
+    previewApi.getServices({
       categoryId: activeCategory === 'all' ? undefined : activeCategory,
       pageSize: 20,
-    }),
-    staleTime: 60 * 1000,
-  })
+    })
+      .then(result => {
+        console.log('[ServicesPage] ✅ 服务列表加载成功:', result?.data?.length, '条')
+        setServices(result?.data || [])
+      })
+      .catch(err => console.error('[ServicesPage] ❌ 服务列表加载失败:', err))
+      .finally(() => setServicesLoading(false))
+  }, [activeCategory])
 
-  const services = servicesData?.data || []
+  const bannerData = bannerDataOverride ?? fetchedBannerData ?? null
 
   // 分类列表（添加"全部"选项）
   const categoryList = useMemo(() => {
@@ -134,325 +164,715 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
   const borderColor = isDarkMode ? '#3a3a3a' : '#e5e7eb'
 
   return (
-    <div style={{ backgroundColor: bgColor }} className='min-h-full pb-14'>
-      {/* 搜索框 */}
-      <div className='px-3 pt-3 pb-2' style={{ backgroundColor: headerBg }}>
-        <div
+    <Box
+      className='min-h-full pb-14'
+      style={{
+        minHeight: '100%',
+        paddingBottom: 56 * wxScale,
+        backgroundColor: bgColor,
+      }}
+    >
+      {/* 搜索框（顶部留出小程序胶囊按钮空间） */}
+      <Box
+        className='px-3 pt-3 pb-2'
+        style={{
+          paddingLeft: 12 * wxScale,
+          paddingRight: 12 * wxScale,
+          paddingTop: 88 * wxScale, // 状态栏(44) + 胶囊按钮高度(32) + 间距(12)
+          paddingBottom: 8 * wxScale,
+          backgroundColor: headerBg,
+        }}
+      >
+        <Box
           className='flex items-center gap-2 rounded-full px-4 py-2.5 cursor-pointer transition-all hover:shadow-md active:scale-[0.98]'
-          style={{ backgroundColor: isDarkMode ? '#3a3a3a' : '#f3f4f6' }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8 * wxScale,
+            borderRadius: 9999,
+            paddingLeft: 16 * wxScale,
+            paddingRight: 16 * wxScale,
+            paddingTop: 10 * wxScale,
+            paddingBottom: 10 * wxScale,
+            backgroundColor: isDarkMode ? '#3a3a3a' : '#f3f4f6',
+          }}
         >
-          <Search className='h-4 w-4' style={{ color: textMuted }} />
-          <span className='text-sm' style={{ color: textMuted }}>
+          <Search size={16 * wxScale} color={textMuted} />
+          <Text
+            className='text-sm'
+            style={{ fontSize: 14 * wxScale, color: textMuted }}
+          >
             搜索服务
-          </span>
-        </div>
-      </div>
+          </Text>
+        </Box>
+      </Box>
 
       {/* 轮播图区域 */}
       {bannerData?.enabled && bannerData.items && bannerData.items.length > 0 && (
-        <div style={{ backgroundColor: headerBg }}>
+        <Box style={{ backgroundColor: headerBg }}>
           <BannerSection
             bannerData={bannerData}
             themeSettings={themeSettings}
             autoPlayInterval={3000}
+            className='pb-3'
           />
-        </div>
+        </Box>
       )}
 
-      {/* 分类 Tab */}
-      <div
-        className='sticky top-0 z-10 overflow-x-auto px-3 py-2'
-        style={{ backgroundColor: headerBg }}
+      {/* 分类 Tab（隐藏滚动条，增加上下边距） */}
+      <Box
+        className='services-category-scroll sticky top-0 z-10 px-3'
+        style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
+          paddingLeft: 12 * wxScale,
+          paddingRight: 12 * wxScale,
+          paddingTop: 12 * wxScale,
+          paddingBottom: 12 * wxScale,
+          marginTop: 4 * wxScale,
+          marginBottom: 4 * wxScale,
+          backgroundColor: headerBg,
+          overflowX: 'auto',
+        }}
       >
-        <style>{`
-          .category-scroll::-webkit-scrollbar { display: none; }
-          .category-scroll { scrollbar-width: none; -ms-overflow-style: none; }
-        `}</style>
-        <div className='category-scroll flex gap-2 overflow-x-auto'>
+        <Box
+          className='flex gap-2'
+          style={{
+            display: 'flex',
+            gap: 8 * wxScale,
+          }}
+        >
           {categoryList.map(cat => (
-            <div
+            <Box
               key={cat.id}
               className={cn(
                 'flex-shrink-0 px-3.5 py-1.5 rounded-full text-sm cursor-pointer transition-all',
                 activeCategory === cat.id ? 'font-medium' : ''
               )}
               style={{
+                flexShrink: 0,
+                paddingLeft: 14 * wxScale,
+                paddingRight: 14 * wxScale,
+                paddingTop: 10 * wxScale,
+                paddingBottom: 10 * wxScale,
+                borderRadius: 9999,
+                fontSize: 14 * wxScale,
                 backgroundColor: activeCategory === cat.id
                   ? `${themeSettings.primaryColor}15`
                   : isDarkMode ? '#3a3a3a' : '#f3f4f6',
                 color: activeCategory === cat.id
                   ? themeSettings.primaryColor
                   : textSecondary,
+                fontWeight: activeCategory === cat.id ? 500 : 400,
               }}
               onClick={() => setActiveCategory(cat.id)}
             >
-              {cat.name}
-            </div>
+              <Text style={{ fontSize: 14 * wxScale }}>{cat.name}</Text>
+            </Box>
           ))}
-        </div>
-      </div>
+        </Box>
+      </Box>
 
       {/* 工具栏：排序 + 布局切换 */}
-      <div
+      <Box
         className='flex items-center justify-between px-3 py-2'
-        style={{ backgroundColor: headerBg, borderBottom: `1px solid ${borderColor}` }}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          paddingLeft: 12 * wxScale,
+          paddingRight: 12 * wxScale,
+          paddingTop: 8 * wxScale,
+          paddingBottom: 8 * wxScale,
+          backgroundColor: headerBg,
+          borderBottomWidth: 1,
+          borderBottomColor: borderColor,
+          borderBottomStyle: 'solid',
+        }}
       >
-        {/* 排序选择 */}
-        <div className='relative'>
-          <button
+        {/* 排序选择（优化后的样式） */}
+        <Box className='relative' style={{ position: 'relative' }}>
+          <Button
             className='flex items-center gap-1.5 text-xs px-2 py-1 rounded transition-colors'
-            style={{ color: textSecondary }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4 * wxScale,
+              paddingLeft: 8 * wxScale,
+              paddingRight: 8 * wxScale,
+              paddingTop: 4 * wxScale,
+              paddingBottom: 4 * wxScale,
+              borderRadius: 4 * wxScale,
+              fontSize: 12 * wxScale,
+              color: textSecondary,
+            }}
             onClick={() => setShowSortMenu(!showSortMenu)}
           >
-            {sortOptions.find(s => s.value === sortType)?.icon}
-            <span>{sortOptions.find(s => s.value === sortType)?.label}</span>
-            <ChevronDown className={cn('h-3 w-3 transition-transform', showSortMenu && 'rotate-180')} />
-          </button>
+            <Text style={{ fontSize: 12 * wxScale }}>{sortOptionConfigs.find(s => s.value === sortType)?.label}</Text>
+            <Icon
+              name="down"
+              size={12 * wxScale}
+              color={textMuted}
+              style={{ transform: showSortMenu ? 'rotate(180deg)' : 'rotate(0deg)' }}
+            />
+          </Button>
           {showSortMenu && (
-            <div
-              className='absolute top-full left-0 mt-1 py-1 rounded-lg shadow-lg z-20 min-w-[100px]'
-              style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
+            <Box
+              className='absolute top-full left-0 mt-1 py-1 rounded-lg shadow-lg z-20'
+              style={{
+                position: 'absolute',
+                top: '100%',
+                left: 0,
+                marginTop: 4 * wxScale,
+                paddingTop: 6 * wxScale,
+                paddingBottom: 6 * wxScale,
+                borderRadius: 8 * wxScale,
+                zIndex: 20,
+                minWidth: 90 * wxScale,
+                backgroundColor: cardBg,
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+              }}
             >
-              {sortOptions.map(option => (
-                <button
-                  key={option.value}
-                  className={cn(
-                    'flex items-center gap-2 w-full px-3 py-1.5 text-xs transition-colors',
-                    sortType === option.value ? 'font-medium' : ''
-                  )}
-                  style={{
-                    color: sortType === option.value ? themeSettings.primaryColor : textSecondary,
-                    backgroundColor: sortType === option.value ? `${themeSettings.primaryColor}10` : 'transparent',
-                  }}
-                  onClick={() => {
-                    setSortType(option.value)
-                    setShowSortMenu(false)
-                  }}
-                >
-                  {option.icon}
-                  {option.label}
-                </button>
-              ))}
-            </div>
+              {sortOptionConfigs.map(option => {
+                const isActive = sortType === option.value
+                const itemColor = isActive ? themeSettings.primaryColor : textSecondary
+                return (
+                  <Button
+                    key={option.value}
+                    className='flex items-center gap-2 w-full transition-colors'
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6 * wxScale,
+                      width: '100%',
+                      paddingLeft: 12 * wxScale,
+                      paddingRight: 12 * wxScale,
+                      paddingTop: 8 * wxScale,
+                      paddingBottom: 8 * wxScale,
+                      fontSize: 13 * wxScale,
+                      color: itemColor,
+                      backgroundColor: isActive ? `${themeSettings.primaryColor}08` : 'transparent',
+                      fontWeight: isActive ? 500 : 400,
+                    }}
+                    onClick={() => {
+                      setSortType(option.value)
+                      setShowSortMenu(false)
+                    }}
+                  >
+                    <Text style={{ fontSize: 13 * wxScale }}>{option.label}</Text>
+                  </Button>
+                )
+              })}
+            </Box>
           )}
-        </div>
+        </Box>
 
-        {/* 布局切换 */}
-        <div className='flex items-center gap-1'>
-          <button
+        {/* 布局切换（缩小尺寸，与首页保持一致） */}
+        <Box
+          className='flex items-center gap-1'
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2 * wxScale,
+          }}
+        >
+          <Button
             onClick={() => setLayoutMode('grid')}
-            className='rounded p-1.5 transition-colors'
             style={{
-              backgroundColor: layoutMode === 'grid' ? `${themeSettings.primaryColor}20` : 'transparent',
-              color: layoutMode === 'grid' ? themeSettings.primaryColor : textMuted,
+              backgroundColor: layoutMode === 'grid' ? `${themeSettings.primaryColor}15` : 'transparent',
+              padding: 4 * wxScale,
+              borderRadius: 4,
+              width: 24 * wxScale,
+              height: 24 * wxScale,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
-            <LayoutGrid className='h-4 w-4' />
-          </button>
-          <button
+            <Icon
+              name="grid-four"
+              size={14 * wxScale}
+              color={layoutMode === 'grid' ? themeSettings.primaryColor : textMuted}
+            />
+          </Button>
+          <Button
             onClick={() => setLayoutMode('list')}
-            className='rounded p-1.5 transition-colors'
             style={{
-              backgroundColor: layoutMode === 'list' ? `${themeSettings.primaryColor}20` : 'transparent',
-              color: layoutMode === 'list' ? themeSettings.primaryColor : textMuted,
+              backgroundColor: layoutMode === 'list' ? `${themeSettings.primaryColor}15` : 'transparent',
+              padding: 4 * wxScale,
+              borderRadius: 4,
+              width: 24 * wxScale,
+              height: 24 * wxScale,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
-            <List className='h-4 w-4' />
-          </button>
-        </div>
-      </div>
+            <Icon
+              name="list"
+              size={14 * wxScale}
+              color={layoutMode === 'list' ? themeSettings.primaryColor : textMuted}
+            />
+          </Button>
+        </Box>
+      </Box>
 
       {/* 服务列表 */}
-      <div className={cn(
-        'px-3 pt-3',
-        layoutMode === 'grid' ? 'grid grid-cols-2 gap-2.5' : 'space-y-3'
-      )}>
+      <Box
+        className={cn(
+          'px-3 pt-3',
+          layoutMode === 'grid' ? 'grid grid-cols-2 gap-2.5' : 'space-y-3'
+        )}
+        style={{
+          paddingLeft: 12 * wxScale,
+          paddingRight: 12 * wxScale,
+          paddingTop: 12 * wxScale,
+          ...(layoutMode === 'grid' ? {
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, 1fr)',
+            gap: 10 * wxScale,
+          } : {
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 12 * wxScale,
+          }),
+        }}
+      >
         {sortedServices.map(service => (
           layoutMode === 'grid' ? (
             // 网格布局
-            <div
+            <Box
               key={service.id}
               className='rounded-xl overflow-hidden cursor-pointer transition-all duration-200 hover:shadow-lg active:scale-[0.98]'
-              style={{ backgroundColor: cardBg }}
+              style={{
+                borderRadius: 12 * wxScale,
+                overflow: 'hidden',
+                backgroundColor: cardBg,
+              }}
               onClick={() => onServiceClick?.(service.id)}
             >
               {/* 封面 */}
-              <div
+              <Box
                 className='h-28 relative flex items-center justify-center'
-                style={{ backgroundColor: isDarkMode ? '#3a3a3a' : '#f3f4f6' }}
+                style={{
+                  height: 112 * wxScale,
+                  position: 'relative',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: isDarkMode ? '#3a3a3a' : '#f3f4f6',
+                }}
               >
                 {service.coverImage ? (
-                  <img
+                  <Image
                     src={getResourceUrl(service.coverImage)}
                     alt={service.name}
                     className='w-full h-full object-cover'
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    mode="aspectFill"
                   />
                 ) : (
-                  <Stethoscope className='h-10 w-10' style={{ color: themeSettings.primaryColor }} />
+                  <Icon name="stethoscope" size={40 * wxScale} color={themeSettings.primaryColor} />
                 )}
                 {/* 热门标签 */}
                 {service.orderCount > 5000 && (
-                  <div
+                  <Box
                     className='absolute top-2 left-2 flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-white text-[10px]'
-                    style={{ backgroundColor: '#ff4d4f' }}
+                    style={{
+                      position: 'absolute',
+                      top: 8 * wxScale,
+                      left: 8 * wxScale,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 2 * wxScale,
+                      paddingLeft: 6 * wxScale,
+                      paddingRight: 6 * wxScale,
+                      paddingTop: 2 * wxScale,
+                      paddingBottom: 2 * wxScale,
+                      borderRadius: 9999,
+                      backgroundColor: '#ff4d4f',
+                    }}
                   >
-                    <Rocket className='h-2.5 w-2.5' />
-                    <span>热门</span>
-                  </div>
+                    <Rocket size={10 * wxScale} color="#fff" />
+                    <Text style={{ fontSize: 10 * wxScale, color: '#fff' }}>热门</Text>
+                  </Box>
                 )}
-                {/* 操作按钮 */}
-                <div className='absolute top-2 right-2 flex gap-1'>
-                  <button
-                    onClick={(e) => toggleFavorite(service.id, e)}
-                    className='p-1 rounded-full backdrop-blur-sm transition-colors'
-                    style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}
+                {/* 操作按钮（圆形收藏按钮） */}
+                <Box
+                  className='absolute top-2 right-2'
+                  style={{
+                    position: 'absolute',
+                    top: 8 * wxScale,
+                    right: 8 * wxScale,
+                  }}
+                >
+                  <Box
+                    onClick={(e: any) => toggleFavorite(service.id, e)}
+                    style={{
+                      width: 22,
+                      height: 22,
+                      borderRadius: 11,
+                      backgroundColor: 'rgba(0,0,0,0.3)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
                   >
-                    <Heart
-                      className='h-3.5 w-3.5'
-                      style={{
-                        color: favorites.has(service.id) ? '#ff4d4f' : '#fff',
-                        fill: favorites.has(service.id) ? '#ff4d4f' : 'transparent',
-                      }}
+                    <Icon
+                      name="like"
+                      size={12}
+                      color={favorites.has(service.id) ? '#ff4d4f' : '#fff'}
                     />
-                  </button>
-                </div>
-              </div>
+                  </Box>
+                </Box>
+              </Box>
               {/* 信息 */}
-              <div className='p-2.5'>
-                <p className='text-xs font-semibold truncate' style={{ color: textPrimary }}>
+              <Box
+                className='p-2.5'
+                style={{
+                  padding: 10 * wxScale,
+                }}
+              >
+                <Text
+                  className='text-xs font-semibold truncate'
+                  style={{
+                    fontSize: 12 * wxScale,
+                    fontWeight: 600,
+                    color: textPrimary,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
                   {service.name}
-                </p>
-                <div className='mt-1.5 flex items-center gap-2 text-[10px]' style={{ color: textMuted }}>
-                  <div className='flex items-center gap-0.5'>
-                    <Star className='h-2.5 w-2.5 text-amber-400' />
-                    <span>{service.rating}%</span>
-                  </div>
-                  <span>{service.orderCount.toLocaleString()}人购</span>
-                </div>
-                <div className='mt-1.5 flex items-center justify-between'>
-                  <div className='flex items-baseline gap-0.5'>
-                    <span className='text-[10px]' style={{ color: themeSettings.primaryColor }}>¥</span>
-                    <span className='text-sm font-bold' style={{ color: themeSettings.primaryColor }}>
+                </Text>
+                <Box
+                  className='mt-1.5 flex items-center gap-2 text-[10px]'
+                  style={{
+                    marginTop: 6 * wxScale,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6 * wxScale,
+                    color: textMuted,
+                  }}
+                >
+                  <Box
+                    className='flex items-center gap-0.5'
+                    style={{ display: 'flex', alignItems: 'center', gap: 2 * wxScale }}
+                  >
+                    <Icon name="good-one" size={10 * wxScale} color="#fbbf24" />
+                    <Text style={{ fontSize: 10 * wxScale, color: textMuted }}>{service.rating}%</Text>
+                  </Box>
+                  <Text style={{ fontSize: 10 * wxScale, color: textMuted }}>{formatCount(service.orderCount)}人购</Text>
+                </Box>
+                <Box
+                  className='mt-1.5 flex items-center justify-between'
+                  style={{
+                    marginTop: 6 * wxScale,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <Box
+                    className='flex items-baseline gap-0.5'
+                    style={{ display: 'flex', alignItems: 'baseline', gap: 2 * wxScale }}
+                  >
+                    <Text style={{ fontSize: 10 * wxScale, color: themeSettings.primaryColor }}>¥</Text>
+                    <Text style={{ fontSize: 14 * wxScale, fontWeight: 700, color: themeSettings.primaryColor }}>
                       {service.price}
-                    </span>
+                    </Text>
                     {service.originalPrice && service.originalPrice > service.price && (
-                      <span className='text-[10px] line-through' style={{ color: textMuted }}>
+                      <Text
+                        className='line-through'
+                        style={{ fontSize: 10 * wxScale, color: textMuted, textDecoration: 'line-through' }}
+                      >
                         ¥{service.originalPrice}
-                      </span>
+                      </Text>
                     )}
-                  </div>
-                </div>
-              </div>
-            </div>
+                  </Box>
+                  {/* 陪诊员视角：分成比例 */}
+                  {isEscort && (
+                    <Box
+                      className='flex items-center gap-0.5 px-1.5 py-0.5 rounded'
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 2 * wxScale,
+                        paddingLeft: 6 * wxScale,
+                        paddingRight: 6 * wxScale,
+                        paddingTop: 2 * wxScale,
+                        paddingBottom: 2 * wxScale,
+                        borderRadius: 4 * wxScale,
+                        backgroundColor: `${themeSettings.primaryColor}15`,
+                      }}
+                    >
+                      <Percent size={10 * wxScale} color={themeSettings.primaryColor} />
+                      <Text style={{ fontSize: 10 * wxScale, fontWeight: 500, color: themeSettings.primaryColor }}>
+                        {service.commissionRate ?? 70}%
+                      </Text>
+                    </Box>
+                  )}
+                </Box>
+              </Box>
+            </Box>
           ) : (
             // 列表布局
-            <div
+            <Box
               key={service.id}
               className='rounded-xl overflow-hidden cursor-pointer transition-all duration-200 hover:shadow-lg active:scale-[0.98]'
-              style={{ backgroundColor: cardBg }}
+              style={{
+                borderRadius: 12 * wxScale,
+                overflow: 'hidden',
+                backgroundColor: cardBg,
+              }}
               onClick={() => onServiceClick?.(service.id)}
             >
-              <div className='flex'>
+              <Box
+                className='flex'
+                style={{ display: 'flex' }}
+              >
                 {/* 左侧封面 */}
-                <div
+                <Box
                   className='w-28 h-28 flex-shrink-0 relative flex items-center justify-center'
-                  style={{ backgroundColor: isDarkMode ? '#3a3a3a' : '#f3f4f6' }}
+                  style={{
+                    width: 112 * wxScale,
+                    height: 112 * wxScale,
+                    flexShrink: 0,
+                    position: 'relative',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: isDarkMode ? '#3a3a3a' : '#f3f4f6',
+                  }}
                 >
                   {service.coverImage ? (
-                    <img
+                    <Image
                       src={getResourceUrl(service.coverImage)}
                       alt={service.name}
                       className='w-full h-full object-cover'
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      mode="aspectFill"
                     />
                   ) : (
-                    <Stethoscope className='h-10 w-10' style={{ color: themeSettings.primaryColor }} />
+                    <Icon name="stethoscope" size={40 * wxScale} color={themeSettings.primaryColor} />
                   )}
                   {/* 热门标签 */}
                   {service.orderCount > 5000 && (
-                    <div
+                    <Box
                       className='absolute top-2 left-2 flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-white text-[10px]'
-                      style={{ backgroundColor: '#ff4d4f' }}
+                      style={{
+                        position: 'absolute',
+                        top: 8 * wxScale,
+                        left: 8 * wxScale,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 2 * wxScale,
+                        paddingLeft: 6 * wxScale,
+                        paddingRight: 6 * wxScale,
+                        paddingTop: 2 * wxScale,
+                        paddingBottom: 2 * wxScale,
+                        borderRadius: 9999,
+                        backgroundColor: '#ff4d4f',
+                      }}
                     >
-                      <Rocket className='h-2.5 w-2.5' />
-                      <span>热门</span>
-                    </div>
+                      <Rocket size={10 * wxScale} color="#fff" />
+                      <Text style={{ fontSize: 10 * wxScale, color: '#fff' }}>热门</Text>
+                    </Box>
                   )}
-                </div>
+                </Box>
                 {/* 右侧信息 */}
-                <div className='flex-1 p-3 flex flex-col justify-between'>
-                  <div>
-                    <div className='flex items-start justify-between'>
-                      <p className='text-sm font-semibold flex-1 truncate' style={{ color: textPrimary }}>
+                <Box
+                  className='flex-1 p-3 flex flex-col justify-between'
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    padding: 12 * wxScale,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    overflow: 'hidden',
+                  }}
+                >
+                  <Box>
+                    <Box
+                      className='flex items-start justify-between'
+                      style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <Text
+                        className='text-sm font-semibold'
+                        style={{
+                          fontSize: 14 * wxScale,
+                          fontWeight: 600,
+                          flex: 1,
+                          color: textPrimary,
+                          lineHeight: 1.3,
+                          wordBreak: 'break-word',
+                        }}
+                      >
                         {service.name}
-                      </p>
+                      </Text>
                       {/* 操作按钮 */}
-                      <div className='flex gap-1 ml-2'>
-                        <button
+                      <Box
+                        className='flex gap-1 ml-2'
+                        style={{
+                          display: 'flex',
+                          flexShrink: 0,
+                          gap: 4 * wxScale,
+                          marginLeft: 8 * wxScale,
+                        }}
+                      >
+                        <Button
                           onClick={(e) => toggleFavorite(service.id, e)}
-                          className='p-1 transition-colors'
+                          className='transition-colors'
+                          style={{ padding: 4 * wxScale }}
                         >
-                          <Heart
-                            className='h-4 w-4'
-                            style={{
-                              color: favorites.has(service.id) ? '#ff4d4f' : textMuted,
-                              fill: favorites.has(service.id) ? '#ff4d4f' : 'transparent',
-                            }}
+                          <Icon
+                            name="like"
+                            size={14 * wxScale}
+                            color={favorites.has(service.id) ? '#ff4d4f' : textMuted}
                           />
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                           onClick={(e) => handleShare(service, e)}
-                          className='p-1 transition-colors'
+                          className='transition-colors'
+                          style={{ padding: 4 * wxScale }}
                         >
-                          <Share2 className='h-4 w-4' style={{ color: textMuted }} />
-                        </button>
-                      </div>
-                    </div>
-                    <p className='mt-1 text-xs line-clamp-2' style={{ color: textSecondary }}>
-                      {service.description || '专业陪诊服务'}
-                    </p>
-                  </div>
-                  <div className='mt-2'>
-                    <div className='flex items-center gap-3 text-xs' style={{ color: textMuted }}>
+                          <Icon name="share-three" size={14 * wxScale} color={textMuted} />
+                        </Button>
+                      </Box>
+                    </Box>
+                    <Text
+                      className='mt-1 text-xs'
+                      style={{
+                        marginTop: 4 * wxScale,
+                        fontSize: 12 * wxScale,
+                        color: textSecondary,
+                      }}
+                    >
+                      {(() => {
+                        const desc = service.description || '专业陪诊服务'
+                        const maxLen = 14
+                        return desc.length > maxLen ? desc.slice(0, maxLen) + '…' : desc
+                      })()}
+                    </Text>
+                  </Box>
+                  <Box style={{ marginTop: 8 * wxScale }}>
+                    <Box
+                      className='flex items-center text-xs'
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        flexWrap: 'nowrap',
+                        gap: 8 * wxScale,
+                        color: textMuted,
+                        overflow: 'hidden',
+                      }}
+                    >
                       {service.duration && (
-                        <div className='flex items-center gap-1'>
-                          <Clock className='h-3 w-3' />
-                          <span>{service.duration}</span>
-                        </div>
+                        <Box
+                          className='flex items-center gap-1'
+                          style={{ display: 'flex', alignItems: 'center', flexShrink: 0, gap: 2 * wxScale }}
+                        >
+                          <Icon name="time" size={10 * wxScale} color={textMuted} />
+                          <Text style={{ fontSize: 11 * wxScale, color: textMuted, whiteSpace: 'nowrap' }}>{service.duration}</Text>
+                        </Box>
                       )}
-                      <div className='flex items-center gap-1'>
-                        <Star className='h-3 w-3 text-amber-400' />
-                        <span>{service.rating}%</span>
-                      </div>
-                      <span>{service.orderCount.toLocaleString()}人购</span>
-                    </div>
-                    <div className='mt-1.5 flex items-center justify-between'>
-                      <div className='flex items-baseline gap-1'>
-                        <span className='text-xs' style={{ color: themeSettings.primaryColor }}>¥</span>
-                        <span className='text-base font-bold' style={{ color: themeSettings.primaryColor }}>
+                      <Box
+                        className='flex items-center gap-1'
+                        style={{ display: 'flex', alignItems: 'center', flexShrink: 0, gap: 2 * wxScale }}
+                      >
+                        <Icon name="good-one" size={10 * wxScale} color="#fbbf24" />
+                        <Text style={{ fontSize: 11 * wxScale, color: textMuted, whiteSpace: 'nowrap' }}>{service.rating}%</Text>
+                      </Box>
+                      <Text style={{ fontSize: 11 * wxScale, color: textMuted, whiteSpace: 'nowrap', flexShrink: 0 }}>{formatCount(service.orderCount)}人购</Text>
+                    </Box>
+                    <Box
+                      className='mt-1.5 flex items-center justify-between'
+                      style={{
+                        marginTop: 6 * wxScale,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <Box
+                        className='flex items-baseline gap-1'
+                        style={{ display: 'flex', alignItems: 'baseline', gap: 4 * wxScale }}
+                      >
+                        <Text style={{ fontSize: 12 * wxScale, color: themeSettings.primaryColor }}>¥</Text>
+                        <Text style={{ fontSize: 16 * wxScale, fontWeight: 700, color: themeSettings.primaryColor }}>
                           {service.price}
-                        </span>
+                        </Text>
                         {service.originalPrice && service.originalPrice > service.price && (
-                          <span className='text-xs line-through' style={{ color: textMuted }}>
+                          <Text
+                            className='line-through'
+                            style={{ fontSize: 12 * wxScale, color: textMuted, textDecoration: 'line-through' }}
+                          >
                             ¥{service.originalPrice}
-                          </span>
+                          </Text>
                         )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+                      </Box>
+                      {/* 陪诊员视角：分成比例 */}
+                      {isEscort && (
+                        <Box
+                          className='flex items-center gap-1 px-2 py-1 rounded'
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 4 * wxScale,
+                            paddingLeft: 8 * wxScale,
+                            paddingRight: 8 * wxScale,
+                            paddingTop: 4 * wxScale,
+                            paddingBottom: 4 * wxScale,
+                            borderRadius: 4 * wxScale,
+                            backgroundColor: `${themeSettings.primaryColor}15`,
+                          }}
+                        >
+                          <Percent size={12 * wxScale} color={themeSettings.primaryColor} />
+                          <Text style={{ fontSize: 12 * wxScale, fontWeight: 500, color: themeSettings.primaryColor }}>
+                            分成 {service.commissionRate ?? 70}%
+                          </Text>
+                        </Box>
+                      )}
+                    </Box>
+                  </Box>
+                </Box>
+              </Box>
+            </Box>
           )
         ))}
 
         {/* 无数据状态 */}
         {sortedServices.length === 0 && (
-          <div className={cn('py-12 text-center', layoutMode === 'grid' && 'col-span-2')}>
-            <Stethoscope className='h-12 w-12 mx-auto mb-3' style={{ color: textMuted }} />
-            <p className='text-sm' style={{ color: textMuted }}>暂无服务</p>
-          </div>
+          <Box
+            className={cn('py-12 text-center', layoutMode === 'grid' && 'col-span-2')}
+            style={{
+              paddingTop: 48 * wxScale,
+              paddingBottom: 48 * wxScale,
+              textAlign: 'center',
+              ...(layoutMode === 'grid' && { gridColumn: 'span 2' }),
+            }}
+          >
+            <Icon
+              name="stethoscope"
+              size={48 * wxScale}
+              color={textMuted}
+              style={{
+                marginLeft: 'auto',
+                marginRight: 'auto',
+                marginBottom: 12 * wxScale,
+              }}
+            />
+            <Text style={{ fontSize: 14 * wxScale, color: textMuted }}>暂无服务</Text>
+          </Box>
         )}
-      </div>
-    </div>
+      </Box>
+    </Box>
   )
 }
