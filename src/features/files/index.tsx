@@ -94,7 +94,7 @@ export function Files() {
     } = route.useSearch()
     const navigate = route.useNavigate()
 
-    const [sort, setSort] = useState(initSort)
+    const [sort, setSort] = useState<'name' | 'date' | 'size' | 'name-desc'>(initSort as 'name' | 'date' | 'size' | 'name-desc')
     const [searchTerm, setSearchTerm] = useState(filter)
     const [view, setView] = useState<'grid' | 'list'>(initView as 'grid' | 'list')
     const [selectedFolder, setSelectedFolder] = useState(initFolder)
@@ -131,14 +131,14 @@ export function Files() {
         })
     }
 
-    const handleSortChange = (value: string) => {
+    const handleSortChange = (value: 'name' | 'date' | 'size' | 'name-desc') => {
         setSort(value)
         navigate({ search: (prev) => ({ ...prev, sort: value }) })
     }
 
     const handleViewChange = (value: string) => {
         setView(value as 'grid' | 'list')
-        navigate({ search: (prev) => ({ ...prev, view: value }) })
+        navigate({ search: (prev) => ({ ...prev, view: value as 'grid' | 'list' }) })
     }
 
     const handleFolderSelect = (folderId: string) => {

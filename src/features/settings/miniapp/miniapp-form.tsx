@@ -38,8 +38,9 @@ const defaultValues: Partial<MiniappFormValues> = {
 export function MiniappForm() {
   const [loading, setLoading] = useState(true)
 
-  const form = useForm<MiniappFormValues>({
-    resolver: zodResolver(miniappFormSchema),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const form = useForm<MiniappFormValues, any>({
+    resolver: zodResolver(miniappFormSchema) as any,
     defaultValues,
   })
 

@@ -11,7 +11,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { type Employee } from '../data/schema'
+import { type Employee as User } from '../data/schema'
 
 interface Permission {
   id: string
