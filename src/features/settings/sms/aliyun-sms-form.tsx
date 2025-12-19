@@ -34,13 +34,13 @@ const smsFormSchema = z.object({
   signName: z.string().min(1, '请输入短信签名'),
   templateCode: z.string().min(1, '请输入模板编码'),
   devMode: z.boolean(),
-  devCode: z.coerce.string().optional().default('123456'),
-  // 频控配置 - 使用 coerce 确保数字类型
-  rateLimitPhone60s: z.coerce.number().min(10, '最小10秒').max(300, '最大300秒'),
-  rateLimitIpHour: z.coerce.number().min(1, '最小1次').max(100, '最大100次'),
-  rateLimitPhoneDay: z.coerce.number().min(1, '最小1次').max(50, '最大50次'),
-  codeLength: z.coerce.number().min(4, '最小4位').max(8, '最大8位'),
-  codeTtl: z.coerce.number().min(60, '最小60秒').max(600, '最大600秒'),
+  devCode: z.string().default('123456'),
+  // 频控配置
+  rateLimitPhone60s: z.number().min(10, '最小10秒').max(300, '最大300秒'),
+  rateLimitIpHour: z.number().min(1, '最小1次').max(100, '最大100次'),
+  rateLimitPhoneDay: z.number().min(1, '最小1次').max(50, '最大50次'),
+  codeLength: z.number().min(4, '最小4位').max(8, '最大8位'),
+  codeTtl: z.number().min(60, '最小60秒').max(600, '最大600秒'),
 })
 
 type SmsFormValues = z.infer<typeof smsFormSchema>
@@ -69,10 +69,10 @@ export function AliyunSmsForm() {
   const [testPhone, setTestPhone] = useState('')
   const [isConfigured, setIsConfigured] = useState(false)
 
-  const form = useForm<SmsFormValues>({
-    resolver: zodResolver(smsFormSchema),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const form = useForm<SmsFormValues, any>({
+    resolver: zodResolver(smsFormSchema) as any,
     defaultValues,
-    mode: 'onChange',
   })
 
   const devMode = form.watch('devMode')
@@ -228,7 +228,7 @@ export function AliyunSmsForm() {
         })} className='space-y-6'>
           {/* 启用开关 */}
           <FormField
-            control={form.control}
+            control={form.control as any}
             name='enabled'
             render={({ field }) => (
               <FormItem className='flex flex-row items-center justify-between rounded-lg border p-4'>
@@ -250,7 +250,7 @@ export function AliyunSmsForm() {
 
           {/* 开发模式开关 */}
           <FormField
-            control={form.control}
+            control={form.control as any}
             name='devMode'
             render={({ field }) => (
               <FormItem className='flex flex-row items-center justify-between rounded-lg border p-4'>
@@ -273,7 +273,7 @@ export function AliyunSmsForm() {
           {/* 开发模式验证码 */}
           {devMode && (
             <FormField
-              control={form.control}
+              control={form.control as any}
               name='devCode'
               render={({ field }) => (
                 <FormItem>
@@ -297,7 +297,7 @@ export function AliyunSmsForm() {
             <h3 className="text-sm font-medium">阿里云短信配置</h3>
 
             <FormField
-              control={form.control}
+              control={form.control as any}
               name='accessKeyId'
               render={({ field }) => (
                 <FormItem>
@@ -314,7 +314,7 @@ export function AliyunSmsForm() {
             />
 
             <FormField
-              control={form.control}
+              control={form.control as any}
               name='accessKeySecret'
               render={({ field }) => (
                 <FormItem>
@@ -351,7 +351,7 @@ export function AliyunSmsForm() {
             />
 
             <FormField
-              control={form.control}
+              control={form.control as any}
               name='signName'
               render={({ field }) => (
                 <FormItem>
@@ -368,7 +368,7 @@ export function AliyunSmsForm() {
             />
 
             <FormField
-              control={form.control}
+              control={form.control as any}
               name='templateCode'
               render={({ field }) => (
                 <FormItem>
@@ -396,7 +396,7 @@ export function AliyunSmsForm() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
-                control={form.control}
+                control={form.control as any}
                 name='rateLimitPhone60s'
                 render={({ field }) => (
                   <FormItem>
@@ -422,7 +422,7 @@ export function AliyunSmsForm() {
               />
 
               <FormField
-                control={form.control}
+                control={form.control as any}
                 name='rateLimitIpHour'
                 render={({ field }) => (
                   <FormItem>
@@ -448,7 +448,7 @@ export function AliyunSmsForm() {
               />
 
               <FormField
-                control={form.control}
+                control={form.control as any}
                 name='rateLimitPhoneDay'
                 render={({ field }) => (
                   <FormItem>
@@ -474,7 +474,7 @@ export function AliyunSmsForm() {
               />
 
               <FormField
-                control={form.control}
+                control={form.control as any}
                 name='codeTtl'
                 render={({ field }) => (
                   <FormItem>
@@ -500,7 +500,7 @@ export function AliyunSmsForm() {
               />
 
               <FormField
-                control={form.control}
+                control={form.control as any}
                 name='codeLength'
                 render={({ field }) => (
                   <FormItem>
