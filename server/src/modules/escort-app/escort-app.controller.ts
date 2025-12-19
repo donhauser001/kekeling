@@ -7,10 +7,41 @@ import { EscortAppService } from './escort-app.service';
 export class EscortAppController {
   constructor(private readonly escortAppService: EscortAppService) { }
 
+  /**
+   * 获取有效的 userId
+   * 支持两种 token 类型：
+   * - escortToken: req.user.isEscort = true, req.user.userId 是关联的用户ID
+   * - userToken: req.user.sub 是用户ID
+   */
+  private getUserId(req: any): string {
+    // 如果是 escort token，使用关联的 userId 或直接返回 escortId 作为标识
+    if (req.user.isEscort) {
+      return req.user.userId || req.user.escortId;
+    }
+    // 普通 user token
+    return req.user.sub || req.user.userId;
+  }
+
+  /**
+   * 获取 escortId（优先使用 escort token 中的 escortId）
+   */
+  private async getEscortIdFromRequest(req: any): Promise<string | null> {
+    // 如果是 escort token，直接返回 escortId
+    if (req.user.isEscort && req.user.escortId) {
+      return req.user.escortId;
+    }
+    // 否则返回 null，让 service 层通过 userId 查找
+    return null;
+  }
+
   // 获取陪诊员信息
   @Get('profile')
   async getProfile(@Request() req) {
-    return this.escortAppService.getProfile(req.user.userId);
+    const escortId = await this.getEscortIdFromRequest(req);
+    if (escortId) {
+      return this.escortAppService.getProfileByEscortId(escortId);
+    }
+    return this.escortAppService.getProfile(this.getUserId(req));
   }
 
   // 更新陪诊员资料
@@ -24,13 +55,21 @@ export class EscortAppController {
       introduction?: string;
     },
   ) {
-    return this.escortAppService.updateProfile(req.user.userId, data);
+    const escortId = await this.getEscortIdFromRequest(req);
+    if (escortId) {
+      return this.escortAppService.updateProfileByEscortId(escortId, data);
+    }
+    return this.escortAppService.updateProfile(this.getUserId(req), data);
   }
 
   // 获取统计数据
   @Get('stats')
   async getStats(@Request() req) {
-    return this.escortAppService.getStats(req.user.userId);
+    const escortId = await this.getEscortIdFromRequest(req);
+    if (escortId) {
+      return this.escortAppService.getStatsByEscortId(escortId);
+    }
+    return this.escortAppService.getStats(this.getUserId(req));
   }
 
   // 获取订单列表

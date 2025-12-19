@@ -21,6 +21,7 @@
 
 import type { PreviewViewerRole, UserSession, EscortSession } from './types'
 import { platformStorage } from './platform'
+import { isWxEnvironment } from './platform/env'
 
 // ============================================================================
 // 常量定义
@@ -38,6 +39,8 @@ export const TOKEN_KEYS = {
   PREVIEW_USER_TOKEN: 'terminalPreview.mockUserToken',
   /** 预览器陪诊员 Mock Token（仅开发用） */
   PREVIEW_ESCORT_TOKEN: 'terminalPreview.mockEscortToken',
+  /** 小程序陪诊员真实 Token（小程序环境持久化用） */
+  MINIAPP_ESCORT_TOKEN: 'terminalPreview.escortToken',
 } as const
 
 // ============================================================================
@@ -144,12 +147,23 @@ export function clearPreviewUserToken(): void {
  *
  * 优先级：
  * 1. 内存态 Token（真实 Token）
- * 2. platformStorage 中的 mock Token（开发用）
+ * 2. 小程序环境：platformStorage 中的真实 Token
+ * 3. platformStorage 中的 mock Token（开发用）
  */
 export function getPreviewEscortToken(): string | null {
   // 优先返回内存态 Token
   if (memoryEscortToken) {
     return memoryEscortToken
+  }
+
+  // 小程序环境：读取持久化的真实 token
+  if (isWxEnvironment()) {
+    const realToken = platformStorage.getItem(TOKEN_KEYS.MINIAPP_ESCORT_TOKEN)
+    if (realToken && !isMockToken(realToken)) {
+      // 同时更新内存态（避免重复读取）
+      memoryEscortToken = realToken
+      return realToken
+    }
   }
 
   // 读取持久化的 mock token
@@ -166,15 +180,20 @@ export function getPreviewEscortToken(): string | null {
  *
  * 安全策略：
  * - mock token: 持久化到 platformStorage（开发调试用）
- * - 真实 token: 仅存内存，刷新后丢失
+ * - 真实 token (Web): 仅存内存，刷新后丢失（防止 XSS）
+ * - 真实 token (小程序): 持久化到 platformStorage（小程序没有 XSS 风险）
  */
 export function setPreviewEscortToken(token: string): void {
   if (isMockToken(token)) {
     // mock token 持久化（开发用）
     platformStorage.setItem(TOKEN_KEYS.PREVIEW_ESCORT_TOKEN, token)
   } else {
-    // 真实 token 仅存内存
+    // 真实 token 存内存
     memoryEscortToken = token
+    // 小程序环境：额外持久化（小程序没有 XSS 风险，且页面跳转会丢失内存）
+    if (isWxEnvironment()) {
+      platformStorage.setItem(TOKEN_KEYS.MINIAPP_ESCORT_TOKEN, token)
+    }
   }
 }
 
@@ -184,6 +203,8 @@ export function setPreviewEscortToken(token: string): void {
 export function clearPreviewEscortToken(): void {
   memoryEscortToken = null
   platformStorage.removeItem(TOKEN_KEYS.PREVIEW_ESCORT_TOKEN)
+  // 小程序环境：同时清除持久化的真实 token
+  platformStorage.removeItem(TOKEN_KEYS.MINIAPP_ESCORT_TOKEN)
 }
 
 /**

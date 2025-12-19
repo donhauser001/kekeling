@@ -5,15 +5,149 @@ import {
   NotFoundException,
   ConflictException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
+import { RedisService } from '../redis/redis.service';
+import { SmsService } from '../escort-auth/sms.service';
 import { CreateEscortApplicationDto } from './dto/create-application.dto';
 import { ReviewAction, QueryApplicationsDto } from './dto/review-application.dto';
+
+// Redis 键前缀
+const REDIS_KEYS = {
+  // 验证码存储: escort_apply_sms:{phone}
+  SMS_CODE: (phone: string) => `escort_apply_sms:${phone}`,
+  // 60秒限流: escort_apply_limit_60s:{phone}
+  RATE_LIMIT_60S: (phone: string) => `escort_apply_limit_60s:${phone}`,
+  // IP每小时限流: escort_apply_limit_ip:{ip}
+  RATE_LIMIT_IP: (ip: string) => `escort_apply_limit_ip:${ip}`,
+  // 手机号每日限流: escort_apply_limit_day:{phone}:{date}
+  RATE_LIMIT_DAY: (phone: string) =>
+    `escort_apply_limit_day:${phone}:${new Date().toISOString().split('T')[0]}`,
+  // 验证通过标记: escort_apply_verified:{phone}
+  VERIFIED: (phone: string) => `escort_apply_verified:${phone}`,
+};
+
+// 验证码配置
+const CODE_CONFIG = {
+  LENGTH: 6,        // 验证码长度
+  TTL: 300,         // 验证码有效期（5分钟）
+  VERIFIED_TTL: 600, // 验证通过标记有效期（10分钟）
+};
 
 @Injectable()
 export class EscortApplyService {
   private readonly logger = new Logger(EscortApplyService.name);
 
-  constructor(private prisma: PrismaService) { }
+  constructor(
+    private prisma: PrismaService,
+    private redis: RedisService,
+    private smsService: SmsService,
+    private configService: ConfigService,
+  ) { }
+
+  // ============================================================================
+  // 短信验证码相关
+  // ============================================================================
+
+  /**
+   * 发送短信验证码
+   */
+  async sendVerifyCode(phone: string, clientIp: string) {
+    // 1. 60秒内发送限流
+    const limitKey60s = REDIS_KEYS.RATE_LIMIT_60S(phone);
+    const exists = await this.redis.get(limitKey60s);
+    if (exists) {
+      throw new BadRequestException('验证码发送过于频繁，请60秒后再试');
+    }
+
+    // 2. IP每小时限流（最多20次）
+    const ipLimitKey = REDIS_KEYS.RATE_LIMIT_IP(clientIp);
+    const ipCount = await this.redis.incrWithExpire(ipLimitKey, 3600);
+    if (ipCount && ipCount > 20) {
+      throw new BadRequestException('请求过于频繁，请稍后再试');
+    }
+
+    // 3. 手机号每日限流（最多10次）
+    const dayLimitKey = REDIS_KEYS.RATE_LIMIT_DAY(phone);
+    const dayCount = await this.redis.incrWithExpire(dayLimitKey, 86400);
+    if (dayCount && dayCount > 10) {
+      throw new BadRequestException('今日验证码发送次数已达上限');
+    }
+
+    // 4. 生成6位数字验证码
+    const code = this.generateCode();
+
+    // 5. 存储验证码到 Redis（TTL 5分钟）
+    await this.redis.set(REDIS_KEYS.SMS_CODE(phone), code, CODE_CONFIG.TTL);
+
+    // 6. 设置60秒限流标记
+    await this.redis.set(limitKey60s, '1', 60);
+
+    // 7. 发送短信
+    const devMode = this.configService.get('SMS_DEV_MODE') === 'true';
+    if (devMode) {
+      this.logger.warn(`[开发模式] 陪诊员申请验证码: ${phone} -> ${code}`);
+    } else {
+      await this.smsService.sendVerificationCode(phone, code);
+    }
+
+    return {
+      message: '验证码已发送',
+      // 开发模式返回验证码（方便测试）
+      ...(devMode && { code }),
+    };
+  }
+
+  /**
+   * 验证短信验证码
+   */
+  async verifySmsCode(phone: string, code: string) {
+    const devMode = this.configService.get('SMS_DEV_MODE') === 'true';
+    const storedCode = await this.redis.get(REDIS_KEYS.SMS_CODE(phone));
+
+    // 开发模式：固定验证码 123456
+    if (devMode && code === '123456') {
+      // 验证成功，设置验证通过标记
+      await this.redis.set(REDIS_KEYS.VERIFIED(phone), '1', CODE_CONFIG.VERIFIED_TTL);
+      // 删除验证码
+      await this.redis.del(REDIS_KEYS.SMS_CODE(phone));
+      return { verified: true, message: '验证成功' };
+    }
+
+    if (!storedCode) {
+      throw new BadRequestException('验证码已过期，请重新获取');
+    }
+
+    if (storedCode !== code) {
+      throw new BadRequestException('验证码错误');
+    }
+
+    // 验证成功，设置验证通过标记
+    await this.redis.set(REDIS_KEYS.VERIFIED(phone), '1', CODE_CONFIG.VERIFIED_TTL);
+    // 删除验证码
+    await this.redis.del(REDIS_KEYS.SMS_CODE(phone));
+
+    return { verified: true, message: '验证成功' };
+  }
+
+  /**
+   * 检查手机号是否已验证
+   */
+  async checkPhoneVerified(phone: string): Promise<boolean> {
+    const verified = await this.redis.get(REDIS_KEYS.VERIFIED(phone));
+    return verified === '1';
+  }
+
+  /**
+   * 生成6位数字验证码
+   */
+  private generateCode(): string {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  }
+
+  // ============================================================================
+  // 申请相关
+  // ============================================================================
 
   /**
    * 提交陪诊员申请
@@ -160,7 +294,10 @@ export class EscortApplyService {
    * 获取申请列表（管理端）
    */
   async getApplications(query: QueryApplicationsDto) {
-    const { status, keyword, page = 1, pageSize = 10 } = query;
+    const { status, keyword } = query;
+    // 确保 page 和 pageSize 是数字
+    const page = Number(query.page) || 1;
+    const pageSize = Number(query.pageSize) || 10;
 
     const where: any = {};
 
@@ -194,7 +331,7 @@ export class EscortApplyService {
     ]);
 
     return {
-      items,
+      data: items,
       total,
       page,
       pageSize,

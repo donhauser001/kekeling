@@ -61,27 +61,6 @@
   /* Firefox */
 }
 
-@utility faded-bottom {
-  position: relative;
-
-  &::after {
-    content: '';
-    pointer-events: none;
-    position: absolute;
-    inset-inline-start: 0;
-    bottom: 0;
-    display: none;
-    height: 8rem;
-    width: 100%;
-    border-radius: 0 0 1rem 1rem;
-    background: linear-gradient(180deg, transparent 10%, var(--background) 70%);
-
-    @media (min-width: 768px) {
-      display: block;
-    }
-  }
-}
-
 /* styles.css */
 .CollapsibleContent {
   overflow: hidden;

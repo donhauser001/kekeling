@@ -28,6 +28,8 @@ export function EscortApplyPage({
   const [application, setApplication] = useState<ApplicationStatus | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [userPhone, setUserPhone] = useState<string>('')
+  const [userAvatar, setUserAvatar] = useState<string>('')
+  const [userGender, setUserGender] = useState<'male' | 'female' | 'unknown'>('male')
 
   // ============================================================================
   // 数据获取
@@ -49,10 +51,25 @@ export function EscortApplyPage({
         setShowForm(true)
       }
 
-      // 获取用户手机号
+      // 获取用户资料（手机号、头像、性别）
       const profile = await previewApi.getUserProfile()
-      if (profile?.phone) {
-        setUserPhone(profile.phone)
+      if (profile) {
+        if (profile.phone) {
+          setUserPhone(profile.phone)
+        }
+        if (profile.avatar) {
+          setUserAvatar(profile.avatar)
+        }
+        if (profile.gender) {
+          // 将用户性别映射到表单性别选项
+          const genderMap: Record<string, 'male' | 'female' | 'unknown'> = {
+            'male': 'male',
+            'female': 'female',
+            '男': 'male',
+            '女': 'female',
+          }
+          setUserGender(genderMap[profile.gender] || 'male')
+        }
       }
     } catch (error) {
       console.error('获取申请状态失败:', error)
@@ -75,7 +92,14 @@ export function EscortApplyPage({
 
   const handleSubmit = async (data: ApplyFormData) => {
     try {
-      await previewApi.submitEscortApplication(data)
+      // 过滤掉空字符串字段，避免后端验证失败
+      const submitData: Record<string, unknown> = {}
+      Object.entries(data).forEach(([key, value]) => {
+        if (value !== '' && value !== null && value !== undefined) {
+          submitData[key] = value
+        }
+      })
+      await previewApi.submitEscortApplication(submitData as any)
       // 重新加载申请状态
       await loadApplication()
       setShowForm(false)
@@ -176,6 +200,8 @@ export function EscortApplyPage({
             colors={colors}
             primaryColor={primaryColor}
             userPhone={userPhone}
+            userAvatar={userAvatar}
+            userGender={userGender}
             onSubmit={handleSubmit}
             onValidateInviteCode={handleValidateInviteCode}
           />
@@ -192,6 +218,8 @@ export function EscortApplyPage({
             colors={colors}
             primaryColor={primaryColor}
             userPhone={userPhone}
+            userAvatar={userAvatar}
+            userGender={userGender}
             onSubmit={handleSubmit}
             onValidateInviteCode={handleValidateInviteCode}
           />

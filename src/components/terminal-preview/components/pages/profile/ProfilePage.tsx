@@ -59,7 +59,11 @@ export function ProfilePage({
 
   const colors: ThemeColors = getThemeColors(isDarkMode)
   const primaryColor = themeSettings.primaryColor
-  const isEscort = effectiveViewerRole === 'escort'
+  // 是否有有效的 escortToken（用于决定是否需要登录）
+  const hasEscortToken = effectiveViewerRole === 'escort'
+  // 是否是陪诊员（用于决定显示"进入工作台"还是"成为陪诊员"）
+  // 优先看 userProfile.isEscort（后端返回），如果后端说是陪诊员就显示工作台入口
+  const isEscort = userProfile?.isEscort === true || hasEscortToken
 
   // 优先使用覆盖数据
   const effectiveBannerData = bannerDataOverride !== undefined ? bannerDataOverride : bannerData

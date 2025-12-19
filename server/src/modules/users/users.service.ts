@@ -6,9 +6,26 @@ export class UsersService {
   constructor(private prisma: PrismaService) { }
 
   async findById(id: string) {
-    return this.prisma.user.findUnique({
+    const user = await this.prisma.user.findUnique({
       where: { id },
+      include: {
+        escort: {
+          select: {
+            id: true,
+            status: true,
+          },
+        },
+      },
     });
+
+    if (!user) return null;
+
+    // 添加陪诊员状态标识
+    return {
+      ...user,
+      isEscort: !!user.escort && user.escort.status === 'active',
+      escortId: user.escort?.id ?? null,
+    };
   }
 
   async findByOpenid(openid: string) {

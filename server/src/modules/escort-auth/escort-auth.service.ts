@@ -6,10 +6,11 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
+import { ConfigService as NestConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
 import { SmsService } from './sms.service';
+import { ConfigService as AppConfigService } from '../config/config.service';
 
 /**
  * Redis Key 前缀定义
@@ -44,9 +45,9 @@ export enum EscortAuthErrorCode {
 }
 
 /**
- * 频控配置
+ * 频控配置（默认值，实际使用动态配置）
  */
-const RATE_LIMIT_CONFIG = {
+const DEFAULT_RATE_LIMIT_CONFIG = {
   // 同手机号 60 秒内只能发一次
   PHONE_60S: {
     ttl: 60,
@@ -65,9 +66,9 @@ const RATE_LIMIT_CONFIG = {
 };
 
 /**
- * 验证码配置
+ * 验证码配置（默认值，实际使用动态配置）
  */
-const CODE_CONFIG = {
+const DEFAULT_CODE_CONFIG = {
   LENGTH: 6, // 验证码长度
   TTL: 300, // 验证码有效期（5 分钟）
 };
@@ -79,15 +80,51 @@ export class EscortAuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
-    private configService: ConfigService,
+    private nestConfigService: NestConfigService,
     private redis: RedisService,
     private smsService: SmsService,
+    private appConfigService: AppConfigService,
   ) { }
+
+  /**
+   * 获取短信频控配置（动态）
+   */
+  private async getSmsRateLimitConfig() {
+    try {
+      const smsSettings = await this.appConfigService.getSmsSettings();
+      return {
+        PHONE_60S: {
+          ttl: smsSettings.rateLimitPhone60s || DEFAULT_RATE_LIMIT_CONFIG.PHONE_60S.ttl,
+          limit: 1,
+        },
+        IP_HOUR: {
+          ttl: 3600,
+          limit: smsSettings.rateLimitIpHour || DEFAULT_RATE_LIMIT_CONFIG.IP_HOUR.limit,
+        },
+        PHONE_DAY: {
+          ttl: 86400,
+          limit: smsSettings.rateLimitPhoneDay || DEFAULT_RATE_LIMIT_CONFIG.PHONE_DAY.limit,
+        },
+        CODE_LENGTH: smsSettings.codeLength || DEFAULT_CODE_CONFIG.LENGTH,
+        CODE_TTL: smsSettings.codeTtl || DEFAULT_CODE_CONFIG.TTL,
+      };
+    } catch (error) {
+      this.logger.warn('获取短信配置失败，使用默认值:', error);
+      return {
+        ...DEFAULT_RATE_LIMIT_CONFIG,
+        CODE_LENGTH: DEFAULT_CODE_CONFIG.LENGTH,
+        CODE_TTL: DEFAULT_CODE_CONFIG.TTL,
+      };
+    }
+  }
 
   /**
    * 发送短信验证码
    */
   async sendSmsCode(phone: string, clientIp: string) {
+    // 0. 获取动态配置
+    const rateLimitConfig = await this.getSmsRateLimitConfig();
+
     // 1. 检查手机号是否为已注册陪诊员
     const escort = await this.prisma.escort.findUnique({
       where: { phone },
@@ -101,17 +138,17 @@ export class EscortAuthService {
       });
     }
 
-    // 2. 频控检查
-    await this.checkRateLimit(phone, clientIp);
+    // 2. 频控检查（使用动态配置）
+    await this.checkRateLimit(phone, clientIp, rateLimitConfig);
 
-    // 3. 生成验证码
-    const code = this.generateCode();
+    // 3. 生成验证码（使用动态长度）
+    const code = this.generateCode(rateLimitConfig.CODE_LENGTH);
 
-    // 4. 存储验证码到 Redis（TTL 5 分钟）
+    // 4. 存储验证码到 Redis（使用动态 TTL）
     const stored = await this.redis.set(
       REDIS_KEYS.SMS_CODE(phone),
       code,
-      CODE_CONFIG.TTL,
+      rateLimitConfig.CODE_TTL,
     );
 
     if (!stored) {
@@ -119,11 +156,11 @@ export class EscortAuthService {
       this.logger.warn('Redis 不可用，验证码存储可能不可靠');
     }
 
-    // 5. 记录频控
-    await this.recordRateLimit(phone, clientIp);
+    // 5. 记录频控（使用动态配置）
+    await this.recordRateLimit(phone, clientIp, rateLimitConfig);
 
     // 6. 发送短信
-    const devMode = this.configService.get('SMS_DEV_MODE') === 'true';
+    const devMode = this.nestConfigService.get('SMS_DEV_MODE') === 'true';
     if (devMode) {
       this.logger.warn(`[开发模式] 陪诊员验证码: ${phone} -> ${code}`);
     } else {
@@ -180,7 +217,7 @@ export class EscortAuthService {
     }
 
     // 3. 验证验证码
-    const devMode = this.configService.get('SMS_DEV_MODE') === 'true';
+    const devMode = this.nestConfigService.get('SMS_DEV_MODE') === 'true';
     const storedCode = await this.redis.get(REDIS_KEYS.SMS_CODE(phone));
 
     // 开发模式：固定验证码 123456
@@ -211,7 +248,7 @@ export class EscortAuthService {
         type: 'escort', // 标识这是陪诊员 token
       },
       {
-        expiresIn: this.configService.get('JWT_ESCORT_EXPIRES_IN') || '30d',
+        expiresIn: this.nestConfigService.get('JWT_ESCORT_EXPIRES_IN') || '30d',
       },
     );
 
@@ -252,62 +289,211 @@ export class EscortAuthService {
   }
 
   /**
-   * 频控检查
+   * 开发模式自动登录
+   * 根据用户 openId 或手机号自动查找关联的陪诊员并登录
+   * ⚠️ 仅开发模式下可用
    */
-  private async checkRateLimit(phone: string, clientIp: string) {
-    // 检查 60 秒限流
+  async devModeAutoLogin(userId: string): Promise<{
+    escortToken: string;
+    escortProfile: {
+      id: string;
+      name: string;
+      phone: string;
+      avatar: string | null;
+      gender: string | null;
+      status: string;
+      workStatus: string;
+      level: { code: string; name: string } | null;
+      rating: number;
+      orderCount: number;
+    };
+  } | null> {
+    // 1. 检查是否开启开发模式
+    const miniappSettings = await this.appConfigService.getMiniappSettings();
+    if (!miniappSettings.devMode || !miniappSettings.skipWorkbenchLogin) {
+      this.logger.warn('[DevModeAutoLogin] 开发模式未开启，拒绝自动登录');
+      throw new ForbiddenException('开发模式未开启');
+    }
+
+    // 2. 查找用户信息
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, phone: true, openid: true },
+    });
+
+    if (!user) {
+      this.logger.warn(`[DevModeAutoLogin] 用户不存在: ${userId}`);
+      return null;
+    }
+
+    // 3. 根据用户手机号或 userId 查找关联的陪诊员
+    // 定义陪诊员类型
+    type EscortWithLevel = {
+      id: string;
+      name: string;
+      phone: string;
+      avatar: string | null;
+      gender: string | null;
+      status: string;
+      workStatus: string;
+      rating: number;
+      orderCount: number;
+      level: { code: string; name: string } | null;
+    };
+
+    let escort: EscortWithLevel | null = null;
+
+    // 优先通过手机号查找
+    if (user.phone) {
+      const found = await this.prisma.escort.findFirst({
+        where: { phone: user.phone },
+        include: { level: true },
+      });
+      if (found) {
+        escort = {
+          id: found.id,
+          name: found.name,
+          phone: found.phone,
+          avatar: found.avatar,
+          gender: found.gender,
+          status: found.status,
+          workStatus: found.workStatus,
+          rating: found.rating,
+          orderCount: found.orderCount,
+          level: found.level ? { code: found.level.code, name: found.level.name } : null,
+        };
+      }
+    }
+
+    // 如果手机号未找到，尝试通过 userId 查找（如果陪诊员表有 userId 关联）
+    if (!escort) {
+      const found = await this.prisma.escort.findFirst({
+        where: { userId: userId },
+        include: { level: true },
+      });
+      if (found) {
+        escort = {
+          id: found.id,
+          name: found.name,
+          phone: found.phone,
+          avatar: found.avatar,
+          gender: found.gender,
+          status: found.status,
+          workStatus: found.workStatus,
+          rating: found.rating,
+          orderCount: found.orderCount,
+          level: found.level ? { code: found.level.code, name: found.level.name } : null,
+        };
+      }
+    }
+
+    if (!escort) {
+      this.logger.warn(`[DevModeAutoLogin] 未找到关联的陪诊员: userId=${userId}, phone=${user.phone}`);
+      return null;
+    }
+
+    // 4. 检查陪诊员状态（开发模式下放宽限制，只要不是 suspended 都允许）
+    if (escort.status === 'suspended') {
+      this.logger.warn(`[DevModeAutoLogin] 陪诊员已被暂停: ${escort.id}`);
+      return null;
+    }
+
+    // 5. 生成 escortToken
+    const escortToken = this.jwtService.sign(
+      {
+        sub: escort.id,
+        phone: escort.phone,
+        type: 'escort',
+      },
+      {
+        expiresIn: this.nestConfigService.get('JWT_ESCORT_EXPIRES_IN') || '30d',
+      },
+    );
+
+    this.logger.log(`[DevModeAutoLogin] 开发模式自动登录成功: ${escort.id} (${escort.name})`);
+
+    return {
+      escortToken,
+      escortProfile: {
+        id: escort.id,
+        name: escort.name,
+        phone: escort.phone,
+        avatar: escort.avatar,
+        gender: escort.gender,
+        status: escort.status,
+        workStatus: escort.workStatus,
+        level: escort.level,
+        rating: escort.rating,
+        orderCount: escort.orderCount,
+      },
+    };
+  }
+
+  /**
+   * 频控检查（使用动态配置）
+   */
+  private async checkRateLimit(
+    phone: string,
+    clientIp: string,
+    config: Awaited<ReturnType<typeof this.getSmsRateLimitConfig>>,
+  ) {
+    // 检查发送间隔限流
     const limit60s = await this.redis.get(REDIS_KEYS.RATE_LIMIT_60S(phone));
     if (limit60s) {
       throw new BadRequestException({
         code: EscortAuthErrorCode.RATE_LIMIT_60S,
-        message: '请求过于频繁，请 60 秒后再试',
+        message: `请求过于频繁，请 ${config.PHONE_60S.ttl} 秒后再试`,
       });
     }
 
     // 检查 IP 每小时限流
     const canSendByIp = await this.redis.checkRateLimit(
       `escort_sms_ip:${clientIp}`,
-      RATE_LIMIT_CONFIG.IP_HOUR.limit,
-      RATE_LIMIT_CONFIG.IP_HOUR.ttl,
+      config.IP_HOUR.limit,
+      config.IP_HOUR.ttl,
     );
     if (!canSendByIp) {
       throw new BadRequestException({
         code: EscortAuthErrorCode.RATE_LIMIT_IP,
-        message: '该 IP 发送次数已达上限，请稍后再试',
+        message: `该 IP 发送次数已达上限（${config.IP_HOUR.limit}次/小时），请稍后再试`,
       });
     }
 
     // 检查每日限流
     const canSendByDay = await this.redis.checkRateLimit(
       `escort_sms_day:${phone}`,
-      RATE_LIMIT_CONFIG.PHONE_DAY.limit,
-      RATE_LIMIT_CONFIG.PHONE_DAY.ttl,
+      config.PHONE_DAY.limit,
+      config.PHONE_DAY.ttl,
     );
     if (!canSendByDay) {
       throw new BadRequestException({
         code: EscortAuthErrorCode.RATE_LIMIT_DAY,
-        message: '今日发送次数已达上限',
+        message: `今日发送次数已达上限（${config.PHONE_DAY.limit}次/天）`,
       });
     }
   }
 
   /**
-   * 记录频控
+   * 记录频控（使用动态配置）
    */
-  private async recordRateLimit(phone: string, clientIp: string) {
-    // 记录 60 秒限流
+  private async recordRateLimit(
+    phone: string,
+    clientIp: string,
+    config: Awaited<ReturnType<typeof this.getSmsRateLimitConfig>>,
+  ) {
+    // 记录发送间隔限流
     await this.redis.set(
       REDIS_KEYS.RATE_LIMIT_60S(phone),
       '1',
-      RATE_LIMIT_CONFIG.PHONE_60S.ttl,
+      config.PHONE_60S.ttl,
     );
   }
 
   /**
-   * 生成 6 位数字验证码
+   * 生成数字验证码（支持动态长度）
    */
-  private generateCode(): string {
-    return Math.random().toString().slice(2, 2 + CODE_CONFIG.LENGTH);
+  private generateCode(length: number = DEFAULT_CODE_CONFIG.LENGTH): string {
+    return Math.random().toString().slice(2, 2 + length);
   }
 
   /**

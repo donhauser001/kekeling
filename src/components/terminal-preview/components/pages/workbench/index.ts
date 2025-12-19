@@ -1,10 +1,25 @@
 /**
  * 陪诊员工作台页面组件导出
+ *
+ * WorkbenchPage 已按小程序页面改造规范重构：
+ * - 拆分为多个子组件（ProfileCard, TodayOverview, QuickEntries, IncomeOverview）
+ * - 使用跨平台原语（Box, Text, Image）
+ * - 使用 useState + useEffect 替代 useQuery
+ * - 接入真实后端 API（/escort/stats, /escort/profile）
+ *
+ * @see docs/小程序页面改造规范.md
  */
 
-// Step 11
+// Step 11 - 工作台首页（已改造）
 export { WorkbenchPage } from './WorkbenchPage'
-export type { WorkbenchPageProps } from './WorkbenchPage'
+export type { WorkbenchPageProps } from './types'
+
+// 类型导出
+export type {
+  WorkbenchStatsData,
+  EscortProfileData,
+  EscortWorkStatus,
+} from './types'
 
 // Step 7/7 批次 A
 export { OrdersPoolPage } from './OrdersPoolPage'

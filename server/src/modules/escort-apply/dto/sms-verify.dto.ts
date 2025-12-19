@@ -1,0 +1,28 @@
+import { IsString, IsMobilePhone, IsNotEmpty, Length } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+
+/**
+ * 发送短信验证码 DTO
+ */
+export class SendVerifyCodeDto {
+  @ApiProperty({ description: '手机号', example: '13800138000' })
+  @IsNotEmpty({ message: '手机号不能为空' })
+  @IsMobilePhone('zh-CN', {}, { message: '手机号格式不正确' })
+  phone: string;
+}
+
+/**
+ * 验证短信验证码 DTO
+ */
+export class VerifySmsCodeDto {
+  @ApiProperty({ description: '手机号', example: '13800138000' })
+  @IsNotEmpty({ message: '手机号不能为空' })
+  @IsMobilePhone('zh-CN', {}, { message: '手机号格式不正确' })
+  phone: string;
+
+  @ApiProperty({ description: '短信验证码', example: '123456' })
+  @IsNotEmpty({ message: '验证码不能为空' })
+  @IsString()
+  @Length(6, 6, { message: '验证码长度必须为6位' })
+  code: string;
+}

@@ -2,12 +2,23 @@
  * 陪诊员二次登录对话框
  *
  * 使用跨宿主原语组件，支持 Web 和小程序
+ *
+ * @see docs/小程序页面改造规范.md
  */
 
 import { useState, useCallback, useEffect } from 'react'
-import { Box, Text, Button, Input } from '../ui/primitives'
-import { isBrowserEnvironment } from '../platform/env'
+import { Box, Text, Button, Input, Icon } from '../ui/primitives'
+import { isBrowserEnvironment, isWxEnvironment } from '../platform/env'
+import { platformRequest } from '../platform'
+import { getApiUrl } from '../api/request'
 import type { ThemeSettings } from '../types'
+
+// ============================================================================
+// 常量
+// ============================================================================
+
+/** 小程序缩放系数 */
+const wxScale = isWxEnvironment() ? 1.1 : 1
 
 // ============================================================================
 // 类型定义
@@ -44,6 +55,9 @@ export function EscortLoginDialog({
   const [countdown, setCountdown] = useState(0)
   const [error, setError] = useState<string | null>(null)
 
+  // 主色
+  const primaryColor = themeSettings.primaryColor
+
   // Esc 键关闭弹窗（仅浏览器环境）
   useEffect(() => {
     if (!isBrowserEnvironment()) return
@@ -67,7 +81,17 @@ export function EscortLoginDialog({
     setError(null)
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 500))
+      const response = await platformRequest(`${getApiUrl()}/escort-auth/sms/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || '发送失败')
+      }
+
       setCountdown(60)
       const timer = setInterval(() => {
         setCountdown(prev => {
@@ -78,8 +102,8 @@ export function EscortLoginDialog({
           return prev - 1
         })
       }, 1000)
-    } catch {
-      setError('发送验证码失败，请重试')
+    } catch (err: any) {
+      setError(err.message || '发送验证码失败，请重试')
     } finally {
       setIsSendingCode(false)
     }
@@ -100,14 +124,30 @@ export function EscortLoginDialog({
     setError(null)
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 800))
-      const mockEscortToken = `mock-escort-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 8)}`
-      onLoginSuccess(mockEscortToken)
+      const response = await platformRequest(`${getApiUrl()}/escort-auth/sms/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, code }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || '登录失败')
+      }
+
+      const result = await response.json()
+      const escortToken = result.data?.escortToken
+
+      if (!escortToken) {
+        throw new Error('登录响应缺少 token')
+      }
+
+      onLoginSuccess(escortToken)
       onClose()
       setPhone('')
       setCode('')
-    } catch {
-      setError('登录失败，请检查验证码')
+    } catch (err: any) {
+      setError(err.message || '登录失败，请检查验证码')
     } finally {
       setIsLoading(false)
     }
@@ -115,11 +155,19 @@ export function EscortLoginDialog({
 
   if (!open) return null
 
+  // 颜色变量
   const bgColor = isDarkMode ? '#1a1a1a' : '#ffffff'
   const textPrimary = isDarkMode ? '#f3f4f6' : '#111827'
   const textSecondary = isDarkMode ? '#9ca3af' : '#6b7280'
   const inputBg = isDarkMode ? '#2a2a2a' : '#f5f7fa'
   const borderColor = isDarkMode ? '#4b5563' : '#e5e7eb'
+
+  // 关闭按钮尺寸（规则 7：圆形按钮用 Box + 固定宽高）
+  const closeButtonSize = 28 * wxScale
+
+  // 按钮禁用状态
+  const isLoginDisabled = isLoading || !phone || !code
+  const isSendDisabled = isSendingCode || countdown > 0
 
   return (
     <Box
@@ -129,7 +177,7 @@ export function EscortLoginDialog({
         left: 0,
         right: 0,
         bottom: 0,
-        zIndex: 50,
+        zIndex: 200,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -153,8 +201,8 @@ export function EscortLoginDialog({
         style={{
           position: 'relative',
           width: '85%',
-          maxWidth: 384,
-          borderRadius: 16,
+          maxWidth: 384 * wxScale,
+          borderRadius: 16 * wxScale,
           boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
           backgroundColor: bgColor,
         }}
@@ -165,27 +213,62 @@ export function EscortLoginDialog({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            paddingLeft: 20,
-            paddingRight: 20,
-            paddingTop: 16,
-            paddingBottom: 16,
+            paddingLeft: 20 * wxScale,
+            paddingRight: 20 * wxScale,
+            paddingTop: 16 * wxScale,
+            paddingBottom: 16 * wxScale,
             borderBottomWidth: 1,
             borderBottomColor: borderColor,
             borderBottomStyle: 'solid',
           }}
         >
-          <Text style={{ fontSize: 16, fontWeight: 600, color: textPrimary }}>
+          <Text
+            style={{
+              display: 'block',
+              fontSize: 16 * wxScale,
+              fontWeight: 600,
+              color: textPrimary,
+            }}
+          >
             陪诊员登录
           </Text>
-          <Button onClick={onClose} style={{ padding: 4, borderRadius: 9999 }}>
-            <Text style={{ fontSize: 20, color: textSecondary }}>×</Text>
-          </Button>
+
+          {/* 关闭按钮（规则 7：圆形按钮用 Box + 固定宽高） */}
+          <Box
+            onClick={onClose}
+            style={{
+              width: closeButtonSize,
+              height: closeButtonSize,
+              borderRadius: closeButtonSize / 2,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: isDarkMode ? '#3a3a3a' : '#f3f4f6',
+            }}
+          >
+            <Icon name="close" size={16 * wxScale} color={textSecondary} />
+          </Box>
         </Box>
 
         {/* 表单 */}
-        <Box style={{ paddingLeft: 20, paddingRight: 20, paddingTop: 24, paddingBottom: 24 }}>
-          {/* 提示文字 */}
-          <Text style={{ fontSize: 14, color: textSecondary, marginBottom: 16 }}>
+        <Box
+          style={{
+            paddingLeft: 20 * wxScale,
+            paddingRight: 20 * wxScale,
+            paddingTop: 24 * wxScale,
+            paddingBottom: 24 * wxScale,
+          }}
+        >
+          {/* 提示文字（规则 10：文本块需设置 display: block） */}
+          <Text
+            style={{
+              display: 'block',
+              fontSize: 14 * wxScale,
+              lineHeight: 1.5,
+              color: textSecondary,
+              marginBottom: 16 * wxScale,
+            }}
+          >
             请使用陪诊员账号登录，登录后可进入工作台接单
           </Text>
 
@@ -194,17 +277,18 @@ export function EscortLoginDialog({
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 12,
-              paddingLeft: 16,
-              paddingRight: 16,
-              paddingTop: 12,
-              paddingBottom: 12,
-              borderRadius: 8,
+              gap: 12 * wxScale,
+              paddingLeft: 16 * wxScale,
+              paddingRight: 16 * wxScale,
+              paddingTop: 12 * wxScale,
+              paddingBottom: 12 * wxScale,
+              borderRadius: 8 * wxScale,
               backgroundColor: inputBg,
-              marginBottom: 16,
+              marginBottom: 16 * wxScale,
             }}
           >
-            <Text style={{ fontSize: 16, color: textSecondary }}>📱</Text>
+            {/* 图标（规则 9：统一使用 iconfont 图标系统） */}
+            <Icon name="phone-telephone" size={18 * wxScale} color={textSecondary} />
             <Input
               type="tel"
               placeholder="请输入手机号"
@@ -213,7 +297,7 @@ export function EscortLoginDialog({
               style={{
                 flex: 1,
                 backgroundColor: 'transparent',
-                fontSize: 14,
+                fontSize: 14 * wxScale,
                 color: textPrimary,
                 border: 'none',
                 outline: 'none',
@@ -226,17 +310,18 @@ export function EscortLoginDialog({
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 12,
-              paddingLeft: 16,
-              paddingRight: 16,
-              paddingTop: 12,
-              paddingBottom: 12,
-              borderRadius: 8,
+              gap: 12 * wxScale,
+              paddingLeft: 16 * wxScale,
+              paddingRight: 16 * wxScale,
+              paddingTop: 12 * wxScale,
+              paddingBottom: 12 * wxScale,
+              borderRadius: 8 * wxScale,
               backgroundColor: inputBg,
-              marginBottom: 16,
+              marginBottom: 16 * wxScale,
             }}
           >
-            <Text style={{ fontSize: 16, color: textSecondary }}>🔒</Text>
+            {/* 图标（规则 9：统一使用 iconfont 图标系统） */}
+            <Icon name="lock" size={18 * wxScale} color={textSecondary} />
             <Input
               type="text"
               placeholder="请输入验证码"
@@ -245,73 +330,87 @@ export function EscortLoginDialog({
               style={{
                 flex: 1,
                 backgroundColor: 'transparent',
-                fontSize: 14,
+                fontSize: 14 * wxScale,
                 color: textPrimary,
                 border: 'none',
                 outline: 'none',
               }}
             />
-            <Button
-              onClick={handleSendCode}
-              disabled={isSendingCode || countdown > 0}
+            {/* 发送验证码按钮 */}
+            <Box
+              onClick={isSendDisabled ? undefined : handleSendCode}
               style={{
-                fontSize: 14,
-                whiteSpace: 'nowrap',
-                color: themeSettings.primaryColor,
-                opacity: (isSendingCode || countdown > 0) ? 0.5 : 1,
+                paddingLeft: 8 * wxScale,
+                paddingRight: 8 * wxScale,
+                opacity: isSendDisabled ? 0.5 : 1,
               }}
             >
-              <Text style={{ color: themeSettings.primaryColor }}>
+              <Text
+                style={{
+                  fontSize: 14 * wxScale,
+                  color: primaryColor,
+                  whiteSpace: 'nowrap',
+                }}
+              >
                 {isSendingCode ? '发送中...' : countdown > 0 ? `${countdown}s` : '获取验证码'}
               </Text>
-            </Button>
+            </Box>
           </Box>
 
           {/* 错误提示 */}
           {error && (
-            <Text style={{ fontSize: 14, color: '#ef4444', marginBottom: 16 }}>{error}</Text>
+            <Text
+              style={{
+                display: 'block',
+                fontSize: 14 * wxScale,
+                color: '#ef4444',
+                marginBottom: 16 * wxScale,
+              }}
+            >
+              {error}
+            </Text>
           )}
 
-          {/* 登录按钮 */}
-          <Button
-            onClick={handleLogin}
-            disabled={isLoading || !phone || !code}
+          {/* 登录按钮（规则 8：主操作按钮内边距标准） */}
+          <Box
+            onClick={isLoginDisabled ? undefined : handleLogin}
             style={{
               width: '100%',
-              paddingTop: 12,
-              paddingBottom: 12,
-              borderRadius: 8,
-              fontWeight: 500,
+              paddingTop: isWxEnvironment() ? 14 * wxScale : 12,
+              paddingBottom: isWxEnvironment() ? 14 * wxScale : 12,
+              borderRadius: 8 * wxScale,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: 8,
-              backgroundColor: (isLoading || !phone || !code)
+              gap: 8 * wxScale,
+              backgroundColor: isLoginDisabled
                 ? (isDarkMode ? '#4b5563' : '#e5e7eb')
-                : themeSettings.primaryColor,
-              color: (isLoading || !phone || !code)
-                ? (isDarkMode ? '#9ca3af' : '#6b7280')
-                : '#ffffff',
+                : primaryColor,
+              opacity: isLoginDisabled ? 0.6 : 1,
             }}
           >
             <Text
               style={{
-                color: (isLoading || !phone || !code)
+                fontSize: 16 * wxScale,
+                fontWeight: 500,
+                color: isLoginDisabled
                   ? (isDarkMode ? '#9ca3af' : '#6b7280')
                   : '#ffffff',
               }}
             >
               {isLoading ? '登录中...' : '登录'}
             </Text>
-          </Button>
+          </Box>
 
-          {/* 底部提示 */}
+          {/* 底部提示（规则 10：文本块需设置 display: block） */}
           <Text
             style={{
-              fontSize: 12,
+              display: 'block',
+              fontSize: 12 * wxScale,
               textAlign: 'center',
               color: textSecondary,
-              marginTop: 16,
+              marginTop: 16 * wxScale,
+              lineHeight: 1.5,
             }}
           >
             登录即表示同意《陪诊员服务协议》

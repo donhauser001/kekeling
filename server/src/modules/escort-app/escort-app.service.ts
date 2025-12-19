@@ -128,11 +128,33 @@ export class EscortAppService {
             hospital: true,
           },
         },
+        level: true,
       },
     });
 
     if (!escort) {
       throw new NotFoundException('您不是陪诊员');
+    }
+
+    return escort;
+  }
+
+  // 获取陪诊员信息（通过 escortId，用于 escort token 验证）
+  async getProfileByEscortId(escortId: string) {
+    const escort = await this.prisma.escort.findUnique({
+      where: { id: escortId },
+      include: {
+        hospitals: {
+          include: {
+            hospital: true,
+          },
+        },
+        level: true,
+      },
+    });
+
+    if (!escort) {
+      throw new NotFoundException('陪诊员不存在');
     }
 
     return escort;
@@ -150,6 +172,27 @@ export class EscortAppService {
   ) {
     const escortId = await this.getEscortId(userId);
 
+    return this.prisma.escort.update({
+      where: { id: escortId },
+      data: {
+        name: data.name,
+        avatar: data.avatar,
+        gender: data.gender,
+        introduction: data.introduction,
+      },
+    });
+  }
+
+  // 更新陪诊员资料（通过 escortId）
+  async updateProfileByEscortId(
+    escortId: string,
+    data: {
+      name?: string;
+      avatar?: string;
+      gender?: string;
+      introduction?: string;
+    },
+  ) {
     return this.prisma.escort.update({
       where: { id: escortId },
       data: {
@@ -253,6 +296,100 @@ export class EscortAppService {
       ratingCount,                          // 评价数量
       totalOrders: escort.orderCount || 0,  // 总订单数
       balance: Number(escort.wallet?.balance || 0), // 钱包余额
+    };
+  }
+
+  // 获取陪诊员统计数据（通过 escortId）
+  async getStatsByEscortId(escortId: string) {
+    const escort = await this.prisma.escort.findUnique({
+      where: { id: escortId },
+      include: {
+        wallet: {
+          select: { balance: true, totalEarned: true },
+        },
+      },
+    });
+
+    if (!escort) {
+      throw new NotFoundException('陪诊员不存在');
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+    // 并发查询统计数据
+    const [
+      todayOrders,
+      pendingOrders,
+      completedOrders,
+      monthEarningsResult,
+      poolOrders,
+      ratingCount,
+    ] = await Promise.all([
+      // 今日订单数
+      this.prisma.order.count({
+        where: {
+          escortId: escort.id,
+          appointmentDate: {
+            gte: today,
+            lt: tomorrow,
+          },
+        },
+      }),
+      // 待服务订单数
+      this.prisma.order.count({
+        where: {
+          escortId: escort.id,
+          status: { in: ['assigned', 'arrived'] },
+        },
+      }),
+      // 已完成订单数
+      this.prisma.order.count({
+        where: {
+          escortId: escort.id,
+          status: 'completed',
+        },
+      }),
+      // 本月收入（从钱包流水汇总）
+      this.prisma.walletTransaction.aggregate({
+        where: {
+          wallet: { escortId: escort.id },
+          type: 'income',
+          createdAt: { gte: startOfMonth },
+        },
+        _sum: { amount: true },
+      }),
+      // 可抢订单数（已支付未分配）
+      escort.workStatus === 'working'
+        ? this.prisma.order.count({
+          where: {
+            status: 'paid',
+            escortId: null,
+          },
+        })
+        : 0,
+      // 评价数量
+      this.prisma.escortReview.count({
+        where: { escortId: escort.id, status: 'visible' },
+      }),
+    ]);
+
+    const monthEarnings = Number(monthEarningsResult._sum?.amount || 0);
+
+    return {
+      todayOrders,
+      pendingOrders,
+      completedOrders,
+      monthEarnings: Math.round(monthEarnings * 100) / 100,
+      poolOrders: typeof poolOrders === 'number' ? poolOrders : 0,
+      rating: escort.rating || 5.0,
+      ratingCount,
+      totalOrders: escort.orderCount || 0,
+      balance: Number(escort.wallet?.balance || 0),
     };
   }
 

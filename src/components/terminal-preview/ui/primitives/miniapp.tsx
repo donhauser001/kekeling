@@ -9,7 +9,7 @@
  * @see docs/终端预览器审计/小程序组件适配改造计划.md
  */
 
-import { forwardRef } from 'react'
+import React, { forwardRef } from 'react'
 
 // 使用 require 绕过 Taro Babel 插件的自动导入修改
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -222,6 +222,17 @@ export const Input = forwardRef<any, InputProps>(function Input(
   // 小程序 Input 类型映射
   const inputType = type === 'tel' ? 'number' : type
 
+  // 模拟 Web 事件对象，使业务代码可以使用 e.target.value
+  const handleInput = (e: { detail: { value: string } }) => {
+    if (onChange) {
+      const syntheticEvent = {
+        target: { value: e.detail.value },
+        currentTarget: { value: e.detail.value },
+      }
+      onChange(syntheticEvent as unknown as React.ChangeEvent<HTMLInputElement>)
+    }
+  }
+
   return (
     <TaroInput
       value={value}
@@ -231,7 +242,7 @@ export const Input = forwardRef<any, InputProps>(function Input(
       type={inputType}
       disabled={disabled}
       maxlength={maxLength}
-      onInput={(e) => onChange?.(e.detail.value)}
+      onInput={handleInput}
       onFocus={onFocus}
       onBlur={onBlur}
       focus={autoFocus}
@@ -267,6 +278,17 @@ export const Textarea = forwardRef<any, TextareaProps>(function Textarea(
   const filteredProps: Record<string, unknown> = {}
   if (rest['data-testid']) filteredProps['data-testid'] = rest['data-testid']
 
+  // 模拟 Web 事件对象，使业务代码可以使用 e.target.value
+  const handleInput = (e: { detail: { value: string } }) => {
+    if (onChange) {
+      const syntheticEvent = {
+        target: { value: e.detail.value },
+        currentTarget: { value: e.detail.value },
+      }
+      onChange(syntheticEvent as unknown as React.ChangeEvent<HTMLTextAreaElement>)
+    }
+  }
+
   return (
     <TaroTextarea
       value={value}
@@ -275,7 +297,7 @@ export const Textarea = forwardRef<any, TextareaProps>(function Textarea(
       style={style}
       disabled={disabled}
       maxlength={maxLength}
-      onInput={(e) => onChange?.(e.detail.value)}
+      onInput={handleInput}
       onFocus={onFocus}
       onBlur={onBlur}
       focus={autoFocus}

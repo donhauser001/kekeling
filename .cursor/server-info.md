@@ -50,17 +50,20 @@ systemctl status postgresql-13
 # 查看 Redis 状态
 systemctl status redis
 
-# 部署服务器代码（排除敏感文件和依赖）
+# 部署后端代码（排除敏感文件和依赖）
 cd /Users/aiden/Documents/app/kekeling
 rsync -avz --delete --exclude='node_modules' --exclude='.env' --exclude='uploads' --exclude='dist' \
   -e "sshpass -p 'Kekeling.2581264' ssh -o StrictHostKeyChecking=no" \
   server/ root@8.130.23.38:/var/www/kekeling/server/
 
-# 服务器上安装依赖并构建
-ssh root@8.130.23.38 "cd /var/www/kekeling/server && CI=true pnpm install && pnpm build && pm2 restart kekeling-api"
-
-# 一键部署脚本
+# 服务器上安装依赖并构建后端
 sshpass -p 'Kekeling.2581264' ssh root@8.130.23.38 "cd /var/www/kekeling/server && CI=true pnpm install && pnpm build && pm2 restart kekeling-api"
+
+# 部署前端（先本地构建，再上传到服务器）
+cd /Users/aiden/Documents/app/kekeling
+pnpm vite build
+rsync -avz --delete -e "sshpass -p 'Kekeling.2581264' ssh -o StrictHostKeyChecking=no" \
+  dist/ root@8.130.23.38:/var/www/kekeling/dist/
 
 # 服务器上查看 Git 状态
 ssh root@8.130.23.38 "cd /var/www/kekeling/server && git status"
@@ -81,7 +84,7 @@ ssh root@8.130.23.38 "cd /var/www/kekeling/server && git checkout HEAD~1 . && pn
 │   ├── dist/        # 编译输出
 │   ├── uploads/     # 上传文件
 │   └── .env         # 环境变量
-└── web/             # 前端静态文件 (Nginx 托管)
+└── dist/            # 前端静态文件 (Nginx 托管，root 指向此目录)
 ```
 
 ## SSL 证书
@@ -99,10 +102,11 @@ ssh root@8.130.23.38 "cd /var/www/kekeling/server && git checkout HEAD~1 . && pn
 ## Nginx 配置
 
 - 配置文件: `/etc/nginx/conf.d/kekeling.conf`
+- 前端根目录: `root /var/www/kekeling/dist;`
 - 关键配置:
   - `/uploads/` 使用 `^~` 修饰符优先匹配，代理到后端
   - `/api/` 代理到 `https://127.0.0.1:3000`
-  - 其他路径走前端 SPA
+  - 其他路径走前端 SPA (`try_files $uri $uri/ /index.html`)
 
 ## Git 版本管理
 

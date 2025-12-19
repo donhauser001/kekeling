@@ -11,6 +11,13 @@ import { isWxEnvironment } from './env'
 // ============================================================================
 
 /**
+ * 开发模式开关
+ * - true: 小程序连接本地开发服务器（需要在微信开发者工具中勾选"不校验合法域名"）
+ * - false: 小程序连接生产服务器
+ */
+const MINIAPP_DEV_MODE = false
+
+/**
  * 获取 API 服务器基础 URL
  *
  * - 浏览器环境：使用相对路径（由 Vite 代理处理）
@@ -20,8 +27,13 @@ import { isWxEnvironment } from './env'
  */
 export function getApiBaseUrl(): string {
   if (isWxEnvironment()) {
-    // 小程序环境：统一使用线上服务器
-    // 开发时需要在微信开发者工具中勾选"不校验合法域名"
+    // 小程序环境
+    if (MINIAPP_DEV_MODE) {
+      // 开发模式：连接本地服务器
+      // 注意：需要确保本地后端服务已启动
+      return 'http://localhost:3456'
+    }
+    // 生产模式：连接线上服务器
     return 'https://kkl.top'
   }
 

@@ -46,6 +46,8 @@ export interface UserProfile {
   nickname?: string
   phone?: string
   avatar?: string
+  isEscort?: boolean  // 是否已是陪诊员（审核通过）
+  escortId?: string | null
 }
 
 export interface OrderEntry {

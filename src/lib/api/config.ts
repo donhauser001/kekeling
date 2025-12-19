@@ -53,6 +53,43 @@ export interface ThemeSettings {
 }
 
 // ============================================================================
+// 短信设置
+// ============================================================================
+
+export type SmsProvider = 'aliyun' | 'tencent'
+
+export interface SmsSettings {
+  enabled: boolean           // 是否启用短信服务
+  provider: SmsProvider      // 短信服务提供商
+  accessKeyId: string        // 阿里云 AccessKey ID
+  accessKeySecret: string    // 阿里云 AccessKey Secret（返回时脱敏）
+  signName: string           // 短信签名
+  templateCode: string       // 短信模板编码
+  devMode: boolean           // 开发模式
+  devCode: string            // 开发模式下的固定验证码
+  // 频控配置
+  rateLimitPhone60s: number  // 同手机号发送间隔（秒）
+  rateLimitIpHour: number    // 同IP每小时发送上限
+  rateLimitPhoneDay: number  // 同手机号每日发送上限
+  codeLength: number         // 验证码长度
+  codeTtl: number            // 验证码有效期（秒）
+}
+
+// ============================================================================
+// 配置 API
+// ============================================================================
+
+// ============================================================================
+// 小程序设置
+// ============================================================================
+
+export interface MiniappSettings {
+  devMode: boolean              // 小程序开发模式
+  skipWorkbenchLogin: boolean   // 跳过工作台登录验证
+  devEscortId: string           // 开发模式下的默认陪诊员ID
+}
+
+// ============================================================================
 // 配置 API
 // ============================================================================
 
@@ -84,6 +121,24 @@ export const configApi = {
 
   updateThemeSettings: (data: Partial<ThemeSettings>) =>
     request<ThemeSettings>('/config/theme/settings', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  getSmsSettings: () =>
+    request<SmsSettings>('/config/sms/settings'),
+
+  updateSmsSettings: (data: Partial<SmsSettings>) =>
+    request<SmsSettings>('/config/sms/settings', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  getMiniappSettings: () =>
+    request<MiniappSettings>('/config/miniapp/settings'),
+
+  updateMiniappSettings: (data: Partial<MiniappSettings>) =>
+    request<MiniappSettings>('/config/miniapp/settings', {
       method: 'PUT',
       body: JSON.stringify(data),
     }),

@@ -299,3 +299,108 @@ export interface HomePageSettings {
   serviceRecommend: ServiceRecommendSettings;
 }
 
+// ============================================
+// 短信配置（阿里云短信服务）
+// ============================================
+
+// 短信配置键
+export const SMS_CONFIG_KEYS = {
+  ENABLED: 'sms.enabled',
+  PROVIDER: 'sms.provider',
+  ACCESS_KEY_ID: 'sms.access_key_id',
+  ACCESS_KEY_SECRET: 'sms.access_key_secret',
+  SIGN_NAME: 'sms.sign_name',
+  TEMPLATE_CODE: 'sms.template_code',
+  DEV_MODE: 'sms.dev_mode',
+  DEV_CODE: 'sms.dev_code',
+  // 频控配置
+  RATE_LIMIT_PHONE_60S: 'sms.rate_limit_phone_60s', // 同手机号60秒内只能发1次
+  RATE_LIMIT_IP_HOUR: 'sms.rate_limit_ip_hour', // 同IP每小时上限
+  RATE_LIMIT_PHONE_DAY: 'sms.rate_limit_phone_day', // 同手机号每日上限
+  CODE_LENGTH: 'sms.code_length', // 验证码长度
+  CODE_TTL: 'sms.code_ttl', // 验证码有效期（秒）
+} as const;
+
+// 短信配置默认值
+export const SMS_CONFIG_DEFAULTS: Record<string, any> = {
+  [SMS_CONFIG_KEYS.ENABLED]: false,
+  [SMS_CONFIG_KEYS.PROVIDER]: 'aliyun',
+  [SMS_CONFIG_KEYS.ACCESS_KEY_ID]: '',
+  [SMS_CONFIG_KEYS.ACCESS_KEY_SECRET]: '',
+  [SMS_CONFIG_KEYS.SIGN_NAME]: '',
+  [SMS_CONFIG_KEYS.TEMPLATE_CODE]: '',
+  [SMS_CONFIG_KEYS.DEV_MODE]: true,
+  [SMS_CONFIG_KEYS.DEV_CODE]: '123456',
+  // 频控配置默认值
+  [SMS_CONFIG_KEYS.RATE_LIMIT_PHONE_60S]: 60, // 60秒冷却
+  [SMS_CONFIG_KEYS.RATE_LIMIT_IP_HOUR]: 20, // 同IP每小时20次
+  [SMS_CONFIG_KEYS.RATE_LIMIT_PHONE_DAY]: 10, // 同手机号每日10次
+  [SMS_CONFIG_KEYS.CODE_LENGTH]: 6, // 6位验证码
+  [SMS_CONFIG_KEYS.CODE_TTL]: 300, // 5分钟有效
+};
+
+// 短信服务提供商
+export type SmsProvider = 'aliyun' | 'tencent';
+
+// 短信配置类型
+export interface SmsSettings {
+  /** 是否启用短信服务 */
+  enabled: boolean;
+  /** 短信服务提供商 */
+  provider: SmsProvider;
+  /** 阿里云 AccessKey ID */
+  accessKeyId: string;
+  /** 阿里云 AccessKey Secret */
+  accessKeySecret: string;
+  /** 短信签名 */
+  signName: string;
+  /** 短信模板编码 */
+  templateCode: string;
+  /** 开发模式（不调用真实接口） */
+  devMode: boolean;
+  /** 开发模式下的固定验证码 */
+  devCode: string;
+  // 频控配置
+  /** 同手机号发送间隔（秒），默认60秒 */
+  rateLimitPhone60s: number;
+  /** 同IP每小时发送上限，默认20次 */
+  rateLimitIpHour: number;
+  /** 同手机号每日发送上限，默认10次 */
+  rateLimitPhoneDay: number;
+  /** 验证码长度，默认6位 */
+  codeLength: number;
+  /** 验证码有效期（秒），默认300秒（5分钟） */
+  codeTtl: number;
+}
+
+// ============================================
+// 小程序设置
+// ============================================
+
+// 小程序配置键
+export const MINIAPP_CONFIG_KEYS = {
+  // 开发模式开关
+  DEV_MODE: 'miniapp.dev_mode',
+  // 开发模式下跳过工作台登录
+  SKIP_WORKBENCH_LOGIN: 'miniapp.skip_workbench_login',
+  // 开发模式下的默认陪诊员ID（用于跳过登录时加载数据）
+  DEV_ESCORT_ID: 'miniapp.dev_escort_id',
+} as const;
+
+// 小程序配置默认值
+export const MINIAPP_CONFIG_DEFAULTS: Record<string, any> = {
+  [MINIAPP_CONFIG_KEYS.DEV_MODE]: false,
+  [MINIAPP_CONFIG_KEYS.SKIP_WORKBENCH_LOGIN]: false,
+  [MINIAPP_CONFIG_KEYS.DEV_ESCORT_ID]: '',
+};
+
+// 小程序设置类型
+export interface MiniappSettings {
+  /** 小程序开发模式 */
+  devMode: boolean;
+  /** 跳过工作台登录验证 */
+  skipWorkbenchLogin: boolean;
+  /** 开发模式下的默认陪诊员ID */
+  devEscortId: string;
+}
+

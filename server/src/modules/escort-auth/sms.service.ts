@@ -1,16 +1,19 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
+import { ConfigService as AppConfigService } from '../config/config.service';
+import type { SmsSettings } from '../config/dto/config.dto';
 
 /**
  * 阿里云短信服务
  *
- * 环境变量:
- * - ALIYUN_ACCESS_KEY_ID: 阿里云 AccessKey ID
- * - ALIYUN_ACCESS_KEY_SECRET: 阿里云 AccessKey Secret
- * - ALIYUN_SMS_SIGN_NAME: 短信签名（如：可客灵）
- * - ALIYUN_SMS_TEMPLATE_CODE: 短信模板编码（如：SMS_123456789）
- * - SMS_DEV_MODE: 是否开发模式（true 时不调真实接口，验证码固定为 123456）
+ * 配置来源：系统配置（数据库）
+ * - sms.enabled: 是否启用短信服务
+ * - sms.access_key_id: 阿里云 AccessKey ID
+ * - sms.access_key_secret: 阿里云 AccessKey Secret
+ * - sms.sign_name: 短信签名（如：科科灵）
+ * - sms.template_code: 短信模板编码（如：SMS_123456789）
+ * - sms.dev_mode: 是否开发模式（true 时不调真实接口）
+ * - sms.dev_code: 开发模式下的固定验证码
  */
 @Injectable()
 export class SmsService {
@@ -20,7 +23,14 @@ export class SmsService {
   private readonly endpoint = 'dysmsapi.aliyuncs.com';
   private readonly apiVersion = '2017-05-25';
 
-  constructor(private configService: ConfigService) { }
+  constructor(private appConfigService: AppConfigService) { }
+
+  /**
+   * 获取短信配置
+   */
+  private async getSmsConfig(): Promise<SmsSettings> {
+    return this.appConfigService.getSmsSettings();
+  }
 
   /**
    * 发送短信验证码
@@ -29,21 +39,25 @@ export class SmsService {
    * @returns 是否发送成功
    */
   async sendVerificationCode(phone: string, code: string): Promise<boolean> {
+    const config = await this.getSmsConfig();
+
+    // 检查是否启用短信服务
+    if (!config.enabled) {
+      this.logger.warn(`[短信服务未启用] 验证码: ${phone} -> ${code}`);
+      return true; // 未启用时直接返回成功（方便开发测试）
+    }
+
     // 开发模式：不调用真实接口
-    const devMode = this.configService.get('SMS_DEV_MODE') === 'true';
-    if (devMode) {
+    if (config.devMode) {
       this.logger.warn(`[开发模式] 短信验证码: ${phone} -> ${code}`);
       return true;
     }
 
-    const accessKeyId = this.configService.get('ALIYUN_ACCESS_KEY_ID');
-    const accessKeySecret = this.configService.get('ALIYUN_ACCESS_KEY_SECRET');
-    const signName = this.configService.get('ALIYUN_SMS_SIGN_NAME');
-    const templateCode = this.configService.get('ALIYUN_SMS_TEMPLATE_CODE');
+    const { accessKeyId, accessKeySecret, signName, templateCode } = config;
 
     if (!accessKeyId || !accessKeySecret || !signName || !templateCode) {
       this.logger.error('阿里云短信配置不完整');
-      throw new BadRequestException('短信服务未配置');
+      throw new BadRequestException('短信服务配置不完整，请联系管理员');
     }
 
     try {
@@ -91,6 +105,23 @@ export class SmsService {
       this.logger.error('短信发送异常', error);
       throw new BadRequestException('短信发送失败，请稍后重试');
     }
+  }
+
+  /**
+   * 验证验证码（开发模式下使用固定验证码）
+   * @param inputCode 用户输入的验证码
+   * @param expectedCode 期望的验证码（真实发送的）
+   * @returns 是否匹配
+   */
+  async verifyCode(inputCode: string, expectedCode: string): Promise<boolean> {
+    const config = await this.getSmsConfig();
+
+    // 开发模式下使用固定验证码
+    if (config.devMode) {
+      return inputCode === config.devCode;
+    }
+
+    return inputCode === expectedCode;
   }
 
   /**
@@ -149,4 +180,3 @@ export class SmsService {
     return errorMap[code] || '短信发送失败，请稍后重试';
   }
 }
-

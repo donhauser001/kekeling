@@ -11,9 +11,11 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { Request } from 'express';
 import { EscortApplyService } from './escort-apply.service';
 import { CreateEscortApplicationDto } from './dto/create-application.dto';
 import { ReviewApplicationDto, QueryApplicationsDto } from './dto/review-application.dto';
+import { SendVerifyCodeDto, VerifySmsCodeDto } from './dto/sms-verify.dto';
 import { ApiResponse as ApiRes } from '../../common/response/api-response';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminGuard } from '../auth/guards/admin.guard';
@@ -22,6 +24,46 @@ import { AdminGuard } from '../auth/guards/admin.guard';
 @Controller('escort-apply')
 export class EscortApplyController {
   constructor(private readonly escortApplyService: EscortApplyService) { }
+
+  // ============================================================================
+  // 短信验证接口
+  // ============================================================================
+
+  @Post('sms/send')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: '发送短信验证码',
+    description: '申请成为陪诊员前的手机号验证（60秒内只能发送一次）',
+  })
+  @ApiResponse({ status: 200, description: '验证码发送成功' })
+  @ApiResponse({ status: 400, description: '频率限制或参数错误' })
+  async sendVerifyCode(@Body() dto: SendVerifyCodeDto, @Req() req: Request) {
+    // 获取客户端 IP
+    const clientIp =
+      (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
+      req.socket.remoteAddress ||
+      'unknown';
+
+    const result = await this.escortApplyService.sendVerifyCode(dto.phone, clientIp);
+    return ApiRes.success(result);
+  }
+
+  @Post('sms/verify')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: '验证短信验证码',
+    description: '验证手机号，验证成功后10分钟内可提交申请',
+  })
+  @ApiResponse({ status: 200, description: '验证成功' })
+  @ApiResponse({ status: 400, description: '验证码错误或已过期' })
+  async verifySmsCode(@Body() dto: VerifySmsCodeDto) {
+    const result = await this.escortApplyService.verifySmsCode(dto.phone, dto.code);
+    return ApiRes.success(result);
+  }
+
+  // ============================================================================
+  // 申请接口
+  // ============================================================================
 
   @Post()
   @UseGuards(JwtAuthGuard)

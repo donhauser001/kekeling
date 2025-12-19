@@ -6,6 +6,7 @@
 import { useState } from 'react'
 import { Box, Text, Button, Input, Icon, Image } from '../../../../ui/primitives'
 import { isWxEnvironment } from '../../../../platform/env'
+import { getFullResourceUrl } from '../../../../platform/config'
 import type { ApplyFormData, InviterInfo, ThemeColors } from '../types'
 import { GENDER_OPTIONS } from '../constants'
 
@@ -15,6 +16,8 @@ interface ApplyFormProps {
   colors: ThemeColors
   primaryColor: string
   userPhone?: string
+  userAvatar?: string
+  userGender?: 'male' | 'female' | 'unknown'
   onSubmit: (data: ApplyFormData) => Promise<void>
   onValidateInviteCode: (code: string) => Promise<{ valid: boolean; inviter?: InviterInfo; message?: string }>
 }
@@ -23,6 +26,8 @@ export function ApplyForm({
   colors,
   primaryColor,
   userPhone,
+  userAvatar,
+  userGender,
   onSubmit,
   onValidateInviteCode,
 }: ApplyFormProps) {
@@ -30,8 +35,8 @@ export function ApplyForm({
     name: '',
     phone: userPhone || '',
     idCard: '',
-    avatar: '',
-    gender: 'male',
+    avatar: userAvatar || '',
+    gender: userGender || 'male',
     emergencyContact: '',
     emergencyPhone: '',
     inviteCode: '',
@@ -134,7 +139,7 @@ export function ApplyForm({
           >
             {formData.avatar ? (
               <Image
-                src={formData.avatar}
+                src={getFullResourceUrl(formData.avatar)}
                 mode="aspectFill"
                 style={{ width: '100%', height: '100%' }}
               />
@@ -178,7 +183,7 @@ export function ApplyForm({
         >
           <Input
             value={formData.name}
-            onInput={(e: any) => updateField('name', e.detail?.value || e.target?.value || '')}
+            onChange={(value) => updateField('name', value)}
             placeholder="请输入真实姓名"
             style={{
               flex: 1,
@@ -198,7 +203,7 @@ export function ApplyForm({
         >
           <Input
             value={formData.phone}
-            onInput={(e: any) => updateField('phone', e.detail?.value || e.target?.value || '')}
+            onChange={(value) => updateField('phone', value)}
             placeholder="请输入手机号"
             type="tel"
             maxLength={11}
@@ -220,7 +225,7 @@ export function ApplyForm({
         >
           <Input
             value={formData.idCard}
-            onInput={(e: any) => updateField('idCard', e.detail?.value || e.target?.value || '')}
+            onChange={(value) => updateField('idCard', value)}
             placeholder="请输入身份证号"
             maxLength={18}
             style={{
@@ -286,7 +291,7 @@ export function ApplyForm({
         <FormItem label="联系人姓名" colors={colors}>
           <Input
             value={formData.emergencyContact}
-            onInput={(e: any) => updateField('emergencyContact', e.detail?.value || e.target?.value || '')}
+            onChange={(value) => updateField('emergencyContact', value)}
             placeholder="请输入紧急联系人姓名"
             style={{
               flex: 1,
@@ -305,7 +310,7 @@ export function ApplyForm({
         >
           <Input
             value={formData.emergencyPhone}
-            onInput={(e: any) => updateField('emergencyPhone', e.detail?.value || e.target?.value || '')}
+            onChange={(value) => updateField('emergencyPhone', value)}
             placeholder="请输入紧急联系人电话"
             type="tel"
             maxLength={11}
@@ -349,8 +354,8 @@ export function ApplyForm({
         >
           <Input
             value={formData.inviteCode}
-            onInput={(e: any) => {
-              updateField('inviteCode', e.detail?.value || e.target?.value || '')
+            onChange={(value) => {
+              updateField('inviteCode', value)
               setInviteCodeError('')
               setInviter(null)
             }}
