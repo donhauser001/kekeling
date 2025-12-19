@@ -1,0 +1,107 @@
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  Param,
+  Query,
+  Req,
+  HttpCode,
+  HttpStatus,
+  UseGuards,
+} from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { EscortApplyService } from './escort-apply.service';
+import { CreateEscortApplicationDto } from './dto/create-application.dto';
+import { ReviewApplicationDto, QueryApplicationsDto } from './dto/review-application.dto';
+import { ApiResponse as ApiRes } from '../../common/response/api-response';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { AdminGuard } from '../auth/guards/admin.guard';
+
+@ApiTags('陪诊员申请')
+@Controller('escort-apply')
+export class EscortApplyController {
+  constructor(private readonly escortApplyService: EscortApplyService) { }
+
+  @Post()
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '提交陪诊员申请' })
+  @ApiResponse({ status: 200, description: '申请提交成功' })
+  @ApiResponse({ status: 400, description: '参数错误或邀请码无效' })
+  @ApiResponse({ status: 409, description: '重复申请' })
+  async createApplication(
+    @Body() dto: CreateEscortApplicationDto,
+    @Req() req: any,
+  ) {
+    const userId = req.user?.id || req.user?.sub;
+    const result = await this.escortApplyService.createApplication(userId, dto);
+    return ApiRes.success(result);
+  }
+
+  @Get('my')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '查询我的申请状态' })
+  @ApiResponse({ status: 200, description: '返回申请状态' })
+  async getMyApplication(@Req() req: any) {
+    const userId = req.user?.id || req.user?.sub;
+    const result = await this.escortApplyService.getMyApplication(userId);
+    return ApiRes.success(result);
+  }
+
+  @Get('validate-invite/:code')
+  @ApiOperation({ summary: '验证邀请码' })
+  @ApiResponse({ status: 200, description: '返回邀请码验证结果' })
+  async validateInviteCode(@Param('code') code: string) {
+    const result = await this.escortApplyService.validateInviteCode(code);
+    return ApiRes.success(result);
+  }
+}
+
+@ApiTags('陪诊员申请管理')
+@Controller('admin/escort-apply')
+@UseGuards(AdminGuard)
+@ApiBearerAuth()
+export class EscortApplyAdminController {
+  constructor(private readonly escortApplyService: EscortApplyService) { }
+
+  @Get()
+  @ApiOperation({ summary: '获取申请列表' })
+  @ApiResponse({ status: 200, description: '返回申请列表' })
+  async getApplications(@Query() query: QueryApplicationsDto) {
+    const result = await this.escortApplyService.getApplications(query);
+    return ApiRes.success(result);
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: '获取申请详情' })
+  @ApiResponse({ status: 200, description: '返回申请详情' })
+  @ApiResponse({ status: 404, description: '申请不存在' })
+  async getApplicationDetail(@Param('id') id: string) {
+    const result = await this.escortApplyService.getApplicationDetail(id);
+    return ApiRes.success(result);
+  }
+
+  @Post(':id/review')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '审核申请' })
+  @ApiResponse({ status: 200, description: '审核完成' })
+  @ApiResponse({ status: 400, description: '审核失败' })
+  @ApiResponse({ status: 404, description: '申请不存在' })
+  async reviewApplication(
+    @Param('id') id: string,
+    @Body() dto: ReviewApplicationDto,
+    @Req() req: any,
+  ) {
+    const reviewerId = req.user?.id || req.user?.sub || 'system';
+    const result = await this.escortApplyService.reviewApplication(
+      id,
+      dto.action,
+      reviewerId,
+      dto.rejectReason,
+    );
+    return ApiRes.success(result);
+  }
+}

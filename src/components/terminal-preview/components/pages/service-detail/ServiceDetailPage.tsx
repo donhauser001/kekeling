@@ -29,7 +29,7 @@ import {
 } from './components'
 import type { ServiceDetailPageProps, GuaranteeItem } from './types'
 
-const wxScale = isWxEnvironment() ? 1.15 : 1
+const wxScale = isWxEnvironment() ? 1.1 : 1
 
 export function ServiceDetailPage({
   serviceId,
@@ -102,6 +102,7 @@ export function ServiceDetailPage({
         serviceId={serviceId}
         themeSettings={themeSettings}
         colors={colors}
+        isDarkMode={isDarkMode}
         isFavorite={isFavorite}
         onFavoriteToggle={() => setIsFavorite(!isFavorite)}
         onBack={onBack}

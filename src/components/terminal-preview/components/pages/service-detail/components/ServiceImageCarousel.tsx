@@ -10,7 +10,7 @@ import { isWxEnvironment } from '../../../../platform/env'
 import { getResourceUrl } from '../../../../utils'
 import type { ServiceImageCarouselProps } from '../types'
 
-const wxScale = isWxEnvironment() ? 1.15 : 1
+const wxScale = isWxEnvironment() ? 1.1 : 1
 
 export function ServiceImageCarousel({
   images,

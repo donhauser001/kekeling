@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { useSearch, useNavigate } from '@tanstack/react-router'
+import { useSearch } from '@tanstack/react-router'
 import {
     useReactTable,
     getCoreRowModel,
@@ -15,7 +15,6 @@ import {
     Pencil,
     Trash2,
     Users,
-    Check,
     Crown,
     Star,
     Building2,
@@ -275,7 +274,6 @@ const getIconComponent = (iconName: string) => {
 }
 
 export function Roles() {
-    const navigate = useNavigate()
     const search = useSearch({ strict: false }) as Record<string, unknown>
 
     const [categories, setCategories] = useState<UserCategory[]>(initialCategories)
@@ -298,10 +296,6 @@ export function Roles() {
     // 切换视图时更新 URL
     const handleViewModeChange = (mode: string) => {
         setViewMode(mode as 'grid' | 'list')
-        navigate({
-            search: (prev: Record<string, unknown>) => ({ ...prev, view: mode }),
-            replace: true,
-        })
     }
 
     // 详情抽屉状态
@@ -664,11 +658,11 @@ export function Roles() {
                 open={deleteDialogOpen}
                 onOpenChange={setDeleteDialogOpen}
                 title='确认删除'
-                description={`确定要删除分类「${deletingCategory?.name}」吗？此操作不可撤销。`}
+                desc={`确定要删除分类「${deletingCategory?.name}」吗？此操作不可撤销。`}
                 confirmText='删除'
-                cancelText='取消'
-                onConfirm={handleDelete}
-                variant='destructive'
+                cancelBtnText='取消'
+                handleConfirm={handleDelete}
+                destructive
             />
 
             {/* 新建/编辑分类对话框 */}

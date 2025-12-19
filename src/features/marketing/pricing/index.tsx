@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { SlidersHorizontal } from 'lucide-react'
+// import { SlidersHorizontal } from 'lucide-react' // 暂未使用
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
@@ -25,7 +25,7 @@ export function PricingConfig() {
   })
 
   const [formData, setFormData] = useState({
-    discountStackMode: 'multiply' as 'multiply' | 'min',
+    discountStackMode: 'multiply' as string,
     couponStackWithMember: true,
     couponStackWithCampaign: true,
     pointsEnabled: true,

@@ -1,5 +1,5 @@
 {
-  "libVersion": "3.12.0",
+  "libVersion": "2.32.3",
   "projectname": "miniapp-shell",
   "condition": {},
   "setting": {
@@ -17,6 +17,6 @@
     "compileHotReLoad": true,
     "checkInvalidKey": true,
     "ignoreDevUnusedFiles": true,
-    "bigPackageSizeSupport": false
+    "bigPackageSizeSupport": true
   }
 }

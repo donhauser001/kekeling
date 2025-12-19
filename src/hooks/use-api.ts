@@ -617,13 +617,9 @@ export function useCreateService() {
  * 用于新建服务时自动获取 ID，便于图片上传等关联操作
  */
 export function useCreateServiceDraft() {
-  const queryClient = useQueryClient()
-
   return useMutation({
     mutationFn: serviceApi.createDraft,
-    onSuccess: () => {
-      // 草稿创建不刷新列表，避免显示未完成的草稿
-    },
+    // 草稿创建不刷新列表，避免显示未完成的草稿
   })
 }
 

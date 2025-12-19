@@ -7,7 +7,7 @@
  * @see docs/终端预览器审计/小程序组件适配改造计划.md
  */
 
-import type { CSSProperties, ReactNode, MouseEvent, KeyboardEvent, UIEvent } from 'react'
+import type { CSSProperties, ReactNode, MouseEvent, KeyboardEvent, UIEvent, TouchEvent } from 'react'
 
 // ============================================================================
 // Box 组件（容器）
@@ -25,6 +25,11 @@ export interface BoxProps {
   onMouseMove?: (e: MouseEvent) => void
   onMouseUp?: (e: MouseEvent) => void
   onMouseLeave?: (e: MouseEvent) => void
+  /** 触摸事件（Web 和小程序均支持） */
+  onTouchStart?: (e: TouchEvent) => void
+  onTouchMove?: (e: TouchEvent) => void
+  onTouchEnd?: (e: TouchEvent) => void
+  onTouchCancel?: (e: TouchEvent) => void
   /** 滚动事件 */
   onScroll?: (e: UIEvent<HTMLDivElement>) => void
   /** 无障碍角色 */

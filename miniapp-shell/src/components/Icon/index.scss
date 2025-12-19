@@ -1,0 +1,13 @@
+/**
+ * Icon 组件样式
+ * 使用 iconfont 字体
+ */
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-style: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

@@ -18,9 +18,9 @@ import { CouponsActionDialog } from './components/coupons-action-dialog'
 import { CouponsDetailSheet } from './components/coupons-detail-sheet'
 
 const topNav = [
-  { title: '优惠券模板', url: '/marketing/coupons' },
-  { title: '发放规则', url: '/marketing/coupons/rules' },
-  { title: '用户优惠券', url: '/marketing/coupons/users' },
+  { title: '优惠券模板', href: '/marketing/coupons', isActive: true },
+  { title: '发放规则', href: '/marketing/coupons/rules', isActive: false },
+  { title: '用户优惠券', href: '/marketing/coupons/users', isActive: false },
 ]
 
 export function Coupons() {

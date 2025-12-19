@@ -46,12 +46,19 @@ export const CUSTOM_FIELD_TYPES = [
     { value: 'image', label: '图片上传', icon: ImagePlus },  // 用于处方、病历等图片
 ] as const
 
+// 内容类型选项
+export const CONTENT_TYPE_OPTIONS = [
+    { value: 'richtext', label: '富文本编辑器' },
+    { value: 'html', label: 'HTML 代码' },
+] as const
+
 // 默认表单数据
 export const DEFAULT_FORM_DATA: ServiceFormData = {
     name: '',
     categoryId: '',
     description: '',
     content: '',
+    contentType: 'richtext',  // 默认使用富文本编辑器
     price: '',
     originalPrice: '',
     unit: '次',

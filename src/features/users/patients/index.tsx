@@ -8,10 +8,8 @@ import {
   Users as UsersIcon,
   UserPlus,
   CreditCard,
-  Loader2,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import {
   DataTablePagination,
@@ -64,7 +62,7 @@ export function Patients() {
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null)
 
   // API hooks
-  const { data, isLoading, refetch } = usePatients({
+  const { data, isLoading } = usePatients({
     keyword: keyword || undefined,
     page,
     pageSize,

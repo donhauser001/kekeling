@@ -1,0 +1,100 @@
+/**
+ * 用户资料编辑页样式
+ *
+ * 主要处理小程序原生按钮的样式重置
+ * 颜色通过内联样式动态应用（受主题设置控制）
+ */
+
+// 静态色值（非主题色）
+$bg-color: #f5f7fa;
+$border-color: #e5e7eb;
+
+.page-container {
+  min-height: 100vh;
+}
+
+.page-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background-color: $bg-color;
+}
+
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid $border-color;
+  border-top-color: currentColor; // 继承父级颜色
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// 头像按钮样式重置
+.avatar-button {
+  position: relative;
+  width: 176rpx;
+  height: 176rpx;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  overflow: visible;
+  line-height: 1;
+
+  &::after {
+    border: none;
+  }
+}
+
+.avatar-image {
+  width: 176rpx;
+  height: 176rpx;
+  border-radius: 50%;
+}
+
+// 头像占位符 - 背景色通过内联样式设置
+.avatar-placeholder {
+  width: 176rpx;
+  height: 176rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// 相机图标 - 背景色通过内联样式设置
+.camera-icon {
+  position: absolute;
+  bottom: 4rpx;
+  right: 4rpx;
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 4rpx solid #fff;
+}
+
+// 绑定手机号按钮样式 - 背景色通过内联样式设置
+.bind-phone-button {
+  margin-left: auto;
+  padding: 6rpx 24rpx;
+  font-size: 24rpx;
+  color: #fff;
+  border-radius: 32rpx;
+  border: none;
+  line-height: 1.4;
+
+  &::after {
+    border: none;
+  }
+}

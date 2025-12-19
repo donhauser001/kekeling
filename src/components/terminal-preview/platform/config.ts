@@ -20,15 +20,9 @@ import { isWxEnvironment } from './env'
  */
 export function getApiBaseUrl(): string {
   if (isWxEnvironment()) {
-    // 小程序环境
-    // @ts-expect-error Taro 环境变量
-    if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'production') {
-      // 生产环境：使用线上服务器（需要配置）
-      return 'https://api.kekeliang.com'  // TODO: 替换为实际的生产服务器地址
-    }
-    // 开发环境：使用局域网 IP + HTTPS（需要在微信开发者工具中勾选"不校验合法域名"）
-    // 注意：如果 IP 地址变化，需要修改此处
-    return 'https://192.168.31.180:3456'
+    // 小程序环境：统一使用线上服务器
+    // 开发时需要在微信开发者工具中勾选"不校验合法域名"
+    return 'https://kkl.top'
   }
 
   // 浏览器环境：使用相对路径

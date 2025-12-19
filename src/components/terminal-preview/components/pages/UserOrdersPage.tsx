@@ -4,12 +4,24 @@
  * 普通用户查看自己的订单列表
  * - page key: 'user-orders'
  * - 支持按状态筛选
+ *
+ * 改造状态: ✅ 已按小程序规范改造
+ * @see docs/小程序页面改造规范.md
  */
 
-import { useState } from 'react'
-import { ArrowLeft, MapPin, Clock, ChevronRight, Package, FileText } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Box, Text, ScrollView, Icon } from '../../ui/primitives'
+import { isWxEnvironment } from '../../platform/env'
 import type { ThemeSettings } from '../../types'
 import { getWxBridge } from '../../bridge'
+import { UserOrdersPageSkeleton } from '../UserOrdersPageSkeleton'
+
+// ============================================================================
+// 常量定义
+// ============================================================================
+
+const wxScale = isWxEnvironment() ? 1.1 : 1
+const wxSafeAreaTop = isWxEnvironment() ? 44 : 0
 
 // ============================================================================
 // 类型定义
@@ -104,6 +116,10 @@ export function UserOrdersPage({
   const [activeTab, setActiveTab] = useState<OrderStatusTab>(
     (pageParams?.status as OrderStatusTab) || 'all'
   )
+  // 订单列表状态
+  const [orders, setOrders] = useState<typeof mockOrders>([])
+  // 加载状态（用于骨架屏）
+  const [isLoading, setIsLoading] = useState(true)
 
   // 颜色定义
   const bgColor = isDarkMode ? '#1a1a1a' : '#f5f7fa'
@@ -112,172 +128,417 @@ export function UserOrdersPage({
   const textSecondary = isDarkMode ? '#9ca3af' : '#6b7280'
   const textMuted = isDarkMode ? '#6b7280' : '#9ca3af'
   const borderColor = isDarkMode ? '#3a3a3a' : '#e5e7eb'
+  const primaryColor = themeSettings.primaryColor
+
+  // 模拟异步加载数据
+  useEffect(() => {
+    setIsLoading(true)
+    // 模拟 API 请求延迟
+    const timer = setTimeout(() => {
+      setOrders(mockOrders)
+      setIsLoading(false)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [])
 
   // 根据 Tab 过滤订单
   const filteredOrders = activeTab === 'all'
-    ? mockOrders
-    : mockOrders.filter(order => order.status === activeTab)
+    ? orders
+    : orders.filter(order => order.status === activeTab)
+
+  // 加载中显示骨架屏
+  if (isLoading) {
+    return (
+      <UserOrdersPageSkeleton
+        primaryColor={primaryColor}
+        isDarkMode={isDarkMode}
+      />
+    )
+  }
 
   return (
-    <div style={{ backgroundColor: bgColor }} className='min-h-full pb-4'>
+    <Box
+      className='min-h-full'
+      style={{
+        minHeight: '100%',
+        backgroundColor: bgColor,
+        paddingBottom: 16 * wxScale,
+      }}
+    >
       {/* 顶部导航栏 */}
-      <div
-        className='sticky top-0 z-20 flex items-center justify-between px-3 py-3'
-        style={{ backgroundColor: themeSettings.primaryColor }}
+      <Box
+        className='sticky top-0 z-20'
+        style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 20,
+          paddingTop: wxSafeAreaTop,
+          backgroundColor: primaryColor,
+        }}
       >
-        <button
-          onClick={onBack}
-          className='w-8 h-8 flex items-center justify-center text-white'
+        <Box
+          className='flex items-center justify-between'
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            paddingLeft: 12 * wxScale,
+            paddingRight: 12 * wxScale,
+            paddingTop: 12 * wxScale,
+            paddingBottom: 12 * wxScale,
+          }}
         >
-          <ArrowLeft className='h-5 w-5' />
-        </button>
-        <h1 className='text-base font-semibold text-white'>我的订单</h1>
-        <div className='w-8' />
-      </div>
-
-      {/* 状态 Tab */}
-      <div
-        className='sticky top-[52px] z-10 flex border-b'
-        style={{ backgroundColor: cardBg, borderColor }}
-      >
-        {STATUS_TABS.map(tab => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className='flex-1 py-3 text-xs font-medium transition-colors relative'
+          <Box
+            onClick={onBack}
             style={{
-              color: activeTab === tab.key ? themeSettings.primaryColor : textSecondary,
+              width: 32 * wxScale,
+              height: 32 * wxScale,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
-            {tab.label}
+            <Icon name="left" size={20 * wxScale} color="#fff" />
+          </Box>
+          <Text
+            style={{
+              fontSize: 16 * wxScale,
+              fontWeight: 600,
+              color: '#fff',
+            }}
+          >
+            我的订单
+          </Text>
+          <Box style={{ width: 32 * wxScale }} />
+        </Box>
+      </Box>
+
+      {/* 状态 Tab */}
+      <Box
+        className='sticky z-10 flex'
+        style={{
+          position: 'sticky',
+          top: wxSafeAreaTop + 56 * wxScale,
+          zIndex: 10,
+          display: 'flex',
+          backgroundColor: cardBg,
+          borderBottomWidth: 1,
+          borderBottomColor: borderColor,
+          borderBottomStyle: 'solid',
+        }}
+      >
+        {STATUS_TABS.map(tab => (
+          <Box
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            style={{
+              flex: 1,
+              paddingTop: 12 * wxScale,
+              paddingBottom: 12 * wxScale,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              position: 'relative',
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 12 * wxScale,
+                fontWeight: 500,
+                color: activeTab === tab.key ? primaryColor : textSecondary,
+              }}
+            >
+              {tab.label}
+            </Text>
             {activeTab === tab.key && (
-              <div
-                className='absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full'
-                style={{ backgroundColor: themeSettings.primaryColor }}
+              <Box
+                style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  width: 32 * wxScale,
+                  height: 2 * wxScale,
+                  borderRadius: 1 * wxScale,
+                  backgroundColor: primaryColor,
+                }}
               />
             )}
-          </button>
+          </Box>
         ))}
-      </div>
+      </Box>
 
       {/* 订单列表 */}
-      <div className='px-3 pt-3 space-y-3'>
+      <ScrollView
+        style={{
+          paddingLeft: 12 * wxScale,
+          paddingRight: 12 * wxScale,
+          paddingTop: 12 * wxScale,
+        }}
+      >
         {filteredOrders.length === 0 ? (
-          <div className='flex flex-col items-center justify-center py-16'>
-            <Package className='h-16 w-16' style={{ color: textMuted }} />
-            <p className='mt-4 text-sm' style={{ color: textMuted }}>
+          <Box
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              paddingTop: 64 * wxScale,
+              paddingBottom: 64 * wxScale,
+            }}
+          >
+            <Icon name="shopping-bag" size={64 * wxScale} color={textMuted} />
+            <Text
+              style={{
+                marginTop: 16 * wxScale,
+                fontSize: 14 * wxScale,
+                color: textMuted,
+              }}
+            >
               暂无订单
-            </p>
-          </div>
+            </Text>
+          </Box>
         ) : (
-          filteredOrders.map(order => (
-            <div
+          filteredOrders.map((order, index) => (
+            <Box
               key={order.id}
-              className='rounded-xl overflow-hidden cursor-pointer hover:shadow-md transition-shadow'
-              style={{ backgroundColor: cardBg }}
               onClick={() => onNavigate?.('user-order-detail', { id: order.id })}
+              style={{
+                backgroundColor: cardBg,
+                borderRadius: 12 * wxScale,
+                overflow: 'hidden',
+                marginBottom: 12 * wxScale,
+              }}
             >
               {/* 头部：服务名称 + 状态 */}
-              <div
-                className='flex items-center justify-between px-4 py-3 border-b'
-                style={{ borderColor }}
+              <Box
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  paddingLeft: 16 * wxScale,
+                  paddingRight: 16 * wxScale,
+                  paddingTop: 12 * wxScale,
+                  paddingBottom: 12 * wxScale,
+                  borderBottomWidth: 1,
+                  borderBottomColor: borderColor,
+                  borderBottomStyle: 'solid',
+                }}
               >
-                <div className='flex items-center gap-2'>
-                  <FileText className='h-4 w-4' style={{ color: themeSettings.primaryColor }} />
-                  <span className='text-sm font-medium' style={{ color: textPrimary }}>
-                    {order.serviceName}
-                  </span>
-                </div>
-                <span
-                  className='px-2 py-0.5 rounded text-xs'
+                <Box
                   style={{
-                    backgroundColor: statusColors[order.status]?.bg || '#f5f5f5',
-                    color: statusColors[order.status]?.text || '#8c8c8c',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8 * wxScale,
                   }}
                 >
-                  {order.statusText}
-                </span>
-              </div>
+                  <Icon name="document" size={16 * wxScale} color={primaryColor} />
+                  <Text
+                    style={{
+                      fontSize: 14 * wxScale,
+                      fontWeight: 500,
+                      color: textPrimary,
+                    }}
+                  >
+                    {order.serviceName}
+                  </Text>
+                </Box>
+                <Box
+                  style={{
+                    paddingLeft: 8 * wxScale,
+                    paddingRight: 8 * wxScale,
+                    paddingTop: 2 * wxScale,
+                    paddingBottom: 2 * wxScale,
+                    borderRadius: 4 * wxScale,
+                    backgroundColor: statusColors[order.status]?.bg || '#f5f5f5',
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 12 * wxScale,
+                      color: statusColors[order.status]?.text || '#8c8c8c',
+                    }}
+                  >
+                    {order.statusText}
+                  </Text>
+                </Box>
+              </Box>
 
               {/* 内容 */}
-              <div className='px-4 py-3'>
+              <Box
+                style={{
+                  paddingLeft: 16 * wxScale,
+                  paddingRight: 16 * wxScale,
+                  paddingTop: 12 * wxScale,
+                  paddingBottom: 12 * wxScale,
+                }}
+              >
                 {/* 医院信息 */}
-                <div className='flex items-center gap-2 mb-2'>
-                  <MapPin className='h-3.5 w-3.5' style={{ color: textMuted }} />
-                  <span className='text-xs' style={{ color: textSecondary }}>
+                <Box
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8 * wxScale,
+                    marginBottom: 8 * wxScale,
+                  }}
+                >
+                  <Icon name="local-two" size={14 * wxScale} color={textMuted} />
+                  <Text
+                    style={{
+                      fontSize: 12 * wxScale,
+                      color: textSecondary,
+                    }}
+                  >
                     {order.hospitalName} · {order.departmentName}
-                  </span>
-                </div>
+                  </Text>
+                </Box>
+
                 {/* 预约时间 */}
-                <div className='flex items-center gap-2 mb-3'>
-                  <Clock className='h-3.5 w-3.5' style={{ color: textMuted }} />
-                  <span className='text-xs' style={{ color: textSecondary }}>
+                <Box
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8 * wxScale,
+                    marginBottom: 12 * wxScale,
+                  }}
+                >
+                  <Icon name="time" size={14 * wxScale} color={textMuted} />
+                  <Text
+                    style={{
+                      fontSize: 12 * wxScale,
+                      color: textSecondary,
+                    }}
+                  >
                     {order.appointmentDate} {order.appointmentTime}
-                  </span>
-                </div>
+                  </Text>
+                </Box>
+
                 {/* 底部：价格 + 操作 */}
-                <div className='flex items-center justify-between pt-2 border-t' style={{ borderColor }}>
-                  <div className='flex items-baseline gap-0.5'>
-                    <span className='text-xs' style={{ color: themeSettings.primaryColor }}>¥</span>
-                    <span className='text-base font-bold' style={{ color: themeSettings.primaryColor }}>
+                <Box
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    paddingTop: 12 * wxScale,
+                    borderTopWidth: 1,
+                    borderTopColor: borderColor,
+                    borderTopStyle: 'solid',
+                  }}
+                >
+                  {/* 价格 */}
+                  <Box
+                    style={{
+                      display: 'flex',
+                      alignItems: 'baseline',
+                      gap: 2,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 12 * wxScale,
+                        color: primaryColor,
+                      }}
+                    >
+                      ¥
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 16 * wxScale,
+                        fontWeight: 700,
+                        color: primaryColor,
+                      }}
+                    >
                       {order.amount}
-                    </span>
-                  </div>
-                  <div className='flex items-center gap-2'>
+                    </Text>
+                  </Box>
+
+                  {/* 操作按钮 */}
+                  <Box
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8 * wxScale,
+                    }}
+                  >
                     {order.status === 'pending' && (
-                      <button
-                        className='px-4 py-1.5 rounded-full text-xs text-white'
-                        style={{ backgroundColor: themeSettings.primaryColor }}
-                        onClick={async (e) => {
+                      <Box
+                        onClick={async (e: React.MouseEvent) => {
                           e.stopPropagation()
                           const wxBridge = getWxBridge()
                           wxBridge.showLoading('支付中...')
-
-                          // TODO: 调用后端获取订单支付参数
-                          // const payParams = await userRequest<PayParams>(`/orders/${order.id}/pay`)
-
-                          // 宿主能力对接：调用微信支付
-                          // const result = await wxBridge.requestPayment({
-                          //   timeStamp: payParams.timeStamp,
-                          //   nonceStr: payParams.nonceStr,
-                          //   package: payParams.package,
-                          //   signType: payParams.signType,
-                          //   paySign: payParams.paySign,
-                          // })
-
                           wxBridge.hideLoading()
                           wxBridge.showToast({ title: '支付功能待对接', icon: 'none' })
                         }}
+                        style={{
+                          paddingLeft: 16 * wxScale,
+                          paddingRight: 16 * wxScale,
+                          paddingTop: isWxEnvironment() ? 8 * wxScale : 6,
+                          paddingBottom: isWxEnvironment() ? 8 * wxScale : 6,
+                          borderRadius: 9999,
+                          backgroundColor: primaryColor,
+                        }}
                       >
-                        立即支付
-                      </button>
+                        <Text
+                          style={{
+                            fontSize: 12 * wxScale,
+                            color: '#fff',
+                          }}
+                        >
+                          立即支付
+                        </Text>
+                      </Box>
                     )}
                     {order.status === 'completed' && (
-                      <button
-                        className='px-4 py-1.5 rounded-full text-xs border'
-                        style={{
-                          borderColor: themeSettings.primaryColor,
-                          color: themeSettings.primaryColor
-                        }}
-                        onClick={(e) => {
+                      <Box
+                        onClick={(e: React.MouseEvent) => {
                           e.stopPropagation()
                           // 评价逻辑
                         }}
+                        style={{
+                          paddingLeft: 16 * wxScale,
+                          paddingRight: 16 * wxScale,
+                          paddingTop: isWxEnvironment() ? 8 * wxScale : 6,
+                          paddingBottom: isWxEnvironment() ? 8 * wxScale : 6,
+                          borderRadius: 9999,
+                          borderWidth: 1,
+                          borderColor: primaryColor,
+                          borderStyle: 'solid',
+                        }}
                       >
-                        去评价
-                      </button>
+                        <Text
+                          style={{
+                            fontSize: 12 * wxScale,
+                            color: primaryColor,
+                          }}
+                        >
+                          去评价
+                        </Text>
+                      </Box>
                     )}
-                    <div className='flex items-center gap-0.5' style={{ color: textMuted }}>
-                      <span className='text-xs'>查看详情</span>
-                      <ChevronRight className='h-4 w-4' />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+                    <Box
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 2,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 12 * wxScale,
+                          color: textMuted,
+                        }}
+                      >
+                        查看详情
+                      </Text>
+                      <Icon name="right" size={16 * wxScale} color={textMuted} />
+                    </Box>
+                  </Box>
+                </Box>
+              </Box>
+            </Box>
           ))
         )}
-      </div>
-    </div>
+      </ScrollView>
+    </Box>
   )
 }

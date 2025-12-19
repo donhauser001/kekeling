@@ -10,7 +10,7 @@ import { isWxEnvironment, isBrowserEnvironment } from '../../../../platform/env'
 import { useHorizontalDrag } from '../hooks'
 import type { ServiceInfoTabsProps, InfoTabType, WorkflowStep } from '../types'
 
-const wxScale = isWxEnvironment() ? 1.15 : 1
+const wxScale = isWxEnvironment() ? 1.1 : 1
 
 export function ServiceInfoTabs({
   service,

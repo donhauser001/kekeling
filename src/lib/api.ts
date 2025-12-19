@@ -27,7 +27,8 @@ interface PaginatedData<T> {
 
 // 请求配置
 interface RequestConfig extends RequestInit {
-  params?: Record<string, string | number | boolean | undefined>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  params?: Record<string, any>
   data?: unknown  // 请求体数据，会自动转换为 JSON body
 }
 
@@ -241,6 +242,7 @@ export interface OrderQuery {
   pageSize?: number
   status?: string
   keyword?: string
+  userId?: string
   escortId?: string
   hospitalId?: string
   startDate?: string
@@ -839,6 +841,11 @@ export interface UserDetail extends User {
     gender: string | null
     age: number | null
     relationship: string
+    relation?: string        // 兼容字段
+    idCard?: string | null   // 身份证号
+    isDefault?: boolean
+    createdAt?: string
+    updatedAt?: string
   }>
   orders: Array<{
     id: string
@@ -1153,11 +1160,11 @@ export interface Doctor {
   rating: number
   reviewCount: number
   phone: string | null
-  status: string
+  status: 'active' | 'inactive'
   createdAt: string
   updatedAt: string
   hospital?: { id: string; name: string }
-  department?: { id: string; name: string; parent?: { id: string; name: string } }
+  department?: { id: string; name: string; parent?: { id: string; name: string } | null }
 }
 
 export interface DoctorQuery {
@@ -1448,6 +1455,7 @@ export interface Service {
   name: string
   description: string | null
   content: string | null          // 富文本内容
+  contentType: 'richtext' | 'html' // 内容类型
   price: number
   originalPrice: number | null
   unit: string
@@ -1501,6 +1509,7 @@ export interface CreateServiceData {
   categoryId: string
   description?: string
   content?: string                // 富文本内容
+  contentType?: 'richtext' | 'html' // 内容类型
   price: number
   originalPrice?: number
   unit?: string
@@ -2311,11 +2320,16 @@ export interface PointRule {
   id: string
   name: string
   code: string
+  type?: string
+  description?: string | null
   points: number | null
   pointsRate: number | null
+  applicableScope?: string
+  applicableIds?: string[]
   dailyLimit: number | null
   totalLimit: number | null
   conditions: Record<string, any> | null
+  isActive?: boolean
   status: 'active' | 'inactive'
   createdAt: string
   updatedAt: string
@@ -2423,7 +2437,15 @@ export const pointApi = {
 export interface ReferralRule {
   id: string
   name: string
-  type: 'user' | 'patient'
+  type: 'user' | 'patient' | string
+  description?: string | null
+  rewardType?: string
+  rewardValue?: number
+  inviterReward?: number
+  inviterRewardType?: string
+  validDays?: number | null
+  maxInvites?: number | null
+  isActive?: boolean
   inviterCouponId: string | null
   inviterPoints: number
   inviteeCouponId: string | null
@@ -3562,5 +3584,62 @@ export const articleApi = {
   // 公开接口：根据 slug 获取文章
   getBySlug: (slug: string) =>
     request<Article>(`/cms/articles/public/${slug}`),
+}
+
+// ============================================================================
+// 陪诊员申请管理
+// ============================================================================
+
+export interface EscortApplication {
+  id: string
+  name: string
+  phone: string
+  idCard: string
+  avatar?: string
+  gender: string
+  emergencyContact?: string
+  emergencyPhone?: string
+  inviteCode?: string
+  status: 'pending' | 'approved' | 'rejected'
+  rejectReason?: string
+  reviewedBy?: string
+  reviewedAt?: string
+  createdAt: string
+  updatedAt: string
+  user?: {
+    id: string
+    nickname?: string
+    avatar?: string
+  }
+  inviter?: {
+    id: string
+    name: string
+  }
+}
+
+export interface EscortApplicationQuery {
+  status?: string
+  keyword?: string
+  page?: number
+  pageSize?: number
+}
+
+export const escortApplicationApi = {
+  // 获取申请列表
+  getApplications: (query: EscortApplicationQuery = {}) =>
+    request<PaginatedData<EscortApplication>>('/admin/escort-apply', {
+      params: query as Record<string, string | number | boolean | undefined>,
+    }),
+
+  // 获取申请详情
+  getApplicationById: (id: string) =>
+    request<EscortApplication>(`/admin/escort-apply/${id}`),
+
+  // 审核申请
+  reviewApplication: (id: string, action: 'approve' | 'reject', rejectReason?: string) =>
+    request<{ message: string; escortId?: string }>(`/admin/escort-apply/${id}/review`, {
+      method: 'POST',
+      body: JSON.stringify({ action, rejectReason }),
+    }),
 }
 

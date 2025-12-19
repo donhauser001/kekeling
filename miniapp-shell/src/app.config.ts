@@ -9,6 +9,7 @@
  * - pages/services/index: 服务列表页
  * - pages/service-detail/index: 服务详情页
  * - pages/create-order/index: 下单页
+ * - pages/user-settings/index: 用户设置页（头像、昵称、手机号）
  */
 export default defineAppConfig({
   pages: [
@@ -16,6 +17,7 @@ export default defineAppConfig({
     'pages/services/index',
     'pages/service-detail/index',
     'pages/create-order/index',
+    'pages/user-settings/index',
   ],
   window: {
     backgroundTextStyle: 'light',

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { useSearch, useNavigate } from '@tanstack/react-router'
+import { useSearch } from '@tanstack/react-router'
 import {
     useReactTable,
     getCoreRowModel,
@@ -115,7 +115,6 @@ const colorOptions = [
 const categoryOptions = ['内科', '外科', '妇儿', '五官', '医技', '其他']
 
 export function Departments() {
-    const navigate = useNavigate()
     const search = useSearch({ strict: false }) as Record<string, unknown>
 
     // 视图模式
@@ -140,10 +139,6 @@ export function Departments() {
     // 切换视图时更新 URL
     const handleViewModeChange = (mode: string) => {
         setViewMode(mode as 'grid' | 'list')
-        navigate({
-            search: (prev: Record<string, unknown>) => ({ ...prev, view: mode }),
-            replace: true,
-        })
     }
 
     // 从筛选状态提取搜索关键词和分类
@@ -568,12 +563,12 @@ export function Departments() {
                 open={deleteDialogOpen}
                 onOpenChange={setDeleteDialogOpen}
                 title='确认删除'
-                description={`确定要删除科室「${deletingDepartment?.name}」吗？如果有子科室也会一并删除。`}
+                desc={`确定要删除科室「${deletingDepartment?.name}」吗？如果有子科室也会一并删除。`}
                 confirmText='删除'
-                cancelText='取消'
-                onConfirm={handleDelete}
+                cancelBtnText='取消'
+                handleConfirm={handleDelete}
                 isLoading={deleteMutation.isPending}
-                variant='destructive'
+                destructive
             />
 
             {/* 新建/编辑对话框 */}

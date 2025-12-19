@@ -4,11 +4,43 @@
  * 使用 DOMPurify 净化 HTML 内容，防止 XSS 攻击。
  * 所有需要渲染 HTML 的地方都应该使用此组件，禁止直接使用 dangerouslySetInnerHTML。
  *
+ * 注意：在小程序环境中，DOMPurify 不可用（无 DOM API），会跳过净化直接渲染。
+ * 小程序的 rich-text 组件会进行自身的安全过滤。
+ *
  * @see docs/终端预览器集成/安全审计报告-2024-12-13.md - P0-1 XSS 收敛
  */
 
-import DOMPurify from 'dompurify'
 import { cn } from '@/lib/utils'
+
+// 动态导入 DOMPurify，仅在浏览器环境使用
+let DOMPurify: { sanitize: (html: string, config?: object) => string } | null = null
+
+// 检测是否在小程序环境
+const _isMiniprogramEnv = (() => {
+  // @ts-expect-error Taro 环境变量
+  if (typeof process !== 'undefined' && process.env?.TARO_ENV === 'weapp') {
+    return true
+  }
+  // @ts-expect-error wx 在小程序环境中存在
+  if (typeof wx !== 'undefined' && typeof wx.request === 'function') {
+    return true
+  }
+  return false
+})()
+
+export function isMiniprogramEnv(): boolean {
+  return _isMiniprogramEnv
+}
+
+// 在非小程序环境中加载 DOMPurify
+if (!_isMiniprogramEnv) {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    DOMPurify = require('dompurify')
+  } catch {
+    console.warn('[SafeHTML] DOMPurify 加载失败，将跳过 HTML 净化')
+  }
+}
 
 /**
  * 默认允许的标签白名单
@@ -62,8 +94,13 @@ const FORBID_ATTR = [
   'onerror', 'onclick', 'onload', 'onmouseover', 'onfocus', 'onblur',
   'onsubmit', 'onreset', 'onchange', 'oninput', 'onkeydown', 'onkeyup',
   // 危险属性
-  'style', 'formaction', 'action', 'xlink:href',
+  'formaction', 'action', 'xlink:href',
 ]
+
+/**
+ * 样式相关的禁止属性（仅在不允许样式时使用）
+ */
+const STYLE_FORBID_ATTR = ['style']
 
 export interface SafeHTMLProps {
   /** 要渲染的 HTML 字符串 */
@@ -78,6 +115,8 @@ export interface SafeHTMLProps {
   prose?: boolean
   /** 容器元素类型 */
   as?: 'div' | 'span' | 'article' | 'section'
+  /** 是否允许内联样式（用于富文本/HTML内容展示，默认 false） */
+  allowStyle?: boolean
 }
 
 /**
@@ -102,24 +141,54 @@ export function SafeHTML({
   allowedAttr = [],
   prose = false,
   as: Component = 'div',
+  allowStyle = false,
 }: SafeHTMLProps) {
   // 合并默认和自定义的白名单
   const mergedAllowedTags = [...DEFAULT_ALLOWED_TAGS, ...allowedTags]
   const mergedAllowedAttr = [...DEFAULT_ALLOWED_ATTR, ...allowedAttr]
 
-  // 使用 DOMPurify 净化 HTML
-  const sanitized = DOMPurify.sanitize(html || '', {
-    ALLOWED_TAGS: mergedAllowedTags,
-    ALLOWED_ATTR: mergedAllowedAttr,
-    FORBID_TAGS: FORBID_TAGS,
-    FORBID_ATTR: FORBID_ATTR,
-    // 额外安全配置
-    ALLOW_DATA_ATTR: false, // 禁止 data-* 属性
-    ADD_ATTR: ['target'], // 允许 target 属性用于链接
-    RETURN_DOM: false,
-    RETURN_DOM_FRAGMENT: false,
-  })
+  // 如果允许样式，添加 style 到允许列表
+  if (allowStyle) {
+    mergedAllowedAttr.push('style')
+  }
 
+  // 计算禁止属性列表
+  const forbidAttr = allowStyle ? FORBID_ATTR : [...FORBID_ATTR, ...STYLE_FORBID_ATTR]
+
+  // 净化 HTML
+  let sanitized: string
+
+  if (DOMPurify) {
+    // 浏览器环境：使用 DOMPurify 净化
+    sanitized = DOMPurify.sanitize(html || '', {
+      ALLOWED_TAGS: mergedAllowedTags,
+      ALLOWED_ATTR: mergedAllowedAttr,
+      FORBID_TAGS: FORBID_TAGS,
+      FORBID_ATTR: forbidAttr,
+      // 额外安全配置
+      ALLOW_DATA_ATTR: false, // 禁止 data-* 属性
+      ADD_ATTR: ['target'], // 允许 target 属性用于链接
+      RETURN_DOM: false,
+      RETURN_DOM_FRAGMENT: false,
+    })
+  } else {
+    // 小程序环境：跳过净化，rich-text 组件会自行过滤
+    sanitized = html || ''
+  }
+
+  // 小程序环境：使用 Taro 的 RichText 组件
+  if (_isMiniprogramEnv) {
+    // @ts-expect-error 动态导入 Taro 组件
+    const { RichText } = require('@tarojs/components')
+    return (
+      <RichText
+        className={cn(className)}
+        nodes={sanitized}
+      />
+    )
+  }
+
+  // 浏览器环境：使用 dangerouslySetInnerHTML
   return (
     <Component
       className={cn(
@@ -145,6 +214,11 @@ export function sanitizeHTML(
     allowedAttr?: string[]
   }
 ): string {
+  // 小程序环境：跳过净化
+  if (!DOMPurify) {
+    return html || ''
+  }
+
   const mergedAllowedTags = [...DEFAULT_ALLOWED_TAGS, ...(options?.allowedTags || [])]
   const mergedAllowedAttr = [...DEFAULT_ALLOWED_ATTR, ...(options?.allowedAttr || [])]
 

@@ -212,6 +212,11 @@ export const sidebarData: SidebarData = {
               icon: UserCheck,
             },
             {
+              title: '申请审核',
+              url: '/escorts/applications',
+              icon: ClipboardCheck,
+            },
+            {
               title: '等级管理',
               url: '/escort-levels',
               icon: Award,

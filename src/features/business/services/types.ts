@@ -1,11 +1,15 @@
 import type { ServiceIncludeItem, ServiceNoteItem, CustomField } from '@/lib/api'
 
+// 内容类型
+export type ContentType = 'richtext' | 'html'
+
 // 表单数据类型
 export interface ServiceFormData {
     name: string
     categoryId: string
     description: string
     content: string
+    contentType: ContentType  // 内容类型：richtext 或 html
     price: string
     originalPrice: string
     unit: string

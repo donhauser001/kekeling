@@ -12,7 +12,7 @@ import type { RecommendedServicesData, ServiceTabType, ThemeSettings } from '../
 import { getResourceUrl } from '../utils'
 
 // 小程序环境的缩放比例
-const wxScale = isWxEnvironment() ? 1.15 : 1
+const wxScale = isWxEnvironment() ? 1.1 : 1
 
 type LayoutMode = 'grid' | 'list'
 

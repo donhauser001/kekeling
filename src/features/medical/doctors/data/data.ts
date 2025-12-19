@@ -1,4 +1,4 @@
-import { type DoctorStatus, type DoctorTitle } from './schema'
+import { type DoctorStatus } from './schema'
 
 // 医生状态样式
 export const doctorStatusTypes = new Map<DoctorStatus, string>([

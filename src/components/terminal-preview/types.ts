@@ -67,6 +67,7 @@ export type PreviewPage =
   // 陪诊员（用户视角可查看）
   | 'escort-list'
   | 'escort-detail'
+  | 'escort-apply'
   // 工作台（陪诊员视角）
   | 'workbench'
   | 'workbench-orders-pool'
@@ -125,6 +126,7 @@ export const VALID_PAGE_KEYS: readonly PreviewPage[] = [
   // 陪诊员（用户视角可查看）
   'escort-list',
   'escort-detail',
+  'escort-apply',
   // 工作台（陪诊员视角）
   'workbench',
   'workbench-orders-pool',

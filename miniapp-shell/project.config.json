@@ -20,7 +20,7 @@
     "localPlugins": false,
     "disableUseStrict": false,
     "useCompilerPlugins": false,
-    "condition": false,
+    "condition": true,
     "swc": false,
     "disableSWC": true,
     "babelSetting": {
@@ -31,12 +31,15 @@
   },
   "compileType": "miniprogram",
   "simulatorType": "wechat",
-  "simulatorPluginLibVersion": {},
+  "simulatorPluginLibVersion": {
+    "wxext14566970e7e9f62": "2.27.3"
+  },
   "condition": {},
   "packOptions": {
     "ignore": [],
     "include": []
   },
   "editorSetting": {},
-  "libVersion": "3.12.0"
+  "libVersion": "2.32.3",
+  "projectArchitecture": "multiPlatform"
 }

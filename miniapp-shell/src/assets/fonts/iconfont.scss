@@ -1,0 +1,738 @@
+/**
+ * iconfont 字体样式 - 小程序宿主壳版本
+ * 与管理后台使用相同的图标库
+ * 图标数量：775
+ */
+
+@font-face {
+  font-family: "iconfont";
+  src: url('./iconfont.woff2') format('woff2'),
+    url('./iconfont.ttf') format('truetype');
+}
+
+.iconfont {
+  font-family: "iconfont" !important;
+  font-size: 32px;
+  font-style: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// 导航相关
+.icon-home:before {
+  content: "\e600";
+}
+
+.icon-home1:before {
+  content: "\ebe1";
+}
+
+.icon-search:before {
+  content: "\e615";
+}
+
+.icon-back:before {
+  content: "\eadc";
+}
+
+.icon-return:before {
+  content: "\eb1d";
+}
+
+// 用户相关
+.icon-user:before {
+  content: "\ece6";
+}
+
+.icon-peoples:before {
+  content: "\ecde";
+}
+
+.icon-people:before {
+  content: "\ecce";
+}
+
+.icon-avatar:before {
+  content: "\ecc9";
+}
+
+.icon-me:before {
+  content: "\ecd1";
+}
+
+.icon-vip-one:before {
+  content: "\ec66";
+}
+
+// 状态标识
+.icon-check:before {
+  content: "\ebc4";
+}
+
+.icon-check-one:before {
+  content: "\ebca";
+}
+
+.icon-check-small:before {
+  content: "\ebc5";
+}
+
+.icon-check-correct:before {
+  content: "\eaec";
+}
+
+.icon-success:before {
+  content: "\ebd1";
+}
+
+.icon-close:before {
+  content: "\ebc6";
+}
+
+.icon-close-one:before {
+  content: "\ebc9";
+}
+
+.icon-close-small:before {
+  content: "\ebc7";
+}
+
+.icon-caution:before {
+  content: "\ea28";
+}
+
+.icon-alarm:before {
+  content: "\ea29";
+}
+
+.icon-info:before {
+  content: "\ebd4";
+}
+
+.icon-help:before {
+  content: "\ebd5";
+}
+
+.icon-tips:before {
+  content: "\ebf1";
+}
+
+// 安全保障
+.icon-shield:before {
+  content: "\ea36";
+}
+
+.icon-shield-add:before {
+  content: "\ea33";
+}
+
+.icon-lock:before {
+  content: "\eb11";
+}
+
+.icon-lock-one:before {
+  content: "\eb17";
+}
+
+.icon-unlock-one:before {
+  content: "\eb2b";
+}
+
+.icon-protection:before {
+  content: "\ea34";
+}
+
+.icon-protect:before {
+  content: "\ea2b";
+}
+
+.icon-key:before {
+  content: "\ea2c";
+}
+
+// 点赞收藏
+.icon-like:before {
+  content: "\ebe2";
+}
+
+.icon-dislike:before {
+  content: "\ebdd";
+}
+
+.icon-heart:before {
+  content: "\ec9f";
+}
+
+.icon-Heart:before {
+  content: "\e68b";
+}
+
+.icon-Hearts:before {
+  content: "\e68c";
+}
+
+.icon-attention:before {
+  content: "\ebc2";
+}
+
+.icon-bookmark:before {
+  content: "\ebda";
+}
+
+// 箭头方向
+.icon-arrow-up:before {
+  content: "\ec09";
+}
+
+.icon-arrow-down:before {
+  content: "\ec03";
+}
+
+.icon-arrow-circle-up:before {
+  content: "\ec01";
+}
+
+.icon-arrow-circle-down:before {
+  content: "\ec00";
+}
+
+.icon-arrow-circle-left:before {
+  content: "\ebff";
+}
+
+.icon-arrow-circle-right:before {
+  content: "\ec02";
+}
+
+.icon-up:before {
+  content: "\ec1c";
+}
+
+.icon-down:before {
+  content: "\ec08";
+}
+
+.icon-left:before {
+  content: "\ec0f";
+}
+
+.icon-right:before {
+  content: "\ec10";
+}
+
+.icon-go-ahead:before {
+  content: "\ec0d";
+}
+
+// 操作类
+.icon-add:before {
+  content: "\ebbf";
+}
+
+.icon-add-one:before {
+  content: "\ebc0";
+}
+
+.icon-plus:before {
+  content: "\ebcd";
+}
+
+.icon-reduce:before {
+  content: "\ebce";
+}
+
+.icon-reduce-one:before {
+  content: "\ebd0";
+}
+
+.icon-edit:before {
+  content: "\eaf7";
+}
+
+.icon-delete:before {
+  content: "\eae3";
+}
+
+.icon-save:before {
+  content: "\ebfe";
+}
+
+.icon-send:before {
+  content: "\ec12";
+}
+
+.icon-share-three:before {
+  content: "\ebec";
+}
+
+.icon-download:before {
+  content: "\ec0a";
+}
+
+.icon-upload-one:before {
+  content: "\ec22";
+}
+
+.icon-refresh:before {
+  content: "\ebea";
+}
+
+.icon-more:before {
+  content: "\ebe7";
+}
+
+.icon-more-one:before {
+  content: "\ebeb";
+}
+
+.icon-setting:before {
+  content: "\ebf5";
+}
+
+.icon-filter:before {
+  content: "\eaff";
+}
+
+.icon-copy-one:before {
+  content: "\ea49";
+}
+
+// 时间日期
+.icon-time:before {
+  content: "\ec6a";
+}
+
+.icon-alarm-clock:before {
+  content: "\ec67";
+}
+
+.icon-history:before {
+  content: "\ec68";
+}
+
+.icon-appointment:before {
+  content: "\ecc5";
+}
+
+// 通讯联系
+.icon-phone-telephone:before {
+  content: "\ec29";
+}
+
+.icon-phone-incoming:before {
+  content: "\ec28";
+}
+
+.icon-comment:before {
+  content: "\ec23";
+}
+
+.icon-comment-one:before {
+  content: "\ec24";
+}
+
+.icon-comments:before {
+  content: "\ec25";
+}
+
+.icon-remind:before {
+  content: "\eba7";
+}
+
+.icon-mail:before {
+  content: "\eaa8";
+}
+
+.icon-headset:before {
+  content: "\eb91";
+}
+
+// 医疗健康
+.icon-hospital:before {
+  content: "\ec8d";
+}
+
+.icon-hospital-bed:before {
+  content: "\ec96";
+}
+
+.icon-hospital-three:before {
+  content: "\ec99";
+}
+
+.icon-hospital-four:before {
+  content: "\ec91";
+}
+
+.icon-stethoscope:before {
+  content: "\ecae";
+}
+
+.icon-pill:before {
+  content: "\ecb7";
+}
+
+.icon-pills:before {
+  content: "\ecbb";
+}
+
+.icon-injection:before {
+  content: "\ec92";
+}
+
+.icon-infusion:before {
+  content: "\ec98";
+}
+
+.icon-first-aid-kit:before {
+  content: "\ec94";
+}
+
+.icon-medical-box:before {
+  content: "\eca0";
+}
+
+.icon-medicine-chest:before {
+  content: "\eca4";
+}
+
+.icon-medicine-bottle:before {
+  content: "\eca2";
+}
+
+.icon-heartbeat:before {
+  content: "\ec7b";
+}
+
+.icon-heart-rate:before {
+  content: "\ec8f";
+}
+
+.icon-thermometer:before {
+  content: "\ea3e";
+}
+
+.icon-ambulance:before {
+  content: "\ec7f";
+}
+
+.icon-ecg:before {
+  content: "\ec88";
+}
+
+.icon-brain:before {
+  content: "\ec83";
+}
+
+.icon-lung:before {
+  content: "\ec9d";
+}
+
+.icon-teeth:before {
+  content: "\ecc3";
+}
+
+.icon-eyes:before {
+  content: "\ec86";
+}
+
+.icon-nurse-cap:before {
+  content: "\ecc0";
+}
+
+.icon-prescription:before {
+  content: "\ecb0";
+}
+
+.icon-medical-files:before {
+  content: "\ec95";
+}
+
+.icon-mask:before {
+  content: "\ec93";
+}
+
+.icon-test-tube:before {
+  content: "\ea3d";
+}
+
+.icon-microscope:before {
+  content: "\eca7";
+}
+
+// 金融支付
+.icon-wallet:before {
+  content: "\eb76";
+}
+
+.icon-wallet-one:before {
+  content: "\eb85";
+}
+
+.icon-bank:before {
+  content: "\eb45";
+}
+
+.icon-bank-card-one:before {
+  content: "\eb49";
+}
+
+.icon-coupon:before {
+  content: "\eb4e";
+}
+
+.icon-gift:before {
+  content: "\eb55";
+}
+
+.icon-gift-bag:before {
+  content: "\eb53";
+}
+
+.icon-red-envelope:before {
+  content: "\eb72";
+}
+
+.icon-income:before {
+  content: "\eb63";
+}
+
+.icon-expenses:before {
+  content: "\eb61";
+}
+
+.icon-transaction:before {
+  content: "\eb83";
+}
+
+.icon-transaction-order:before {
+  content: "\eb81";
+}
+
+.icon-bill:before {
+  content: "\ebd9";
+}
+
+.icon-diamond:before {
+  content: "\ec5e";
+}
+
+// 购物订单
+.icon-shopping-cart-one:before {
+  content: "\eb7a";
+}
+
+.icon-shopping-cart-two:before {
+  content: "\eb73";
+}
+
+.icon-shopping-bag:before {
+  content: "\eb6e";
+}
+
+.icon-shopping:before {
+  content: "\eb6d";
+}
+
+.icon-commodity:before {
+  content: "\eb47";
+}
+
+.icon-checklist:before {
+  content: "\ec2f";
+}
+
+.icon-buy:before {
+  content: "\eb48";
+}
+
+.icon-receive:before {
+  content: "\eab3";
+}
+
+.icon-ticket-one:before {
+  content: "\eabe";
+}
+
+.icon-label:before {
+  content: "\eaad";
+}
+
+.icon-box:before {
+  content: "\ea53";
+}
+
+// 文件文档
+.icon-folder:before {
+  content: "\ea8e";
+}
+
+.icon-folder-close:before {
+  content: "\ea94";
+}
+
+.icon-folder-plus:before {
+  content: "\ea95";
+}
+
+.icon-file-text:before {
+  content: "\ea86";
+}
+
+.icon-clipboard:before {
+  content: "\ea4d";
+}
+
+.icon-report:before {
+  content: "\ea37";
+}
+
+.icon-agreement:before {
+  content: "\ea41";
+}
+
+// 多媒体
+.icon-camera:before {
+  content: "\ebdb";
+}
+
+.icon-pic:before {
+  content: "\ebfa";
+}
+
+.icon-picture:before {
+  content: "\eab6";
+}
+
+.icon-video:before {
+  content: "\eba4";
+}
+
+.icon-play:before {
+  content: "\eb9f";
+}
+
+.icon-pause:before {
+  content: "\eb9b";
+}
+
+.icon-music:before {
+  content: "\eb94";
+}
+
+.icon-voice:before {
+  content: "\eba3";
+}
+
+.icon-volume-up:before {
+  content: "\eba6";
+}
+
+.icon-volume-mute:before {
+  content: "\eba9";
+}
+
+// 界面操作
+.icon-zoom-in:before {
+  content: "\ebf9";
+}
+
+.icon-zoom-out:before {
+  content: "\ebf7";
+}
+
+.icon-full-screen:before {
+  content: "\eb01";
+}
+
+.icon-preview-open:before {
+  content: "\ebf0";
+}
+
+.icon-preview-close-one:before {
+  content: "\ebfc";
+}
+
+.icon-list:before {
+  content: "\eb12";
+}
+
+.icon-grid-four:before {
+  content: "\eb06";
+}
+
+.icon-grid-nine:before {
+  content: "\eb05";
+}
+
+// 位置地图
+.icon-map-draw:before {
+  content: "\ec2d";
+}
+
+.icon-discovery-index:before {
+  content: "\eb4c";
+}
+
+// 数据图表
+.icon-analysis:before {
+  content: "\ec76";
+}
+
+.icon-trend:before {
+  content: "\eb7d";
+}
+
+.icon-pie:before {
+  content: "\ec79";
+}
+
+.icon-performance:before {
+  content: "\eb9a";
+}
+
+// 工具设备
+.icon-workbench:before {
+  content: "\eb84";
+}
+
+.icon-terminal:before {
+  content: "\ec63";
+}
+
+.icon-power:before {
+  content: "\ebf8";
+}
+
+.icon-bluetooth:before {
+  content: "\ec5c";
+}
+
+.icon-connect:before {
+  content: "\ec30";
+}
+
+// 旧图标兼容（医疗专业）
+.icon-yiliao:before {
+  content: "\e6e6";
+}
+
+.icon-yiliaozixun:before {
+  content: "\e711";
+}
+
+.icon-bingli:before {
+  content: "\e657";
+}
+
+.icon-yiliaoxian:before {
+  content: "\e65d";
+}
+
+.icon-empathize-line:before {
+  content: "\e811";
+}
+
+.icon-first-aid-kit-line:before {
+  content: "\e812";
+}

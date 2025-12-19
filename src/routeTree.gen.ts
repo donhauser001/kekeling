@@ -63,6 +63,7 @@ import { Route as AuthenticatedSettingsAppearanceRouteImport } from './routes/_a
 import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated/settings/account'
 import { Route as AuthenticatedServicesIdRouteImport } from './routes/_authenticated/services/$id'
 import { Route as AuthenticatedEscortsWithdrawRecordsRouteImport } from './routes/_authenticated/escorts/withdraw-records'
+import { Route as AuthenticatedEscortsApplicationsRouteImport } from './routes/_authenticated/escorts/applications'
 import { Route as AuthenticatedEscortsEscortIdRouteImport } from './routes/_authenticated/escorts/$escortId'
 import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
 import { Route as AuthenticatedDistributionSettingsRouteImport } from './routes/_authenticated/distribution/settings'
@@ -381,6 +382,12 @@ const AuthenticatedEscortsWithdrawRecordsRoute =
     path: '/escorts/withdraw-records',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedEscortsApplicationsRoute =
+  AuthenticatedEscortsApplicationsRouteImport.update({
+    id: '/escorts/applications',
+    path: '/escorts/applications',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedEscortsEscortIdRoute =
   AuthenticatedEscortsEscortIdRouteImport.update({
     id: '/escorts/$escortId',
@@ -514,6 +521,7 @@ export interface FileRoutesByFullPath {
   '/distribution/settings': typeof AuthenticatedDistributionSettingsRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/escorts/$escortId': typeof AuthenticatedEscortsEscortIdRoute
+  '/escorts/applications': typeof AuthenticatedEscortsApplicationsRoute
   '/escorts/withdraw-records': typeof AuthenticatedEscortsWithdrawRecordsRoute
   '/services/$id': typeof AuthenticatedServicesIdRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
@@ -585,6 +593,7 @@ export interface FileRoutesByTo {
   '/distribution/settings': typeof AuthenticatedDistributionSettingsRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/escorts/$escortId': typeof AuthenticatedEscortsEscortIdRoute
+  '/escorts/applications': typeof AuthenticatedEscortsApplicationsRoute
   '/escorts/withdraw-records': typeof AuthenticatedEscortsWithdrawRecordsRoute
   '/services/$id': typeof AuthenticatedServicesIdRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
@@ -661,6 +670,7 @@ export interface FileRoutesById {
   '/_authenticated/distribution/settings': typeof AuthenticatedDistributionSettingsRoute
   '/_authenticated/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/_authenticated/escorts/$escortId': typeof AuthenticatedEscortsEscortIdRoute
+  '/_authenticated/escorts/applications': typeof AuthenticatedEscortsApplicationsRoute
   '/_authenticated/escorts/withdraw-records': typeof AuthenticatedEscortsWithdrawRecordsRoute
   '/_authenticated/services/$id': typeof AuthenticatedServicesIdRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
@@ -735,6 +745,7 @@ export interface FileRouteTypes {
     | '/distribution/settings'
     | '/errors/$error'
     | '/escorts/$escortId'
+    | '/escorts/applications'
     | '/escorts/withdraw-records'
     | '/services/$id'
     | '/settings/account'
@@ -806,6 +817,7 @@ export interface FileRouteTypes {
     | '/distribution/settings'
     | '/errors/$error'
     | '/escorts/$escortId'
+    | '/escorts/applications'
     | '/escorts/withdraw-records'
     | '/services/$id'
     | '/settings/account'
@@ -881,6 +893,7 @@ export interface FileRouteTypes {
     | '/_authenticated/distribution/settings'
     | '/_authenticated/errors/$error'
     | '/_authenticated/escorts/$escortId'
+    | '/_authenticated/escorts/applications'
     | '/_authenticated/escorts/withdraw-records'
     | '/_authenticated/services/$id'
     | '/_authenticated/settings/account'
@@ -1329,6 +1342,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEscortsWithdrawRecordsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/escorts/applications': {
+      id: '/_authenticated/escorts/applications'
+      path: '/escorts/applications'
+      fullPath: '/escorts/applications'
+      preLoaderRoute: typeof AuthenticatedEscortsApplicationsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/escorts/$escortId': {
       id: '/_authenticated/escorts/$escortId'
       path: '/escorts/$escortId'
@@ -1499,6 +1519,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDistributionSettingsRoute: typeof AuthenticatedDistributionSettingsRoute
   AuthenticatedErrorsErrorRoute: typeof AuthenticatedErrorsErrorRoute
   AuthenticatedEscortsEscortIdRoute: typeof AuthenticatedEscortsEscortIdRoute
+  AuthenticatedEscortsApplicationsRoute: typeof AuthenticatedEscortsApplicationsRoute
   AuthenticatedEscortsWithdrawRecordsRoute: typeof AuthenticatedEscortsWithdrawRecordsRoute
   AuthenticatedServicesIdRoute: typeof AuthenticatedServicesIdRoute
   AuthenticatedUsersUserIdRoute: typeof AuthenticatedUsersUserIdRoute
@@ -1554,6 +1575,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedDistributionSettingsRoute,
   AuthenticatedErrorsErrorRoute: AuthenticatedErrorsErrorRoute,
   AuthenticatedEscortsEscortIdRoute: AuthenticatedEscortsEscortIdRoute,
+  AuthenticatedEscortsApplicationsRoute: AuthenticatedEscortsApplicationsRoute,
   AuthenticatedEscortsWithdrawRecordsRoute:
     AuthenticatedEscortsWithdrawRecordsRoute,
   AuthenticatedServicesIdRoute: AuthenticatedServicesIdRoute,

@@ -18,9 +18,9 @@ import { PointsActionDialog } from './components/points-action-dialog'
 import { PointsDetailSheet } from './components/points-detail-sheet'
 
 const topNav = [
-  { title: '积分规则', url: '/marketing/points' },
-  { title: '用户积分', url: '/marketing/points/users' },
-  { title: '积分记录', url: '/marketing/points/records' },
+  { title: '积分规则', href: '/marketing/points', isActive: true },
+  { title: '用户积分', href: '/marketing/points/users', isActive: false },
+  { title: '积分记录', href: '/marketing/points/records', isActive: false },
 ]
 
 export function Points() {

@@ -78,6 +78,7 @@ import {
   CouponsAvailablePage,
   EscortListPage,
   EscortDetailPage,
+  EscortApplyPage,
   WorkbenchPage,
   OrdersPoolPage,
   WorkbenchEarningsPage,
@@ -209,9 +210,11 @@ export function TerminalPreview({
   }, [])
 
   // Step 4/7: 陪诊员入口点击处理
+  // 如果不是陪诊员，跳转到申请页面；调试模式下可通过 DebugPanel 模拟登录
   const handleEscortEntryClick = useCallback(() => {
-    setShowEscortLoginDialog(true)
-  }, [])
+    // 跳转到陪诊员申请页面
+    navigateToPage('escort-apply')
+  }, [navigateToPage])
 
   // 获取 token 用于 DebugPanel 显示
   const currentUserToken = getUserToken()
@@ -263,6 +266,19 @@ export function TerminalPreview({
   const navigateToPage = useCallback((page: string, params?: Record<string, string>) => {
     // 开发环境校验参数
     validatePageParams(page, params)
+
+    // 小程序环境：特定页面跳转到原生页面
+    if (isWxEnvironment()) {
+      const nativePageMap: Record<string, string> = {
+        'user-profile-edit': '/pages/user-settings/index',
+      }
+      const nativePath = nativePageMap[page]
+      if (nativePath) {
+        // @ts-expect-error wx 在小程序环境中存在
+        wx.navigateTo({ url: nativePath })
+        return
+      }
+    }
 
     // Step 14.11: 保存当前页面的滚动位置
     const currentPageKey = selectedServiceId
@@ -447,7 +463,7 @@ export function TerminalPreview({
   const wxSafeAreaTop = isWxEnvironment() ? 45 : 0
 
   // 小程序环境的整体缩放比例（因为屏幕比 375px 设计稿更宽）
-  const wxScale = isWxEnvironment() ? 1.15 : 1
+  const wxScale = isWxEnvironment() ? 1.1 : 1
 
   const renderHomePage = () => (
     <>
@@ -595,6 +611,7 @@ export function TerminalPreview({
           <CouponsPage
             themeSettings={themeSettings}
             isDarkMode={isDarkMode}
+            onBack={() => navigateToPage('profile')}
             couponsOverride={marketingData?.coupons}
           />
         )
@@ -603,6 +620,7 @@ export function TerminalPreview({
           <MembershipPage
             themeSettings={themeSettings}
             isDarkMode={isDarkMode}
+            onBack={() => navigateToPage('profile')}
             onNavigate={(page) => navigateToPage(page)}
             membershipOverride={marketingData?.membership}
           />
@@ -621,6 +639,7 @@ export function TerminalPreview({
           <PointsPage
             themeSettings={themeSettings}
             isDarkMode={isDarkMode}
+            onBack={() => navigateToPage('profile')}
             onNavigate={(page) => navigateToPage(page)}
             pointsOverride={marketingData?.points}
           />
@@ -638,6 +657,7 @@ export function TerminalPreview({
           <ReferralsPage
             themeSettings={themeSettings}
             isDarkMode={isDarkMode}
+            onBack={() => navigateToPage('profile')}
             referralsOverride={marketingData?.referrals}
           />
         )
@@ -685,6 +705,15 @@ export function TerminalPreview({
             isDarkMode={isDarkMode}
             escortId={pageParams.id}
             onBack={() => navigateToPage('escort-list')}
+          />
+        )
+      case 'escort-apply':
+        return (
+          <EscortApplyPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            onBack={() => navigateToPage('profile')}
+            onNavigate={(page, params) => navigateToPage(page, params)}
           />
         )
 

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { useSearch, useNavigate } from '@tanstack/react-router'
+import { useSearch } from '@tanstack/react-router'
 import {
     useReactTable,
     getCoreRowModel,
@@ -18,7 +18,6 @@ import {
     Layers,
     LayoutGrid,
     List,
-    Eye,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -155,7 +154,6 @@ const defaultCategoryFormData: CategoryFormData = {
 }
 
 export function MedicalTags() {
-    const navigate = useNavigate()
     const search = useSearch({ strict: false }) as Record<string, unknown>
 
     const [tags, setTags] = useState<MedicalTag[]>(initialTags)
@@ -179,10 +177,6 @@ export function MedicalTags() {
     // 切换视图时更新 URL
     const handleViewModeChange = (mode: string) => {
         setViewMode(mode as 'grid' | 'list')
-        navigate({
-            search: (prev: Record<string, unknown>) => ({ ...prev, view: mode }),
-            replace: true,
-        })
     }
 
     // 标签表单对话框状态
@@ -579,11 +573,11 @@ export function MedicalTags() {
                 open={deleteDialogOpen}
                 onOpenChange={setDeleteDialogOpen}
                 title='确认删除'
-                description={`确定要删除标签「${deletingTag?.name}」吗？此操作不可撤销。`}
+                desc={`确定要删除标签「${deletingTag?.name}」吗？此操作不可撤销。`}
                 confirmText='删除'
-                cancelText='取消'
-                onConfirm={handleDeleteTag}
-                variant='destructive'
+                cancelBtnText='取消'
+                handleConfirm={handleDeleteTag}
+                destructive
             />
 
             {/* 新建/编辑标签对话框 */}

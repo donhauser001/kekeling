@@ -24,7 +24,6 @@ import {
   Plus,
   Star,
   Trash2,
-  Eye,
   FileText,
   Stethoscope,
   Gift,
@@ -73,7 +72,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { userApi, orderApi, patientApi, couponApi, pointApi, type Order, type Patient, type CreatePatientData, type UserCoupon, type PointRecord, type UserPoint } from '@/lib/api'
+import { userApi, orderApi, patientApi, couponApi, pointApi, type Order, type Patient, type CreatePatientData, type UserCoupon, type PointRecord } from '@/lib/api'
 import { PatientFormDialog, PatientDeleteDialog } from './patients/components'
 
 // 订单状态配置

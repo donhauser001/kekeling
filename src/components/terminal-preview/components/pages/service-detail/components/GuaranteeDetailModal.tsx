@@ -7,7 +7,7 @@ import { Box, Text, Button, Icon } from '../../../../ui/primitives'
 import { isWxEnvironment } from '../../../../platform/env'
 import type { GuaranteeDetailModalProps } from '../types'
 
-const wxScale = isWxEnvironment() ? 1.15 : 1
+const wxScale = isWxEnvironment() ? 1.1 : 1
 
 export function GuaranteeDetailModal({
   guarantee,
@@ -133,8 +133,8 @@ export function GuaranteeDetailModal({
           style={{
             marginTop: 24 * wxScale,
             width: '100%',
-            paddingTop: 10 * wxScale,
-            paddingBottom: 10 * wxScale,
+            paddingTop: isWxEnvironment() ? 14 * wxScale : 10,
+            paddingBottom: isWxEnvironment() ? 14 * wxScale : 10,
             borderRadius: 9999,
             fontSize: 14 * wxScale,
             fontWeight: 500,

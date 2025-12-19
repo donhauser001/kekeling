@@ -63,7 +63,7 @@ export function MembershipActionDialog({
   const [confirmCloseOpen, setConfirmCloseOpen] = useState(false)
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formSchema) as any,
     defaultValues: {
       name: '',
       level: 1,

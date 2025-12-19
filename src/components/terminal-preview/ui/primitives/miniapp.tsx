@@ -44,7 +44,20 @@ export type { IconName }
  * 小程序端渲染为 View
  */
 export const Box = forwardRef<any, BoxProps>(function Box(
-  { children, className, style, onClick, onKeyDown, role, tabIndex, ...rest },
+  {
+    children,
+    className,
+    style,
+    onClick,
+    onKeyDown,
+    onTouchStart,
+    onTouchMove,
+    onTouchEnd,
+    onTouchCancel,
+    role,
+    tabIndex,
+    ...rest
+  },
   _ref
 ) {
   // 小程序不支持 ref 和部分 HTML 属性，过滤掉
@@ -59,6 +72,10 @@ export const Box = forwardRef<any, BoxProps>(function Box(
       className={className}
       style={style}
       onClick={onClick}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+      onTouchCancel={onTouchCancel}
       role={role}
       {...filteredProps}
     >
@@ -109,10 +126,25 @@ export const Button = forwardRef<any, ButtonProps>(function Button(
   if (rest['data-testid']) filteredProps['data-testid'] = rest['data-testid']
 
   // 使用 View 模拟按钮，更容易控制样式
+  // 默认文本居中，与 Web 端 button 保持一致
+  // 注意：小程序中纯文本需要用 Text 包裹并显式传递样式
+  const isTextContent = typeof children === 'string' || typeof children === 'number'
+
+  // 提取文本相关样式传递给 Text 组件（小程序 Text 不继承 View 样式）
+  const textStyle = style ? {
+    color: style.color,
+    fontSize: style.fontSize,
+    fontWeight: style.fontWeight,
+  } : {}
+
   return (
     <View
       className={className}
       style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        textAlign: 'center',
         ...style,
         opacity: disabled ? 0.5 : 1,
         pointerEvents: disabled ? 'none' : 'auto',
@@ -121,7 +153,7 @@ export const Button = forwardRef<any, ButtonProps>(function Button(
       role="button"
       {...filteredProps}
     >
-      {children}
+      {isTextContent ? <TaroText style={textStyle}>{children}</TaroText> : children}
     </View>
   )
 })
@@ -141,14 +173,18 @@ export const Image = forwardRef<any, ImageProps>(function Image(
   const filteredProps: Record<string, unknown> = {}
   if (rest['data-testid']) filteredProps['data-testid'] = rest['data-testid']
 
+  // 包装事件处理，确保不传递原生事件参数（与 Web 端对齐）
+  const handleLoad = onLoad ? () => onLoad() : undefined
+  const handleError = onError ? () => onError() : undefined
+
   return (
     <TaroImage
       src={src}
       className={className}
       style={style}
       mode={mode}
-      onLoad={onLoad}
-      onError={onError}
+      onLoad={handleLoad}
+      onError={handleError}
       lazyLoad={lazyLoad}
       {...filteredProps}
     />

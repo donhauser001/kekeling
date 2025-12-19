@@ -220,6 +220,66 @@ export default defineConfig<'webpack5'>(async (merge) => {
     h5: {
       publicPath: '/',
       staticDirectory: 'static',
+      // 将主仓目录纳入 babel 编译链（与 mini 配置保持一致）
+      // 解决通过 alias 引入的外部 .ts/.tsx 文件未被转译的问题
+      compile: {
+        include: [
+          // 主仓终端预览器组件目录
+          path.resolve(__dirname, '..', '..', 'src', 'components', 'terminal-preview'),
+          // 主仓 lib 目录（cn 函数等工具）
+          path.resolve(__dirname, '..', '..', 'src', 'lib'),
+          // 主仓 UI 组件目录（shadcn/ui）
+          path.resolve(__dirname, '..', '..', 'src', 'components', 'ui'),
+          // 主仓 shared 目录（iconfont 资源、类型定义）
+          path.resolve(__dirname, '..', '..', 'src', 'shared'),
+        ],
+      },
+      // webpack 配置链
+      webpackChain(chain) {
+        // 优先从 miniapp-shell 的 node_modules 解析依赖
+        chain.resolve.modules
+          .prepend(miniappNodeModules)
+          .prepend('node_modules')
+
+        // 强制所有 React 相关模块使用同一个实例
+        chain.resolve.alias
+          .set('react', path.resolve(miniappNodeModules, 'react'))
+          .set('react/jsx-runtime', path.resolve(miniappNodeModules, 'react', 'jsx-runtime'))
+          .set('react/jsx-dev-runtime', path.resolve(miniappNodeModules, 'react', 'jsx-dev-runtime'))
+          .set('@tanstack/react-query', path.resolve(miniappNodeModules, '@tanstack', 'react-query'))
+          .set('@tanstack/query-core', path.resolve(
+            miniappNodeModules,
+            '.pnpm',
+            '@tanstack+query-core@5.90.12',
+            'node_modules',
+            '@tanstack',
+            'query-core',
+          ))
+          .set('scheduler', path.resolve(miniappNodeModules, '.pnpm', 'scheduler@0.23.2', 'node_modules', 'scheduler'))
+
+        // iconfont 字体文件路径映射（iconfont.css 使用绝对路径 /fonts/...）
+        const iconfontDir = path.resolve(__dirname, '..', '..', 'src', 'shared', 'assets', 'iconfont')
+        chain.resolve.alias
+          .set('/fonts/iconfont.woff2', path.resolve(iconfontDir, 'iconfont.woff2'))
+          .set('/fonts/iconfont.woff', path.resolve(iconfontDir, 'iconfont.woff'))
+          .set('/fonts/iconfont.ttf', path.resolve(iconfontDir, 'iconfont.ttf'))
+
+        // 跨宿主原语组件：H5 使用 web 实现
+        const webPrimitivesPath = path.resolve(__dirname, '..', '..', 'src', 'components', 'terminal-preview', 'ui', 'primitives', 'web.tsx')
+        const webpack = require('webpack')
+        chain.plugin('replace-primitives').use(webpack.NormalModuleReplacementPlugin, [
+          /primitives/,
+          (resource: { request: string }) => {
+            if (resource.request && (
+              resource.request.includes('/ui/primitives') ||
+              resource.request.endsWith('/primitives') ||
+              resource.request.includes('primitives/index')
+            )) {
+              resource.request = webPrimitivesPath
+            }
+          },
+        ])
+      },
       miniCssExtractPluginOption: {
         ignoreOrder: true,
         filename: 'css/[name].[hash].css',

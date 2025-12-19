@@ -133,21 +133,32 @@ function getAdminToken(): string | null {
   return null
 }
 
+/** 用户 Token 存储 Key（小程序/H5） */
+const USER_TOKEN_KEY = 'kekeling_user_token'
+
 /**
  * 获取用户 Token
  *
- * ⚠️ 当前实现：预览器使用管理后台 token
- * TODO: 终端环境需要从 localStorage/wx.storage 读取 userToken
+ * 环境区分：
+ * - 小程序环境：从 wx.getStorageSync 读取（真实用户登录）
+ * - 预览器环境：使用管理后台 token（模拟预览）
  */
 export function getUserToken(): string | null {
+  // 小程序环境：使用真实用户 token
+  if (typeof wx !== 'undefined' && typeof wx.getStorageSync === 'function') {
+    try {
+      const token = wx.getStorageSync(USER_TOKEN_KEY)
+      if (token) {
+        console.log('[getUserToken] 小程序环境，使用真实 token')
+        return token
+      }
+    } catch (e) {
+      console.warn('[getUserToken] 读取小程序 storage 失败:', e)
+    }
+  }
+
   // 预览器环境：使用管理后台 token
   return getAdminToken()
-
-  // TODO: 终端环境实现
-  // if (typeof wx !== 'undefined') {
-  //   return wx.getStorageSync(USER_TOKEN_KEY) || null
-  // }
-  // return localStorage.getItem(USER_TOKEN_KEY_H5)
 }
 
 /**
@@ -2295,6 +2306,64 @@ export const previewApi = {
       }
       console.warn('[previewApi.getDistributionPromotion] 请求失败，降级 mock:', error)
       return getMockDistributionPromotion()
+    }
+  },
+
+  // ============================================================================
+  // 陪诊员申请 API
+  // ============================================================================
+
+  /**
+   * 获取我的陪诊员申请状态
+   * 接口: GET /escort-apply/my
+   * 通道: userRequest
+   */
+  getMyEscortApplication: async (): Promise<any> => {
+    try {
+      return await userRequest<any>('/escort-apply/my')
+    } catch (error) {
+      console.warn('[previewApi.getMyEscortApplication] 获取申请状态失败:', error)
+      return null
+    }
+  },
+
+  /**
+   * 提交陪诊员申请
+   * 接口: POST /escort-apply
+   * 通道: userRequest
+   */
+  submitEscortApplication: async (data: {
+    name: string
+    phone: string
+    idCard: string
+    avatar?: string
+    gender: string
+    emergencyContact?: string
+    emergencyPhone?: string
+    inviteCode?: string
+  }): Promise<any> => {
+    return await userRequest<any>('/escort-apply', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  },
+
+  /**
+   * 验证陪诊员邀请码
+   * 接口: GET /escort-apply/validate-invite/:code
+   * 通道: 公开（无需认证）
+   */
+  validateEscortInviteCode: async (code: string): Promise<{
+    valid: boolean
+    inviter?: { id: string; name: string; avatar?: string }
+    message?: string
+  }> => {
+    try {
+      const response = await platformRequest<any>(`${getApiUrl()}/escort-apply/validate-invite/${code}`)
+      return response.data || response
+    } catch (error) {
+      console.warn('[previewApi.validateEscortInviteCode] 验证邀请码失败:', error)
+      return { valid: false, message: '验证失败' }
     }
   },
 }

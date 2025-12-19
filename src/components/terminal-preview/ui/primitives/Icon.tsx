@@ -31,10 +31,12 @@ export interface IconProps {
 }
 
 /**
- * Web 端图标组件 - 纯 iconfont 实现
+ * Web 端图标组件 - Unicode 方式实现
  *
- * 所有图标均使用 iconfont 字体渲染
+ * 使用 Unicode 字符渲染图标，与小程序端保持一致
  * 支持 775 个图标
+ *
+ * 渲染方式统一：Web 和小程序都使用 fontFamily + Unicode 字符
  */
 export const Icon = forwardRef<HTMLSpanElement, IconProps>(function Icon(
   { name, size = 24, color = 'currentColor', className = '', style },
@@ -63,12 +65,13 @@ export const Icon = forwardRef<HTMLSpanElement, IconProps>(function Icon(
     )
   }
 
-  // 使用 span + iconfont CSS class 方式渲染（避免 <i> 标签在小程序中的问题）
+  // 使用 Unicode 字符方式渲染（与小程序端保持一致）
   return (
     <span
       ref={ref}
-      className={`iconfont icon-${name} ${className}`.trim()}
+      className={className}
       style={{
+        fontFamily: 'iconfont',
         fontSize: size,
         color,
         lineHeight: 1,
@@ -76,9 +79,13 @@ export const Icon = forwardRef<HTMLSpanElement, IconProps>(function Icon(
         alignItems: 'center',
         justifyContent: 'center',
         fontStyle: 'normal',
+        WebkitFontSmoothing: 'antialiased',
+        MozOsxFontSmoothing: 'grayscale',
         ...style,
       }}
       aria-hidden="true"
-    />
+    >
+      {unicode}
+    </span>
   )
 })

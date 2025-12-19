@@ -67,6 +67,7 @@ export interface ServiceHeaderProps {
   serviceId: string
   themeSettings: ThemeSettings
   colors: ThemeColors
+  isDarkMode: boolean
   isFavorite: boolean
   onFavoriteToggle: () => void
   onBack?: () => void

@@ -66,7 +66,7 @@ export function ReferralRulesActionDialog({
   const [confirmCloseOpen, setConfirmCloseOpen] = useState(false)
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formSchema) as any, // eslint-disable-line @typescript-eslint/no-explicit-any
     defaultValues: {
       name: '',
       type: 'register',

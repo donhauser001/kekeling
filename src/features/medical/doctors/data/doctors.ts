@@ -1,6 +1,6 @@
-import { type Doctor } from './schema'
-
-export const doctors: Doctor[] = [
+// 假数据 - 仅用于开发测试
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const doctors: any[] = [
     {
         id: '1',
         name: '张明远',
