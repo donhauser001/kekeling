@@ -25,7 +25,7 @@ import { getResourceUrl } from '../../utils'
 import { BannerSection } from '../BannerSection'
 
 // 小程序缩放比例（规则 3：只用于视觉尺寸）
-const wxScale = isWxEnvironment() ? 1.15 : 1
+const wxScale = isWxEnvironment() ? 1.1 : 1
 
 type LayoutMode = 'grid' | 'list'
 type SortType = 'default' | 'sales' | 'rating' | 'price-asc' | 'price-desc'

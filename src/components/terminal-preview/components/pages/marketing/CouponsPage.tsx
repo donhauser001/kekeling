@@ -1,24 +1,30 @@
 /**
  * 我的优惠券页面（预览器版本）
  *
- * Step 5: 路由扩展样板 - 跑通最小闭环
- * - page key: 'coupons'
- * - API: previewApi.getMyCoupons()
- * - 数据通道: userRequest
+ * 改造状态: ✅ 已按小程序规范改造
+ * @see docs/小程序页面改造规范.md
  *
- * 支持 marketingData.coupons 覆盖：
- * - 优先使用覆盖数据（即时预览）
- * - 覆盖数据不存在时，调用 previewApi
+ * 改造内容：
+ * - 规则 4: useQuery → useState + useEffect
+ * - 规则 5: 使用跨平台原语 Box/Text/Button/Icon
+ * - 规则 1/2: 布局属性在 style 中定义
+ * - 规则 3: 添加 wxScale 缩放
+ * - 规则 9: emoji → Icon 组件
+ * - 规则 4.1: 添加骨架屏
  */
 
-import { useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useState, useEffect, useMemo } from 'react'
+import { Box, Text, Button, Icon } from '../../../ui/primitives'
+import { isWxEnvironment } from '../../../platform/env'
 import type { ThemeSettings, CouponItemOverride } from '../../../types'
 import { previewApi } from '../../../api'
-import { ListSkeleton } from '../../ListSkeleton'
-import { ErrorRetry } from '../../ErrorRetry'
-import { getRefreshingClass } from '../../PageTransition'
-import { getSecondaryTextClass, getTertiaryTextClass } from '../../../utils'
+
+// ============================================================================
+// 常量定义
+// ============================================================================
+
+const wxScale = isWxEnvironment() ? 1.1 : 1
+const wxSafeAreaTop = isWxEnvironment() ? 44 : 0
 
 // ============================================================================
 // 类型定义
@@ -27,6 +33,7 @@ import { getSecondaryTextClass, getTertiaryTextClass } from '../../../utils'
 export interface CouponsPageProps {
   themeSettings: ThemeSettings
   isDarkMode: boolean
+  onBack?: () => void
   /**
    * 优惠券数据覆盖
    * - undefined: 不覆盖，使用 API 数据
@@ -38,120 +45,172 @@ export interface CouponsPageProps {
   }
 }
 
+/**
+ * 优惠券项
+ * 与后端接口 GET /marketing/coupons/my 返回结构对应
+ */
+export interface CouponItem {
+  id: string
+  name: string
+  description?: string
+  amount: number
+  minAmount: number
+  expireAt: string
+  status: 'available' | 'used' | 'expired'
+}
+
 // ============================================================================
-// 组件实现
+// 骨架屏组件
 // ============================================================================
 
-export function CouponsPage({ themeSettings, isDarkMode, couponsOverride }: CouponsPageProps) {
-  // 是否使用覆盖数据
-  const hasOverride = couponsOverride !== undefined
+function CouponsPageSkeleton({
+  primaryColor,
+  isDarkMode,
+}: {
+  primaryColor: string
+  isDarkMode: boolean
+}) {
+  const bgColor = isDarkMode ? '#1a1a1a' : '#f5f7fa'
+  const cardBg = isDarkMode ? '#2a2a2a' : '#ffffff'
+  const skeletonBg = isDarkMode ? '#3a3a3a' : '#e5e7eb'
 
-  // 获取优惠券数据（仅在无覆盖时调用 API）
-  const {
-    data: apiCouponsData,
-    isLoading: apiLoading,
-    isError: apiError,
-    isFetching: apiFetching,
-    refetch,
-  } = useQuery({
-    queryKey: ['preview', 'coupons', 'my'],
-    queryFn: previewApi.getMyCoupons,
-    staleTime: 60 * 1000,
-    enabled: !hasOverride, // 有覆盖数据时不请求 API
-  })
-
-  // 合并数据：覆盖优先
-  const coupons = useMemo<CouponItem[]>(() => {
-    if (hasOverride && couponsOverride?.items) {
-      // 覆盖数据转换为完整类型（提供默认值）
-      return couponsOverride.items.map((coupon) => ({
-        id: coupon.id,
-        name: coupon.name ?? '优惠券',
-        description: coupon.description,
-        amount: coupon.amount ?? 0,
-        minAmount: coupon.minAmount ?? 0,
-        expireAt: coupon.expireAt ?? '2099-12-31',
-        status: coupon.status ?? 'available',
-      }))
-    }
-    return apiCouponsData?.items ?? []
-  }, [hasOverride, couponsOverride, apiCouponsData])
-
-  // 状态计算
-  const isLoading = !hasOverride && apiLoading
-  const isError = !hasOverride && apiError
-  const isFetching = !hasOverride && apiFetching
-  const isEmpty = !isLoading && coupons.length === 0
+  const skeletonStyle = {
+    animation: 'pulse 1.5s ease-in-out infinite',
+  }
 
   return (
-    <div
-      className="min-h-full"
+    <Box
       style={{
-        backgroundColor: isDarkMode ? '#1a1a1a' : '#f5f7fa',
+        minHeight: '100%',
+        backgroundColor: bgColor,
       }}
     >
-      {/* 页面标题 */}
-      <div
-        className="sticky top-0 z-10 px-4 py-3"
+      {/* 顶部导航栏骨架 */}
+      <Box
         style={{
-          backgroundColor: themeSettings.primaryColor,
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
+          paddingTop: wxSafeAreaTop,
+          backgroundColor: primaryColor,
         }}
       >
-        <h1 className="text-lg font-semibold text-white text-center">
-          我的优惠券
-        </h1>
-      </div>
-
-      {/* 内容区 */}
-      <div className="px-4 py-4">
-        {/* 加载中 - 骨架屏 */}
-        {isLoading && (
-          <ListSkeleton count={3} variant="card" isDarkMode={isDarkMode} />
-        )}
-
-        {/* 请求失败 - 带重试按钮 */}
-        {isError && (
-          <ErrorRetry
-            onRetry={() => refetch()}
-            isDarkMode={isDarkMode}
-            primaryColor={themeSettings.primaryColor}
+        <Box
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingLeft: 16 * wxScale,
+            paddingRight: 16 * wxScale,
+            paddingTop: 12 * wxScale,
+            paddingBottom: 12 * wxScale,
+          }}
+        >
+          <Box
+            style={{
+              width: 100 * wxScale,
+              height: 20 * wxScale,
+              borderRadius: 4 * wxScale,
+              backgroundColor: 'rgba(255,255,255,0.3)',
+              ...skeletonStyle,
+            }}
           />
-        )}
+        </Box>
+      </Box>
 
-        {/* 空态 */}
-        {isEmpty && !isError && (
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="text-5xl mb-3">🎫</div>
-            <div className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>
-              暂无优惠券
-            </div>
-            <button
-              className="mt-4 px-6 py-2 rounded-full text-white text-sm"
-              style={{ backgroundColor: themeSettings.primaryColor }}
+      {/* 优惠券卡片骨架 */}
+      <Box
+        style={{
+          paddingLeft: 16 * wxScale,
+          paddingRight: 16 * wxScale,
+          paddingTop: 16 * wxScale,
+        }}
+      >
+        {[1, 2, 3].map(item => (
+          <Box
+            key={item}
+            style={{
+              display: 'flex',
+              borderRadius: 8 * wxScale,
+              overflow: 'hidden',
+              backgroundColor: cardBg,
+              marginBottom: 12 * wxScale,
+            }}
+          >
+            {/* 左侧金额区骨架 */}
+            <Box
+              style={{
+                width: 96 * wxScale,
+                paddingTop: 16 * wxScale,
+                paddingBottom: 16 * wxScale,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: skeletonBg,
+                ...skeletonStyle,
+              }}
             >
-              去领取
-            </button>
-          </div>
-        )}
-
-        {/* 优惠券列表 - Step 14.10-C: 刷新过渡效果 */}
-        {!isLoading && !isError && coupons.length > 0 && (
-          <div className={`space-y-3 ${getRefreshingClass(isFetching, true)}`}>
-            {coupons.map((coupon) => (
-              <CouponCard
-                key={coupon.id}
-                coupon={coupon}
-                themeSettings={themeSettings}
-                isDarkMode={isDarkMode}
+              <Box
+                style={{
+                  width: 48 * wxScale,
+                  height: 24 * wxScale,
+                  borderRadius: 4 * wxScale,
+                  backgroundColor: 'rgba(255,255,255,0.3)',
+                }}
               />
-            ))}
-          </div>
-        )}
-      </div>
+              <Box
+                style={{
+                  width: 60 * wxScale,
+                  height: 12 * wxScale,
+                  borderRadius: 4 * wxScale,
+                  backgroundColor: 'rgba(255,255,255,0.3)',
+                  marginTop: 8 * wxScale,
+                }}
+              />
+            </Box>
 
-      {/* 底部留白 */}
-      <div className="h-16" />
-    </div>
+            {/* 右侧信息区骨架 */}
+            <Box
+              style={{
+                flex: 1,
+                padding: 12 * wxScale,
+              }}
+            >
+              <Box
+                style={{
+                  width: '60%',
+                  height: 16 * wxScale,
+                  borderRadius: 4 * wxScale,
+                  backgroundColor: skeletonBg,
+                  ...skeletonStyle,
+                }}
+              />
+              <Box
+                style={{
+                  width: '80%',
+                  height: 12 * wxScale,
+                  borderRadius: 4 * wxScale,
+                  backgroundColor: skeletonBg,
+                  marginTop: 8 * wxScale,
+                  ...skeletonStyle,
+                }}
+              />
+              <Box
+                style={{
+                  width: '50%',
+                  height: 12 * wxScale,
+                  borderRadius: 4 * wxScale,
+                  backgroundColor: skeletonBg,
+                  marginTop: 8 * wxScale,
+                  ...skeletonStyle,
+                }}
+              />
+            </Box>
+          </Box>
+        ))}
+      </Box>
+    </Box>
   )
 }
 
@@ -170,75 +229,401 @@ function CouponCard({ coupon, themeSettings, isDarkMode }: CouponCardProps) {
   const isUsed = coupon.status === 'used'
   const isDisabled = isExpired || isUsed
 
+  const cardBg = isDarkMode ? '#2a2a2a' : '#ffffff'
+  const textPrimary = isDarkMode ? '#f3f4f6' : '#111827'
+  const textSecondary = isDarkMode ? '#9ca3af' : '#6b7280'
+  const textMuted = isDarkMode ? '#6b7280' : '#9ca3af'
+
   return (
-    <div
-      className={`relative rounded-lg overflow-hidden ${isDisabled ? 'opacity-60' : ''
-        }`}
+    <Box
       style={{
-        backgroundColor: isDarkMode ? '#2a2a2a' : '#fff',
+        position: 'relative',
+        borderRadius: 8 * wxScale,
+        overflow: 'hidden',
+        backgroundColor: cardBg,
+        opacity: isDisabled ? 0.6 : 1,
+        marginBottom: 12 * wxScale,
       }}
     >
-      <div className="flex">
+      <Box
+        style={{
+          display: 'flex',
+        }}
+      >
         {/* 左侧金额区 */}
-        <div
-          className="flex flex-col items-center justify-center w-24 py-4"
+        <Box
           style={{
-            backgroundColor: isDisabled
-              ? '#9ca3af'
-              : themeSettings.primaryColor,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 96 * wxScale,
+            paddingTop: 16 * wxScale,
+            paddingBottom: 16 * wxScale,
+            backgroundColor: isDisabled ? '#9ca3af' : themeSettings.primaryColor,
           }}
         >
-          <div className="flex items-baseline text-white">
-            <span className="text-sm">¥</span>
-            <span className="text-2xl font-bold">{coupon.amount}</span>
-          </div>
-          <div className="text-white/80 text-xs mt-1">
+          <Box
+            style={{
+              display: 'flex',
+              alignItems: 'baseline',
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 14 * wxScale,
+                color: '#ffffff',
+              }}
+            >
+              ¥
+            </Text>
+            <Text
+              style={{
+                fontSize: 24 * wxScale,
+                fontWeight: 700,
+                color: '#ffffff',
+              }}
+            >
+              {coupon.amount}
+            </Text>
+          </Box>
+          <Text
+            style={{
+              fontSize: 12 * wxScale,
+              color: 'rgba(255,255,255,0.8)',
+              marginTop: 4 * wxScale,
+            }}
+          >
             满{coupon.minAmount}可用
-          </div>
-        </div>
+          </Text>
+        </Box>
 
         {/* 右侧信息区 */}
-        <div className="flex-1 p-3">
-          <div className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+        <Box
+          style={{
+            flex: 1,
+            padding: 12 * wxScale,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 14 * wxScale,
+              fontWeight: 500,
+              color: textPrimary,
+            }}
+          >
             {coupon.name}
-          </div>
-          <div className={`text-xs mt-1 ${getSecondaryTextClass(isDarkMode)}`}>
+          </Text>
+          <Text
+            style={{
+              fontSize: 12 * wxScale,
+              color: textSecondary,
+              marginTop: 4 * wxScale,
+            }}
+          >
             {coupon.description || '全场通用'}
-          </div>
-          <div className={`text-xs mt-2 ${getTertiaryTextClass(isDarkMode)}`}>
+          </Text>
+          <Text
+            style={{
+              fontSize: 12 * wxScale,
+              color: textMuted,
+              marginTop: 8 * wxScale,
+            }}
+          >
             有效期至 {coupon.expireAt}
-          </div>
-        </div>
+          </Text>
+        </Box>
 
         {/* 状态标签 */}
         {isDisabled && (
-          <div className="absolute top-2 right-2">
-            <span className="px-2 py-0.5 bg-gray-400 text-white text-xs rounded">
+          <Box
+            style={{
+              position: 'absolute',
+              top: 8 * wxScale,
+              right: 8 * wxScale,
+              paddingLeft: 8 * wxScale,
+              paddingRight: 8 * wxScale,
+              paddingTop: 2 * wxScale,
+              paddingBottom: 2 * wxScale,
+              borderRadius: 4 * wxScale,
+              backgroundColor: '#9ca3af',
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 12 * wxScale,
+                color: '#ffffff',
+              }}
+            >
               {isUsed ? '已使用' : '已过期'}
-            </span>
-          </div>
+            </Text>
+          </Box>
         )}
-      </div>
-    </div>
+      </Box>
+    </Box>
   )
 }
 
 // ============================================================================
-// 类型导出（与 API 类型保持一致）
+// 主组件
 // ============================================================================
 
-/**
- * 优惠券项
- * 与后端接口 GET /marketing/coupons/my 返回结构对应
- */
-export interface CouponItem {
-  id: string
-  name: string
-  description?: string
-  amount: number
-  minAmount: number
-  expireAt: string
-  status: 'available' | 'used' | 'expired'
+export function CouponsPage({
+  themeSettings,
+  isDarkMode,
+  onBack,
+  couponsOverride,
+}: CouponsPageProps) {
+  // 是否使用覆盖数据
+  const hasOverride = couponsOverride !== undefined
+
+  // ============================================================================
+  // 数据状态（规则 4: useState + useEffect 替代 useQuery）
+  // ============================================================================
+  const [apiCouponsData, setApiCouponsData] = useState<{ items: CouponItem[]; total: number } | null>(null)
+  const [isLoading, setIsLoading] = useState(!hasOverride)
+  const [isError, setIsError] = useState(false)
+
+  // 获取优惠券数据
+  useEffect(() => {
+    if (hasOverride) {
+      setIsLoading(false)
+      return
+    }
+
+    setIsLoading(true)
+    setIsError(false)
+
+    previewApi.getMyCoupons()
+      .then(data => {
+        setApiCouponsData(data)
+        setIsLoading(false)
+      })
+      .catch(err => {
+        console.error('[CouponsPage] 加载优惠券失败:', err)
+        setIsError(true)
+        setIsLoading(false)
+      })
+  }, [hasOverride])
+
+  // 重试加载
+  const handleRetry = () => {
+    setIsLoading(true)
+    setIsError(false)
+
+    previewApi.getMyCoupons()
+      .then(data => {
+        setApiCouponsData(data)
+        setIsLoading(false)
+      })
+      .catch(err => {
+        console.error('[CouponsPage] 重试加载失败:', err)
+        setIsError(true)
+        setIsLoading(false)
+      })
+  }
+
+  // 合并数据：覆盖优先
+  const coupons = useMemo<CouponItem[]>(() => {
+    if (hasOverride && couponsOverride?.items) {
+      // 覆盖数据转换为完整类型（提供默认值）
+      return couponsOverride.items.map((coupon) => ({
+        id: coupon.id,
+        name: coupon.name ?? '优惠券',
+        description: coupon.description,
+        amount: coupon.amount ?? 0,
+        minAmount: coupon.minAmount ?? 0,
+        expireAt: coupon.expireAt ?? '2099-12-31',
+        status: coupon.status ?? 'available',
+      }))
+    }
+    return apiCouponsData?.items ?? []
+  }, [hasOverride, couponsOverride, apiCouponsData])
+
+  // 空态判断
+  const isEmpty = !isLoading && !isError && coupons.length === 0
+
+  // 颜色定义
+  const bgColor = isDarkMode ? '#1a1a1a' : '#f5f7fa'
+  const textMuted = isDarkMode ? '#6b7280' : '#9ca3af'
+  const primaryColor = themeSettings.primaryColor
+
+  // 加载中显示骨架屏
+  if (isLoading) {
+    return (
+      <CouponsPageSkeleton
+        primaryColor={primaryColor}
+        isDarkMode={isDarkMode}
+      />
+    )
+  }
+
+  return (
+    <Box
+      style={{
+        minHeight: '100%',
+        backgroundColor: bgColor,
+      }}
+    >
+      {/* 页面标题 */}
+      <Box
+        style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
+          paddingTop: wxSafeAreaTop,
+          backgroundColor: primaryColor,
+        }}
+      >
+        <Box
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            paddingLeft: 12 * wxScale,
+            paddingRight: 12 * wxScale,
+            paddingTop: 12 * wxScale,
+            paddingBottom: 12 * wxScale,
+          }}
+        >
+          {/* 返回按钮 */}
+          <Box
+            onClick={onBack}
+            style={{
+              width: 32 * wxScale,
+              height: 32 * wxScale,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Icon name="left" size={20 * wxScale} color="#fff" />
+          </Box>
+
+          {/* 标题 */}
+          <Text
+            style={{
+              fontSize: 16 * wxScale,
+              fontWeight: 600,
+              color: '#ffffff',
+            }}
+          >
+            我的优惠券
+          </Text>
+
+          {/* 占位 */}
+          <Box style={{ width: 32 * wxScale }} />
+        </Box>
+      </Box>
+
+      {/* 内容区 */}
+      <Box
+        style={{
+          paddingLeft: 16 * wxScale,
+          paddingRight: 16 * wxScale,
+          paddingTop: 16 * wxScale,
+        }}
+      >
+        {/* 请求失败 - 带重试按钮 */}
+        {isError && (
+          <Box
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              paddingTop: 48 * wxScale,
+              paddingBottom: 48 * wxScale,
+            }}
+          >
+            <Icon name="close-one" size={48 * wxScale} color="#ef4444" />
+            <Text
+              style={{
+                fontSize: 14 * wxScale,
+                color: textMuted,
+                marginTop: 12 * wxScale,
+              }}
+            >
+              加载失败，请重试
+            </Text>
+            <Button
+              onClick={handleRetry}
+              style={{
+                marginTop: 16 * wxScale,
+                paddingLeft: 24 * wxScale,
+                paddingRight: 24 * wxScale,
+                paddingTop: isWxEnvironment() ? 8 * wxScale : 6,
+                paddingBottom: isWxEnvironment() ? 8 * wxScale : 6,
+                borderRadius: 9999,
+                backgroundColor: primaryColor,
+              }}
+            >
+              <Text style={{ fontSize: 14 * wxScale, color: '#ffffff' }}>
+                重新加载
+              </Text>
+            </Button>
+          </Box>
+        )}
+
+        {/* 空态 */}
+        {isEmpty && (
+          <Box
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              paddingTop: 48 * wxScale,
+              paddingBottom: 48 * wxScale,
+            }}
+          >
+            <Icon name="coupon" size={48 * wxScale} color={textMuted} />
+            <Text
+              style={{
+                fontSize: 14 * wxScale,
+                color: textMuted,
+                marginTop: 12 * wxScale,
+              }}
+            >
+              暂无优惠券
+            </Text>
+            <Button
+              style={{
+                marginTop: 16 * wxScale,
+                paddingLeft: 24 * wxScale,
+                paddingRight: 24 * wxScale,
+                paddingTop: isWxEnvironment() ? 8 * wxScale : 6,
+                paddingBottom: isWxEnvironment() ? 8 * wxScale : 6,
+                borderRadius: 9999,
+                backgroundColor: primaryColor,
+              }}
+            >
+              <Text style={{ fontSize: 14 * wxScale, color: '#ffffff' }}>
+                去领取
+              </Text>
+            </Button>
+          </Box>
+        )}
+
+        {/* 优惠券列表 */}
+        {!isError && coupons.length > 0 && (
+          <Box>
+            {coupons.map((coupon) => (
+              <CouponCard
+                key={coupon.id}
+                coupon={coupon}
+                themeSettings={themeSettings}
+                isDarkMode={isDarkMode}
+              />
+            ))}
+          </Box>
+        )}
+      </Box>
+
+      {/* 底部留白 */}
+      <Box style={{ height: 64 * wxScale }} />
+    </Box>
+  )
 }
 
 /**
@@ -248,4 +633,3 @@ export interface CouponsResponse {
   items: CouponItem[]
   total: number
 }
-

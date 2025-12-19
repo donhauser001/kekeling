@@ -15,7 +15,7 @@ import type {
   CouponsResponse,
   EscortListItem,
   EscortDetail,
-} from '../types'
+} from '../api/types'
 
 // ============================================================================
 // 会员相关 Mock

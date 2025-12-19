@@ -68,7 +68,6 @@ export function RolesDetailSheet({
     benefitGroups,
     open,
     onOpenChange,
-    getBenefitName,
 }: RolesDetailSheetProps) {
     if (!category) return null
 

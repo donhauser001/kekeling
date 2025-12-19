@@ -4,11 +4,23 @@
  * 用户管理就诊人信息
  * - page key: 'patients'
  * - 支持添加、编辑、删除、设为默认
+ *
+ * 改造状态: ✅ 已按小程序规范改造
+ * @see docs/小程序页面改造规范.md
  */
 
-import { useState } from 'react'
-import { ArrowLeft, Plus, User, Phone, CreditCard, Star, ChevronRight, MoreHorizontal, Trash2, Edit, UserCheck } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Box, Text, ScrollView, Icon } from '../../ui/primitives'
+import { isWxEnvironment } from '../../platform/env'
 import type { ThemeSettings } from '../../types'
+import { PatientsPageSkeleton } from '../PatientsPageSkeleton'
+
+// ============================================================================
+// 常量定义
+// ============================================================================
+
+const wxScale = isWxEnvironment() ? 1.1 : 1
+const wxSafeAreaTop = isWxEnvironment() ? 44 : 0
 
 // ============================================================================
 // 类型定义
@@ -68,7 +80,266 @@ const mockPatients: Patient[] = [
 ]
 
 // ============================================================================
-// 组件实现
+// 子组件
+// ============================================================================
+
+/** 患者卡片 */
+function PatientCard({
+  patient,
+  isMenuOpen,
+  onToggleMenu,
+  onEdit,
+  onSetDefault,
+  onDelete,
+  themeSettings,
+  isDarkMode,
+}: {
+  patient: Patient
+  isMenuOpen: boolean
+  onToggleMenu: () => void
+  onEdit: () => void
+  onSetDefault: () => void
+  onDelete: () => void
+  themeSettings: ThemeSettings
+  isDarkMode: boolean
+}) {
+  const cardBg = isDarkMode ? '#2a2a2a' : '#ffffff'
+  const textPrimary = isDarkMode ? '#f3f4f6' : '#111827'
+  const textSecondary = isDarkMode ? '#9ca3af' : '#6b7280'
+  const textMuted = isDarkMode ? '#6b7280' : '#9ca3af'
+  const borderColor = isDarkMode ? '#3a3a3a' : '#e5e7eb'
+  const primaryColor = themeSettings.primaryColor
+
+  return (
+    <Box
+      style={{
+        borderRadius: 12 * wxScale,
+        overflow: 'hidden',
+        position: 'relative',
+        backgroundColor: cardBg,
+        marginBottom: 12 * wxScale,
+      }}
+    >
+      {/* 主内容 */}
+      <Box
+        onClick={onEdit}
+        style={{
+          padding: 16 * wxScale,
+        }}
+      >
+        {/* 头部：姓名 + 标签 */}
+        <Box
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: 12 * wxScale,
+          }}
+        >
+          <Box style={{ display: 'flex', alignItems: 'center', gap: 8 * wxScale }}>
+            <Box
+              style={{
+                width: 40 * wxScale,
+                height: 40 * wxScale,
+                borderRadius: 20 * wxScale,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: `${primaryColor}20`,
+              }}
+            >
+              <Icon name="user" size={20 * wxScale} color={primaryColor} />
+            </Box>
+            <Box>
+              <Box style={{ display: 'flex', alignItems: 'center', gap: 8 * wxScale }}>
+                <Text style={{ fontSize: 14 * wxScale, fontWeight: 500, color: textPrimary }}>
+                  {patient.name}
+                </Text>
+                <Box
+                  style={{
+                    paddingLeft: 6 * wxScale,
+                    paddingRight: 6 * wxScale,
+                    paddingTop: 2 * wxScale,
+                    paddingBottom: 2 * wxScale,
+                    borderRadius: 4 * wxScale,
+                    backgroundColor: patient.gender === 'male' ? '#e0f2fe' : '#fce7f3',
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 10 * wxScale,
+                      color: patient.gender === 'male' ? '#0284c7' : '#db2777',
+                    }}
+                  >
+                    {patient.gender === 'male' ? '男' : '女'}
+                  </Text>
+                </Box>
+                <Text style={{ fontSize: 12 * wxScale, color: textSecondary }}>
+                  {patient.age}岁
+                </Text>
+              </Box>
+              <Text style={{ fontSize: 12 * wxScale, color: textMuted, marginTop: 2 * wxScale }}>
+                {patient.relation}
+              </Text>
+            </Box>
+          </Box>
+
+          {/* 默认标签 + 操作按钮 */}
+          <Box style={{ display: 'flex', alignItems: 'center', gap: 8 * wxScale }}>
+            {patient.isDefault && (
+              <Box
+                style={{
+                  paddingLeft: 8 * wxScale,
+                  paddingRight: 8 * wxScale,
+                  paddingTop: 2 * wxScale,
+                  paddingBottom: 2 * wxScale,
+                  borderRadius: 9999,
+                  backgroundColor: primaryColor,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2 * wxScale,
+                }}
+              >
+                <Icon name="star" size={12 * wxScale} color="#fff" />
+                <Text style={{ fontSize: 10 * wxScale, color: '#fff' }}>默认</Text>
+              </Box>
+            )}
+            <Box
+              onClick={(e: React.MouseEvent) => {
+                e.stopPropagation()
+                onToggleMenu()
+              }}
+              style={{
+                width: 32 * wxScale,
+                height: 32 * wxScale,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: 16 * wxScale,
+              }}
+            >
+              <Icon name="more-one" size={16 * wxScale} color={textSecondary} />
+            </Box>
+          </Box>
+        </Box>
+
+        {/* 详细信息 */}
+        <Box style={{ marginLeft: 48 * wxScale }}>
+          <Box style={{ display: 'flex', alignItems: 'center', gap: 8 * wxScale, marginBottom: 8 * wxScale }}>
+            <Icon name="phone" size={14 * wxScale} color={textMuted} />
+            <Text style={{ fontSize: 12 * wxScale, color: textSecondary }}>{patient.phone}</Text>
+          </Box>
+          {patient.idCard && (
+            <Box style={{ display: 'flex', alignItems: 'center', gap: 8 * wxScale }}>
+              <Icon name="id-card-h" size={14 * wxScale} color={textMuted} />
+              <Text style={{ fontSize: 12 * wxScale, color: textSecondary }}>{patient.idCard}</Text>
+            </Box>
+          )}
+        </Box>
+
+        {/* 编辑入口 */}
+        <Box
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            marginTop: 12 * wxScale,
+            paddingTop: 12 * wxScale,
+            borderTopWidth: 1,
+            borderTopColor: borderColor,
+            borderTopStyle: 'solid',
+          }}
+        >
+          <Box style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Text style={{ fontSize: 12 * wxScale, color: textMuted }}>编辑信息</Text>
+            <Icon name="right" size={16 * wxScale} color={textMuted} />
+          </Box>
+        </Box>
+      </Box>
+
+      {/* 操作菜单下拉 */}
+      {isMenuOpen && (
+        <Box
+          style={{
+            position: 'absolute',
+            right: 12 * wxScale,
+            top: 56 * wxScale,
+            zIndex: 10,
+            borderRadius: 8 * wxScale,
+            paddingTop: 4 * wxScale,
+            paddingBottom: 4 * wxScale,
+            minWidth: 120 * wxScale,
+            backgroundColor: cardBg,
+            borderWidth: 1,
+            borderColor: borderColor,
+            borderStyle: 'solid',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          }}
+        >
+          <Box
+            onClick={(e: React.MouseEvent) => {
+              e.stopPropagation()
+              onEdit()
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8 * wxScale,
+              paddingLeft: 12 * wxScale,
+              paddingRight: 12 * wxScale,
+              paddingTop: 8 * wxScale,
+              paddingBottom: 8 * wxScale,
+            }}
+          >
+            <Icon name="edit" size={16 * wxScale} color={textSecondary} />
+            <Text style={{ fontSize: 14 * wxScale, color: textPrimary }}>编辑</Text>
+          </Box>
+          {!patient.isDefault && (
+            <Box
+              onClick={(e: React.MouseEvent) => {
+                e.stopPropagation()
+                onSetDefault()
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8 * wxScale,
+                paddingLeft: 12 * wxScale,
+                paddingRight: 12 * wxScale,
+                paddingTop: 8 * wxScale,
+                paddingBottom: 8 * wxScale,
+              }}
+            >
+              <Icon name="check-one" size={16 * wxScale} color={primaryColor} />
+              <Text style={{ fontSize: 14 * wxScale, color: primaryColor }}>设为默认</Text>
+            </Box>
+          )}
+          <Box
+            onClick={(e: React.MouseEvent) => {
+              e.stopPropagation()
+              onDelete()
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8 * wxScale,
+              paddingLeft: 12 * wxScale,
+              paddingRight: 12 * wxScale,
+              paddingTop: 8 * wxScale,
+              paddingBottom: 8 * wxScale,
+            }}
+          >
+            <Icon name="delete" size={16 * wxScale} color="#ef4444" />
+            <Text style={{ fontSize: 14 * wxScale, color: '#ef4444' }}>删除</Text>
+          </Box>
+        </Box>
+      )}
+    </Box>
+  )
+}
+
+// ============================================================================
+// 主组件
 // ============================================================================
 
 export function PatientsPage({
@@ -79,16 +350,36 @@ export function PatientsPage({
 }: PatientsPageProps) {
   // 操作菜单状态
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null)
-  // 就诊人列表状态（用于模拟删除、设为默认等操作）
-  const [patients, setPatients] = useState<Patient[]>(mockPatients)
+  // 就诊人列表状态
+  const [patients, setPatients] = useState<Patient[]>([])
+  // 加载状态（用于骨架屏）
+  const [isLoading, setIsLoading] = useState(true)
 
   // 颜色定义
   const bgColor = isDarkMode ? '#1a1a1a' : '#f5f7fa'
-  const cardBg = isDarkMode ? '#2a2a2a' : '#ffffff'
-  const textPrimary = isDarkMode ? '#f3f4f6' : '#111827'
-  const textSecondary = isDarkMode ? '#9ca3af' : '#6b7280'
   const textMuted = isDarkMode ? '#6b7280' : '#9ca3af'
-  const borderColor = isDarkMode ? '#3a3a3a' : '#e5e7eb'
+  const primaryColor = themeSettings.primaryColor
+
+  // 模拟异步加载数据
+  useEffect(() => {
+    setIsLoading(true)
+    // 模拟 API 请求延迟
+    const timer = setTimeout(() => {
+      setPatients(mockPatients)
+      setIsLoading(false)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [])
+
+  // 加载中显示骨架屏
+  if (isLoading) {
+    return (
+      <PatientsPageSkeleton
+        primaryColor={primaryColor}
+        isDarkMode={isDarkMode}
+      />
+    )
+  }
 
   // 设为默认
   const handleSetDefault = (id: string) => {
@@ -117,210 +408,158 @@ export function PatientsPage({
   }
 
   return (
-    <div style={{ backgroundColor: bgColor }} className='min-h-full pb-4'>
+    <Box
+      style={{
+        minHeight: '100%',
+        backgroundColor: bgColor,
+        paddingBottom: 16 * wxScale,
+      }}
+    >
       {/* 顶部导航栏 */}
-      <div
-        className='sticky top-0 z-20 flex items-center justify-between px-3 py-3'
-        style={{ backgroundColor: themeSettings.primaryColor }}
+      <Box
+        style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 20,
+          paddingTop: wxSafeAreaTop,
+          backgroundColor: primaryColor,
+        }}
       >
-        <button
-          onClick={onBack}
-          className='w-8 h-8 flex items-center justify-center text-white'
+        <Box
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            paddingLeft: 12 * wxScale,
+            paddingRight: 12 * wxScale,
+            paddingTop: 12 * wxScale,
+            paddingBottom: 12 * wxScale,
+          }}
         >
-          <ArrowLeft className='h-5 w-5' />
-        </button>
-        <h1 className='text-base font-semibold text-white'>就诊人管理</h1>
-        <button
-          onClick={handleAdd}
-          className='w-8 h-8 flex items-center justify-center text-white'
-        >
-          <Plus className='h-5 w-5' />
-        </button>
-      </div>
-
-      {/* 就诊人列表 */}
-      <div className='px-3 pt-3 space-y-3'>
-        {patients.length === 0 ? (
-          <div className='flex flex-col items-center justify-center py-16'>
-            <User className='h-16 w-16' style={{ color: textMuted }} />
-            <p className='mt-4 text-sm' style={{ color: textMuted }}>
-              暂无就诊人信息
-            </p>
-            <button
-              onClick={handleAdd}
-              className='mt-4 px-6 py-2 rounded-full text-sm text-white'
-              style={{ backgroundColor: themeSettings.primaryColor }}
-            >
-              添加就诊人
-            </button>
-          </div>
-        ) : (
-          patients.map(patient => (
-            <div
-              key={patient.id}
-              className='rounded-xl overflow-hidden relative'
-              style={{ backgroundColor: cardBg }}
-            >
-              {/* 主内容 */}
-              <div
-                className='p-4 cursor-pointer hover:opacity-90 transition-opacity'
-                onClick={() => handleEdit(patient.id)}
-              >
-                {/* 头部：姓名 + 标签 */}
-                <div className='flex items-center justify-between mb-3'>
-                  <div className='flex items-center gap-2'>
-                    <div
-                      className='w-10 h-10 rounded-full flex items-center justify-center'
-                      style={{ backgroundColor: `${themeSettings.primaryColor}20` }}
-                    >
-                      <User className='h-5 w-5' style={{ color: themeSettings.primaryColor }} />
-                    </div>
-                    <div>
-                      <div className='flex items-center gap-2'>
-                        <span className='text-sm font-medium' style={{ color: textPrimary }}>
-                          {patient.name}
-                        </span>
-                        <span
-                          className='px-1.5 py-0.5 rounded text-[10px]'
-                          style={{
-                            backgroundColor: patient.gender === 'male' ? '#e0f2fe' : '#fce7f3',
-                            color: patient.gender === 'male' ? '#0284c7' : '#db2777',
-                          }}
-                        >
-                          {patient.gender === 'male' ? '男' : '女'}
-                        </span>
-                        <span className='text-xs' style={{ color: textSecondary }}>
-                          {patient.age}岁
-                        </span>
-                      </div>
-                      <span className='text-xs' style={{ color: textMuted }}>
-                        {patient.relation}
-                      </span>
-                    </div>
-                  </div>
-                  {/* 默认标签 + 操作按钮 */}
-                  <div className='flex items-center gap-2'>
-                    {patient.isDefault && (
-                      <span
-                        className='px-2 py-0.5 rounded-full text-[10px] text-white flex items-center gap-0.5'
-                        style={{ backgroundColor: themeSettings.primaryColor }}
-                      >
-                        <Star className='h-3 w-3' />
-                        默认
-                      </span>
-                    )}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setActiveMenuId(activeMenuId === patient.id ? null : patient.id)
-                      }}
-                      className='w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors'
-                    >
-                      <MoreHorizontal className='h-4 w-4' style={{ color: textSecondary }} />
-                    </button>
-                  </div>
-                </div>
-
-                {/* 详细信息 */}
-                <div className='space-y-2 ml-12'>
-                  <div className='flex items-center gap-2'>
-                    <Phone className='h-3.5 w-3.5' style={{ color: textMuted }} />
-                    <span className='text-xs' style={{ color: textSecondary }}>
-                      {patient.phone}
-                    </span>
-                  </div>
-                  {patient.idCard && (
-                    <div className='flex items-center gap-2'>
-                      <CreditCard className='h-3.5 w-3.5' style={{ color: textMuted }} />
-                      <span className='text-xs' style={{ color: textSecondary }}>
-                        {patient.idCard}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                {/* 编辑入口 */}
-                <div
-                  className='flex items-center justify-end mt-3 pt-3 border-t'
-                  style={{ borderColor }}
-                >
-                  <div className='flex items-center gap-0.5' style={{ color: textMuted }}>
-                    <span className='text-xs'>编辑信息</span>
-                    <ChevronRight className='h-4 w-4' />
-                  </div>
-                </div>
-              </div>
-
-              {/* 操作菜单下拉 */}
-              {activeMenuId === patient.id && (
-                <div
-                  className='absolute right-3 top-14 z-10 rounded-lg shadow-lg py-1 min-w-[120px]'
-                  style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
-                >
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleEdit(patient.id)
-                    }}
-                    className='w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-100 transition-colors'
-                  >
-                    <Edit className='h-4 w-4' style={{ color: textSecondary }} />
-                    <span className='text-sm' style={{ color: textPrimary }}>编辑</span>
-                  </button>
-                  {!patient.isDefault && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleSetDefault(patient.id)
-                      }}
-                      className='w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-100 transition-colors'
-                    >
-                      <UserCheck className='h-4 w-4' style={{ color: themeSettings.primaryColor }} />
-                      <span className='text-sm' style={{ color: themeSettings.primaryColor }}>设为默认</span>
-                    </button>
-                  )}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleDelete(patient.id)
-                    }}
-                    className='w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-100 transition-colors'
-                  >
-                    <Trash2 className='h-4 w-4 text-red-500' />
-                    <span className='text-sm text-red-500'>删除</span>
-                  </button>
-                </div>
-              )}
-            </div>
-          ))
-        )}
-      </div>
-
-      {/* 底部添加按钮 */}
-      {patients.length > 0 && (
-        <div className='px-3 mt-4'>
-          <button
-            onClick={handleAdd}
-            className='w-full py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2'
+          <Box
+            onClick={onBack}
             style={{
-              backgroundColor: `${themeSettings.primaryColor}10`,
-              color: themeSettings.primaryColor,
-              border: `1px dashed ${themeSettings.primaryColor}`,
+              width: 32 * wxScale,
+              height: 32 * wxScale,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
-            <Plus className='h-4 w-4' />
-            添加就诊人
-          </button>
-        </div>
-      )}
+            <Icon name="left" size={20 * wxScale} color="#fff" />
+          </Box>
+          <Text style={{ fontSize: 16 * wxScale, fontWeight: 600, color: '#fff' }}>
+            就诊人管理
+          </Text>
+          <Box
+            onClick={handleAdd}
+            style={{
+              width: 32 * wxScale,
+              height: 32 * wxScale,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Icon name="plus" size={20 * wxScale} color="#fff" />
+          </Box>
+        </Box>
+      </Box>
+
+      {/* 就诊人列表 */}
+      <ScrollView
+        style={{
+          paddingLeft: 12 * wxScale,
+          paddingRight: 12 * wxScale,
+          paddingTop: 12 * wxScale,
+        }}
+      >
+        {patients.length === 0 ? (
+          <Box
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              paddingTop: 64 * wxScale,
+              paddingBottom: 64 * wxScale,
+            }}
+          >
+            <Icon name="user" size={64 * wxScale} color={textMuted} />
+            <Text style={{ marginTop: 16 * wxScale, fontSize: 14 * wxScale, color: textMuted }}>
+              暂无就诊人信息
+            </Text>
+            <Box
+              onClick={handleAdd}
+              style={{
+                marginTop: 16 * wxScale,
+                paddingLeft: 24 * wxScale,
+                paddingRight: 24 * wxScale,
+                paddingTop: isWxEnvironment() ? 8 * wxScale : 6,
+                paddingBottom: isWxEnvironment() ? 8 * wxScale : 6,
+                borderRadius: 9999,
+                backgroundColor: primaryColor,
+              }}
+            >
+              <Text style={{ fontSize: 14 * wxScale, color: '#fff' }}>添加就诊人</Text>
+            </Box>
+          </Box>
+        ) : (
+          <>
+            {patients.map(patient => (
+              <PatientCard
+                key={patient.id}
+                patient={patient}
+                isMenuOpen={activeMenuId === patient.id}
+                onToggleMenu={() => setActiveMenuId(activeMenuId === patient.id ? null : patient.id)}
+                onEdit={() => handleEdit(patient.id)}
+                onSetDefault={() => handleSetDefault(patient.id)}
+                onDelete={() => handleDelete(patient.id)}
+                themeSettings={themeSettings}
+                isDarkMode={isDarkMode}
+              />
+            ))}
+
+            {/* 底部添加按钮 */}
+            <Box
+              onClick={handleAdd}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8 * wxScale,
+                paddingTop: 12 * wxScale,
+                paddingBottom: 12 * wxScale,
+                borderRadius: 12 * wxScale,
+                backgroundColor: `${primaryColor}10`,
+                borderWidth: 1,
+                borderColor: primaryColor,
+                borderStyle: 'dashed',
+              }}
+            >
+              <Icon name="plus" size={16 * wxScale} color={primaryColor} />
+              <Text style={{ fontSize: 14 * wxScale, fontWeight: 500, color: primaryColor }}>
+                添加就诊人
+              </Text>
+            </Box>
+          </>
+        )}
+      </ScrollView>
 
       {/* 点击遮罩层关闭菜单 */}
       {activeMenuId && (
-        <div
-          className='fixed inset-0 z-0'
+        <Box
           onClick={() => setActiveMenuId(null)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 0,
+          }}
         />
       )}
-    </div>
+    </Box>
   )
 }

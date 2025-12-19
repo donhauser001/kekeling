@@ -10,12 +10,18 @@ import {
   BANNER_AREAS,
   HOME_CONFIG_KEYS,
   HOME_CONFIG_DEFAULTS,
+  SMS_CONFIG_KEYS,
+  SMS_CONFIG_DEFAULTS,
+  MINIAPP_CONFIG_KEYS,
+  MINIAPP_CONFIG_DEFAULTS,
   type OrderSettings,
   type ThemeSettings,
   type BannerSettings,
   type BannerAreaConfig,
   type BannerPosition,
   type HomePageSettings,
+  type SmsSettings,
+  type MiniappSettings,
 } from './dto/config.dto';
 
 @Injectable()
@@ -549,6 +555,152 @@ export class ConfigService {
     }
 
     return this.getHomePageSettings();
+  }
+
+  // ============================================
+  // 短信设置专用方法
+  // ============================================
+
+  /**
+   * 获取短信设置
+   */
+  async getSmsSettings(): Promise<SmsSettings> {
+    const keys = Object.values(SMS_CONFIG_KEYS);
+    const configs = await this.getMultiple(keys);
+
+    return {
+      enabled:
+        configs[SMS_CONFIG_KEYS.ENABLED] ??
+        SMS_CONFIG_DEFAULTS[SMS_CONFIG_KEYS.ENABLED],
+      provider:
+        configs[SMS_CONFIG_KEYS.PROVIDER] ??
+        SMS_CONFIG_DEFAULTS[SMS_CONFIG_KEYS.PROVIDER],
+      accessKeyId:
+        configs[SMS_CONFIG_KEYS.ACCESS_KEY_ID] ??
+        SMS_CONFIG_DEFAULTS[SMS_CONFIG_KEYS.ACCESS_KEY_ID],
+      accessKeySecret:
+        configs[SMS_CONFIG_KEYS.ACCESS_KEY_SECRET] ??
+        SMS_CONFIG_DEFAULTS[SMS_CONFIG_KEYS.ACCESS_KEY_SECRET],
+      signName:
+        configs[SMS_CONFIG_KEYS.SIGN_NAME] ??
+        SMS_CONFIG_DEFAULTS[SMS_CONFIG_KEYS.SIGN_NAME],
+      templateCode:
+        configs[SMS_CONFIG_KEYS.TEMPLATE_CODE] ??
+        SMS_CONFIG_DEFAULTS[SMS_CONFIG_KEYS.TEMPLATE_CODE],
+      devMode:
+        configs[SMS_CONFIG_KEYS.DEV_MODE] ??
+        SMS_CONFIG_DEFAULTS[SMS_CONFIG_KEYS.DEV_MODE],
+      devCode:
+        configs[SMS_CONFIG_KEYS.DEV_CODE] ??
+        SMS_CONFIG_DEFAULTS[SMS_CONFIG_KEYS.DEV_CODE],
+      // 频控配置
+      rateLimitPhone60s:
+        configs[SMS_CONFIG_KEYS.RATE_LIMIT_PHONE_60S] ??
+        SMS_CONFIG_DEFAULTS[SMS_CONFIG_KEYS.RATE_LIMIT_PHONE_60S],
+      rateLimitIpHour:
+        configs[SMS_CONFIG_KEYS.RATE_LIMIT_IP_HOUR] ??
+        SMS_CONFIG_DEFAULTS[SMS_CONFIG_KEYS.RATE_LIMIT_IP_HOUR],
+      rateLimitPhoneDay:
+        configs[SMS_CONFIG_KEYS.RATE_LIMIT_PHONE_DAY] ??
+        SMS_CONFIG_DEFAULTS[SMS_CONFIG_KEYS.RATE_LIMIT_PHONE_DAY],
+      codeLength:
+        configs[SMS_CONFIG_KEYS.CODE_LENGTH] ??
+        SMS_CONFIG_DEFAULTS[SMS_CONFIG_KEYS.CODE_LENGTH],
+      codeTtl:
+        configs[SMS_CONFIG_KEYS.CODE_TTL] ??
+        SMS_CONFIG_DEFAULTS[SMS_CONFIG_KEYS.CODE_TTL],
+    };
+  }
+
+  /**
+   * 更新短信设置
+   */
+  async updateSmsSettings(settings: Partial<SmsSettings>): Promise<SmsSettings> {
+    const keyMap: Record<keyof SmsSettings, string> = {
+      enabled: SMS_CONFIG_KEYS.ENABLED,
+      provider: SMS_CONFIG_KEYS.PROVIDER,
+      accessKeyId: SMS_CONFIG_KEYS.ACCESS_KEY_ID,
+      accessKeySecret: SMS_CONFIG_KEYS.ACCESS_KEY_SECRET,
+      signName: SMS_CONFIG_KEYS.SIGN_NAME,
+      templateCode: SMS_CONFIG_KEYS.TEMPLATE_CODE,
+      devMode: SMS_CONFIG_KEYS.DEV_MODE,
+      devCode: SMS_CONFIG_KEYS.DEV_CODE,
+      // 频控配置
+      rateLimitPhone60s: SMS_CONFIG_KEYS.RATE_LIMIT_PHONE_60S,
+      rateLimitIpHour: SMS_CONFIG_KEYS.RATE_LIMIT_IP_HOUR,
+      rateLimitPhoneDay: SMS_CONFIG_KEYS.RATE_LIMIT_PHONE_DAY,
+      codeLength: SMS_CONFIG_KEYS.CODE_LENGTH,
+      codeTtl: SMS_CONFIG_KEYS.CODE_TTL,
+    };
+
+    const configs: { key: string; value: any }[] = [];
+
+    for (const [field, value] of Object.entries(settings)) {
+      if (value !== undefined && keyMap[field as keyof SmsSettings]) {
+        configs.push({
+          key: keyMap[field as keyof SmsSettings],
+          value,
+        });
+      }
+    }
+
+    if (configs.length > 0) {
+      await this.setMultiple(configs);
+    }
+
+    return this.getSmsSettings();
+  }
+
+  // ============================================
+  // 小程序设置专用方法
+  // ============================================
+
+  /**
+   * 获取小程序设置
+   */
+  async getMiniappSettings(): Promise<MiniappSettings> {
+    const keys = Object.values(MINIAPP_CONFIG_KEYS);
+    const configs = await this.getMultiple(keys);
+
+    return {
+      devMode:
+        configs[MINIAPP_CONFIG_KEYS.DEV_MODE] ??
+        MINIAPP_CONFIG_DEFAULTS[MINIAPP_CONFIG_KEYS.DEV_MODE],
+      skipWorkbenchLogin:
+        configs[MINIAPP_CONFIG_KEYS.SKIP_WORKBENCH_LOGIN] ??
+        MINIAPP_CONFIG_DEFAULTS[MINIAPP_CONFIG_KEYS.SKIP_WORKBENCH_LOGIN],
+      devEscortId:
+        configs[MINIAPP_CONFIG_KEYS.DEV_ESCORT_ID] ??
+        MINIAPP_CONFIG_DEFAULTS[MINIAPP_CONFIG_KEYS.DEV_ESCORT_ID],
+    };
+  }
+
+  /**
+   * 更新小程序设置
+   */
+  async updateMiniappSettings(settings: Partial<MiniappSettings>): Promise<MiniappSettings> {
+    const keyMap: Record<keyof MiniappSettings, string> = {
+      devMode: MINIAPP_CONFIG_KEYS.DEV_MODE,
+      skipWorkbenchLogin: MINIAPP_CONFIG_KEYS.SKIP_WORKBENCH_LOGIN,
+      devEscortId: MINIAPP_CONFIG_KEYS.DEV_ESCORT_ID,
+    };
+
+    const configs: { key: string; value: any }[] = [];
+
+    for (const [field, value] of Object.entries(settings)) {
+      if (value !== undefined && keyMap[field as keyof MiniappSettings]) {
+        configs.push({
+          key: keyMap[field as keyof MiniappSettings],
+          value,
+        });
+      }
+    }
+
+    if (configs.length > 0) {
+      await this.setMultiple(configs);
+    }
+
+    return this.getMiniappSettings();
   }
 }
 

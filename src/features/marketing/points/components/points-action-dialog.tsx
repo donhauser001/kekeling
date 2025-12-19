@@ -66,7 +66,7 @@ export function PointsActionDialog({
   const [confirmCloseOpen, setConfirmCloseOpen] = useState(false)
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formSchema) as any, // eslint-disable-line @typescript-eslint/no-explicit-any
     defaultValues: {
       name: '',
       code: '',
@@ -87,7 +87,7 @@ export function PointsActionDialog({
         name: currentRow.name,
         code: currentRow.code,
         type: currentRow.type,
-        points: currentRow.points,
+        points: currentRow.points ?? 0,
         applicableScope: currentRow.applicableScope || 'all',
         applicableIds: currentRow.applicableIds?.join(',') || '',
         dailyLimit: currentRow.dailyLimit || undefined,

@@ -6,7 +6,7 @@
 import { Box, Text, Button, Icon } from '../../../../ui/primitives'
 import { isWxEnvironment } from '../../../../platform/env'
 
-const wxScale = isWxEnvironment() ? 1.15 : 1
+const wxScale = isWxEnvironment() ? 1.1 : 1
 
 interface ServiceGuarantee {
   id: string

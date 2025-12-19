@@ -1,6 +1,5 @@
 import {
   Phone,
-  CreditCard,
   User,
   Users,
   Calendar,

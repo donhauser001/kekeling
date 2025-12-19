@@ -1,47 +1,23 @@
-import { Controller, Get, Put, Body, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Put, Post, Body, Param, Delete, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam, ApiBody } from '@nestjs/swagger';
 import { ConfigService } from './config.service';
+import { SmsService } from '../escort-auth/sms.service';
 import { ApiResponse } from '../../common/response/api-response';
-import { type OrderSettings, type ThemeSettings, type BannerPosition, type BannerAreaConfig, type HomePageSettings } from './dto/config.dto';
+import { type OrderSettings, type ThemeSettings, type BannerPosition, type BannerAreaConfig, type HomePageSettings, type SmsSettings, type MiniappSettings } from './dto/config.dto';
 
 @ApiTags('系统配置')
 @Controller('config')
 export class ConfigController {
-  constructor(private readonly configService: ConfigService) { }
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly smsService: SmsService,
+  ) { }
 
   @Get()
   @ApiOperation({ summary: '获取所有配置' })
   async getAll() {
     const data = await this.configService.getAll();
     return ApiResponse.success(data);
-  }
-
-  @Get(':key')
-  @ApiOperation({ summary: '获取单个配置' })
-  @ApiParam({ name: 'key', description: '配置键' })
-  async get(@Param('key') key: string) {
-    const data = await this.configService.get(key);
-    return ApiResponse.success(data);
-  }
-
-  @Put(':key')
-  @ApiOperation({ summary: '设置单个配置' })
-  @ApiParam({ name: 'key', description: '配置键' })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        value: { description: '配置值' },
-        remark: { type: 'string', description: '备注' },
-      },
-    },
-  })
-  async set(
-    @Param('key') key: string,
-    @Body() body: { value: any; remark?: string },
-  ) {
-    await this.configService.set(key, body.value, body.remark);
-    return ApiResponse.success(null, '保存成功');
   }
 
   @Put()
@@ -69,16 +45,8 @@ export class ConfigController {
     return ApiResponse.success(null, '保存成功');
   }
 
-  @Delete(':key')
-  @ApiOperation({ summary: '删除配置' })
-  @ApiParam({ name: 'key', description: '配置键' })
-  async delete(@Param('key') key: string) {
-    await this.configService.delete(key);
-    return ApiResponse.success(null, '删除成功');
-  }
-
   // ============================================
-  // 订单设置专用接口
+  // 订单设置专用接口（必须在通配路由之前）
   // ============================================
 
   @Get('order/settings')
@@ -166,5 +134,142 @@ export class ConfigController {
     const data = await this.configService.updateHomePageSettings(body);
     return ApiResponse.success(data, '保存成功');
   }
-}
 
+  // ============================================
+  // 短信设置专用接口
+  // ============================================
+
+  @Get('sms/settings')
+  @ApiOperation({ summary: '获取短信设置' })
+  async getSmsSettings() {
+    const data = await this.configService.getSmsSettings();
+    // 敏感信息脱敏（AccessKeySecret 只显示部分）
+    const maskedData = {
+      ...data,
+      accessKeySecret: data.accessKeySecret
+        ? `${data.accessKeySecret.slice(0, 4)}****${data.accessKeySecret.slice(-4)}`
+        : '',
+    };
+    return ApiResponse.success(maskedData);
+  }
+
+  @Put('sms/settings')
+  @ApiOperation({ summary: '更新短信设置' })
+  async updateSmsSettings(@Body() body: Partial<SmsSettings>) {
+    const data = await this.configService.updateSmsSettings(body);
+    // 敏感信息脱敏
+    const maskedData = {
+      ...data,
+      accessKeySecret: data.accessKeySecret
+        ? `${data.accessKeySecret.slice(0, 4)}****${data.accessKeySecret.slice(-4)}`
+        : '',
+    };
+    return ApiResponse.success(maskedData, '保存成功');
+  }
+
+  @Post('sms/test')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '测试短信发送' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        phone: { type: 'string', description: '测试手机号' },
+      },
+      required: ['phone'],
+    },
+  })
+  async testSmsSend(@Body() body: { phone: string }) {
+    const { phone } = body;
+
+    // 验证手机号格式
+    if (!/^1\d{10}$/.test(phone)) {
+      return ApiResponse.error('请输入正确的手机号');
+    }
+
+    // 生成测试验证码
+    const code = Math.random().toString().slice(2, 8);
+
+    try {
+      // 发送短信
+      const success = await this.smsService.sendVerificationCode(phone, code);
+
+      if (success) {
+        // 获取当前配置判断是否开发模式
+        const settings = await this.configService.getSmsSettings();
+        return ApiResponse.success(
+          {
+            success: true,
+            devMode: settings.devMode,
+            code: settings.devMode ? settings.devCode : undefined,
+          },
+          settings.devMode ? `开发模式，验证码为: ${settings.devCode}` : '测试短信已发送'
+        );
+      } else {
+        return ApiResponse.error('短信发送失败，请检查配置');
+      }
+    } catch (error) {
+      // 捕获异常，返回具体错误信息
+      const errorMessage = error instanceof Error ? error.message : '短信发送失败';
+      return ApiResponse.error(errorMessage);
+    }
+  }
+
+  // ============================================
+  // 小程序设置专用接口
+  // ============================================
+
+  @Get('miniapp/settings')
+  @ApiOperation({ summary: '获取小程序设置' })
+  async getMiniappSettings() {
+    const data = await this.configService.getMiniappSettings();
+    return ApiResponse.success(data);
+  }
+
+  @Put('miniapp/settings')
+  @ApiOperation({ summary: '更新小程序设置' })
+  async updateMiniappSettings(@Body() body: Partial<MiniappSettings>) {
+    const data = await this.configService.updateMiniappSettings(body);
+    return ApiResponse.success(data, '保存成功');
+  }
+
+  // ============================================
+  // 通配路由（必须放在最后）
+  // ============================================
+
+  @Get(':key')
+  @ApiOperation({ summary: '获取单个配置' })
+  @ApiParam({ name: 'key', description: '配置键' })
+  async get(@Param('key') key: string) {
+    const data = await this.configService.get(key);
+    return ApiResponse.success(data);
+  }
+
+  @Put(':key')
+  @ApiOperation({ summary: '设置单个配置' })
+  @ApiParam({ name: 'key', description: '配置键' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        value: { description: '配置值' },
+        remark: { type: 'string', description: '备注' },
+      },
+    },
+  })
+  async set(
+    @Param('key') key: string,
+    @Body() body: { value: any; remark?: string },
+  ) {
+    await this.configService.set(key, body.value, body.remark);
+    return ApiResponse.success(null, '保存成功');
+  }
+
+  @Delete(':key')
+  @ApiOperation({ summary: '删除配置' })
+  @ApiParam({ name: 'key', description: '配置键' })
+  async delete(@Param('key') key: string) {
+    await this.configService.delete(key);
+    return ApiResponse.success(null, '删除成功');
+  }
+}

@@ -65,6 +65,11 @@ export class CreateServiceDto {
   @IsString()
   content?: string;
 
+  @ApiPropertyOptional({ description: '内容类型', enum: ['richtext', 'html'], default: 'richtext' })
+  @IsOptional()
+  @IsEnum(['richtext', 'html'])
+  contentType?: 'richtext' | 'html';
+
   @ApiProperty({ description: '销售价格' })
   @IsNumber({}, { message: '价格必须是数字' })
   @Min(0, { message: '价格不能为负' })
@@ -274,6 +279,11 @@ export class UpdateServiceDto {
   @IsOptional()
   @IsString()
   content?: string;
+
+  @ApiPropertyOptional({ description: '内容类型', enum: ['richtext', 'html'] })
+  @IsOptional()
+  @IsEnum(['richtext', 'html'])
+  contentType?: 'richtext' | 'html';
 
   @ApiPropertyOptional({ description: '销售价格' })
   @IsOptional()

@@ -1,5 +1,5 @@
 import { Outlet } from '@tanstack/react-router'
-import { Monitor, Bell, Palette, Wrench, UserCog, CreditCard } from 'lucide-react'
+import { Monitor, Bell, Palette, Wrench, UserCog, CreditCard, MessageSquare, Smartphone } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
@@ -25,6 +25,16 @@ const sidebarNavItems = [
     title: '支付配置',
     href: '/settings/payment',
     icon: <CreditCard size={18} />,
+  },
+  {
+    title: '短信配置',
+    href: '/settings/sms',
+    icon: <MessageSquare size={18} />,
+  },
+  {
+    title: '小程序设置',
+    href: '/settings/miniapp',
+    icon: <Smartphone size={18} />,
   },
   {
     title: '外观',

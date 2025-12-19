@@ -8,7 +8,7 @@ import { isWxEnvironment } from '../platform/env'
 import { Box, Image, Text } from '../ui/primitives'
 
 // 小程序环境的缩放比例
-const wxScale = isWxEnvironment() ? 1.15 : 1
+const wxScale = isWxEnvironment() ? 1.1 : 1
 
 interface BrandSectionProps {
   layout: BrandLayout

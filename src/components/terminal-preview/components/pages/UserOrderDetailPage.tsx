@@ -3,11 +3,22 @@
  *
  * 普通用户查看订单详情
  * - page key: 'user-order-detail'
+ *
+ * 改造状态: ✅ 已按小程序规范改造
+ * @see docs/小程序页面改造规范.md
  */
 
-import { ArrowLeft, MapPin, Clock, Phone, MessageCircle, User, FileText, CheckCircle } from 'lucide-react'
+import { Box, Text, ScrollView, Icon } from '../../ui/primitives'
+import { isWxEnvironment } from '../../platform/env'
 import type { ThemeSettings } from '../../types'
 import { getWxBridge } from '../../bridge'
+
+// ============================================================================
+// 常量定义
+// ============================================================================
+
+const wxScale = isWxEnvironment() ? 1.1 : 1
+const wxSafeAreaTop = isWxEnvironment() ? 44 : 0
 
 // ============================================================================
 // 类型定义
@@ -71,7 +82,88 @@ const statusColors: Record<string, { bg: string; text: string }> = {
 }
 
 // ============================================================================
-// 组件实现
+// 子组件
+// ============================================================================
+
+/** 信息卡片容器 */
+function InfoCard({
+  children,
+  cardBg,
+  style,
+}: {
+  children: React.ReactNode
+  cardBg: string
+  style?: React.CSSProperties
+}) {
+  return (
+    <Box
+      style={{
+        marginLeft: 12 * wxScale,
+        marginRight: 12 * wxScale,
+        marginTop: 12 * wxScale,
+        borderRadius: 12 * wxScale,
+        padding: 16 * wxScale,
+        backgroundColor: cardBg,
+        ...style,
+      }}
+    >
+      {children}
+    </Box>
+  )
+}
+
+/** 卡片标题 */
+function CardTitle({ children, color }: { children: React.ReactNode; color: string }) {
+  return (
+    <Text
+      style={{
+        display: 'block',
+        fontSize: 14 * wxScale,
+        fontWeight: 600,
+        marginBottom: 12 * wxScale,
+        color,
+      }}
+    >
+      {children}
+    </Text>
+  )
+}
+
+/** 信息行 */
+function InfoRow({
+  label,
+  value,
+  labelColor,
+  valueColor,
+  valueStyle,
+}: {
+  label: string
+  value: string | React.ReactNode
+  labelColor: string
+  valueColor: string
+  valueStyle?: React.CSSProperties
+}) {
+  return (
+    <Box
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 8 * wxScale,
+      }}
+    >
+      <Text style={{ fontSize: 12 * wxScale, color: labelColor }}>{label}</Text>
+      {typeof value === 'string' ? (
+        <Text style={{ fontSize: 14 * wxScale, color: valueColor, ...valueStyle }}>{value}</Text>
+      ) : (
+        value
+      )}
+    </Box>
+  )
+}
+
+// ============================================================================
+// 主组件
 // ============================================================================
 
 export function UserOrderDetailPage({
@@ -88,347 +180,410 @@ export function UserOrderDetailPage({
   const textSecondary = isDarkMode ? '#9ca3af' : '#6b7280'
   const textMuted = isDarkMode ? '#6b7280' : '#9ca3af'
   const borderColor = isDarkMode ? '#3a3a3a' : '#e5e7eb'
+  const primaryColor = themeSettings.primaryColor
 
   const order = mockOrderDetail
 
   return (
-    <div style={{ backgroundColor: bgColor }} className='min-h-full pb-24'>
+    <Box
+      style={{
+        minHeight: '100%',
+        backgroundColor: bgColor,
+        paddingBottom: 96 * wxScale,
+      }}
+    >
       {/* 顶部导航栏 */}
-      <div
-        className='sticky top-0 z-20 flex items-center justify-between px-3 py-3'
-        style={{ backgroundColor: themeSettings.primaryColor }}
+      <Box
+        style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 20,
+          paddingTop: wxSafeAreaTop,
+          backgroundColor: primaryColor,
+        }}
       >
-        <button
-          onClick={onBack}
-          className='w-8 h-8 flex items-center justify-center text-white'
+        <Box
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            paddingLeft: 12 * wxScale,
+            paddingRight: 12 * wxScale,
+            paddingTop: 12 * wxScale,
+            paddingBottom: 12 * wxScale,
+          }}
         >
-          <ArrowLeft className='h-5 w-5' />
-        </button>
-        <h1 className='text-base font-semibold text-white'>订单详情</h1>
-        <div className='w-8' />
-      </div>
-
-      {/* 订单状态卡片 */}
-      <div
-        className='mx-3 mt-3 rounded-xl p-4'
-        style={{ backgroundColor: cardBg }}
-      >
-        <div className='flex items-center justify-between'>
-          <div className='flex items-center gap-3'>
-            <div
-              className='w-12 h-12 rounded-full flex items-center justify-center'
-              style={{ backgroundColor: statusColors[order.status]?.bg || '#f5f5f5' }}
-            >
-              <FileText
-                className='h-6 w-6'
-                style={{ color: statusColors[order.status]?.text || '#8c8c8c' }}
-              />
-            </div>
-            <div>
-              <p className='text-base font-semibold' style={{ color: textPrimary }}>
-                {order.statusText}
-              </p>
-              <p className='text-xs mt-0.5' style={{ color: textMuted }}>
-                订单号：{order.orderNo}
-              </p>
-            </div>
-          </div>
-          <span
-            className='px-3 py-1 rounded-full text-xs'
+          <Box
+            onClick={onBack}
             style={{
-              backgroundColor: statusColors[order.status]?.bg || '#f5f5f5',
-              color: statusColors[order.status]?.text || '#8c8c8c',
+              width: 32 * wxScale,
+              height: 32 * wxScale,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
-            {order.statusText}
-          </span>
-        </div>
-      </div>
+            <Icon name="left" size={20 * wxScale} color="#fff" />
+          </Box>
+          <Text style={{ fontSize: 16 * wxScale, fontWeight: 600, color: '#fff' }}>
+            订单详情
+          </Text>
+          <Box style={{ width: 32 * wxScale }} />
+        </Box>
+      </Box>
 
-      {/* 服务信息 */}
-      <div
-        className='mx-3 mt-3 rounded-xl p-4'
-        style={{ backgroundColor: cardBg }}
-      >
-        <h3 className='text-sm font-semibold mb-3' style={{ color: textPrimary }}>
-          服务信息
-        </h3>
-        <div className='space-y-3'>
-          <div className='flex items-start gap-3'>
-            <FileText className='h-4 w-4 mt-0.5 flex-shrink-0' style={{ color: themeSettings.primaryColor }} />
-            <div>
-              <p className='text-sm font-medium' style={{ color: textPrimary }}>
+      <ScrollView>
+        {/* 订单状态卡片 */}
+        <InfoCard cardBg={cardBg}>
+          <Box
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <Box style={{ display: 'flex', alignItems: 'center', gap: 12 * wxScale }}>
+              <Box
+                style={{
+                  width: 48 * wxScale,
+                  height: 48 * wxScale,
+                  borderRadius: 24 * wxScale,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: statusColors[order.status]?.bg || '#f5f5f5',
+                }}
+              >
+                <Icon
+                  name="document"
+                  size={24 * wxScale}
+                  color={statusColors[order.status]?.text || '#8c8c8c'}
+                />
+              </Box>
+              <Box>
+                <Text
+                  style={{
+                    display: 'block',
+                    fontSize: 16 * wxScale,
+                    fontWeight: 600,
+                    color: textPrimary,
+                  }}
+                >
+                  {order.statusText}
+                </Text>
+                <Text
+                  style={{
+                    display: 'block',
+                    fontSize: 12 * wxScale,
+                    marginTop: 4 * wxScale,
+                    color: textMuted,
+                  }}
+                >
+                  订单号：{order.orderNo}
+                </Text>
+              </Box>
+            </Box>
+            <Box
+              style={{
+                paddingLeft: 12 * wxScale,
+                paddingRight: 12 * wxScale,
+                paddingTop: 4 * wxScale,
+                paddingBottom: 4 * wxScale,
+                borderRadius: 9999,
+                backgroundColor: statusColors[order.status]?.bg || '#f5f5f5',
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 12 * wxScale,
+                  color: statusColors[order.status]?.text || '#8c8c8c',
+                }}
+              >
+                {order.statusText}
+              </Text>
+            </Box>
+          </Box>
+        </InfoCard>
+
+        {/* 服务信息 */}
+        <InfoCard cardBg={cardBg}>
+          <CardTitle color={textPrimary}>服务信息</CardTitle>
+
+          {/* 服务名称 */}
+          <Box style={{ display: 'flex', alignItems: 'flex-start', gap: 12 * wxScale, marginBottom: 12 * wxScale }}>
+            <Icon name="document" size={16 * wxScale} color={primaryColor} />
+            <Box style={{ flex: 1 }}>
+              <Text style={{ display: 'block', fontSize: 14 * wxScale, fontWeight: 500, color: textPrimary }}>
                 {order.serviceName}
-              </p>
-              <div className='flex flex-wrap gap-1 mt-1.5'>
+              </Text>
+              <Box style={{ display: 'flex', flexWrap: 'wrap', gap: 4 * wxScale, marginTop: 8 * wxScale }}>
                 {order.serviceItems.map((item, idx) => (
-                  <span
+                  <Box
                     key={idx}
-                    className='px-2 py-0.5 rounded text-[10px]'
                     style={{
+                      paddingLeft: 8 * wxScale,
+                      paddingRight: 8 * wxScale,
+                      paddingTop: 2 * wxScale,
+                      paddingBottom: 2 * wxScale,
+                      borderRadius: 4 * wxScale,
                       backgroundColor: isDarkMode ? '#3a3a3a' : '#f3f4f6',
-                      color: textSecondary,
                     }}
                   >
-                    {item}
-                  </span>
+                    <Text style={{ fontSize: 10 * wxScale, color: textSecondary }}>{item}</Text>
+                  </Box>
                 ))}
-              </div>
-            </div>
-          </div>
-          <div className='flex items-start gap-3'>
-            <MapPin className='h-4 w-4 mt-0.5 flex-shrink-0' style={{ color: textMuted }} />
-            <div>
-              <p className='text-sm' style={{ color: textPrimary }}>
+              </Box>
+            </Box>
+          </Box>
+
+          {/* 医院地址 */}
+          <Box style={{ display: 'flex', alignItems: 'flex-start', gap: 12 * wxScale, marginBottom: 12 * wxScale }}>
+            <Icon name="local-two" size={16 * wxScale} color={textMuted} />
+            <Box style={{ flex: 1 }}>
+              <Text style={{ display: 'block', fontSize: 14 * wxScale, color: textPrimary }}>
                 {order.hospitalName} · {order.departmentName}
-              </p>
-              <p className='text-xs mt-0.5' style={{ color: textMuted }}>
+              </Text>
+              <Text style={{ display: 'block', fontSize: 12 * wxScale, marginTop: 4 * wxScale, color: textMuted }}>
                 {order.hospitalAddress}
-              </p>
-            </div>
-          </div>
-          <div className='flex items-center gap-3'>
-            <Clock className='h-4 w-4 flex-shrink-0' style={{ color: textMuted }} />
-            <p className='text-sm' style={{ color: textPrimary }}>
+              </Text>
+            </Box>
+          </Box>
+
+          {/* 预约时间 */}
+          <Box style={{ display: 'flex', alignItems: 'center', gap: 12 * wxScale }}>
+            <Icon name="time" size={16 * wxScale} color={textMuted} />
+            <Text style={{ fontSize: 14 * wxScale, color: textPrimary }}>
               {order.appointmentDate} {order.appointmentTime}
-            </p>
-          </div>
-        </div>
-      </div>
+            </Text>
+          </Box>
+        </InfoCard>
 
-      {/* 就诊人信息 */}
-      <div
-        className='mx-3 mt-3 rounded-xl p-4'
-        style={{ backgroundColor: cardBg }}
-      >
-        <h3 className='text-sm font-semibold mb-3' style={{ color: textPrimary }}>
-          就诊人信息
-        </h3>
-        <div className='space-y-2'>
-          <div className='flex items-center justify-between'>
-            <span className='text-xs' style={{ color: textMuted }}>姓名</span>
-            <span className='text-sm' style={{ color: textPrimary }}>{order.patientName}</span>
-          </div>
-          <div className='flex items-center justify-between'>
-            <span className='text-xs' style={{ color: textMuted }}>性别/年龄</span>
-            <span className='text-sm' style={{ color: textPrimary }}>
-              {order.patientGender} / {order.patientAge}岁
-            </span>
-          </div>
-          <div className='flex items-center justify-between'>
-            <span className='text-xs' style={{ color: textMuted }}>联系电话</span>
-            <span className='text-sm' style={{ color: textPrimary }}>{order.patientPhone}</span>
-          </div>
-          <div className='flex items-center justify-between'>
-            <span className='text-xs' style={{ color: textMuted }}>身份证号</span>
-            <span className='text-sm' style={{ color: textPrimary }}>{order.patientIdCard}</span>
-          </div>
-        </div>
-      </div>
+        {/* 就诊人信息 */}
+        <InfoCard cardBg={cardBg}>
+          <CardTitle color={textPrimary}>就诊人信息</CardTitle>
+          <InfoRow label="姓名" value={order.patientName} labelColor={textMuted} valueColor={textPrimary} />
+          <InfoRow label="性别/年龄" value={`${order.patientGender} / ${order.patientAge}岁`} labelColor={textMuted} valueColor={textPrimary} />
+          <InfoRow label="联系电话" value={order.patientPhone} labelColor={textMuted} valueColor={textPrimary} />
+          <InfoRow label="身份证号" value={order.patientIdCard} labelColor={textMuted} valueColor={textPrimary} />
+        </InfoCard>
 
-      {/* 陪诊员信息 */}
-      {order.escortName && (
-        <div
-          className='mx-3 mt-3 rounded-xl p-4'
-          style={{ backgroundColor: cardBg }}
-        >
-          <h3 className='text-sm font-semibold mb-3' style={{ color: textPrimary }}>
-            陪诊员信息
-          </h3>
-          <div className='flex items-center justify-between'>
-            <div className='flex items-center gap-3'>
-              <div
-                className='w-10 h-10 rounded-full flex items-center justify-center'
-                style={{ backgroundColor: `${themeSettings.primaryColor}20` }}
-              >
-                <User className='h-5 w-5' style={{ color: themeSettings.primaryColor }} />
-              </div>
-              <div>
-                <p className='text-sm font-medium' style={{ color: textPrimary }}>
-                  {order.escortName}
-                </p>
-                <div className='flex items-center gap-2 mt-0.5'>
-                  <span className='text-xs' style={{ color: textMuted }}>
-                    评分 {order.escortRating}
-                  </span>
-                  <span className='text-xs' style={{ color: textMuted }}>|</span>
-                  <span className='text-xs' style={{ color: textMuted }}>
-                    服务 {order.escortOrderCount} 单
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div className='flex items-center gap-2'>
-              <button
-                className='w-8 h-8 rounded-full flex items-center justify-center'
-                style={{ backgroundColor: '#52c41a20' }}
-              >
-                <Phone className='h-4 w-4' style={{ color: '#52c41a' }} />
-              </button>
-              <button
-                className='w-8 h-8 rounded-full flex items-center justify-center'
-                style={{ backgroundColor: `${themeSettings.primaryColor}20` }}
-              >
-                <MessageCircle className='h-4 w-4' style={{ color: themeSettings.primaryColor }} />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+        {/* 陪诊员信息 */}
+        {order.escortName && (
+          <InfoCard cardBg={cardBg}>
+            <CardTitle color={textPrimary}>陪诊员信息</CardTitle>
+            <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Box style={{ display: 'flex', alignItems: 'center', gap: 12 * wxScale }}>
+                <Box
+                  style={{
+                    width: 40 * wxScale,
+                    height: 40 * wxScale,
+                    borderRadius: 20 * wxScale,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: `${primaryColor}20`,
+                  }}
+                >
+                  <Icon name="user" size={20 * wxScale} color={primaryColor} />
+                </Box>
+                <Box>
+                  <Text style={{ display: 'block', fontSize: 14 * wxScale, fontWeight: 500, color: textPrimary }}>
+                    {order.escortName}
+                  </Text>
+                  <Box style={{ display: 'flex', alignItems: 'center', gap: 8 * wxScale, marginTop: 4 * wxScale }}>
+                    <Text style={{ fontSize: 12 * wxScale, color: textMuted }}>评分 {order.escortRating}</Text>
+                    <Text style={{ fontSize: 12 * wxScale, color: textMuted }}>|</Text>
+                    <Text style={{ fontSize: 12 * wxScale, color: textMuted }}>服务 {order.escortOrderCount} 单</Text>
+                  </Box>
+                </Box>
+              </Box>
+              <Box style={{ display: 'flex', alignItems: 'center', gap: 8 * wxScale }}>
+                <Box
+                  style={{
+                    width: 32 * wxScale,
+                    height: 32 * wxScale,
+                    borderRadius: 16 * wxScale,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: '#52c41a20',
+                  }}
+                >
+                  <Icon name="phone" size={16 * wxScale} color="#52c41a" />
+                </Box>
+                <Box
+                  style={{
+                    width: 32 * wxScale,
+                    height: 32 * wxScale,
+                    borderRadius: 16 * wxScale,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: `${primaryColor}20`,
+                  }}
+                >
+                  <Icon name="comment" size={16 * wxScale} color={primaryColor} />
+                </Box>
+              </Box>
+            </Box>
+          </InfoCard>
+        )}
 
-      {/* 订单信息 */}
-      <div
-        className='mx-3 mt-3 rounded-xl p-4'
-        style={{ backgroundColor: cardBg }}
-      >
-        <h3 className='text-sm font-semibold mb-3' style={{ color: textPrimary }}>
-          订单信息
-        </h3>
-        <div className='space-y-2'>
-          <div className='flex items-center justify-between'>
-            <span className='text-xs' style={{ color: textMuted }}>订单编号</span>
-            <span className='text-sm' style={{ color: textPrimary }}>{order.orderNo}</span>
-          </div>
-          <div className='flex items-center justify-between'>
-            <span className='text-xs' style={{ color: textMuted }}>下单时间</span>
-            <span className='text-sm' style={{ color: textPrimary }}>{order.createTime}</span>
-          </div>
-          <div className='flex items-center justify-between'>
-            <span className='text-xs' style={{ color: textMuted }}>支付方式</span>
-            <span className='text-sm' style={{ color: textPrimary }}>{order.paymentMethod}</span>
-          </div>
-          <div className='flex items-center justify-between'>
-            <span className='text-xs' style={{ color: textMuted }}>支付时间</span>
-            <span className='text-sm' style={{ color: textPrimary }}>{order.paymentTime}</span>
-          </div>
+        {/* 订单信息 */}
+        <InfoCard cardBg={cardBg}>
+          <CardTitle color={textPrimary}>订单信息</CardTitle>
+          <InfoRow label="订单编号" value={order.orderNo} labelColor={textMuted} valueColor={textPrimary} />
+          <InfoRow label="下单时间" value={order.createTime} labelColor={textMuted} valueColor={textPrimary} />
+          <InfoRow label="支付方式" value={order.paymentMethod} labelColor={textMuted} valueColor={textPrimary} />
+          <InfoRow label="支付时间" value={order.paymentTime} labelColor={textMuted} valueColor={textPrimary} />
           {order.remark && (
-            <div className='flex items-start justify-between pt-2 border-t' style={{ borderColor }}>
-              <span className='text-xs' style={{ color: textMuted }}>备注</span>
-              <span className='text-sm text-right max-w-[200px]' style={{ color: textPrimary }}>
+            <Box
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                justifyContent: 'space-between',
+                paddingTop: 8 * wxScale,
+                marginTop: 8 * wxScale,
+                borderTopWidth: 1,
+                borderTopColor: borderColor,
+                borderTopStyle: 'solid',
+              }}
+            >
+              <Text style={{ fontSize: 12 * wxScale, color: textMuted }}>备注</Text>
+              <Text style={{ fontSize: 14 * wxScale, color: textPrimary, textAlign: 'right', maxWidth: 200 * wxScale }}>
                 {order.remark}
-              </span>
-            </div>
+              </Text>
+            </Box>
           )}
-        </div>
-      </div>
+        </InfoCard>
 
-      {/* 费用明细 */}
-      <div
-        className='mx-3 mt-3 rounded-xl p-4'
-        style={{ backgroundColor: cardBg }}
-      >
-        <h3 className='text-sm font-semibold mb-3' style={{ color: textPrimary }}>
-          费用明细
-        </h3>
-        <div className='space-y-2'>
-          <div className='flex items-center justify-between'>
-            <span className='text-xs' style={{ color: textMuted }}>服务费用</span>
-            <span className='text-sm' style={{ color: textPrimary }}>¥{order.amount}</span>
-          </div>
-          <div className='flex items-center justify-between'>
-            <span className='text-xs' style={{ color: textMuted }}>优惠减免</span>
-            <span className='text-sm' style={{ color: '#52c41a' }}>-¥0</span>
-          </div>
-          <div className='flex items-center justify-between pt-2 border-t' style={{ borderColor }}>
-            <span className='text-sm font-medium' style={{ color: textPrimary }}>实付金额</span>
-            <span className='text-base font-bold' style={{ color: themeSettings.primaryColor }}>
-              ¥{order.amount}
-            </span>
-          </div>
-        </div>
-      </div>
+        {/* 费用明细 */}
+        <InfoCard cardBg={cardBg}>
+          <CardTitle color={textPrimary}>费用明细</CardTitle>
+          <InfoRow label="服务费用" value={`¥${order.amount}`} labelColor={textMuted} valueColor={textPrimary} />
+          <InfoRow label="优惠减免" value="-¥0" labelColor={textMuted} valueColor="#52c41a" />
+          <Box
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              paddingTop: 8 * wxScale,
+              marginTop: 8 * wxScale,
+              borderTopWidth: 1,
+              borderTopColor: borderColor,
+              borderTopStyle: 'solid',
+            }}
+          >
+            <Text style={{ fontSize: 14 * wxScale, fontWeight: 500, color: textPrimary }}>实付金额</Text>
+            <Text style={{ fontSize: 16 * wxScale, fontWeight: 700, color: primaryColor }}>¥{order.amount}</Text>
+          </Box>
+        </InfoCard>
+      </ScrollView>
 
       {/* 底部操作栏 */}
-      <div
-        className='fixed bottom-0 left-0 right-0 px-4 py-3 border-t flex items-center justify-between'
-        style={{ backgroundColor: cardBg, borderColor }}
+      <Box
+        style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          paddingLeft: 16 * wxScale,
+          paddingRight: 16 * wxScale,
+          paddingTop: 12 * wxScale,
+          paddingBottom: isWxEnvironment() ? 32 * wxScale : 12 * wxScale,
+          backgroundColor: cardBg,
+          borderTopWidth: 1,
+          borderTopColor: borderColor,
+          borderTopStyle: 'solid',
+        }}
       >
-        <div className='flex items-baseline gap-0.5'>
-          <span className='text-xs' style={{ color: textMuted }}>实付：</span>
-          <span className='text-xs' style={{ color: themeSettings.primaryColor }}>¥</span>
-          <span className='text-lg font-bold' style={{ color: themeSettings.primaryColor }}>
-            {order.amount}
-          </span>
-        </div>
-        <div className='flex items-center gap-2'>
+        {/* 价格 */}
+        <Box style={{ display: 'flex', alignItems: 'baseline', gap: 2 }}>
+          <Text style={{ fontSize: 12 * wxScale, color: textMuted }}>实付：</Text>
+          <Text style={{ fontSize: 12 * wxScale, color: primaryColor }}>¥</Text>
+          <Text style={{ fontSize: 18 * wxScale, fontWeight: 700, color: primaryColor }}>{order.amount}</Text>
+        </Box>
+
+        {/* 操作按钮 */}
+        <Box style={{ display: 'flex', alignItems: 'center', gap: 8 * wxScale }}>
           {order.status === 'pending' && (
             <>
-              <button
-                className='px-4 py-2 rounded-full text-xs border'
-                style={{ borderColor, color: textSecondary }}
-              >
-                取消订单
-              </button>
-              <button
-                className='px-6 py-2 rounded-full text-xs text-white'
-                style={{ backgroundColor: themeSettings.primaryColor }}
+              <ActionButton label="取消订单" borderColor={borderColor} textColor={textSecondary} />
+              <ActionButton
+                label="立即支付"
+                backgroundColor={primaryColor}
+                textColor="#fff"
                 onClick={async () => {
                   const wxBridge = getWxBridge()
                   wxBridge.showLoading('支付中...')
-
-                  // TODO: 调用后端获取订单支付参数
-                  // const payParams = await userRequest<PayParams>(`/orders/${order.id}/pay`)
-
-                  // 宿主能力对接：调用微信支付
-                  // 注：实际支付参数需从后端获取
-                  // const result = await wxBridge.requestPayment({
-                  //   timeStamp: payParams.timeStamp,
-                  //   nonceStr: payParams.nonceStr,
-                  //   package: payParams.package,
-                  //   signType: payParams.signType,
-                  //   paySign: payParams.paySign,
-                  // })
-
                   wxBridge.hideLoading()
                   wxBridge.showToast({ title: '支付功能待对接', icon: 'none' })
                 }}
-              >
-                立即支付
-              </button>
+              />
             </>
           )}
           {order.status === 'confirmed' && (
             <>
-              <button
-                className='px-4 py-2 rounded-full text-xs border'
-                style={{ borderColor, color: textSecondary }}
+              <ActionButton
+                label="投诉"
+                borderColor={borderColor}
+                textColor={textSecondary}
                 onClick={() => onNavigate?.('order-complaint', { id: order.id })}
-              >
-                投诉
-              </button>
-              <button
-                className='px-4 py-2 rounded-full text-xs border'
-                style={{ borderColor, color: textSecondary }}
-              >
-                联系客服
-              </button>
+              />
+              <ActionButton label="联系客服" borderColor={borderColor} textColor={textSecondary} />
             </>
           )}
           {order.status === 'completed' && (
             <>
-              <button
-                className='px-4 py-2 rounded-full text-xs border'
-                style={{ borderColor, color: textSecondary }}
+              <ActionButton
+                label="投诉"
+                borderColor={borderColor}
+                textColor={textSecondary}
                 onClick={() => onNavigate?.('order-complaint', { id: order.id })}
-              >
-                投诉
-              </button>
-              <button
-                className='px-4 py-2 rounded-full text-xs border'
-                style={{ borderColor, color: textSecondary }}
-              >
-                再次预约
-              </button>
-              <button
-                className='px-6 py-2 rounded-full text-xs text-white'
-                style={{ backgroundColor: themeSettings.primaryColor }}
-              >
-                去评价
-              </button>
+              />
+              <ActionButton label="再次预约" borderColor={borderColor} textColor={textSecondary} />
+              <ActionButton label="去评价" backgroundColor={primaryColor} textColor="#fff" />
             </>
           )}
-        </div>
-      </div>
-    </div>
+        </Box>
+      </Box>
+    </Box>
+  )
+}
+
+/** 操作按钮 */
+function ActionButton({
+  label,
+  borderColor,
+  textColor,
+  backgroundColor,
+  onClick,
+}: {
+  label: string
+  borderColor?: string
+  textColor: string
+  backgroundColor?: string
+  onClick?: () => void
+}) {
+  return (
+    <Box
+      onClick={onClick}
+      style={{
+        paddingLeft: 16 * wxScale,
+        paddingRight: 16 * wxScale,
+        paddingTop: isWxEnvironment() ? 8 * wxScale : 6,
+        paddingBottom: isWxEnvironment() ? 8 * wxScale : 6,
+        borderRadius: 9999,
+        backgroundColor: backgroundColor || 'transparent',
+        borderWidth: backgroundColor ? 0 : 1,
+        borderColor: borderColor,
+        borderStyle: 'solid',
+      }}
+    >
+      <Text style={{ fontSize: 12 * wxScale, color: textColor }}>{label}</Text>
+    </Box>
   )
 }

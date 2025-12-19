@@ -74,6 +74,27 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       return { ...payload, admin, isAdmin: true };
     }
 
+    // 检查是否是陪诊员 token
+    if (payload.type === 'escort') {
+      // 陪诊员 token：sub 是 escortId
+      const escort = await this.authService.validateEscort(payload.sub);
+      if (!escort) {
+        throw new UnauthorizedException('陪诊员不存在');
+      }
+      if (escort.status === 'suspended') {
+        throw new UnauthorizedException('陪诊员账号已被暂停');
+      }
+      // 返回 escortId 和 userId（如果有关联）
+      return {
+        ...payload,
+        escort,
+        escortId: escort.id,
+        userId: escort.userId, // 关联的用户ID
+        isEscort: true,
+        isAdmin: false,
+      };
+    }
+
     // 安全修复 P1-12：验证会话版本号
     const isValidSession = await this.sessionService.validateUserSessionVersion(
       payload.sub,

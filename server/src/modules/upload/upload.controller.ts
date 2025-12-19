@@ -139,9 +139,8 @@ export class UploadController {
       mkdirSync(uploadDir, { recursive: true });
     }
 
-    // 重命名文件，添加扩展名并移动到子目录
-    const ext = extname(file.originalname);
-    const newFilename = `${file.filename}${ext}`;
+    // 移动文件到目标目录（文件名已包含扩展名）
+    const newFilename = file.filename;
     const newPath = join(uploadDir, newFilename);
 
     try {

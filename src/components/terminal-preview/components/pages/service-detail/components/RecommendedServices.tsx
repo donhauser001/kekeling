@@ -10,7 +10,7 @@ import { getResourceUrl, formatCount } from '../../../../utils'
 import { useHorizontalDrag } from '../hooks'
 import type { RecommendedServicesProps } from '../types'
 
-const wxScale = isWxEnvironment() ? 1.15 : 1
+const wxScale = isWxEnvironment() ? 1.1 : 1
 
 export function RecommendedServices({
   services,

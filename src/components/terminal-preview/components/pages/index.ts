@@ -116,7 +116,7 @@ export const CouponsAvailablePage = lazy(() =>
 )
 
 // ============================================================================
-// 陪诊员页面（2 个）
+// 陪诊员页面（3 个）
 // ============================================================================
 
 export const EscortListPage = lazy(() =>
@@ -125,6 +125,10 @@ export const EscortListPage = lazy(() =>
 
 export const EscortDetailPage = lazy(() =>
   import('./escort').then(m => ({ default: m.EscortDetailPage }))
+)
+
+export const EscortApplyPage = lazy(() =>
+  import('./escort-apply').then(m => ({ default: m.EscortApplyPage }))
 )
 
 // ============================================================================

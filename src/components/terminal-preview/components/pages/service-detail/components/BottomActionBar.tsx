@@ -8,7 +8,7 @@ import { Box, Text, Button } from '../../../../ui/primitives'
 import { isWxEnvironment } from '../../../../platform/env'
 import type { BottomActionBarProps } from '../types'
 
-const wxScale = isWxEnvironment() ? 1.15 : 1
+const wxScale = isWxEnvironment() ? 1.1 : 1
 
 export function BottomActionBar({
   serviceId,
@@ -76,8 +76,8 @@ export function BottomActionBar({
         className='flex-1 py-2.5 rounded-full text-sm font-medium text-white'
         style={{
           flex: 1,
-          paddingTop: 10 * wxScale,
-          paddingBottom: 10 * wxScale,
+          paddingTop: isWxEnvironment() ? 14 * wxScale : 10,
+          paddingBottom: isWxEnvironment() ? 14 * wxScale : 10,
           borderRadius: 9999,
           fontSize: 14 * wxScale,
           fontWeight: 500,

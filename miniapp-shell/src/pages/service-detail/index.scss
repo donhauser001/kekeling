@@ -1,6 +1,9 @@
 .page-container {
   min-height: 100vh;
   background-color: #f5f7fa;
+  // 支持 sticky 定位
+  position: relative;
+  overflow-x: hidden;
 }
 
 .page-loading {

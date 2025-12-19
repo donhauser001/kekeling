@@ -50,6 +50,7 @@ import {
   DebugPanel,
   shouldShowDebugPanel,
   EscortLoginDialog,
+  PhoneBindPromptDialog,
   PreviewErrorBoundary,
   PageTransition,
 } from './components'
@@ -78,6 +79,7 @@ import {
   CouponsAvailablePage,
   EscortListPage,
   EscortDetailPage,
+  EscortApplyPage,
   WorkbenchPage,
   OrdersPoolPage,
   WorkbenchEarningsPage,
@@ -160,6 +162,17 @@ export function TerminalPreview({
   // Step 4/7: 陪诊员登录对话框状态
   const [showEscortLoginDialog, setShowEscortLoginDialog] = useState(false)
 
+  // 手机号绑定提示对话框状态（用于申请成为陪诊员前检查手机号绑定状态）
+  const [showPhoneBindDialog, setShowPhoneBindDialog] = useState(false)
+  const [userPhone, setUserPhone] = useState<string | null>(null)
+
+  // 小程序开发模式设置（用于跳过工作台登录）
+  const [miniappDevSettings, setMiniappDevSettings] = useState<{
+    devMode: boolean
+    skipWorkbenchLogin: boolean
+    devEscortId: string
+  }>({ devMode: false, skipWorkbenchLogin: false, devEscortId: '' })
+
   // 合并 escortSession：Props 优先，其次本地状态
   const mergedEscortSession = useMemo(() => {
     if (escortSession?.token) return escortSession
@@ -206,11 +219,11 @@ export function TerminalPreview({
     setPreviewEscortToken(escortToken) // 持久化
     setLocalEscortToken(escortToken)   // 更新状态
     // useViewerRole 会自动触发验证并切换视角
-  }, [])
-
-  // Step 4/7: 陪诊员入口点击处理
-  const handleEscortEntryClick = useCallback(() => {
-    setShowEscortLoginDialog(true)
+    // 登录成功后自动进入工作台
+    setTimeout(() => {
+      setCurrentPage('workbench')
+      setPageParams({})
+    }, 100)
   }, [])
 
   // 获取 token 用于 DebugPanel 显示
@@ -233,6 +246,20 @@ export function TerminalPreview({
       setSelectedServiceId(initialServiceId)
     }
   }, [initialServiceId])
+
+  // 加载小程序开发模式设置
+  useEffect(() => {
+    const loadMiniappSettings = async () => {
+      try {
+        const settings = await previewApi.getMiniappSettings()
+        console.log('[TerminalPreview] 小程序开发模式设置:', settings)
+        setMiniappDevSettings(settings)
+      } catch (error) {
+        console.warn('[TerminalPreview] 加载小程序设置失败:', error)
+      }
+    }
+    loadMiniappSettings()
+  }, [])
 
   // Step 9: 路由参数状态（用于传递 id 等参数到详情页）
   const [pageParams, setPageParams] = useState<Record<string, string>>({})
@@ -264,6 +291,19 @@ export function TerminalPreview({
     // 开发环境校验参数
     validatePageParams(page, params)
 
+    // 小程序环境：特定页面跳转到原生页面
+    if (isWxEnvironment()) {
+      const nativePageMap: Record<string, string> = {
+        'user-profile-edit': '/pages/user-settings/index',
+      }
+      const nativePath = nativePageMap[page]
+      if (nativePath) {
+        // @ts-expect-error wx 在小程序环境中存在
+        wx.navigateTo({ url: nativePath })
+        return
+      }
+    }
+
     // Step 14.11: 保存当前页面的滚动位置
     const currentPageKey = selectedServiceId
       ? `${currentPage}-service-${selectedServiceId}`
@@ -280,10 +320,74 @@ export function TerminalPreview({
     restoreScrollPosition(targetPageKey, { delay: 50, fallbackToTop: true })
   }, [currentPage, selectedServiceId, saveScrollPosition, restoreScrollPosition])
 
-  // Step 4/7: 进入工作台处理
-  const handleWorkbenchClick = useCallback(() => {
-    navigateToPage('workbench')
+  // Step 4/7: 陪诊员入口点击处理
+  // 检查用户是否已绑定手机号，未绑定则提示绑定
+  const handleEscortEntryClick = useCallback(async () => {
+    // 先获取用户资料，检查手机号绑定状态
+    try {
+      const profile = await previewApi.getUserProfile()
+      if (profile?.phone) {
+        // 已绑定手机号，直接跳转到申请页面
+        setUserPhone(profile.phone)
+        navigateToPage('escort-apply')
+      } else {
+        // 未绑定手机号，弹出绑定提示
+        setShowPhoneBindDialog(true)
+      }
+    } catch (error) {
+      console.error('[TerminalPreview] 获取用户资料失败:', error)
+      // 获取失败时也弹出绑定提示
+      setShowPhoneBindDialog(true)
+    }
   }, [navigateToPage])
+
+  // 手机号绑定成功后的处理
+  const handlePhoneBindSuccess = useCallback((phone: string) => {
+    console.log('[TerminalPreview] 手机号绑定成功:', phone)
+    setUserPhone(phone)
+    setShowPhoneBindDialog(false)
+    // 绑定成功后跳转到申请页面
+    navigateToPage('escort-apply')
+  }, [navigateToPage])
+
+  // 已有手机号时直接继续
+  const handlePhoneContinue = useCallback(() => {
+    navigateToPage('escort-apply')
+  }, [navigateToPage])
+
+  // Step 4/7: 进入工作台处理
+  const handleWorkbenchClick = useCallback(async () => {
+    // 如果已有有效的 escortToken，直接进入工作台
+    if (effectiveViewerRole === 'escort') {
+      navigateToPage('workbench')
+      return
+    }
+
+    // 开发模式下，如果启用了跳过登录，尝试自动登录
+    if (miniappDevSettings.devMode && miniappDevSettings.skipWorkbenchLogin) {
+      console.log('[TerminalPreview] 开发模式，尝试自动登录陪诊员...')
+      try {
+        const result = await previewApi.devModeAutoLogin()
+        if (result?.escortToken) {
+          console.log('[TerminalPreview] 开发模式自动登录成功:', result.escortProfile.name)
+          setPreviewEscortToken(result.escortToken)
+          setLocalEscortToken(result.escortToken)
+          // 延迟进入工作台，等待状态更新
+          setTimeout(() => {
+            navigateToPage('workbench')
+          }, 100)
+          return
+        } else {
+          console.warn('[TerminalPreview] 开发模式自动登录失败：未找到关联陪诊员')
+        }
+      } catch (error) {
+        console.error('[TerminalPreview] 开发模式自动登录失败:', error)
+      }
+    }
+
+    // 未登录且自动登录失败，弹出陪诊员登录对话框
+    setShowEscortLoginDialog(true)
+  }, [navigateToPage, effectiveViewerRole, miniappDevSettings, setLocalEscortToken])
 
   // Step 5/7: 退出陪诊员视角
   const handleExitEscortMode = useCallback(() => {
@@ -447,7 +551,7 @@ export function TerminalPreview({
   const wxSafeAreaTop = isWxEnvironment() ? 45 : 0
 
   // 小程序环境的整体缩放比例（因为屏幕比 375px 设计稿更宽）
-  const wxScale = isWxEnvironment() ? 1.15 : 1
+  const wxScale = isWxEnvironment() ? 1.1 : 1
 
   const renderHomePage = () => (
     <>
@@ -595,6 +699,7 @@ export function TerminalPreview({
           <CouponsPage
             themeSettings={themeSettings}
             isDarkMode={isDarkMode}
+            onBack={() => navigateToPage('profile')}
             couponsOverride={marketingData?.coupons}
           />
         )
@@ -603,6 +708,7 @@ export function TerminalPreview({
           <MembershipPage
             themeSettings={themeSettings}
             isDarkMode={isDarkMode}
+            onBack={() => navigateToPage('profile')}
             onNavigate={(page) => navigateToPage(page)}
             membershipOverride={marketingData?.membership}
           />
@@ -621,6 +727,7 @@ export function TerminalPreview({
           <PointsPage
             themeSettings={themeSettings}
             isDarkMode={isDarkMode}
+            onBack={() => navigateToPage('profile')}
             onNavigate={(page) => navigateToPage(page)}
             pointsOverride={marketingData?.points}
           />
@@ -638,6 +745,7 @@ export function TerminalPreview({
           <ReferralsPage
             themeSettings={themeSettings}
             isDarkMode={isDarkMode}
+            onBack={() => navigateToPage('profile')}
             referralsOverride={marketingData?.referrals}
           />
         )
@@ -685,6 +793,15 @@ export function TerminalPreview({
             isDarkMode={isDarkMode}
             escortId={pageParams.id}
             onBack={() => navigateToPage('escort-list')}
+          />
+        )
+      case 'escort-apply':
+        return (
+          <EscortApplyPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            onBack={() => navigateToPage('profile')}
+            onNavigate={(page, params) => navigateToPage(page, params)}
           />
         )
 
@@ -1094,6 +1211,17 @@ export function TerminalPreview({
         onLoginSuccess={handleEscortLoginSuccess}
         themeSettings={themeSettings}
         isDarkMode={isDarkMode}
+      />
+
+      {/* 手机号绑定提示对话框（申请成为陪诊员前检查手机号绑定状态） */}
+      <PhoneBindPromptDialog
+        open={showPhoneBindDialog}
+        onClose={() => setShowPhoneBindDialog(false)}
+        onBindSuccess={handlePhoneBindSuccess}
+        onContinue={handlePhoneContinue}
+        themeSettings={themeSettings}
+        isDarkMode={isDarkMode}
+        currentPhone={userPhone}
       />
     </Box>
   )

@@ -8,7 +8,7 @@ import { isWxEnvironment } from '../../../../platform/env'
 import { formatCount } from '../../../../utils'
 import type { ServiceInfoCardProps } from '../types'
 
-const wxScale = isWxEnvironment() ? 1.15 : 1
+const wxScale = isWxEnvironment() ? 1.1 : 1
 
 export function ServiceInfoCard({
   service,
@@ -32,28 +32,15 @@ export function ServiceInfoCard({
         backgroundColor: cardBg,
       }}
     >
-      {/* 分类标签 */}
-      {service.category && (
-        <Text
-          className='inline-block px-2 py-0.5 rounded text-xs mb-2'
+      {/* 服务名称 + 分类标签 */}
+      <Box
+        className='flex items-center gap-2'
           style={{
-            display: 'inline-block',
-            paddingLeft: 8 * wxScale,
-            paddingRight: 8 * wxScale,
-            paddingTop: 2 * wxScale,
-            paddingBottom: 2 * wxScale,
-            borderRadius: 4 * wxScale,
-            fontSize: 12 * wxScale,
-            marginBottom: 8 * wxScale,
-            backgroundColor: `${themeSettings.primaryColor}15`,
-            color: themeSettings.primaryColor,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8 * wxScale,
           }}
         >
-          {service.category.name}
-        </Text>
-      )}
-
-      {/* 服务名称 */}
       <Text
         className='text-lg font-bold'
         style={{
@@ -64,14 +51,40 @@ export function ServiceInfoCard({
       >
         {service.name}
       </Text>
+        {service.category && (
+          <Box
+            className='px-2 rounded flex items-center'
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              paddingLeft: 8 * wxScale,
+              paddingRight: 8 * wxScale,
+              height: isWxEnvironment() ? 22 * wxScale : 20,
+              borderRadius: 4 * wxScale,
+              backgroundColor: `${themeSettings.primaryColor}15`,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 12 * wxScale,
+                color: themeSettings.primaryColor,
+              }}
+            >
+              {service.category.name}
+            </Text>
+          </Box>
+        )}
+      </Box>
 
       {/* 简介 */}
       {service.description && (
         <Text
-          className='mt-2 text-sm'
+          className='mt-2 text-sm block'
           style={{
-            marginTop: 8 * wxScale,
+            display: 'block',
+            marginTop: isWxEnvironment() ? 12 * wxScale : 8,
             fontSize: 14 * wxScale,
+            lineHeight: 1.5,
             color: textSecondary,
           }}
         >
@@ -81,19 +94,19 @@ export function ServiceInfoCard({
 
       {/* 价格和统计 */}
       <Box
-        className='mt-4 flex items-end justify-between'
+        className='mt-4 flex items-center justify-between'
         style={{
           marginTop: 16 * wxScale,
           display: 'flex',
-          alignItems: 'flex-end',
+          alignItems: 'center',
           justifyContent: 'space-between',
         }}
       >
         <Box
-          className='flex items-baseline gap-1'
+          className='flex items-center gap-1'
           style={{
             display: 'flex',
-            alignItems: 'baseline',
+            alignItems: 'center',
             gap: 4 * wxScale,
           }}
         >

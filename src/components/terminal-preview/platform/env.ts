@@ -26,17 +26,17 @@ export function isWxEnvironment(): boolean {
   // @ts-expect-error Taro 环境变量
   if (typeof process !== 'undefined' && process.env?.TARO_ENV === 'weapp') {
     console.log('[isWxEnvironment] 检测到 TARO_ENV=weapp')
-      _isWxEnvCached = true
-      return true
-    }
+    _isWxEnvCached = true
+    return true
+  }
 
   // 方法 2：检测 wx 全局对象
   // @ts-expect-error wx 在小程序环境中存在
   if (typeof wx !== 'undefined' && typeof wx.request === 'function') {
     console.log('[isWxEnvironment] 检测到 wx.request')
-      _isWxEnvCached = true
-      return true
-    }
+    _isWxEnvCached = true
+    return true
+  }
 
   // 方法 3：检测 Taro 全局对象（某些情况下 wx 可能被重命名）
   // @ts-expect-error Taro 全局对象
@@ -97,4 +97,42 @@ export function getRuntimeEnvironment(): RuntimeEnvironment {
     return 'browser'
   }
   return 'unknown'
+}
+
+// ============================================================================
+// 图片 URL 处理
+// ============================================================================
+
+// 服务器基础 URL（用于拼接相对路径）
+const SITE_BASE_URL = 'https://kkl.top'
+
+/**
+ * 将相对路径转换为完整 URL
+ * 
+ * 在小程序环境中，Image 组件需要完整 URL 才能加载图片
+ * 在 Web 环境中，相对路径也可以正常使用
+ * 
+ * @param url - 图片 URL（可能是相对路径或完整 URL）
+ * @returns 完整 URL 或 null
+ */
+export function getFullImageUrl(url: string | null | undefined): string | null {
+  if (!url) return null
+
+  // 已经是完整 URL 直接返回
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url
+  }
+
+  // 微信临时文件路径直接返回
+  if (url.startsWith('wxfile://') || url.startsWith('http://tmp/')) {
+    return url
+  }
+
+  // 在小程序环境中，必须使用完整 URL
+  if (isWxEnvironment()) {
+    return `${SITE_BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`
+  }
+
+  // 在 Web 环境中，相对路径也可以使用
+  return url
 }

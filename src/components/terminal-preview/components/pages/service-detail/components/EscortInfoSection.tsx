@@ -10,7 +10,7 @@ import { SafeHTML } from '@/components/ui/safe-html'
 import { isWxEnvironment, isBrowserEnvironment } from '../../../../platform/env'
 import type { EscortInfoSectionProps } from '../types'
 
-const wxScale = isWxEnvironment() ? 1.15 : 1
+const wxScale = isWxEnvironment() ? 1.1 : 1
 
 export function EscortInfoSection({
   service,

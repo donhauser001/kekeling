@@ -103,6 +103,7 @@ export function ServiceEdit() {
                 categoryId: service.categoryId,
                 description: service.description || '',
                 content: service.content || '',
+                contentType: (service as any).contentType || 'richtext',  // 兼容旧数据
                 price: service.price.toString(),
                 originalPrice: service.originalPrice?.toString() || '',
                 unit: service.unit,
@@ -181,6 +182,7 @@ export function ServiceEdit() {
             categoryId: formData.categoryId,
             description: formData.description.trim() || undefined,
             content: formData.content.trim() || undefined,
+            contentType: formData.contentType || 'richtext',  // 内容类型
             price: parseFloat(formData.price),
             originalPrice: formData.originalPrice ? parseFloat(formData.originalPrice) : undefined,
             unit: formData.unit,

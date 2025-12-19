@@ -56,13 +56,16 @@ import { Route as ClerkauthSignUpRouteImport } from './routes/clerk/(auth)/sign-
 import { Route as ClerkauthSignInRouteImport } from './routes/clerk/(auth)/sign-in'
 import { Route as AuthenticatedUsersPatientsRouteImport } from './routes/_authenticated/users/patients'
 import { Route as AuthenticatedUsersUserIdRouteImport } from './routes/_authenticated/users/$userId'
+import { Route as AuthenticatedSettingsSmsRouteImport } from './routes/_authenticated/settings/sms'
 import { Route as AuthenticatedSettingsPaymentRouteImport } from './routes/_authenticated/settings/payment'
 import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings/notifications'
+import { Route as AuthenticatedSettingsMiniappRouteImport } from './routes/_authenticated/settings/miniapp'
 import { Route as AuthenticatedSettingsDisplayRouteImport } from './routes/_authenticated/settings/display'
 import { Route as AuthenticatedSettingsAppearanceRouteImport } from './routes/_authenticated/settings/appearance'
 import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated/settings/account'
 import { Route as AuthenticatedServicesIdRouteImport } from './routes/_authenticated/services/$id'
 import { Route as AuthenticatedEscortsWithdrawRecordsRouteImport } from './routes/_authenticated/escorts/withdraw-records'
+import { Route as AuthenticatedEscortsApplicationsRouteImport } from './routes/_authenticated/escorts/applications'
 import { Route as AuthenticatedEscortsEscortIdRouteImport } from './routes/_authenticated/escorts/$escortId'
 import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
 import { Route as AuthenticatedDistributionSettingsRouteImport } from './routes/_authenticated/distribution/settings'
@@ -340,6 +343,12 @@ const AuthenticatedUsersUserIdRoute =
     path: '/users/$userId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedSettingsSmsRoute =
+  AuthenticatedSettingsSmsRouteImport.update({
+    id: '/sms',
+    path: '/sms',
+    getParentRoute: () => AuthenticatedSettingsRouteRoute,
+  } as any)
 const AuthenticatedSettingsPaymentRoute =
   AuthenticatedSettingsPaymentRouteImport.update({
     id: '/payment',
@@ -350,6 +359,12 @@ const AuthenticatedSettingsNotificationsRoute =
   AuthenticatedSettingsNotificationsRouteImport.update({
     id: '/notifications',
     path: '/notifications',
+    getParentRoute: () => AuthenticatedSettingsRouteRoute,
+  } as any)
+const AuthenticatedSettingsMiniappRoute =
+  AuthenticatedSettingsMiniappRouteImport.update({
+    id: '/miniapp',
+    path: '/miniapp',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any)
 const AuthenticatedSettingsDisplayRoute =
@@ -379,6 +394,12 @@ const AuthenticatedEscortsWithdrawRecordsRoute =
   AuthenticatedEscortsWithdrawRecordsRouteImport.update({
     id: '/escorts/withdraw-records',
     path: '/escorts/withdraw-records',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedEscortsApplicationsRoute =
+  AuthenticatedEscortsApplicationsRouteImport.update({
+    id: '/escorts/applications',
+    path: '/escorts/applications',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedEscortsEscortIdRoute =
@@ -514,13 +535,16 @@ export interface FileRoutesByFullPath {
   '/distribution/settings': typeof AuthenticatedDistributionSettingsRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/escorts/$escortId': typeof AuthenticatedEscortsEscortIdRoute
+  '/escorts/applications': typeof AuthenticatedEscortsApplicationsRoute
   '/escorts/withdraw-records': typeof AuthenticatedEscortsWithdrawRecordsRoute
   '/services/$id': typeof AuthenticatedServicesIdRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
+  '/settings/miniapp': typeof AuthenticatedSettingsMiniappRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/settings/payment': typeof AuthenticatedSettingsPaymentRoute
+  '/settings/sms': typeof AuthenticatedSettingsSmsRoute
   '/users/$userId': typeof AuthenticatedUsersUserIdRoute
   '/users/patients': typeof AuthenticatedUsersPatientsRoute
   '/clerk/sign-in': typeof ClerkauthSignInRoute
@@ -585,13 +609,16 @@ export interface FileRoutesByTo {
   '/distribution/settings': typeof AuthenticatedDistributionSettingsRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/escorts/$escortId': typeof AuthenticatedEscortsEscortIdRoute
+  '/escorts/applications': typeof AuthenticatedEscortsApplicationsRoute
   '/escorts/withdraw-records': typeof AuthenticatedEscortsWithdrawRecordsRoute
   '/services/$id': typeof AuthenticatedServicesIdRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
+  '/settings/miniapp': typeof AuthenticatedSettingsMiniappRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/settings/payment': typeof AuthenticatedSettingsPaymentRoute
+  '/settings/sms': typeof AuthenticatedSettingsSmsRoute
   '/users/$userId': typeof AuthenticatedUsersUserIdRoute
   '/users/patients': typeof AuthenticatedUsersPatientsRoute
   '/clerk/sign-in': typeof ClerkauthSignInRoute
@@ -661,13 +688,16 @@ export interface FileRoutesById {
   '/_authenticated/distribution/settings': typeof AuthenticatedDistributionSettingsRoute
   '/_authenticated/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/_authenticated/escorts/$escortId': typeof AuthenticatedEscortsEscortIdRoute
+  '/_authenticated/escorts/applications': typeof AuthenticatedEscortsApplicationsRoute
   '/_authenticated/escorts/withdraw-records': typeof AuthenticatedEscortsWithdrawRecordsRoute
   '/_authenticated/services/$id': typeof AuthenticatedServicesIdRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/_authenticated/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/_authenticated/settings/display': typeof AuthenticatedSettingsDisplayRoute
+  '/_authenticated/settings/miniapp': typeof AuthenticatedSettingsMiniappRoute
   '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/_authenticated/settings/payment': typeof AuthenticatedSettingsPaymentRoute
+  '/_authenticated/settings/sms': typeof AuthenticatedSettingsSmsRoute
   '/_authenticated/users/$userId': typeof AuthenticatedUsersUserIdRoute
   '/_authenticated/users/patients': typeof AuthenticatedUsersPatientsRoute
   '/clerk/(auth)/sign-in': typeof ClerkauthSignInRoute
@@ -735,13 +765,16 @@ export interface FileRouteTypes {
     | '/distribution/settings'
     | '/errors/$error'
     | '/escorts/$escortId'
+    | '/escorts/applications'
     | '/escorts/withdraw-records'
     | '/services/$id'
     | '/settings/account'
     | '/settings/appearance'
     | '/settings/display'
+    | '/settings/miniapp'
     | '/settings/notifications'
     | '/settings/payment'
+    | '/settings/sms'
     | '/users/$userId'
     | '/users/patients'
     | '/clerk/sign-in'
@@ -806,13 +839,16 @@ export interface FileRouteTypes {
     | '/distribution/settings'
     | '/errors/$error'
     | '/escorts/$escortId'
+    | '/escorts/applications'
     | '/escorts/withdraw-records'
     | '/services/$id'
     | '/settings/account'
     | '/settings/appearance'
     | '/settings/display'
+    | '/settings/miniapp'
     | '/settings/notifications'
     | '/settings/payment'
+    | '/settings/sms'
     | '/users/$userId'
     | '/users/patients'
     | '/clerk/sign-in'
@@ -881,13 +917,16 @@ export interface FileRouteTypes {
     | '/_authenticated/distribution/settings'
     | '/_authenticated/errors/$error'
     | '/_authenticated/escorts/$escortId'
+    | '/_authenticated/escorts/applications'
     | '/_authenticated/escorts/withdraw-records'
     | '/_authenticated/services/$id'
     | '/_authenticated/settings/account'
     | '/_authenticated/settings/appearance'
     | '/_authenticated/settings/display'
+    | '/_authenticated/settings/miniapp'
     | '/_authenticated/settings/notifications'
     | '/_authenticated/settings/payment'
+    | '/_authenticated/settings/sms'
     | '/_authenticated/users/$userId'
     | '/_authenticated/users/patients'
     | '/clerk/(auth)/sign-in'
@@ -1280,6 +1319,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedUsersUserIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/settings/sms': {
+      id: '/_authenticated/settings/sms'
+      path: '/sms'
+      fullPath: '/settings/sms'
+      preLoaderRoute: typeof AuthenticatedSettingsSmsRouteImport
+      parentRoute: typeof AuthenticatedSettingsRouteRoute
+    }
     '/_authenticated/settings/payment': {
       id: '/_authenticated/settings/payment'
       path: '/payment'
@@ -1292,6 +1338,13 @@ declare module '@tanstack/react-router' {
       path: '/notifications'
       fullPath: '/settings/notifications'
       preLoaderRoute: typeof AuthenticatedSettingsNotificationsRouteImport
+      parentRoute: typeof AuthenticatedSettingsRouteRoute
+    }
+    '/_authenticated/settings/miniapp': {
+      id: '/_authenticated/settings/miniapp'
+      path: '/miniapp'
+      fullPath: '/settings/miniapp'
+      preLoaderRoute: typeof AuthenticatedSettingsMiniappRouteImport
       parentRoute: typeof AuthenticatedSettingsRouteRoute
     }
     '/_authenticated/settings/display': {
@@ -1327,6 +1380,13 @@ declare module '@tanstack/react-router' {
       path: '/escorts/withdraw-records'
       fullPath: '/escorts/withdraw-records'
       preLoaderRoute: typeof AuthenticatedEscortsWithdrawRecordsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/escorts/applications': {
+      id: '/_authenticated/escorts/applications'
+      path: '/escorts/applications'
+      fullPath: '/escorts/applications'
+      preLoaderRoute: typeof AuthenticatedEscortsApplicationsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/escorts/$escortId': {
@@ -1469,8 +1529,10 @@ interface AuthenticatedSettingsRouteRouteChildren {
   AuthenticatedSettingsAccountRoute: typeof AuthenticatedSettingsAccountRoute
   AuthenticatedSettingsAppearanceRoute: typeof AuthenticatedSettingsAppearanceRoute
   AuthenticatedSettingsDisplayRoute: typeof AuthenticatedSettingsDisplayRoute
+  AuthenticatedSettingsMiniappRoute: typeof AuthenticatedSettingsMiniappRoute
   AuthenticatedSettingsNotificationsRoute: typeof AuthenticatedSettingsNotificationsRoute
   AuthenticatedSettingsPaymentRoute: typeof AuthenticatedSettingsPaymentRoute
+  AuthenticatedSettingsSmsRoute: typeof AuthenticatedSettingsSmsRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
 }
 
@@ -1479,9 +1541,11 @@ const AuthenticatedSettingsRouteRouteChildren: AuthenticatedSettingsRouteRouteCh
     AuthenticatedSettingsAccountRoute: AuthenticatedSettingsAccountRoute,
     AuthenticatedSettingsAppearanceRoute: AuthenticatedSettingsAppearanceRoute,
     AuthenticatedSettingsDisplayRoute: AuthenticatedSettingsDisplayRoute,
+    AuthenticatedSettingsMiniappRoute: AuthenticatedSettingsMiniappRoute,
     AuthenticatedSettingsNotificationsRoute:
       AuthenticatedSettingsNotificationsRoute,
     AuthenticatedSettingsPaymentRoute: AuthenticatedSettingsPaymentRoute,
+    AuthenticatedSettingsSmsRoute: AuthenticatedSettingsSmsRoute,
     AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
   }
 
@@ -1499,6 +1563,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDistributionSettingsRoute: typeof AuthenticatedDistributionSettingsRoute
   AuthenticatedErrorsErrorRoute: typeof AuthenticatedErrorsErrorRoute
   AuthenticatedEscortsEscortIdRoute: typeof AuthenticatedEscortsEscortIdRoute
+  AuthenticatedEscortsApplicationsRoute: typeof AuthenticatedEscortsApplicationsRoute
   AuthenticatedEscortsWithdrawRecordsRoute: typeof AuthenticatedEscortsWithdrawRecordsRoute
   AuthenticatedServicesIdRoute: typeof AuthenticatedServicesIdRoute
   AuthenticatedUsersUserIdRoute: typeof AuthenticatedUsersUserIdRoute
@@ -1554,6 +1619,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedDistributionSettingsRoute,
   AuthenticatedErrorsErrorRoute: AuthenticatedErrorsErrorRoute,
   AuthenticatedEscortsEscortIdRoute: AuthenticatedEscortsEscortIdRoute,
+  AuthenticatedEscortsApplicationsRoute: AuthenticatedEscortsApplicationsRoute,
   AuthenticatedEscortsWithdrawRecordsRoute:
     AuthenticatedEscortsWithdrawRecordsRoute,
   AuthenticatedServicesIdRoute: AuthenticatedServicesIdRoute,

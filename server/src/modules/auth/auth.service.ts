@@ -374,5 +374,33 @@ export class AuthService {
       },
     });
   }
+
+  /**
+   * 验证陪诊员
+   * 用于 escort token 的身份验证
+   */
+  async validateEscort(escortId: string) {
+    return this.prisma.escort.findUnique({
+      where: { id: escortId },
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        avatar: true,
+        gender: true,
+        status: true,
+        workStatus: true,
+        userId: true,
+        rating: true,
+        orderCount: true,
+        level: {
+          select: {
+            code: true,
+            name: true,
+          },
+        },
+      },
+    });
+  }
 }
 

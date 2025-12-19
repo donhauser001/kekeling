@@ -10,7 +10,7 @@ import { Box, ScrollView, Text, Icon } from '../ui/primitives'
 import { getIconName } from '../icons'
 
 // 小程序环境的缩放比例
-const wxScale = isWxEnvironment() ? 1.15 : 1
+const wxScale = isWxEnvironment() ? 1.1 : 1
 
 interface CategorySectionProps {
   categories: ServiceCategory[]

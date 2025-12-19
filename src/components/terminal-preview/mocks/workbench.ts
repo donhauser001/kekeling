@@ -15,7 +15,7 @@ import type {
   WithdrawStats,
   WorkbenchOrderDetail,
   WorkbenchSettings,
-} from '../types'
+} from '../api/types'
 
 // ============================================================================
 // 工作台统计 Mock

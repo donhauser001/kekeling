@@ -9,7 +9,7 @@ import { isWxEnvironment } from '../../../../platform/env'
 import type { ThemeSettings } from '../../../../types'
 import type { ThemeColors } from '../types'
 
-const wxScale = isWxEnvironment() ? 1.15 : 1
+const wxScale = isWxEnvironment() ? 1.1 : 1
 
 interface LoadingStateProps {
   themeSettings: ThemeSettings
@@ -110,8 +110,8 @@ export function EmptyState({ themeSettings, colors, onBack }: EmptyStateProps) {
             marginTop: 16 * wxScale,
             paddingLeft: 16 * wxScale,
             paddingRight: 16 * wxScale,
-            paddingTop: 8 * wxScale,
-            paddingBottom: 8 * wxScale,
+            paddingTop: isWxEnvironment() ? 14 * wxScale : 10,
+            paddingBottom: isWxEnvironment() ? 14 * wxScale : 10,
             borderRadius: 9999,
             fontSize: 14 * wxScale,
             backgroundColor: themeSettings.primaryColor,

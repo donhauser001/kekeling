@@ -37,6 +37,10 @@ export const Box = forwardRef<HTMLDivElement, BoxProps>(function Box(
     onMouseMove,
     onMouseUp,
     onMouseLeave,
+    onTouchStart,
+    onTouchMove,
+    onTouchEnd,
+    onTouchCancel,
     onScroll,
     ...rest
   },
@@ -53,6 +57,10 @@ export const Box = forwardRef<HTMLDivElement, BoxProps>(function Box(
       onMouseMove={onMouseMove}
       onMouseUp={onMouseUp}
       onMouseLeave={onMouseLeave}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+      onTouchCancel={onTouchCancel}
       onScroll={onScroll}
       {...rest}
     >
@@ -86,18 +94,44 @@ export const Text = forwardRef<HTMLSpanElement, TextProps>(function Text(
 
 /**
  * Button - 按钮组件
- * Web 端渲染为 button
+ * Web 端渲染为 button，重置默认样式以与小程序 View 模拟保持一致
  */
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
   { children, className, style, onClick, onKeyDown, disabled, type = 'button', ...rest },
   ref
 ) {
+  // 重置按钮默认样式，使其表现与小程序 View 模拟一致
+  const resetStyle: React.CSSProperties = {
+    // 重置边框和背景
+    border: 'none',
+    background: 'none',
+    // 重置内边距
+    padding: 0,
+    margin: 0,
+    // 重置字体
+    font: 'inherit',
+    color: 'inherit',
+    // 重置光标
+    cursor: disabled ? 'not-allowed' : 'pointer',
+    // 透明度（与小程序端一致）
+    opacity: disabled ? 0.5 : 1,
+    // 默认 flex 布局居中（与小程序端一致）
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    textAlign: 'center',
+    // 移除默认轮廓
+    outline: 'none',
+    // 合并自定义样式
+    ...style,
+  }
+
   return (
     <button
       ref={ref}
       className={className}
-      style={style}
-      onClick={onClick}
+      style={resetStyle}
+      onClick={disabled ? undefined : onClick}
       onKeyDown={onKeyDown}
       disabled={disabled}
       type={type}
@@ -146,6 +180,10 @@ export const Image = forwardRef<HTMLImageElement, ImageProps>(function Image(
     ...(objectFit ? { objectFit } : {}),
   }
 
+  // 包装事件处理，确保不传递原生事件参数（与小程序端对齐）
+  const handleLoad = onLoad ? () => onLoad() : undefined
+  const handleError = onError ? () => onError() : undefined
+
   return (
     <img
       ref={ref}
@@ -153,8 +191,8 @@ export const Image = forwardRef<HTMLImageElement, ImageProps>(function Image(
       alt={alt}
       className={className}
       style={combinedStyle}
-      onLoad={onLoad}
-      onError={onError}
+      onLoad={handleLoad}
+      onError={handleError}
       loading={lazyLoad ? 'lazy' : undefined}
       {...rest}
     />

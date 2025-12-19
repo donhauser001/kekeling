@@ -19,6 +19,9 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { getCookie } from '@/lib/cookies'
+
+const ACCESS_TOKEN_KEY = 'thisisjustarandomstring'
 import {
   Card,
   CardContent,
@@ -83,12 +86,24 @@ function LogoUploader({
       formData.append('file', file)
       formData.append('folder', 'brand')
 
+      // 获取认证 token
+      const cookieValue = getCookie(ACCESS_TOKEN_KEY)
+      const token = cookieValue ? (cookieValue.startsWith('"') ? JSON.parse(cookieValue) : cookieValue) : null
+      const headers: HeadersInit = {}
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+
       const response = await fetch('/api/upload', {
         method: 'POST',
+        headers,
         body: formData,
       })
 
       if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('登录已过期，请重新登录')
+        }
         throw new Error('上传失败')
       }
 

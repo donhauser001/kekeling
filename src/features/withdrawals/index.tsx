@@ -2,7 +2,6 @@ import { useState } from 'react'
 import {
   Search as SearchIcon,
   Loader2,
-  AlertCircle,
   Clock,
   CheckCircle,
   XCircle,
@@ -415,9 +414,10 @@ export function Withdrawals() {
         {/* 分页 */}
         <div className='mt-4'>
           <SimplePagination
-            page={page}
+            currentPage={page}
+            totalPages={Math.ceil(total / pageSize) || 1}
             pageSize={pageSize}
-            total={total}
+            totalItems={total}
             onPageChange={setPage}
             onPageSizeChange={size => {
               setPageSize(size)

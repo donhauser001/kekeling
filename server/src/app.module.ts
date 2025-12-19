@@ -21,6 +21,7 @@ import { SystemConfigModule } from './modules/config/config.module';
 import { TestModule } from './modules/test/test.module'; // ⚠️ 仅开发环境，生产环境请注释
 import { EscortAppModule } from './modules/escort-app/escort-app.module';
 import { EscortAuthModule } from './modules/escort-auth/escort-auth.module';
+import { EscortApplyModule } from './modules/escort-apply/escort-apply.module';
 import { WorkflowsModule } from './modules/workflows/workflows.module';
 import { ServiceGuaranteesModule } from './modules/service-guarantees/service-guarantees.module';
 import { OperationGuideCategoriesModule } from './modules/operation-guide-categories/operation-guide-categories.module';
@@ -78,6 +79,7 @@ import { UserAddressesModule } from './modules/user-addresses/user-addresses.mod
     WorkflowsModule,    // 流程管理
     EscortAppModule,    // 陪诊员端 API
     EscortAuthModule,   // 陪诊员认证（短信登录）
+    EscortApplyModule,  // 陪诊员申请
     TasksModule,        // 定时任务
     PricingModule,      // 价格引擎
     MembershipModule,   // 会员系统

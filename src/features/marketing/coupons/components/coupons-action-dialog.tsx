@@ -84,7 +84,7 @@ export function CouponsActionDialog({
   }
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formSchema) as any,
     defaultValues: {
       name: '',
       code: '',

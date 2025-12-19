@@ -9,7 +9,7 @@ import { SafeHTML } from '@/components/ui/safe-html'
 import { isWxEnvironment, isBrowserEnvironment } from '../../../../platform/env'
 import type { ServiceRichContentProps } from '../types'
 
-const wxScale = isWxEnvironment() ? 1.15 : 1
+const wxScale = isWxEnvironment() ? 1.1 : 1
 
 export function ServiceRichContent({
   content,
@@ -45,7 +45,7 @@ export function ServiceRichContent({
               .rich-content h1, .rich-content h2, .rich-content h3 { font-weight: 600; margin: 12px 0 8px; }
             `}</style>
           )}
-          <SafeHTML html={content} />
+          <SafeHTML html={content} allowStyle />
         </Box>
       ) : (
         <Box
