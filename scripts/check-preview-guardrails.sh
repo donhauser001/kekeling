@@ -118,15 +118,17 @@ echo ""
 
 # -----------------------------------------------------------------------------
 # 检查 4: 工作台页面必须检查 effectiveViewerRole
+# 注意：子组件目录(components/)由父组件处理权限，不需要直接检查
 # -----------------------------------------------------------------------------
 echo "📋 检查 4: 工作台页面视角检查..."
 
 if [ -d "$WORKBENCH_PAGES" ]; then
-  WORKBENCH_FILES=$(find "$WORKBENCH_PAGES" -name "*.tsx" -type f 2>/dev/null)
+  # 只检查页面级文件，排除 components/ 子目录
+  WORKBENCH_FILES=$(find "$WORKBENCH_PAGES" -maxdepth 1 -name "*.tsx" -type f 2>/dev/null)
   
   for file in $WORKBENCH_FILES; do
     filename=$(basename "$file")
-    if [[ "$filename" == "index.ts" ]]; then
+    if [[ "$filename" == "index.ts" ]] || [[ "$filename" == "index.tsx" ]] || [[ "$filename" == "types.ts" ]]; then
       continue
     fi
     
@@ -146,16 +148,18 @@ echo ""
 # -----------------------------------------------------------------------------
 # 检查 4.1: 工作台页面必须使用 PermissionPrompt（强制）
 # @see DEV_NOTES.md PermissionPrompt 组件约束
+# 注意：子组件目录(components/)由父组件处理权限，不需要直接包含 PermissionPrompt
 # -----------------------------------------------------------------------------
 echo "📋 检查 4.1: 工作台页面 PermissionPrompt 使用（强制）..."
 
 if [ -d "$WORKBENCH_PAGES" ]; then
-  WORKBENCH_FILES=$(find "$WORKBENCH_PAGES" -name "*.tsx" -type f 2>/dev/null)
+  # 只检查页面级文件，排除 components/ 子目录和 types.ts 文件
+  WORKBENCH_FILES=$(find "$WORKBENCH_PAGES" -maxdepth 1 -name "*.tsx" -type f 2>/dev/null)
   
   for file in $WORKBENCH_FILES; do
     filename=$(basename "$file")
-    # 跳过 index.ts 等导出文件
-    if [[ "$filename" == "index.ts" ]] || [[ "$filename" == "index.tsx" ]]; then
+    # 跳过 index.ts 等导出文件和类型定义文件
+    if [[ "$filename" == "index.ts" ]] || [[ "$filename" == "index.tsx" ]] || [[ "$filename" == "types.ts" ]]; then
       continue
     fi
     

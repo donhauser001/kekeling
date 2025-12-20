@@ -884,7 +884,9 @@ export function TerminalPreview({
           <ServiceTypesPage
             themeSettings={themeSettings}
             isDarkMode={isDarkMode}
+            effectiveViewerRole={effectiveViewerRole}
             onNavigate={(page: string, params?: Record<string, string>) => navigateToPage(page, params)}
+            onLogin={() => setShowEscortLoginDialog(true)}
           />
         )
 
