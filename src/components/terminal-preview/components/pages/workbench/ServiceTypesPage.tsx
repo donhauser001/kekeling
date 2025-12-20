@@ -2,14 +2,16 @@
  * 服务项目选择页面（预览器版本）
  *
  * 用于陪诊员选择可接单的服务项目
+ * 数据通道: escortRequest（⚠️ 需要 escortToken）
  */
 
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, Check, Loader2 } from 'lucide-react'
-import type { ThemeSettings } from '../../../types'
+import type { ThemeSettings, PreviewViewerRole } from '../../../types'
 import { getSecondaryTextClass } from '../../../utils'
 import { previewApi } from '../../../api'
+import { PermissionPrompt } from '../../PermissionPrompt'
 
 // ============================================================================
 // 类型定义
@@ -18,7 +20,10 @@ import { previewApi } from '../../../api'
 export interface ServiceTypesPageProps {
   themeSettings: ThemeSettings
   isDarkMode: boolean
+  effectiveViewerRole: PreviewViewerRole
   onNavigate?: (page: string, params?: Record<string, string>) => void
+  /** 显示登录弹窗回调 */
+  onLogin?: () => void
 }
 
 // ============================================================================
@@ -28,14 +33,59 @@ export interface ServiceTypesPageProps {
 export function ServiceTypesPage({
   themeSettings,
   isDarkMode,
+  effectiveViewerRole,
   onNavigate,
+  onLogin,
 }: ServiceTypesPageProps) {
-  // 获取服务列表
+  const isEscort = effectiveViewerRole === 'escort'
+
+  // 获取服务列表（⚠️ 非 escort 视角时不发请求）
   const { data: servicesData, isLoading } = useQuery({
     queryKey: ['preview', 'servicesList', 'all'],
     queryFn: () => previewApi.getServices({ pageSize: 50 }),
     staleTime: 60 * 1000,
+    enabled: isEscort,
   })
+
+  // 非 escort 视角：显示统一的 PermissionPrompt
+  if (!isEscort) {
+    return (
+      <div
+        className="min-h-full"
+        style={{
+          backgroundColor: isDarkMode ? '#1a1a1a' : '#f5f7fa',
+        }}
+      >
+        {/* 页面标题 */}
+        <div
+          className="sticky top-0 z-10 px-4 py-3 flex items-center justify-between"
+          style={{
+            backgroundColor: themeSettings.primaryColor,
+          }}
+        >
+          <button
+            onClick={() => onNavigate?.('workbench-settings')}
+            className="text-white p-1 -ml-1"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <h1 className="text-lg font-semibold text-white">服务项目</h1>
+          <div className="w-10" />
+        </div>
+
+        <div className="px-4 py-8">
+          <PermissionPrompt
+            title="需要陪诊员身份"
+            description="请先登录陪诊员账号管理服务项目"
+            onLogin={onLogin}
+            showDebugInject={process.env.NODE_ENV === 'development'}
+            primaryColor={themeSettings.primaryColor}
+            isDarkMode={isDarkMode}
+          />
+        </div>
+      </div>
+    )
+  }
 
   const services = servicesData?.data || []
 
