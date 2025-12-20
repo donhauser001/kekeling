@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/sheet'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
-import { type Service, type ServiceCategory } from '@/lib/api'
+import { type Service } from '@/lib/api'
 
 // 状态颜色映射
 const statusColors = new Map<string, string>([

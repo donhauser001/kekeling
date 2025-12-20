@@ -106,6 +106,7 @@ export class CommissionService {
 
   /**
    * 结算订单分成 - 将分成金额入账到陪诊员钱包
+   * 根据结算配置决定是实时入账还是先冻结
    * 
    * @param orderId 订单ID
    */
@@ -139,6 +140,11 @@ export class CommissionService {
       return;
     }
 
+    // 获取结算配置
+    const config = await this.getGlobalConfig();
+    const settlementMode = config.settlementMode || 'realtime';
+    const settlementDays = config.settlementDays || 0;
+
     // 计算分成
     const commission = await this.calculateCommission(orderId, order.escortId);
 
@@ -167,8 +173,16 @@ export class CommissionService {
       remainingCommission -= deduction;
     }
 
-    // 实际入账金额
+    // 实际入账金额（扣除负债后）
     const actualAmount = Number(commission.commissionAmount) - totalDeduction;
+
+    // 判断结算模式
+    const isFrozenMode = settlementMode === 'frozen' && settlementDays > 0;
+
+    // 计算解冻时间
+    const unfreezeAt = isFrozenMode
+      ? new Date(Date.now() + settlementDays * 24 * 60 * 60 * 1000)
+      : null;
 
     // 使用事务处理结算
     await this.prisma.$transaction(async (tx) => {
@@ -182,30 +196,59 @@ export class CommissionService {
         },
       });
 
-      // 更新钱包余额
-      const newBalance = new Decimal(Number(order.escort!.wallet!.balance) + actualAmount);
-      await tx.escortWallet.update({
-        where: { id: order.escort!.wallet!.id },
-        data: {
-          balance: newBalance,
-          totalEarned: { increment: commission.commissionAmount },
-        },
-      });
+      if (isFrozenMode) {
+        // ========== 冻结模式：收入先进入冻结金额 ==========
+        const newFrozenBalance = new Decimal(Number(order.escort!.wallet!.frozenBalance) + actualAmount);
+        await tx.escortWallet.update({
+          where: { id: order.escort!.wallet!.id },
+          data: {
+            frozenBalance: newFrozenBalance,
+            totalEarned: { increment: commission.commissionAmount },
+          },
+        });
 
-      // 记录收入流水
-      await tx.walletTransaction.create({
-        data: {
-          walletId: order.escort!.wallet!.id,
-          type: 'income',
-          amount: commission.commissionAmount,
-          balanceAfter: newBalance,
-          orderId,
-          title: `订单收入 (${commission.commissionRate}%分成)`,
-          remark: `来源: ${commission.source === 'service' ? '服务配置' : commission.source === 'level' ? '等级配置' : '全局默认'}`,
-        },
-      });
+        // 记录冻结流水
+        await tx.walletTransaction.create({
+          data: {
+            walletId: order.escort!.wallet!.id,
+            type: 'frozen',
+            amount: actualAmount,
+            balanceAfter: Number(order.escort!.wallet!.balance), // 可用余额不变
+            orderId,
+            title: `订单收入 (${commission.commissionRate}%分成)`,
+            remark: `冻结${settlementDays}天后自动解冻`,
+            unfreezeAt,
+            unfrozen: false,
+          },
+        });
 
-      // 处理负债扣除
+        this.logger.log(`订单 ${orderId} 分成 ¥${actualAmount} 已冻结，将于 ${unfreezeAt?.toISOString()} 解冻`);
+      } else {
+        // ========== 实时模式：收入直接进入可用余额 ==========
+        const newBalance = new Decimal(Number(order.escort!.wallet!.balance) + actualAmount);
+        await tx.escortWallet.update({
+          where: { id: order.escort!.wallet!.id },
+          data: {
+            balance: newBalance,
+            totalEarned: { increment: commission.commissionAmount },
+          },
+        });
+
+        // 记录收入流水
+        await tx.walletTransaction.create({
+          data: {
+            walletId: order.escort!.wallet!.id,
+            type: 'income',
+            amount: commission.commissionAmount,
+            balanceAfter: newBalance,
+            orderId,
+            title: `订单收入 (${commission.commissionRate}%分成)`,
+            remark: `来源: ${commission.source === 'service' ? '服务配置' : commission.source === 'level' ? '等级配置' : '全局默认'}`,
+          },
+        });
+      }
+
+      // 处理负债扣除（无论哪种模式都需要处理）
       for (const deduction of debtDeductions) {
         const debt = pendingDebts.find(d => d.id === deduction.debtId)!;
         const newRemaining = Number(debt.remainingAmount) - deduction.amount;
@@ -227,12 +270,15 @@ export class CommissionService {
 
         // 记录扣款流水
         if (deduction.amount > 0) {
+          const currentBalance = isFrozenMode
+            ? Number(order.escort!.wallet!.balance)
+            : Number(order.escort!.wallet!.balance) + actualAmount;
           await tx.walletTransaction.create({
             data: {
               walletId: order.escort!.wallet!.id,
               type: 'refund',
               amount: new Decimal(-deduction.amount),
-              balanceAfter: newBalance,
+              balanceAfter: currentBalance,
               orderId,
               debtId: deduction.debtId,
               title: '负债扣除',
@@ -243,18 +289,22 @@ export class CommissionService {
       }
 
       // 记录订单日志
+      const settleMode = isFrozenMode ? `冻结${settlementDays}天` : '实时结算';
       await tx.orderLog.create({
         data: {
           orderId,
           action: 'settle',
           operatorType: 'system',
-          remark: `结算完成: 分成${commission.commissionRate}%, 陪诊员获得¥${actualAmount.toFixed(2)}${totalDeduction > 0 ? `, 扣除负债¥${totalDeduction.toFixed(2)}` : ''}`,
+          remark: `结算完成(${settleMode}): 分成${commission.commissionRate}%, 陪诊员获得¥${actualAmount.toFixed(2)}${totalDeduction > 0 ? `, 扣除负债¥${totalDeduction.toFixed(2)}` : ''}`,
           extra: JSON.stringify({
             commissionRate: commission.commissionRate,
             commissionAmount: Number(commission.commissionAmount),
             platformAmount: Number(commission.platformAmount),
             debtDeduction: totalDeduction,
             actualAmount,
+            settlementMode: isFrozenMode ? 'frozen' : 'realtime',
+            settlementDays: isFrozenMode ? settlementDays : 0,
+            unfreezeAt: unfreezeAt?.toISOString(),
             source: commission.source,
           }),
         },
@@ -357,6 +407,7 @@ export class CommissionService {
         withdrawFeeRate: 0,
         withdrawFeeFixed: 0,
         settlementMode: 'realtime',
+        settlementDays: 0,
       };
     }
 
@@ -365,6 +416,7 @@ export class CommissionService {
       minWithdrawAmount: Number(config.minWithdrawAmount),
       withdrawFeeRate: Number(config.withdrawFeeRate),
       withdrawFeeFixed: Number(config.withdrawFeeFixed),
+      settlementDays: config.settlementDays || 0,
     };
   }
 

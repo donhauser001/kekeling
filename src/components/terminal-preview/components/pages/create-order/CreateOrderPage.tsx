@@ -9,18 +9,11 @@ import { Box, Text, Button, Icon } from '../../../ui/primitives'
 import { isWxEnvironment } from '../../../platform/env'
 import { previewApi } from '../../../api'
 import { getWxBridge } from '../../../bridge'
-import type { ThemeSettings } from '../../../types'
 
 // 类型和常量
 import type {
   CreateOrderPageProps,
   ThemeColors,
-  Patient,
-  Hospital,
-  Department,
-  Doctor,
-  Coupon,
-  MedicalRecord,
   EmergencyContact,
 } from './types'
 import {
@@ -64,8 +57,9 @@ export function CreateOrderPage({
   themeSettings,
   isDarkMode = false,
   onBack,
-  onNavigate,
+  onNavigate: _onNavigate,
 }: CreateOrderPageProps) {
+  void _onNavigate // 保留参数以保持接口兼容
   // ============================================================================
   // 状态管理
   // ============================================================================
@@ -91,7 +85,7 @@ export function CreateOrderPage({
   const [customFieldValues, setCustomFieldValues] = useState<Record<string, string | string[]>>({})
   const [selectedMedicalRecordId, setSelectedMedicalRecordId] = useState<string | null>(null)
   const [remark, setRemark] = useState('')
-  const [quantity, setQuantity] = useState(1)
+  const [quantity] = useState(1)
 
   // 选择器弹窗状态
   const [showPatientPicker, setShowPatientPicker] = useState(false)

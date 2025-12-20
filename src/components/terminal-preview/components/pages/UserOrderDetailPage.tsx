@@ -169,10 +169,11 @@ function InfoRow({
 export function UserOrderDetailPage({
   themeSettings,
   isDarkMode,
-  orderId,
+  orderId: _orderId,
   onBack,
   onNavigate,
 }: UserOrderDetailPageProps) {
+  void _orderId // 保留用于未来订单详情查询
   // 颜色定义
   const bgColor = isDarkMode ? '#1a1a1a' : '#f5f7fa'
   const cardBg = isDarkMode ? '#2a2a2a' : '#ffffff'

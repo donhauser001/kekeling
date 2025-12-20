@@ -51,7 +51,7 @@ export function EmergencyContactModal({
           </Text>
           <Input
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(value) => setName(value)}
             placeholder="请输入联系人姓名"
             style={{
               width: '100%',
@@ -83,7 +83,7 @@ export function EmergencyContactModal({
           <Input
             type="tel"
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            onChange={(value) => setPhone(value)}
             placeholder="请输入联系人电话"
             style={{
               width: '100%',

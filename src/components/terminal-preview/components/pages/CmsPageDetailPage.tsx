@@ -7,7 +7,7 @@
 
 import { useRef, useEffect, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, AlertCircle } from 'lucide-react'
+import { ArrowLeft, AlertCircle } from '../../ui/lucide-compat'
 import type { ThemeSettings } from '../../types'
 import { previewApi } from '../../api'
 
@@ -225,7 +225,7 @@ export function CmsPageDetailPage({
   onBack,
 }: CmsPageDetailPageProps) {
   // 获取页面数据
-  const { data: page, isLoading, error } = useQuery({
+  const { data: page, isLoading, error: _error } = useQuery({
     queryKey: ['preview', 'cms-page', slug],
     queryFn: () => previewApi.getCmsPageBySlug(slug),
     enabled: !!slug,

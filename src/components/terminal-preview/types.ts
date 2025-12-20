@@ -131,10 +131,13 @@ export const VALID_PAGE_KEYS: readonly PreviewPage[] = [
   'workbench',
   'workbench-orders-pool',
   'workbench-order-detail',
+  'workbench-pool-order-detail',
+  'workbench-my-order-detail',
   'workbench-earnings',
   'workbench-withdraw',
   'workbench-settings',
   'workbench-service-types',
+  'workbench-my-orders',
   'my-orders',
   // 分销中心（陪诊员视角）
   'distribution',
@@ -209,6 +212,7 @@ export const PAGE_METADATA: Record<PreviewPage, PageMetadata> = {
   // 陪诊员公开页
   'escort-list': { entryAllowed: true, description: '陪诊员列表' },
   'escort-detail': { entryAllowed: false, requiredParams: ['id'], description: '陪诊员详情' },
+  'escort-apply': { entryAllowed: true, description: '陪诊员入驻申请' },
 
   // 工作台（主入口允许，子页面不允许）
   'workbench': { entryAllowed: true, description: '工作台首页' },

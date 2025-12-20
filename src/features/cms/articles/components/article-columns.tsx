@@ -53,7 +53,7 @@ export function getArticleColumns({
           {row.original.category?.name || '未分类'}
         </Badge>
       ),
-      filterFn: (row, id, value) => {
+      filterFn: (row, _id, value) => {
         const categoryId = row.original.categoryId
         return value.includes(categoryId || 'uncategorized')
       },

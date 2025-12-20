@@ -2,13 +2,10 @@
  * iconfont 字体样式 - 小程序宿主壳版本
  * 与管理后台使用相同的图标库
  * 图标数量：775
+ *
+ * 注意：字体通过 wx.loadFontFace API 从远程加载（见 app.tsx）
+ * 不在 CSS 中声明 @font-face，避免字体被转为 base64 内嵌
  */
-
-@font-face {
-  font-family: "iconfont";
-  src: url('./iconfont.woff2') format('woff2'),
-    url('./iconfont.ttf') format('truetype');
-}
 
 .iconfont {
   font-family: "iconfont" !important;

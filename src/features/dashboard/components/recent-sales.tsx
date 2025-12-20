@@ -48,13 +48,13 @@ export function RecentSales() {
   return (
     <div className='space-y-8'>
       {orders.map((order) => {
-        const customerName = order.patient?.name ?? order.customerName ?? '用户'
+        const customerName = order.patient?.name ?? order.user?.nickname ?? '用户'
         const initials = customerName.slice(0, 2)
         const amountNumber =
-          typeof order.amount === 'number'
-            ? order.amount
-            : order.amount != null
-              ? Number(order.amount)
+          typeof order.totalAmount === 'number'
+            ? order.totalAmount
+            : order.totalAmount != null
+              ? Number(order.totalAmount)
               : Number.NaN
         const amountLabel = Number.isFinite(amountNumber) ? amountNumber.toLocaleString() : '-'
 
@@ -68,7 +68,7 @@ export function RecentSales() {
               <div className='space-y-1'>
                 <p className='text-sm leading-none font-medium'>{customerName}</p>
                 <p className='text-muted-foreground text-sm'>
-                  {order.service?.name ?? order.serviceName ?? '-'} · {statusMap[order.status] ?? order.status}
+                  {order.service?.name ?? '-'} · {statusMap[order.status] ?? order.status}
                 </p>
               </div>
               <div className='font-medium'>{amountLabel === '-' ? '¥-' : `+¥${amountLabel}`}</div>

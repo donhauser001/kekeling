@@ -7,7 +7,7 @@
 
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, Check, Loader2 } from 'lucide-react'
+import { ArrowLeft, Check, Loader2 } from '../../../ui/lucide-compat'
 import type { ThemeSettings, PreviewViewerRole } from '../../../types'
 import { getSecondaryTextClass } from '../../../utils'
 import { previewApi } from '../../../api'

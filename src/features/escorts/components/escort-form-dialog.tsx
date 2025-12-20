@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Loader2, X, Plus, Building2 } from 'lucide-react'
+import { Loader2, X, Building2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {

@@ -23,15 +23,13 @@ export function isWxEnvironment(): boolean {
   }
 
   // 方法 1：检测 Taro 环境变量（最可靠）
-  // @ts-expect-error Taro 环境变量
-  if (typeof process !== 'undefined' && process.env?.TARO_ENV === 'weapp') {
+  if (typeof process !== 'undefined' && (process.env as Record<string, string | undefined>)?.TARO_ENV === 'weapp') {
     console.log('[isWxEnvironment] 检测到 TARO_ENV=weapp')
     _isWxEnvCached = true
     return true
   }
 
   // 方法 2：检测 wx 全局对象
-  // @ts-expect-error wx 在小程序环境中存在
   if (typeof wx !== 'undefined' && typeof wx.request === 'function') {
     console.log('[isWxEnvironment] 检测到 wx.request')
     _isWxEnvCached = true
@@ -70,8 +68,7 @@ export function isBrowserEnvironment(): boolean {
  * 2. 或 Taro 全局对象存在
  */
 export function isTaroEnvironment(): boolean {
-  // @ts-expect-error Taro 环境变量
-  if (typeof process !== 'undefined' && process.env?.TARO_ENV) {
+  if (typeof process !== 'undefined' && (process.env as Record<string, string | undefined>)?.TARO_ENV) {
     return true
   }
   // @ts-expect-error Taro 全局对象

@@ -1,23 +1,39 @@
 /**
- * 我的订单页面（预览器版本）
+ * 我的订单页面（陪诊员端）- 按小程序页面改造规范实现
  *
- * Step 14.13 FIX-P3-01: 实现 my-orders 页面组件
- * - page key: 'my-orders'
- * - API: previewApi.getMyOrders()
- * - 数据通道: escortRequest（⚠️ 需要 escortToken）
+ * 改造要点：
+ * - 规则 1: 布局属性必须在 style 中定义
+ * - 规则 2: className 仅作 Web 辅助
+ * - 规则 3: wxScale 只用于视觉尺寸
+ * - 规则 4: 数据获取用 useState + useEffect（不使用 useQuery）
+ * - 规则 5: 图标用 size 和 color props
+ * - 规则 9: 统一使用 lucide-compat 图标
+ * - 规则 10: 文本块设置 display: block
+ * - 规则 11: 小程序头部安全区域
+ *
+ * 数据通道: escortRequest（⚠️ 需要 escortToken）
+ *
+ * @see docs/小程序页面改造规范.md
  */
 
-import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { MapPin, Clock, ChevronRight } from 'lucide-react'
-import type { ThemeSettings, PreviewViewerRole } from '../../../types'
+import { useState, useEffect } from 'react'
+import { Box, Text, Icon } from '../../../ui/primitives'
+import { MapPin, Clock, ChevronRight, ChevronLeft, ClipboardList } from '../../../ui/lucide-compat'
+import { isWxEnvironment } from '../../../platform/env'
 import { previewApi } from '../../../api'
 import type { MyOrderItem } from '../../../api'
 import { PermissionPrompt } from '../../PermissionPrompt'
 import { ListSkeleton } from '../../ListSkeleton'
 import { ErrorRetry } from '../../ErrorRetry'
-import { getRefreshingClass } from '../../PageTransition'
-import { formatMoney, getSecondaryTextClass } from '../../../utils'
+import { formatMoney } from '../../../utils'
+import type { ThemeSettings, PreviewViewerRole } from '../../../types'
+
+// ============================================================================
+// 常量定义
+// ============================================================================
+
+const wxScale = isWxEnvironment() ? 1.1 : 1
+const wxSafeAreaTop = isWxEnvironment() ? 44 : 0
 
 // ============================================================================
 // 类型定义
@@ -46,7 +62,7 @@ const STATUS_TABS: { key: OrderStatusTab; label: string }[] = [
 ]
 
 // ============================================================================
-// 组件实现
+// 主组件
 // ============================================================================
 
 export function MyOrdersPage({
@@ -60,52 +76,115 @@ export function MyOrdersPage({
 }: MyOrdersPageProps) {
   const isEscort = effectiveViewerRole === 'escort'
 
-  // 当前选中的状态 Tab
+  // 状态管理（规则 4: 使用 useState + useEffect）
+  const [orders, setOrders] = useState<MyOrderItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
   const [activeTab, setActiveTab] = useState<OrderStatusTab>(
     (pageParams?.status as OrderStatusTab) || 'all'
   )
 
-  // ⚠️ 非 escort 视角时不发请求
-  const {
-    data: ordersResponse,
-    isLoading,
-    isError,
-    isFetching,
-    refetch,
-  } = useQuery({
-    queryKey: ['preview', 'my-orders', activeTab],
-    queryFn: () => previewApi.getMyOrders({ status: activeTab === 'all' ? undefined : activeTab }),
-    staleTime: 30 * 1000, // 30秒刷新
-    enabled: isEscort,
-  })
+  // 颜色配置
+  const bgColor = isDarkMode ? '#1a1a1a' : '#f5f7fa'
+  const cardBg = isDarkMode ? '#2a2a2a' : '#fff'
+  const borderColor = isDarkMode ? '#3a3a3a' : '#f3f4f6'
+  const textPrimary = isDarkMode ? '#f3f4f6' : '#111827'
+  const textSecondary = isDarkMode ? '#9ca3af' : '#6b7280'
 
-  // 非 escort 视角：显示统一的 PermissionPrompt
+  // ============================================================================
+  // 数据加载（规则 4: 使用 useState + useEffect）
+  // ============================================================================
+
+  const loadData = async () => {
+    if (!isEscort) return
+
+    setLoading(true)
+    setError(null)
+
+    try {
+      const response = await previewApi.getMyOrders({
+        status: activeTab === 'all' ? undefined : activeTab,
+      })
+      setOrders(response?.items ?? [])
+    } catch (err) {
+      console.error('[MyOrdersPage] 加载数据失败:', err)
+      setError(err instanceof Error ? err : new Error('加载失败'))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadData()
+  }, [isEscort, activeTab])
+
+  // ============================================================================
+  // 非 escort 视角：显示权限提示
+  // ============================================================================
+
   if (!isEscort) {
     return (
-      <div
-        className="min-h-full flex flex-col"
+      <Box
         style={{
-          backgroundColor: isDarkMode ? '#1a1a1a' : '#f5f7fa',
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: '100%',
+          backgroundColor: bgColor,
         }}
       >
-        <div
-          className="px-4 py-3 flex items-center"
+        {/* 页面标题 */}
+        <Box
           style={{
+            position: 'sticky',
+            top: 0,
+            zIndex: 100,
             backgroundColor: themeSettings.primaryColor,
+            paddingTop: wxSafeAreaTop,
           }}
         >
+          <Box
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              position: 'relative',
+              height: 44 * wxScale,
+              paddingLeft: 12 * wxScale,
+              paddingRight: 12 * wxScale,
+          }}
+        >
+            {/* 返回按钮 */}
           {onBack && (
-            <button onClick={onBack} className="text-white mr-3">
-              ←
-            </button>
-          )}
-          <h1 className="text-lg font-semibold text-white flex-1 text-center pr-6">
+              <Box
+                onClick={onBack}
+                style={{
+                  position: 'absolute',
+                  left: 12 * wxScale,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 36 * wxScale,
+                  height: 36 * wxScale,
+                }}
+              >
+                <ChevronLeft size={22 * wxScale} color="#fff" />
+              </Box>
+            )}
+            {/* 标题 */}
+            <Text
+              style={{
+                fontSize: 17 * wxScale,
+                fontWeight: 600,
+                color: '#fff',
+              }}
+            >
             我的订单
-          </h1>
-        </div>
+            </Text>
+          </Box>
+        </Box>
 
         {/* 权限提示 */}
-        <div className="flex-1">
+        <Box style={{ flex: 1 }}>
           <PermissionPrompt
             title="需要陪诊员身份"
             description="请先登录陪诊员账号查看订单"
@@ -114,112 +193,195 @@ export function MyOrdersPage({
             primaryColor={themeSettings.primaryColor}
             isDarkMode={isDarkMode}
           />
-        </div>
-      </div>
+        </Box>
+      </Box>
     )
   }
 
-  const orders = ordersResponse?.items ?? []
-  const isEmpty = !isLoading && orders.length === 0
+  const isEmpty = !loading && orders.length === 0
 
   return (
-    <div
-      className="min-h-full"
+    <Box
       style={{
-        backgroundColor: isDarkMode ? '#1a1a1a' : '#f5f7fa',
+        minHeight: '100%',
+        backgroundColor: bgColor,
       }}
     >
-      {/* 页面标题 */}
-      <div
-        className="sticky top-0 z-10 px-4 py-3 flex items-center"
+      {/* 页面标题（规则 11: 预留安全区域） */}
+      <Box
         style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 100,
           backgroundColor: themeSettings.primaryColor,
+          paddingTop: wxSafeAreaTop,
         }}
       >
+        <Box
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'relative',
+            height: 44 * wxScale,
+            paddingLeft: 12 * wxScale,
+            paddingRight: 12 * wxScale,
+        }}
+      >
+          {/* 返回按钮 */}
         {onBack && (
-          <button onClick={onBack} className="text-white mr-3">
-            ←
-          </button>
-        )}
-        <h1 className="text-lg font-semibold text-white flex-1 text-center pr-6">
+            <Box
+              onClick={onBack}
+              style={{
+                position: 'absolute',
+                left: 12 * wxScale,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 36 * wxScale,
+                height: 36 * wxScale,
+              }}
+            >
+              <ChevronLeft size={22 * wxScale} color="#fff" />
+            </Box>
+          )}
+          {/* 标题 */}
+          <Text
+            style={{
+              fontSize: 17 * wxScale,
+              fontWeight: 600,
+              color: '#fff',
+            }}
+          >
           我的订单
-        </h1>
-      </div>
+          </Text>
+        </Box>
+      </Box>
 
       {/* 状态 Tab */}
-      <div
-        className="flex items-center px-2 py-2 overflow-x-auto"
+      <Box
         style={{
-          backgroundColor: isDarkMode ? '#2a2a2a' : '#fff',
+          display: 'flex',
+          alignItems: 'center',
+          paddingLeft: 8 * wxScale,
+          paddingRight: 8 * wxScale,
+          paddingTop: 8 * wxScale,
+          paddingBottom: 8 * wxScale,
+          overflowX: 'auto',
+          backgroundColor: cardBg,
         }}
       >
         {STATUS_TABS.map((tab) => (
-          <button
+          <Box
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`px-4 py-2 text-sm whitespace-nowrap rounded-full transition-colors ${activeTab === tab.key
-              ? 'text-white'
-              : isDarkMode
-                ? 'text-gray-300'
-                : 'text-gray-600'
-              }`}
             style={{
+              paddingLeft: 16 * wxScale,
+              paddingRight: 16 * wxScale,
+              paddingTop: 8 * wxScale,
+              paddingBottom: 8 * wxScale,
+              borderRadius: 9999,
               backgroundColor:
                 activeTab === tab.key ? themeSettings.primaryColor : 'transparent',
             }}
           >
+            <Text
+              style={{
+                fontSize: 14 * wxScale,
+                whiteSpace: 'nowrap',
+                color:
+                  activeTab === tab.key
+                    ? '#fff'
+                    : textSecondary,
+            }}
+          >
             {tab.label}
-          </button>
+            </Text>
+          </Box>
         ))}
-      </div>
+      </Box>
 
       {/* 内容区 */}
-      <div className="px-4 py-4">
-        {/* 加载中 - 骨架屏 */}
-        {isLoading && (
+      <Box
+        style={{
+          paddingLeft: 16 * wxScale,
+          paddingRight: 16 * wxScale,
+          paddingTop: 16 * wxScale,
+          paddingBottom: 16 * wxScale,
+        }}
+      >
+        {/* 加载中骨架屏 */}
+        {loading && (
           <ListSkeleton count={3} variant="card" isDarkMode={isDarkMode} />
         )}
 
         {/* 请求失败 - 带重试按钮 */}
-        {isError && (
+        {error && !loading && (
           <ErrorRetry
-            onRetry={() => refetch()}
+            onRetry={loadData}
             isDarkMode={isDarkMode}
             primaryColor={themeSettings.primaryColor}
           />
         )}
 
-        {/* 空态 */}
-        {isEmpty && !isError && (
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="text-5xl mb-3">📋</div>
-            <div className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>
+        {/* 空态（规则 9: 使用 iconfont 图标，不用 emoji） */}
+        {isEmpty && !error && (
+          <Box
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              paddingTop: 48 * wxScale,
+              paddingBottom: 48 * wxScale,
+            }}
+          >
+            <ClipboardList size={48 * wxScale} color={textSecondary} />
+            <Text
+              style={{
+                display: 'block',
+                marginTop: 12 * wxScale,
+                fontSize: 14 * wxScale,
+                color: textSecondary,
+              }}
+            >
               暂无{activeTab === 'all' ? '' : STATUS_TABS.find(t => t.key === activeTab)?.label}订单
-            </div>
-          </div>
+            </Text>
+          </Box>
         )}
 
-        {/* 订单列表 - 刷新过渡效果 */}
-        {!isLoading && !isError && orders.length > 0 && (
-          <div className={`space-y-3 ${getRefreshingClass(isFetching, orders.length > 0)}`}>
+        {/* 订单列表 */}
+        {!loading && !error && orders.length > 0 && (
+          <Box
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 12 * wxScale,
+            }}
+          >
             {orders.map((order) => (
               <MyOrderCard
                 key={order.id}
                 order={order}
                 themeSettings={themeSettings}
                 isDarkMode={isDarkMode}
+                cardBg={cardBg}
+                borderColor={borderColor}
+                textPrimary={textPrimary}
+                textSecondary={textSecondary}
+                wxScale={wxScale}
                 onViewDetail={() => {
-                  onNavigate?.('workbench-order-detail', { id: order.id })
+                  onNavigate?.('workbench-my-order-detail', { id: order.id })
                 }}
               />
             ))}
-          </div>
+          </Box>
         )}
-      </div>
+      </Box>
 
       {/* 底部留白 */}
-      <div className="h-16" />
-    </div>
+      <Box style={{ height: 64 * wxScale }} />
+    </Box>
   )
 }
 
@@ -231,10 +393,25 @@ interface MyOrderCardProps {
   order: MyOrderItem
   themeSettings: ThemeSettings
   isDarkMode: boolean
+  cardBg: string
+  borderColor: string
+  textPrimary: string
+  textSecondary: string
+  wxScale: number
   onViewDetail?: () => void
 }
 
-function MyOrderCard({ order, themeSettings, isDarkMode, onViewDetail }: MyOrderCardProps) {
+function MyOrderCard({
+  order,
+  themeSettings,
+  isDarkMode,
+  cardBg,
+  borderColor,
+  textPrimary,
+  textSecondary,
+  wxScale,
+  onViewDetail,
+}: MyOrderCardProps) {
   // 订单状态配置
   const statusConfig: Record<string, { label: string; color: string }> = {
     pending: { label: '待服务', color: '#f59e0b' },
@@ -247,75 +424,218 @@ function MyOrderCard({ order, themeSettings, isDarkMode, onViewDetail }: MyOrder
   const status = statusConfig[order.status] || { label: order.status, color: '#6b7280' }
 
   return (
-    <div
-      className="rounded-xl overflow-hidden cursor-pointer transition-shadow hover:shadow-md"
-      style={{
-        backgroundColor: isDarkMode ? '#2a2a2a' : '#fff',
-      }}
+    <Box
       onClick={onViewDetail}
+      style={{
+        borderRadius: 12 * wxScale,
+        overflow: 'hidden',
+        backgroundColor: cardBg,
+      }}
     >
       {/* 头部 */}
-      <div className="px-4 py-3 border-b" style={{ borderColor: isDarkMode ? '#3a3a3a' : '#f3f4f6' }}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span
-              className="px-2 py-0.5 rounded text-xs text-white"
-              style={{ backgroundColor: themeSettings.primaryColor }}
+      <Box
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          paddingLeft: 16 * wxScale,
+          paddingRight: 16 * wxScale,
+          paddingTop: 12 * wxScale,
+          paddingBottom: 12 * wxScale,
+          borderBottomWidth: 1,
+          borderBottomStyle: 'solid',
+          borderBottomColor: borderColor,
+        }}
+      >
+        <Box
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8 * wxScale,
+          }}
+        >
+          {/* 服务类型标签 */}
+          <Box
+            style={{
+              paddingLeft: 8 * wxScale,
+              paddingRight: 8 * wxScale,
+              paddingTop: 2 * wxScale,
+              paddingBottom: 2 * wxScale,
+              borderRadius: 4 * wxScale,
+              backgroundColor: themeSettings.primaryColor,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 12 * wxScale,
+                color: '#fff',
+              }}
             >
               {order.serviceType === 'accompany' ? '全程陪诊' : order.serviceName}
-            </span>
-            <span className={`text-xs ${getSecondaryTextClass(isDarkMode)}`}>
+            </Text>
+          </Box>
+          {/* 订单号 */}
+          <Text
+            style={{
+              fontSize: 12 * wxScale,
+              color: textSecondary,
+            }}
+          >
               {order.orderNo}
-            </span>
-          </div>
-          <span
-            className="text-xs px-2 py-0.5 rounded"
-            style={{ backgroundColor: `${status.color}20`, color: status.color }}
+          </Text>
+        </Box>
+        {/* 状态标签 */}
+        <Box
+          style={{
+            paddingLeft: 8 * wxScale,
+            paddingRight: 8 * wxScale,
+            paddingTop: 2 * wxScale,
+            paddingBottom: 2 * wxScale,
+            borderRadius: 4 * wxScale,
+            backgroundColor: `${status.color}20`,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 12 * wxScale,
+              color: status.color,
+            }}
           >
             {status.label}
-          </span>
-        </div>
-      </div>
+          </Text>
+        </Box>
+      </Box>
 
       {/* 内容 */}
-      <div className="px-4 py-3">
-        <div className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+      <Box
+        style={{
+          paddingLeft: 16 * wxScale,
+          paddingRight: 16 * wxScale,
+          paddingTop: 12 * wxScale,
+          paddingBottom: 12 * wxScale,
+        }}
+      >
+        {/* 服务名称 */}
+        <Text
+          style={{
+            display: 'block',
+            fontSize: 15 * wxScale,
+            fontWeight: 500,
+            color: textPrimary,
+          }}
+        >
           {order.serviceName}
-        </div>
+        </Text>
 
-        <div className="mt-2 space-y-1">
-          <div className="flex items-center gap-2">
-            <MapPin className="w-4 h-4" style={{ color: themeSettings.primaryColor }} />
-            <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+        {/* 信息列表 */}
+        <Box
+          style={{
+            marginTop: 8 * wxScale,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 4 * wxScale,
+          }}
+        >
+          {/* 医院信息 */}
+          <Box
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8 * wxScale,
+            }}
+          >
+            <MapPin size={16 * wxScale} color={themeSettings.primaryColor} />
+            <Text
+              style={{
+                fontSize: 14 * wxScale,
+                color: isDarkMode ? '#d1d5db' : '#4b5563',
+              }}
+            >
               {order.hospitalName}
               {order.department && ` · ${order.department}`}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4" style={{ color: themeSettings.primaryColor }} />
-            <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+            </Text>
+          </Box>
+          {/* 预约时间 */}
+          <Box
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8 * wxScale,
+            }}
+          >
+            <Clock size={16 * wxScale} color={themeSettings.primaryColor} />
+            <Text
+              style={{
+                fontSize: 14 * wxScale,
+                color: isDarkMode ? '#d1d5db' : '#4b5563',
+              }}
+            >
               {order.appointmentTime}
-            </span>
-          </div>
-        </div>
-      </div>
+            </Text>
+          </Box>
+        </Box>
+      </Box>
 
       {/* 底部 */}
-      <div
-        className="px-4 py-3 flex items-center justify-between border-t"
-        style={{ borderColor: isDarkMode ? '#3a3a3a' : '#f3f4f6' }}
+      <Box
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          paddingLeft: 16 * wxScale,
+          paddingRight: 16 * wxScale,
+          paddingTop: 12 * wxScale,
+          paddingBottom: 12 * wxScale,
+          borderTopWidth: 1,
+          borderTopStyle: 'solid',
+          borderTopColor: borderColor,
+        }}
       >
-        <div>
-          <span className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>订单金额 </span>
-          <span className="text-lg font-bold" style={{ color: themeSettings.primaryColor }}>
+        {/* 金额 */}
+        <Box
+          style={{
+            display: 'flex',
+            alignItems: 'baseline',
+            gap: 4 * wxScale,
+          }}
+      >
+          <Text
+            style={{
+              fontSize: 14 * wxScale,
+              color: textSecondary,
+            }}
+          >
+            订单金额
+          </Text>
+          <Text
+            style={{
+              fontSize: 18 * wxScale,
+              fontWeight: 700,
+              color: themeSettings.primaryColor,
+            }}
+          >
             ¥{formatMoney(order.amount)}
-          </span>
-        </div>
-        <div className="flex items-center gap-1 text-sm" style={{ color: themeSettings.primaryColor }}>
+          </Text>
+        </Box>
+        {/* 查看详情 */}
+        <Box
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4 * wxScale,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 14 * wxScale,
+              color: themeSettings.primaryColor,
+            }}
+          >
           查看详情
-          <ChevronRight className="w-4 h-4" />
-        </div>
-      </div>
-    </div>
+          </Text>
+          <ChevronRight size={16 * wxScale} color={themeSettings.primaryColor} />
+        </Box>
+      </Box>
+    </Box>
   )
 }

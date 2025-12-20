@@ -19,7 +19,8 @@ export function ServiceInfoTabs({
   isDarkMode,
 }: ServiceInfoTabsProps) {
   const [activeTab, setActiveTab] = useState<InfoTabType>('highlights')
-  const { cardBg, textPrimary, textSecondary, textMuted } = colors
+  const { cardBg, textPrimary: _textPrimary, textSecondary, textMuted } = colors
+  void _textPrimary // 保留用于未来样式扩展
   const workflowDrag = useHorizontalDrag()
 
   // 服务亮点

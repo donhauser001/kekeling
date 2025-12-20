@@ -23,7 +23,12 @@ import '@/shared/assets/iconfont/iconfont.css'
 export type { IconName }
 
 export interface IconProps {
-  name: IconName
+  /**
+   * 图标名称
+   * - 推荐使用 IconName 类型（775 个预定义图标）
+   * - 也接受 string 类型以兼容动态场景，无效名称会显示空占位符
+   */
+  name: IconName | (string & {})
   size?: number
   color?: string
   className?: string
@@ -42,7 +47,7 @@ export const Icon = forwardRef<HTMLSpanElement, IconProps>(function Icon(
   { name, size = 24, color = 'currentColor', className = '', style },
   ref
 ) {
-  const unicode = iconUnicodeMap[name]
+  const unicode = iconUnicodeMap[name as IconName]
 
   if (!unicode) {
     // 图标未定义，显示警告

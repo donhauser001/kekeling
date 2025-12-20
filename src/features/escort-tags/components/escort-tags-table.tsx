@@ -9,15 +9,12 @@ import {
     TableRow,
 } from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
+import { type EscortTag as ApiEscortTag } from '@/lib/api/escorts'
 
-interface EscortTag {
-    id: string
-    name: string
-    description: string
-    escortCount: number
-    color: string
-    category: string
-    createdAt: string
+// 扩展 API 类型以支持本地使用的额外属性
+interface EscortTag extends ApiEscortTag {
+    description?: string
+    escortCount?: number
 }
 
 interface EscortTagsTableProps {

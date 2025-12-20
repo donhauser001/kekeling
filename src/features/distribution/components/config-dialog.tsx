@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -30,21 +30,21 @@ import { Switch } from '@/components/ui/switch'
 import { distributionApi } from '@/lib/api'
 
 const configSchema = z.object({
-  l1CommissionRate: z.coerce.number().min(0).max(100),
-  l2CommissionRate: z.coerce.number().min(0).max(100),
-  l3CommissionRate: z.coerce.number().min(0).max(100),
-  directInviteBonus: z.coerce.number().min(0),
-  maxMonthlyDistribution: z.coerce.number().min(0).nullable(),
+  l1CommissionRate: z.number().min(0).max(100),
+  l2CommissionRate: z.number().min(0).max(100),
+  l3CommissionRate: z.number().min(0).max(100),
+  directInviteBonus: z.number().min(0),
+  maxMonthlyDistribution: z.number().min(0).nullable(),
   l2PromotionConfig: z.object({
-    minOrders: z.coerce.number().min(0),
-    minRating: z.coerce.number().min(0).max(5),
-    minDirectInvites: z.coerce.number().min(0),
-    minActiveMonths: z.coerce.number().min(0),
+    minOrders: z.number().min(0),
+    minRating: z.number().min(0).max(5),
+    minDirectInvites: z.number().min(0),
+    minActiveMonths: z.number().min(0),
   }),
   l1PromotionConfig: z.object({
-    minTeamSize: z.coerce.number().min(0),
-    minTeamMonthlyOrders: z.coerce.number().min(0),
-    minPersonalMonthlyOrders: z.coerce.number().min(0),
+    minTeamSize: z.number().min(0),
+    minTeamMonthlyOrders: z.number().min(0),
+    minPersonalMonthlyOrders: z.number().min(0),
     requireTraining: z.boolean(),
     byInvitation: z.boolean(),
   }),
@@ -67,7 +67,7 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
   })
 
   const form = useForm<ConfigFormValues>({
-    resolver: zodResolver(configSchema),
+    resolver: zodResolver(configSchema) as Resolver<ConfigFormValues>,
     defaultValues: {
       l1CommissionRate: 2,
       l2CommissionRate: 3,
@@ -159,7 +159,7 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
                           <FormItem>
                             <FormLabel>城市合伙人 (%)</FormLabel>
                             <FormControl>
-                              <Input type="number" {...field} />
+                              <Input type="number" {...field} onChange={(e) => field.onChange(Number(e.target.value))} />
                             </FormControl>
                             <FormDescription>L1 分润比例</FormDescription>
                             <FormMessage />
@@ -173,7 +173,7 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
                           <FormItem>
                             <FormLabel>团队长 (%)</FormLabel>
                             <FormControl>
-                              <Input type="number" {...field} />
+                              <Input type="number" {...field} onChange={(e) => field.onChange(Number(e.target.value))} />
                             </FormControl>
                             <FormDescription>L2 分润比例</FormDescription>
                             <FormMessage />

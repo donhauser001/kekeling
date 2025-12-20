@@ -181,7 +181,7 @@ export class EscortAppController {
     });
   }
 
-  // 获取提现记录
+  // 获取提现记录（旧路由兼容 /escort/wallet/withdrawals）
   @Get('wallet/withdrawals')
   async getWithdrawals(
     @Request() req,

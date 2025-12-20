@@ -64,7 +64,7 @@ import {
     useUpdateEscortWorkStatus,
 } from '@/hooks/use-api'
 import type { Escort } from '@/lib/api'
-import { cn, normalizeLevel } from '@/lib/utils'
+import { normalizeLevel } from '@/lib/utils'
 
 // 导入新组件
 import { getEscortsColumns } from './components/escorts-columns-new'
@@ -150,8 +150,8 @@ export function Escorts() {
     // 切换视图时更新 URL
     const handleViewModeChange = (mode: string) => {
         setViewMode(mode as 'grid' | 'list')
-        navigate({
-            search: (prev: Record<string, unknown>) => ({ ...prev, view: mode }),
+        void navigate({
+            search: ((prev: Record<string, unknown>) => ({ ...prev, view: mode })) as unknown as true,
             replace: true,
         })
     }
@@ -179,7 +179,8 @@ export function Escorts() {
     const { data: stats } = useEscortStats()
     const deleteMutation = useDeleteEscort()
     const updateStatusMutation = useUpdateEscortStatus()
-    const updateWorkStatusMutation = useUpdateEscortWorkStatus()
+    const _updateWorkStatusMutation = useUpdateEscortWorkStatus()
+    void _updateWorkStatusMutation // 保留用于未来工作状态更新
 
     const escorts = data?.data || []
     const total = data?.total || 0
@@ -629,15 +630,15 @@ export function Escorts() {
                 open={deleteDialogOpen}
                 onOpenChange={setDeleteDialogOpen}
                 title='确认删除'
-                description={
+                desc={
                     deletingEscort?.orderCount
                         ? `确定要删除陪诊员「${deletingEscort?.name}」吗？该陪诊员已完成 ${deletingEscort.orderCount} 个订单，删除后历史订单数据仍会保留。`
                         : `确定要删除陪诊员「${deletingEscort?.name}」吗？此操作不可撤销。`
                 }
                 confirmText='删除'
-                cancelText='取消'
-                onConfirm={handleDelete}
-                variant='destructive'
+                cancelBtnText='取消'
+                handleConfirm={handleDelete}
+                destructive
                 isLoading={deleteMutation.isPending}
             />
 

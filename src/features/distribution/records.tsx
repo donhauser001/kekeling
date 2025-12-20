@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
   DollarSign,
-  Search as SearchIcon,
   Loader2,
   AlertCircle,
   Gift,
@@ -17,7 +16,6 @@ import { ConfigDrawer } from '@/components/config-drawer'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
 import {
   Select,
   SelectContent,
@@ -34,7 +32,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { SimplePagination } from '@/components/simple-pagination'
-import { distributionApi, type DistributionRecord } from '@/lib/api'
+import { distributionApi } from '@/lib/api'
 
 // 状态配置
 const statusConfig: Record<string, { label: string; color: string }> = {
@@ -77,6 +75,7 @@ export function DistributionRecords() {
 
   const records = data?.data || []
   const total = data?.total || 0
+  const totalPages = Math.ceil(total / pageSize) || 1
 
   return (
     <>
@@ -235,9 +234,10 @@ export function DistributionRecords() {
                 {total > 0 && (
                   <div className="mt-4">
                     <SimplePagination
-                      page={page}
+                      currentPage={page}
+                      totalPages={totalPages}
                       pageSize={pageSize}
-                      total={total}
+                      totalItems={total}
                       onPageChange={setPage}
                     />
                   </div>

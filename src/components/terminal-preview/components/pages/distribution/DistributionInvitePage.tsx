@@ -9,7 +9,7 @@
  */
 
 import { useQuery } from '@tanstack/react-query'
-import { ChevronLeft, RefreshCw, Copy, Share2, Gift, Users } from 'lucide-react'
+import { ChevronLeft, RefreshCw, Copy, Share2, Gift, Users } from '../../../ui/lucide-compat'
 import type { ThemeSettings, PreviewViewerRole } from '../../../types'
 import { previewApi } from '../../../api'
 import { PermissionPrompt } from '../../PermissionPrompt'

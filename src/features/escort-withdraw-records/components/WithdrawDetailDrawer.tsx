@@ -25,7 +25,6 @@ import {
   Smartphone,
   User,
   Hash,
-  Phone,
   AlertCircle,
 } from 'lucide-react'
 import {
@@ -51,6 +50,16 @@ const statusConfig: Record<
     label: '待处理',
     color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
     icon: <Clock className='h-3.5 w-3.5' />,
+  },
+  approved: {
+    label: '已审核',
+    color: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400',
+    icon: <CheckCircle className='h-3.5 w-3.5' />,
+  },
+  rejected: {
+    label: '已拒绝',
+    color: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400',
+    icon: <XCircle className='h-3.5 w-3.5' />,
   },
   processing: {
     label: '处理中',

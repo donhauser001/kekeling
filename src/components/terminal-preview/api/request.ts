@@ -63,10 +63,8 @@ function getAdminToken(): string | null {
  */
 export function getUserToken(): string | null {
   // 小程序环境：使用真实用户 token
-  // @ts-expect-error wx 在小程序环境中存在
-  if (typeof wx !== 'undefined' && typeof wx.getStorageSync === 'function') {
+  if (typeof wx !== 'undefined' && typeof wx?.getStorageSync === 'function') {
     try {
-      // @ts-expect-error wx 在小程序环境中存在
       const token = wx.getStorageSync(USER_TOKEN_KEY)
       if (token) {
         console.log('[getUserToken] 小程序环境，使用真实 token')

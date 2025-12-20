@@ -7,7 +7,7 @@ import {
   getPaginationRowModel,
   type ColumnFiltersState,
 } from '@tanstack/react-table'
-import { FileText, Plus } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { ConfigDrawer } from '@/components/config-drawer'

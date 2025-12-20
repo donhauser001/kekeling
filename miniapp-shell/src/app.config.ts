@@ -5,20 +5,43 @@
  * 禁止：业务逻辑
  *
  * 页面说明：
- * - pages/main/index: 主页面容器
- * - pages/services/index: 服务列表页
- * - pages/service-detail/index: 服务详情页
- * - pages/create-order/index: 下单页
- * - pages/user-settings/index: 用户设置页（头像、昵称、手机号）
+ * - pages/main/index: 主页面容器（主包入口）
+ *
+ * 分包说明：
+ * - packageA: 服务相关页面（服务列表、服务详情、下单）
+ * - packageB: 用户相关页面（用户设置）
  */
 export default defineAppConfig({
+  // 主包页面
   pages: [
     'pages/main/index',
-    'pages/services/index',
-    'pages/service-detail/index',
-    'pages/create-order/index',
-    'pages/user-settings/index',
   ],
+  // 分包配置
+  subPackages: [
+    {
+      root: 'packageA',
+      name: 'services',
+      pages: [
+        'pages/services/index',
+        'pages/service-detail/index',
+        'pages/create-order/index',
+      ],
+    },
+    {
+      root: 'packageB',
+      name: 'user',
+      pages: [
+        'pages/user-settings/index',
+      ],
+    },
+  ],
+  // 分包预下载规则
+  preloadRule: {
+    'pages/main/index': {
+      network: 'all',
+      packages: ['packageA', 'packageB'],
+    },
+  },
   window: {
     backgroundTextStyle: 'light',
     navigationBarBackgroundColor: '#fff',
@@ -27,5 +50,7 @@ export default defineAppConfig({
     // 隐藏导航栏，由 TerminalPreviewApp 控制
     navigationStyle: 'custom',
   },
+  // 启用组件按需注入（解决代码质量检查"组件"项）
+  lazyCodeLoading: 'requiredComponents',
   // 不使用原生 TabBar
 })

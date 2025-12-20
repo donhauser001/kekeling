@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   FileCheck,
-  Search as SearchIcon,
   Loader2,
   AlertCircle,
   Check,
@@ -111,6 +110,7 @@ export function DistributionApplications() {
 
   const applications = data?.data || []
   const total = data?.total || 0
+  const totalPages = Math.ceil(total / pageSize) || 1
 
   const openReviewDialog = (application: PromotionApplication, action: 'approve' | 'reject') => {
     setSelectedApplication(application)
@@ -303,9 +303,10 @@ export function DistributionApplications() {
                 {total > 0 && (
                   <div className="mt-4">
                     <SimplePagination
-                      page={page}
+                      currentPage={page}
+                      totalPages={totalPages}
                       pageSize={pageSize}
-                      total={total}
+                      totalItems={total}
                       onPageChange={setPage}
                     />
                   </div>

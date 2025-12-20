@@ -13,7 +13,8 @@ import { type OrderStatus } from './schema'
 
 export const orderStatusTypes = new Map<OrderStatus, string>([
   ['pending', 'bg-yellow-100/50 text-yellow-700 dark:text-yellow-300 border-yellow-200'],
-  ['accepted', 'bg-blue-100/50 text-blue-700 dark:text-blue-300 border-blue-200'],
+  ['paid', 'bg-cyan-100/50 text-cyan-700 dark:text-cyan-300 border-cyan-200'],
+  ['confirmed', 'bg-blue-100/50 text-blue-700 dark:text-blue-300 border-blue-200'],
   ['in_progress', 'bg-purple-100/50 text-purple-700 dark:text-purple-300 border-purple-200'],
   ['completed', 'bg-green-100/50 text-green-700 dark:text-green-300 border-green-200'],
   ['cancelled', 'bg-neutral-200/50 text-neutral-600 dark:text-neutral-400 border-neutral-300'],
@@ -21,8 +22,9 @@ export const orderStatusTypes = new Map<OrderStatus, string>([
 ])
 
 export const orderStatuses = [
-  { label: '待接单', value: 'pending', icon: Clock },
-  { label: '已接单', value: 'accepted', icon: CheckCircle },
+  { label: '待支付', value: 'pending', icon: Clock },
+  { label: '待接单', value: 'paid', icon: Clock },
+  { label: '已确认', value: 'confirmed', icon: CheckCircle },
   { label: '服务中', value: 'in_progress', icon: Loader2 },
   { label: '已完成', value: 'completed', icon: CheckCircle },
   { label: '已取消', value: 'cancelled', icon: XCircle },

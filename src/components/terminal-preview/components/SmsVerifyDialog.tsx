@@ -258,7 +258,9 @@ export function SmsVerifyDialog({
               placeholder="请输入手机号"
               value={phone}
               onChange={(e: any) => {
-                setPhone(e.target.value.replace(/\D/g, '').slice(0, 11))
+                // 兼容小程序和 Web 的事件对象结构
+                const value = e?.detail?.value ?? e?.target?.value ?? ''
+                setPhone(value.replace(/\D/g, '').slice(0, 11))
                 setError(null)
               }}
               style={{
@@ -293,7 +295,9 @@ export function SmsVerifyDialog({
               placeholder="请输入验证码"
               value={code}
               onChange={(e: any) => {
-                setCode(e.target.value.replace(/\D/g, '').slice(0, 6))
+                // 兼容小程序和 Web 的事件对象结构
+                const value = e?.detail?.value ?? e?.target?.value ?? ''
+                setCode(value.replace(/\D/g, '').slice(0, 6))
                 setError(null)
               }}
               style={{

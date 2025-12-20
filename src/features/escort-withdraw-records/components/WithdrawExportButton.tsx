@@ -12,8 +12,8 @@
  */
 
 import { useState } from 'react'
+import { format as formatDate } from 'date-fns'
 import { Download, Loader2, FileSpreadsheet, FileText } from 'lucide-react'
-import { format } from 'date-fns'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
@@ -57,7 +57,7 @@ export function WithdrawExportButton({
       const blob = await adminEscortWithdrawApi.export(filters, format)
 
       // 生成文件名
-      const dateStr = format(new Date(), 'yyyyMMdd_HHmmss')
+      const dateStr = formatDate(new Date(), 'yyyyMMdd_HHmmss')
       const filename = `提现记录_${dateStr}.${format}`
 
       // 触发下载

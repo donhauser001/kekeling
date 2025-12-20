@@ -95,7 +95,7 @@ export default defineConfig<'webpack5'>(async (merge) => {
         // 这将把 div/span/img 等标签映射到小程序组件
         enableInnerHTML: true,
       },
-      // 将主仓目录纳入 babel 编译链
+      // 将主仓目录和特定 node_modules 纳入 babel 编译链
       // 解决通过 alias 引入的外部 .ts/.tsx 文件未被转译的问题
       compile: {
         include: [
@@ -107,6 +107,9 @@ export default defineConfig<'webpack5'>(async (merge) => {
           path.resolve(__dirname, '..', '..', 'src', 'components', 'ui'),
           // 主仓 shared 目录（iconfont 资源、类型定义）
           path.resolve(__dirname, '..', '..', 'src', 'shared'),
+          // @tanstack/react-query 和 @tanstack/query-core 使用了 ES2020+ 语法
+          // 需要 babel 转译为 ES5 以兼容小程序环境
+          (modulePath: string) => /@tanstack/.test(modulePath),
         ],
       },
       // webpack 配置链：确保 React 单实例
@@ -174,8 +177,8 @@ export default defineConfig<'webpack5'>(async (merge) => {
           },
         ])
 
-        // 修改 splitChunks 配置，确保 React 相关模块在同一个 chunk
-        // 这可以避免 Context 因为分包而隔离
+        // 恢复 splitChunks 配置，确保 vendors 和 common chunks 被生成
+        // 通过 Taro 的 commonChunks + addChunkPages 控制主包不引用这些 chunks
         chain.optimization.splitChunks({
           chunks: 'all',
           cacheGroups: {

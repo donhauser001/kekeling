@@ -4,7 +4,7 @@
  */
 
 import { useState } from 'react'
-import { Box, Text, Button, Input } from '../../../../ui/primitives'
+import { Box, Text, Input } from '../../../../ui/primitives'
 import { isWxEnvironment } from '../../../../platform/env'
 import type { ThemeColors } from '../types'
 
@@ -202,7 +202,7 @@ export function InputModal({
         <Box style={{ padding: 16 * wxScale }}>
           <Input
             value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
+            onChange={(value) => setInputValue(value)}
             placeholder={placeholder}
             style={{
               width: '100%',

@@ -11,8 +11,10 @@ const wxScale = isWxEnvironment() ? 1.1 : 1
 
 // 小程序头部安全区域
 const wxStatusBarHeight = 44
-const wxCapsuleTop = 6
-const wxCapsuleHeight = 32
+const _wxCapsuleTop = 6 // 保留用于未来胶囊对齐
+const _wxCapsuleHeight = 32 // 保留用于未来胶囊对齐
+void _wxCapsuleTop
+void _wxCapsuleHeight
 const wxSafeAreaTop = isWxEnvironment() ? wxStatusBarHeight : 0
 
 export function UserHeader({

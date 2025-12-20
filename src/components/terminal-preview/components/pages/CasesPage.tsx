@@ -7,13 +7,12 @@ import { useQuery } from '@tanstack/react-query'
 import {
   FileText,
   Plus,
-  Calendar,
   Building2,
   User,
   ChevronRight,
   Search,
   Filter,
-} from 'lucide-react'
+} from '../../ui/lucide-compat'
 import { cn } from '@/lib/utils'
 import type { ThemeSettings, BannerAreaData } from '../../types'
 import { previewApi } from '../../api'

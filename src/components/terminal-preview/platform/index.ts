@@ -26,6 +26,18 @@ export type { PlatformRequestOptions, PlatformResponse } from './request'
 export { platformStorage } from './storage'
 export type { PlatformStorage } from './storage'
 
+// 交互适配（拨打电话、导航、弹窗、Toast）
+export {
+  makePhoneCall,
+  navigateToLocation,
+  navigateByAddress,
+  showConfirmModal,
+  showToast,
+  hideToast,
+  showLoading,
+  hideLoading,
+} from './interaction'
+
 // Navigation 适配（预留）
 // 当前终端预览器使用内部虚拟导航，暂不需要适配
 // export { platformNavigation } from './navigation'

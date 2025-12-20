@@ -10,7 +10,7 @@
 
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { ChevronLeft, RefreshCw, Clock, CheckCircle2, XCircle } from 'lucide-react'
+import { ChevronLeft, RefreshCw, Clock, CheckCircle2, XCircle } from '../../../ui/lucide-compat'
 import type { ThemeSettings, PreviewViewerRole, DistributionRecord } from '../../../types'
 import { previewApi } from '../../../api'
 import { PermissionPrompt } from '../../PermissionPrompt'

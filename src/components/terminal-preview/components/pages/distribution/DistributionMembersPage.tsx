@@ -10,11 +10,11 @@
 
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { ChevronLeft, RefreshCw, User } from 'lucide-react'
+import { ChevronLeft, RefreshCw, User } from '../../../ui/lucide-compat'
 import type { ThemeSettings, PreviewViewerRole, DistributionMember } from '../../../types'
 import { previewApi } from '../../../api'
 import { PermissionPrompt } from '../../PermissionPrompt'
-import { formatMoney, getSecondaryTextClass, getTertiaryTextClass } from '../../../utils'
+import { formatMoney, getSecondaryTextClass } from '../../../utils'
 import { getRefreshingClass } from '../../PageTransition'
 
 // ============================================================================

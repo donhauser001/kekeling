@@ -301,8 +301,13 @@ export const sidebarData: SidebarData = {
             },
             {
               title: '提现管理',
-              url: '/finance/withdrawals',
+              url: '/withdrawals',
               icon: Banknote,
+            },
+            {
+              title: '结算设置',
+              url: '/withdrawals/settings',
+              icon: Settings,
             },
           ],
         },

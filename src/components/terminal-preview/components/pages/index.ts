@@ -163,6 +163,14 @@ export const OrderDetailPage = lazy(() =>
   import('./workbench').then(m => ({ default: m.OrderDetailPage }))
 )
 
+export const PoolOrderDetailPage = lazy(() =>
+  import('./workbench').then(m => ({ default: m.PoolOrderDetailPage }))
+)
+
+export const EscortOrderDetailPage = lazy(() =>
+  import('./workbench').then(m => ({ default: m.EscortOrderDetailPage }))
+)
+
 export const WorkbenchSettingsPage = lazy(() =>
   import('./workbench').then(m => ({ default: m.WorkbenchSettingsPage }))
 )

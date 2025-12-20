@@ -653,6 +653,11 @@ export class AdminWithdrawalsService {
    * 获取提现统计
    */
   async getStats() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+
     const [
       pendingCount,
       pendingAmount,
@@ -660,6 +665,9 @@ export class AdminWithdrawalsService {
       completedCount,
       completedAmount,
       todayCount,
+      todayAmount,
+      monthCount,
+      monthAmount,
     ] = await Promise.all([
       this.prisma.withdrawal.count({ where: { status: 'pending' } }),
       this.prisma.withdrawal.aggregate({
@@ -674,8 +682,31 @@ export class AdminWithdrawalsService {
       }),
       this.prisma.withdrawal.count({
         where: {
-          createdAt: { gte: new Date(new Date().toDateString()) },
+          createdAt: { gte: today },
         },
+      }),
+      // 今日提现金额
+      this.prisma.withdrawal.aggregate({
+        where: {
+          createdAt: { gte: today },
+          status: { in: ['approved', 'completed'] },
+        },
+        _sum: { actualAmount: true },
+      }),
+      // 本月提现笔数
+      this.prisma.withdrawal.count({
+        where: {
+          createdAt: { gte: monthStart },
+          status: { in: ['approved', 'completed'] },
+        },
+      }),
+      // 本月提现金额
+      this.prisma.withdrawal.aggregate({
+        where: {
+          createdAt: { gte: monthStart },
+          status: { in: ['approved', 'completed'] },
+        },
+        _sum: { actualAmount: true },
       }),
     ]);
 
@@ -686,6 +717,9 @@ export class AdminWithdrawalsService {
       completedCount,
       completedAmount: Number(completedAmount._sum.actualAmount || 0),
       todayCount,
+      todayAmount: Number(todayAmount._sum.actualAmount || 0),
+      monthCount,
+      monthAmount: Number(monthAmount._sum.actualAmount || 0),
     };
   }
 

@@ -17,12 +17,10 @@ let DOMPurify: { sanitize: (html: string, config?: object) => string } | null = 
 
 // 检测是否在小程序环境
 const _isMiniprogramEnv = (() => {
-  // @ts-expect-error Taro 环境变量
-  if (typeof process !== 'undefined' && process.env?.TARO_ENV === 'weapp') {
+  if (typeof process !== 'undefined' && (process.env as Record<string, string | undefined>)?.TARO_ENV === 'weapp') {
     return true
   }
-  // @ts-expect-error wx 在小程序环境中存在
-  if (typeof wx !== 'undefined' && typeof wx.request === 'function') {
+  if (typeof wx !== 'undefined' && wx && typeof wx.request === 'function') {
     return true
   }
   return false
@@ -178,8 +176,8 @@ export function SafeHTML({
 
   // 小程序环境：使用 Taro 的 RichText 组件
   if (_isMiniprogramEnv) {
-    // @ts-expect-error 动态导入 Taro 组件
-    const { RichText } = require('@tarojs/components')
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { RichText } = require('@tarojs/components') as { RichText: React.ComponentType<{ className?: string; nodes: string }> }
     return (
       <RichText
         className={cn(className)}

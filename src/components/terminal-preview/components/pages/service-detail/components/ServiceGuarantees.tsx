@@ -5,24 +5,18 @@
 
 import { Box, Text, Button, Icon } from '../../../../ui/primitives'
 import { isWxEnvironment } from '../../../../platform/env'
+import type { GuaranteeItem } from '../types'
 
 const wxScale = isWxEnvironment() ? 1.1 : 1
 
-interface ServiceGuarantee {
-  id: string
-  name: string
-  icon?: string
-  description?: string
-}
-
 interface ServiceGuaranteesProps {
-  guarantees: ServiceGuarantee[]
+  guarantees: GuaranteeItem[]
   colors: {
     cardBg: string
     textPrimary: string
   }
   isDarkMode: boolean
-  onGuaranteeClick: (item: ServiceGuarantee) => void
+  onGuaranteeClick: (item: GuaranteeItem) => void
 }
 
 export function ServiceGuarantees({

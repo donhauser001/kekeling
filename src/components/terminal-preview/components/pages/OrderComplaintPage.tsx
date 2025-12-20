@@ -15,7 +15,7 @@ import {
   X,
   CheckCircle,
   Loader2,
-} from 'lucide-react'
+} from '../../ui/lucide-compat'
 import type { ThemeSettings } from '../../types'
 import { previewApi } from '../../api'
 

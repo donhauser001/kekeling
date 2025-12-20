@@ -13,11 +13,13 @@ const wxScale = isWxEnvironment() ? 1.1 : 1
 
 export function ServiceRichContent({
   content,
-  themeSettings,
+  themeSettings: _themeSettings,
   colors,
   isDarkMode,
 }: ServiceRichContentProps) {
-  const { cardBg, textPrimary, textSecondary, textMuted } = colors
+  void _themeSettings // 保留用于未来主题扩展
+  const { cardBg, textPrimary: _textPrimary, textSecondary, textMuted } = colors
+  void _textPrimary // 保留用于未来样式扩展
 
   return (
     <Box

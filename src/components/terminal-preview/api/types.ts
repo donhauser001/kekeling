@@ -445,6 +445,18 @@ export interface PoolOrderItem {
 }
 
 /**
+ * 陪诊员状态信息（用于订单池接单判断）
+ */
+export interface EscortStatusInfo {
+  /** 工作状态: working-接单中, resting-休息中, busy-服务中 */
+  workStatus: 'working' | 'resting' | 'busy' | 'unknown'
+  /** 是否可以接单 */
+  canAcceptOrder: boolean
+  /** 状态提示消息（不可接单时显示） */
+  statusMessage: string
+}
+
+/**
  * 订单池响应
  * 对应接口: GET /escort-app/orders/pool
  */
@@ -452,6 +464,8 @@ export interface OrdersPoolResponse {
   items: PoolOrderItem[]
   total: number
   hasMore: boolean
+  /** 陪诊员状态信息 */
+  escortStatus?: EscortStatusInfo
 }
 
 /**
@@ -546,6 +560,18 @@ export interface WorkbenchOrderDetail {
     amount: number
     commission: number
     tip?: number
+  }
+  /** 就诊人信息（核心信息） */
+  patient?: {
+    id: string
+    name: string
+    phone?: string
+    maskedPhone?: string
+    gender?: string
+    age?: number
+    idCard?: string
+    maskedIdCard?: string
+    relation?: string
   }
   /** 备注 */
   remark?: string
@@ -650,6 +676,12 @@ export interface EarningsStatsRecord {
   createdAt: string
   /** 状态 */
   status: 'completed' | 'pending' | 'failed'
+  /** 是否冻结中 */
+  isFrozen?: boolean
+  /** 解冻时间 (ISO 格式) */
+  unfreezeAt?: string | null
+  /** 距离解冻的毫秒数 */
+  unfreezeCountdown?: number | null
 }
 
 /**

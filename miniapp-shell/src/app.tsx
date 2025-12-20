@@ -23,9 +23,9 @@ import './app.scss'
 
 /**
  * 服务器地址配置
- * 开发环境使用局域网 IP，生产环境使用线上地址
+ * 使用线上服务器地址，确保真机可以访问
  */
-const SERVER_BASE_URL = 'https://192.168.31.180:3456'
+const SERVER_BASE_URL = 'https://kkl.top'
 
 /**
  * Iconfont 字体 URL（从服务器加载）

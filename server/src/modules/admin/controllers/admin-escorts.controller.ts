@@ -197,4 +197,28 @@ export class AdminEscortsController {
     const data = await this.escortsService.updateHospitals(id, hospitalIds, familiarDeptsMap);
     return ApiResponse.success(data, '医院关联已更新');
   }
+
+  // ============================================
+  // 钱包与收入
+  // ============================================
+
+  @Get(':id/wallet/transactions')
+  @ApiOperation({ summary: '获取陪诊员钱包流水' })
+  @ApiParam({ name: 'id', description: '陪诊员ID' })
+  @ApiQuery({ name: 'type', required: false, description: '类型: income/withdraw/refund' })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'pageSize', required: false })
+  async getWalletTransactions(
+    @Param('id') id: string,
+    @Query('type') type?: string,
+    @Query('page') page?: number,
+    @Query('pageSize') pageSize?: number,
+  ) {
+    const data = await this.escortsService.getWalletTransactions(id, {
+      type,
+      page: page ? Number(page) : 1,
+      pageSize: pageSize ? Number(pageSize) : 20,
+    });
+    return ApiResponse.success(data);
+  }
 }

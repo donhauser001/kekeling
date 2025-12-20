@@ -54,6 +54,7 @@ import { Route as AuthenticatedChatsIndexRouteImport } from './routes/_authentic
 import { Route as ClerkAuthenticatedUserManagementRouteImport } from './routes/clerk/_authenticated/user-management'
 import { Route as ClerkauthSignUpRouteImport } from './routes/clerk/(auth)/sign-up'
 import { Route as ClerkauthSignInRouteImport } from './routes/clerk/(auth)/sign-in'
+import { Route as AuthenticatedWithdrawalsSettingsRouteImport } from './routes/_authenticated/withdrawals/settings'
 import { Route as AuthenticatedUsersPatientsRouteImport } from './routes/_authenticated/users/patients'
 import { Route as AuthenticatedUsersUserIdRouteImport } from './routes/_authenticated/users/$userId'
 import { Route as AuthenticatedSettingsSmsRouteImport } from './routes/_authenticated/settings/sms'
@@ -64,6 +65,10 @@ import { Route as AuthenticatedSettingsDisplayRouteImport } from './routes/_auth
 import { Route as AuthenticatedSettingsAppearanceRouteImport } from './routes/_authenticated/settings/appearance'
 import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated/settings/account'
 import { Route as AuthenticatedServicesIdRouteImport } from './routes/_authenticated/services/$id'
+import { Route as AuthenticatedFinanceTransactionsRouteImport } from './routes/_authenticated/finance/transactions'
+import { Route as AuthenticatedFinanceSettlementsRouteImport } from './routes/_authenticated/finance/settlements'
+import { Route as AuthenticatedFinanceInvoicesRouteImport } from './routes/_authenticated/finance/invoices'
+import { Route as AuthenticatedFinanceBillsRouteImport } from './routes/_authenticated/finance/bills'
 import { Route as AuthenticatedEscortsWithdrawRecordsRouteImport } from './routes/_authenticated/escorts/withdraw-records'
 import { Route as AuthenticatedEscortsApplicationsRouteImport } from './routes/_authenticated/escorts/applications'
 import { Route as AuthenticatedEscortsEscortIdRouteImport } from './routes/_authenticated/escorts/$escortId'
@@ -331,6 +336,12 @@ const ClerkauthSignInRoute = ClerkauthSignInRouteImport.update({
   path: '/sign-in',
   getParentRoute: () => ClerkauthRouteRoute,
 } as any)
+const AuthenticatedWithdrawalsSettingsRoute =
+  AuthenticatedWithdrawalsSettingsRouteImport.update({
+    id: '/withdrawals/settings',
+    path: '/withdrawals/settings',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedUsersPatientsRoute =
   AuthenticatedUsersPatientsRouteImport.update({
     id: '/users/patients',
@@ -390,6 +401,30 @@ const AuthenticatedServicesIdRoute = AuthenticatedServicesIdRouteImport.update({
   path: '/services/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedFinanceTransactionsRoute =
+  AuthenticatedFinanceTransactionsRouteImport.update({
+    id: '/finance/transactions',
+    path: '/finance/transactions',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedFinanceSettlementsRoute =
+  AuthenticatedFinanceSettlementsRouteImport.update({
+    id: '/finance/settlements',
+    path: '/finance/settlements',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedFinanceInvoicesRoute =
+  AuthenticatedFinanceInvoicesRouteImport.update({
+    id: '/finance/invoices',
+    path: '/finance/invoices',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedFinanceBillsRoute =
+  AuthenticatedFinanceBillsRouteImport.update({
+    id: '/finance/bills',
+    path: '/finance/bills',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedEscortsWithdrawRecordsRoute =
   AuthenticatedEscortsWithdrawRecordsRouteImport.update({
     id: '/escorts/withdraw-records',
@@ -537,6 +572,10 @@ export interface FileRoutesByFullPath {
   '/escorts/$escortId': typeof AuthenticatedEscortsEscortIdRoute
   '/escorts/applications': typeof AuthenticatedEscortsApplicationsRoute
   '/escorts/withdraw-records': typeof AuthenticatedEscortsWithdrawRecordsRoute
+  '/finance/bills': typeof AuthenticatedFinanceBillsRoute
+  '/finance/invoices': typeof AuthenticatedFinanceInvoicesRoute
+  '/finance/settlements': typeof AuthenticatedFinanceSettlementsRoute
+  '/finance/transactions': typeof AuthenticatedFinanceTransactionsRoute
   '/services/$id': typeof AuthenticatedServicesIdRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
@@ -547,6 +586,7 @@ export interface FileRoutesByFullPath {
   '/settings/sms': typeof AuthenticatedSettingsSmsRoute
   '/users/$userId': typeof AuthenticatedUsersUserIdRoute
   '/users/patients': typeof AuthenticatedUsersPatientsRoute
+  '/withdrawals/settings': typeof AuthenticatedWithdrawalsSettingsRoute
   '/clerk/sign-in': typeof ClerkauthSignInRoute
   '/clerk/sign-up': typeof ClerkauthSignUpRoute
   '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
@@ -611,6 +651,10 @@ export interface FileRoutesByTo {
   '/escorts/$escortId': typeof AuthenticatedEscortsEscortIdRoute
   '/escorts/applications': typeof AuthenticatedEscortsApplicationsRoute
   '/escorts/withdraw-records': typeof AuthenticatedEscortsWithdrawRecordsRoute
+  '/finance/bills': typeof AuthenticatedFinanceBillsRoute
+  '/finance/invoices': typeof AuthenticatedFinanceInvoicesRoute
+  '/finance/settlements': typeof AuthenticatedFinanceSettlementsRoute
+  '/finance/transactions': typeof AuthenticatedFinanceTransactionsRoute
   '/services/$id': typeof AuthenticatedServicesIdRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
@@ -621,6 +665,7 @@ export interface FileRoutesByTo {
   '/settings/sms': typeof AuthenticatedSettingsSmsRoute
   '/users/$userId': typeof AuthenticatedUsersUserIdRoute
   '/users/patients': typeof AuthenticatedUsersPatientsRoute
+  '/withdrawals/settings': typeof AuthenticatedWithdrawalsSettingsRoute
   '/clerk/sign-in': typeof ClerkauthSignInRoute
   '/clerk/sign-up': typeof ClerkauthSignUpRoute
   '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
@@ -690,6 +735,10 @@ export interface FileRoutesById {
   '/_authenticated/escorts/$escortId': typeof AuthenticatedEscortsEscortIdRoute
   '/_authenticated/escorts/applications': typeof AuthenticatedEscortsApplicationsRoute
   '/_authenticated/escorts/withdraw-records': typeof AuthenticatedEscortsWithdrawRecordsRoute
+  '/_authenticated/finance/bills': typeof AuthenticatedFinanceBillsRoute
+  '/_authenticated/finance/invoices': typeof AuthenticatedFinanceInvoicesRoute
+  '/_authenticated/finance/settlements': typeof AuthenticatedFinanceSettlementsRoute
+  '/_authenticated/finance/transactions': typeof AuthenticatedFinanceTransactionsRoute
   '/_authenticated/services/$id': typeof AuthenticatedServicesIdRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/_authenticated/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
@@ -700,6 +749,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/sms': typeof AuthenticatedSettingsSmsRoute
   '/_authenticated/users/$userId': typeof AuthenticatedUsersUserIdRoute
   '/_authenticated/users/patients': typeof AuthenticatedUsersPatientsRoute
+  '/_authenticated/withdrawals/settings': typeof AuthenticatedWithdrawalsSettingsRoute
   '/clerk/(auth)/sign-in': typeof ClerkauthSignInRoute
   '/clerk/(auth)/sign-up': typeof ClerkauthSignUpRoute
   '/clerk/_authenticated/user-management': typeof ClerkAuthenticatedUserManagementRoute
@@ -767,6 +817,10 @@ export interface FileRouteTypes {
     | '/escorts/$escortId'
     | '/escorts/applications'
     | '/escorts/withdraw-records'
+    | '/finance/bills'
+    | '/finance/invoices'
+    | '/finance/settlements'
+    | '/finance/transactions'
     | '/services/$id'
     | '/settings/account'
     | '/settings/appearance'
@@ -777,6 +831,7 @@ export interface FileRouteTypes {
     | '/settings/sms'
     | '/users/$userId'
     | '/users/patients'
+    | '/withdrawals/settings'
     | '/clerk/sign-in'
     | '/clerk/sign-up'
     | '/clerk/user-management'
@@ -841,6 +896,10 @@ export interface FileRouteTypes {
     | '/escorts/$escortId'
     | '/escorts/applications'
     | '/escorts/withdraw-records'
+    | '/finance/bills'
+    | '/finance/invoices'
+    | '/finance/settlements'
+    | '/finance/transactions'
     | '/services/$id'
     | '/settings/account'
     | '/settings/appearance'
@@ -851,6 +910,7 @@ export interface FileRouteTypes {
     | '/settings/sms'
     | '/users/$userId'
     | '/users/patients'
+    | '/withdrawals/settings'
     | '/clerk/sign-in'
     | '/clerk/sign-up'
     | '/clerk/user-management'
@@ -919,6 +979,10 @@ export interface FileRouteTypes {
     | '/_authenticated/escorts/$escortId'
     | '/_authenticated/escorts/applications'
     | '/_authenticated/escorts/withdraw-records'
+    | '/_authenticated/finance/bills'
+    | '/_authenticated/finance/invoices'
+    | '/_authenticated/finance/settlements'
+    | '/_authenticated/finance/transactions'
     | '/_authenticated/services/$id'
     | '/_authenticated/settings/account'
     | '/_authenticated/settings/appearance'
@@ -929,6 +993,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/sms'
     | '/_authenticated/users/$userId'
     | '/_authenticated/users/patients'
+    | '/_authenticated/withdrawals/settings'
     | '/clerk/(auth)/sign-in'
     | '/clerk/(auth)/sign-up'
     | '/clerk/_authenticated/user-management'
@@ -1305,6 +1370,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClerkauthSignInRouteImport
       parentRoute: typeof ClerkauthRouteRoute
     }
+    '/_authenticated/withdrawals/settings': {
+      id: '/_authenticated/withdrawals/settings'
+      path: '/withdrawals/settings'
+      fullPath: '/withdrawals/settings'
+      preLoaderRoute: typeof AuthenticatedWithdrawalsSettingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/users/patients': {
       id: '/_authenticated/users/patients'
       path: '/users/patients'
@@ -1373,6 +1445,34 @@ declare module '@tanstack/react-router' {
       path: '/services/$id'
       fullPath: '/services/$id'
       preLoaderRoute: typeof AuthenticatedServicesIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/finance/transactions': {
+      id: '/_authenticated/finance/transactions'
+      path: '/finance/transactions'
+      fullPath: '/finance/transactions'
+      preLoaderRoute: typeof AuthenticatedFinanceTransactionsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/finance/settlements': {
+      id: '/_authenticated/finance/settlements'
+      path: '/finance/settlements'
+      fullPath: '/finance/settlements'
+      preLoaderRoute: typeof AuthenticatedFinanceSettlementsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/finance/invoices': {
+      id: '/_authenticated/finance/invoices'
+      path: '/finance/invoices'
+      fullPath: '/finance/invoices'
+      preLoaderRoute: typeof AuthenticatedFinanceInvoicesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/finance/bills': {
+      id: '/_authenticated/finance/bills'
+      path: '/finance/bills'
+      fullPath: '/finance/bills'
+      preLoaderRoute: typeof AuthenticatedFinanceBillsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/escorts/withdraw-records': {
@@ -1565,9 +1665,14 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEscortsEscortIdRoute: typeof AuthenticatedEscortsEscortIdRoute
   AuthenticatedEscortsApplicationsRoute: typeof AuthenticatedEscortsApplicationsRoute
   AuthenticatedEscortsWithdrawRecordsRoute: typeof AuthenticatedEscortsWithdrawRecordsRoute
+  AuthenticatedFinanceBillsRoute: typeof AuthenticatedFinanceBillsRoute
+  AuthenticatedFinanceInvoicesRoute: typeof AuthenticatedFinanceInvoicesRoute
+  AuthenticatedFinanceSettlementsRoute: typeof AuthenticatedFinanceSettlementsRoute
+  AuthenticatedFinanceTransactionsRoute: typeof AuthenticatedFinanceTransactionsRoute
   AuthenticatedServicesIdRoute: typeof AuthenticatedServicesIdRoute
   AuthenticatedUsersUserIdRoute: typeof AuthenticatedUsersUserIdRoute
   AuthenticatedUsersPatientsRoute: typeof AuthenticatedUsersPatientsRoute
+  AuthenticatedWithdrawalsSettingsRoute: typeof AuthenticatedWithdrawalsSettingsRoute
   AuthenticatedChatsIndexRoute: typeof AuthenticatedChatsIndexRoute
   AuthenticatedDepartmentsIndexRoute: typeof AuthenticatedDepartmentsIndexRoute
   AuthenticatedDoctorsIndexRoute: typeof AuthenticatedDoctorsIndexRoute
@@ -1622,9 +1727,14 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEscortsApplicationsRoute: AuthenticatedEscortsApplicationsRoute,
   AuthenticatedEscortsWithdrawRecordsRoute:
     AuthenticatedEscortsWithdrawRecordsRoute,
+  AuthenticatedFinanceBillsRoute: AuthenticatedFinanceBillsRoute,
+  AuthenticatedFinanceInvoicesRoute: AuthenticatedFinanceInvoicesRoute,
+  AuthenticatedFinanceSettlementsRoute: AuthenticatedFinanceSettlementsRoute,
+  AuthenticatedFinanceTransactionsRoute: AuthenticatedFinanceTransactionsRoute,
   AuthenticatedServicesIdRoute: AuthenticatedServicesIdRoute,
   AuthenticatedUsersUserIdRoute: AuthenticatedUsersUserIdRoute,
   AuthenticatedUsersPatientsRoute: AuthenticatedUsersPatientsRoute,
+  AuthenticatedWithdrawalsSettingsRoute: AuthenticatedWithdrawalsSettingsRoute,
   AuthenticatedChatsIndexRoute: AuthenticatedChatsIndexRoute,
   AuthenticatedDepartmentsIndexRoute: AuthenticatedDepartmentsIndexRoute,
   AuthenticatedDoctorsIndexRoute: AuthenticatedDoctorsIndexRoute,

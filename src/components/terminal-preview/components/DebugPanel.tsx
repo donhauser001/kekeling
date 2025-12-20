@@ -221,12 +221,15 @@ export function DebugPanel({
  */
 export function shouldShowDebugPanel(): boolean {
   // 小程序环境不显示（检测 TARO_ENV 或 wx 全局对象）
-  // @ts-expect-error TARO_ENV 是 Taro 编译时注入的环境变量
-  if (typeof process !== 'undefined' && process.env && process.env.TARO_ENV) {
+  if (
+    typeof process !== 'undefined' &&
+    process.env &&
+    (process.env as Record<string, string | undefined>).TARO_ENV
+  ) {
     return false
   }
   // 检测微信小程序环境
-  if (typeof wx !== 'undefined' && wx.getSystemInfoSync) {
+  if (typeof wx !== 'undefined' && wx) {
     return false
   }
   // Web 开发环境显示

@@ -50,7 +50,9 @@ export function ProfilePage({
     // 获取轮播图数据
     previewApi.getBanners('profile').then(setBannerData).catch(console.error)
     // 获取用户资料
-    previewApi.getUserProfile().then(setUserProfile).catch(console.error)
+    previewApi.getUserProfile().then((data) => {
+      setUserProfile(data || undefined)
+    }).catch(console.error)
   }, [])
 
   // ============================================================================

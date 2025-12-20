@@ -192,6 +192,25 @@ export const escortApi = {
         params: { page, pageSize },
       }
     ),
+
+  // 获取钱包流水
+  getWalletTransactions: (id: string, params?: { type?: string; page?: number; pageSize?: number }) =>
+    request<{ data: WalletTransaction[]; total: number }>(
+      `/admin/escorts/${id}/wallet/transactions`,
+      { params }
+    ),
+}
+
+// 钱包流水类型
+export interface WalletTransaction {
+  id: string
+  type: 'income' | 'withdraw' | 'refund' | 'frozen' | 'unfrozen'
+  amount: number
+  balanceAfter: number
+  title: string
+  remark: string | null
+  orderId: string | null
+  createdAt: string
 }
 
 // ============================================================================

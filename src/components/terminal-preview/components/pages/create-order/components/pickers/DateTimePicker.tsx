@@ -3,7 +3,7 @@
  * 按《小程序页面改造规范》改造
  */
 
-import { Box, Text, Icon } from '../../../../../ui/primitives'
+import { Box, Text } from '../../../../../ui/primitives'
 import { isWxEnvironment } from '../../../../../platform/env'
 import { PickerModal } from '../PickerModal'
 import type { DateOption, TimeOption, ThemeColors } from '../../types'

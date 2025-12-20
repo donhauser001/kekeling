@@ -41,9 +41,17 @@ export type { WithdrawPageProps } from './WithdrawPage'
 export { WorkbenchWithdrawPage } from './WorkbenchWithdrawPage'
 export type { WorkbenchWithdrawPageProps } from './WorkbenchWithdrawPage'
 
-// 订单详情
+// 订单详情（旧版，可废弃）
 export { OrderDetailPage } from './OrderDetailPage'
 export type { OrderDetailPageProps } from './OrderDetailPage'
+
+// 订单池订单详情（新架构）
+export { PoolOrderDetailPage } from './PoolOrderDetailPage'
+export type { PoolOrderDetailPageProps } from './PoolOrderDetailPage'
+
+// 陪诊员已接订单详情（新架构）
+export { EscortOrderDetailPage } from './EscortOrderDetailPage'
+export type { EscortOrderDetailPageProps } from './EscortOrderDetailPage'
 
 // 工作台设置（Step 13）
 export { WorkbenchSettingsPage } from './WorkbenchSettingsPage'

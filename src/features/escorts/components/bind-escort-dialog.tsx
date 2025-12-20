@@ -16,7 +16,7 @@ import { escortApi, userApi, type User } from '@/lib/api'
 import { toast } from 'sonner'
 import { type Escort } from '@/lib/api'
 import { cn } from '@/lib/utils'
-import { Search, Loader2, User as UserIcon, Phone, X, Check } from 'lucide-react'
+import { Search, Loader2, User as UserIcon, Phone, X } from 'lucide-react'
 
 interface BindEscortDialogProps {
   open: boolean

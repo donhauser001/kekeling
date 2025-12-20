@@ -685,4 +685,59 @@ export class AdminEscortsService {
       inactive: total - active - pending,
     };
   }
+
+  // ============================================
+  // 钱包与收入
+  // ============================================
+
+  /**
+   * 获取陪诊员钱包流水
+   */
+  async getWalletTransactions(escortId: string, options: {
+    type?: string;
+    page: number;
+    pageSize: number;
+  }) {
+    const { type, page, pageSize } = options;
+
+    // 获取钱包
+    const wallet = await this.prisma.escortWallet.findUnique({
+      where: { escortId },
+    });
+
+    if (!wallet) {
+      return { data: [], total: 0 };
+    }
+
+    // 构建查询条件
+    const where: any = { walletId: wallet.id };
+    if (type) {
+      where.type = type;
+    }
+
+    // 查询总数
+    const total = await this.prisma.walletTransaction.count({ where });
+
+    // 查询列表
+    const transactions = await this.prisma.walletTransaction.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    });
+
+    // 转换格式
+    const data = transactions.map(t => ({
+      id: t.id,
+      type: t.type,
+      amount: Number(t.amount),
+      balanceAfter: Number(t.balanceAfter),
+      title: t.title,
+      remark: t.remark,
+      orderId: t.orderId,
+      createdAt: t.createdAt,
+    }));
+
+    return { data, total };
+  }
 }

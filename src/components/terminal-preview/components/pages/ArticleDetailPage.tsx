@@ -6,7 +6,7 @@
 
 import { useRef, useEffect, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, AlertCircle } from 'lucide-react'
+import { ArrowLeft, AlertCircle } from '../../ui/lucide-compat'
 import type { ThemeSettings } from '../../types'
 import { previewApi } from '../../api'
 

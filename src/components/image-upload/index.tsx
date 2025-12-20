@@ -25,7 +25,7 @@
 
 import { useState, useCallback, useRef } from 'react'
 import { cn } from '@/lib/utils'
-import { useUpload, type UploadResult } from './use-upload'
+import { useUpload } from './use-upload'
 import { UploadItem } from './upload-item'
 import { UploadTrigger, AddButton } from './upload-trigger'
 import { PreviewModal } from './preview-modal'
@@ -243,8 +243,8 @@ export function ImageUpload({
     setPreviewOpen(true)
   }, [])
 
-  // 移动图片位置（简单排序）
-  const handleMove = useCallback(
+  // 移动图片位置（简单排序）- 保留用于拖拽排序功能
+  const _handleMove = useCallback(
     (fromIndex: number, toIndex: number) => {
       if (!sortable || fromIndex === toIndex) return
       const newImages = [...images]
@@ -254,6 +254,7 @@ export function ImageUpload({
     },
     [sortable, images, updateValue]
   )
+  void _handleMove // 保留用于拖拽排序功能
 
   // 计算是否可以继续添加
   const canAdd = multiple ? images.length + uploadingItems.length < maxCount : images.length === 0

@@ -10,12 +10,10 @@ import {
   MapPin,
   Phone,
   User,
-  Check,
-  MoreVertical,
   Edit,
   Trash,
   Star,
-} from 'lucide-react'
+} from '../../ui/lucide-compat'
 import type { ThemeSettings } from '../../types'
 import { previewApi } from '../../api'
 
@@ -33,7 +31,8 @@ export function AddressListPage({
   onNavigate,
 }: AddressListPageProps) {
   const queryClient = useQueryClient()
-  const [menuOpenId, setMenuOpenId] = useState<string | null>(null)
+  const [_menuOpenId, setMenuOpenId] = useState<string | null>(null)
+  void _menuOpenId // 状态值保留用于后续菜单逻辑
 
   // 获取地址列表
   const { data: addresses = [], isLoading } = useQuery({

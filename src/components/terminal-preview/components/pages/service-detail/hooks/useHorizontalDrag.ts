@@ -6,7 +6,7 @@
 import { useRef, useState, useCallback } from 'react'
 
 interface UseHorizontalDragResult {
-  ref: React.RefObject<HTMLDivElement>
+  ref: React.RefObject<HTMLDivElement | null>
   isDragging: boolean
   handlers: {
     onMouseDown: (e: React.MouseEvent) => void

@@ -14,10 +14,11 @@ const wxScale = isWxEnvironment() ? 1.1 : 1
 
 export function ServiceImageCarousel({
   images,
-  serviceName,
+  serviceName: _serviceName,
   primaryColor,
   isDarkMode,
 }: ServiceImageCarouselProps) {
+  void _serviceName // 保留用于未来可访问性标签
   const [activeIndex, setActiveIndex] = useState(0)
   const [startX, setStartX] = useState(0)
   const [isSwiping, setIsSwiping] = useState(false)
