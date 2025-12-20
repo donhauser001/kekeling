@@ -7,7 +7,6 @@ import {
     Heart,
     Users,
     Check,
-    Calendar,
     Layers,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
@@ -65,21 +64,24 @@ export function EscortCategoriesDetailSheet({
 
     const IconComponent = iconMap[category.icon] || UserCheck
 
-    const getAbilityName = (key: string): string => {
+    // 保留用于未来能力名称和描述显示
+    const _getAbilityName = (key: string): string => {
         for (const group of abilityGroups) {
             const ability = group.abilities.find(b => b.key === key)
             if (ability) return ability.name
         }
         return key
     }
+    void _getAbilityName
 
-    const getAbilityDescription = (key: string): string => {
+    const _getAbilityDescription = (key: string): string => {
         for (const group of abilityGroups) {
             const ability = group.abilities.find(b => b.key === key)
             if (ability) return ability.description
         }
         return ''
     }
+    void _getAbilityDescription
 
     // 按能力组分组显示
     const groupedAbilities = abilityGroups.map(group => ({

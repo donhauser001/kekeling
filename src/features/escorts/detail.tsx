@@ -47,7 +47,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { escortApi, distributionApi, orderApi, withdrawalApi, type Order, type DistributionRecord, type Withdrawal } from '@/lib/api'
+import { escortApi, distributionApi, orderApi, withdrawalApi, type Order, type DistributionRecord, type Withdrawal, type WalletTransaction } from '@/lib/api'
 import { normalizeLevel } from '@/lib/utils'
 import {
   Table,
@@ -146,11 +146,10 @@ export function EscortDetail() {
   const [incomePage, setIncomePage] = useState(1)
   const incomePageSize = 10
 
-  // 获取分润记录（收入明细）
+  // 获取钱包流水（收入明细）
   const { data: incomeData, isLoading: incomeLoading } = useQuery({
-    queryKey: ['escort-income', escortId, incomePage],
-    queryFn: () => distributionApi.getRecords({
-      beneficiaryId: escortId,
+    queryKey: ['escort-wallet-transactions', escortId, incomePage],
+    queryFn: () => escortApi.getWalletTransactions(escortId, {
       page: incomePage,
       pageSize: incomePageSize,
     }),
@@ -844,12 +843,9 @@ export function EscortDetail() {
                       <Clock className="h-5 w-5 text-orange-600" />
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">待结算</p>
+                      <p className="text-sm text-muted-foreground">冻结金额</p>
                       <p className="font-semibold">
-                        ¥{incomeData?.data
-                          ?.filter((r: DistributionRecord) => r.status === 'pending')
-                          .reduce((sum: number, r: DistributionRecord) => sum + r.amount, 0)
-                          .toFixed(2) || '0.00'}
+                        ¥{distributionInfo?.wallet?.frozenBalance?.toFixed(2) || '0.00'}
                       </p>
                     </div>
                   </div>
@@ -879,7 +875,7 @@ export function EscortDetail() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">收入明细</CardTitle>
-                <CardDescription>查看服务收入和分润记录</CardDescription>
+                <CardDescription>查看服务收入和钱包流水记录</CardDescription>
               </CardHeader>
               <CardContent>
                 {incomeLoading ? (
@@ -893,48 +889,44 @@ export function EscortDetail() {
                         <TableRow>
                           <TableHead>时间</TableHead>
                           <TableHead>类型</TableHead>
-                          <TableHead>来源</TableHead>
-                          <TableHead>订单金额</TableHead>
-                          <TableHead>分润比例</TableHead>
-                          <TableHead>分润金额</TableHead>
-                          <TableHead>状态</TableHead>
+                          <TableHead>说明</TableHead>
+                          <TableHead>金额</TableHead>
+                          <TableHead>余额</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {incomeData.data.map((record: DistributionRecord) => (
+                        {incomeData.data.map((record: WalletTransaction) => (
                           <TableRow key={record.id}>
                             <TableCell className="text-sm">
                               {new Date(record.createdAt).toLocaleString()}
                             </TableCell>
                             <TableCell>
-                              <Badge variant="outline">
-                                {record.type === 'order' ? '订单分润' : '直推奖励'}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              {record.sourceEscort?.name || '-'}
-                              {record.relationLevel > 1 && (
-                                <span className="text-xs text-muted-foreground ml-1">
-                                  ({record.relationLevel}级)
-                                </span>
-                              )}
-                            </TableCell>
-                            <TableCell>¥{record.orderAmount.toFixed(2)}</TableCell>
-                            <TableCell>{record.rate}%</TableCell>
-                            <TableCell className="font-medium text-green-600">
-                              +¥{record.amount.toFixed(2)}
-                            </TableCell>
-                            <TableCell>
-                              <Badge className={
-                                record.status === 'settled'
-                                  ? 'bg-green-50 text-green-600'
-                                  : record.status === 'pending'
-                                    ? 'bg-yellow-50 text-yellow-600'
-                                    : 'bg-gray-50 text-gray-600'
+                              <Badge variant="outline" className={
+                                record.type === 'income' ? 'border-green-200 bg-green-50 text-green-700' :
+                                  record.type === 'withdraw' ? 'border-blue-200 bg-blue-50 text-blue-700' :
+                                    record.type === 'refund' ? 'border-red-200 bg-red-50 text-red-700' :
+                                      'border-gray-200 bg-gray-50 text-gray-700'
                               }>
-                                {record.status === 'settled' ? '已结算' :
-                                  record.status === 'pending' ? '待结算' : '已取消'}
+                                {record.type === 'income' ? '订单收入' :
+                                  record.type === 'withdraw' ? '提现' :
+                                    record.type === 'refund' ? '退款扣回' :
+                                      record.type === 'frozen' ? '冻结' :
+                                        record.type === 'unfrozen' ? '解冻' : record.type}
                               </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div>
+                                <span className="font-medium">{record.title}</span>
+                                {record.remark && (
+                                  <p className="text-xs text-muted-foreground mt-0.5">{record.remark}</p>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell className={`font-medium ${record.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {record.amount >= 0 ? '+' : ''}¥{record.amount.toFixed(2)}
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">
+                              ¥{record.balanceAfter.toFixed(2)}
                             </TableCell>
                           </TableRow>
                         ))}

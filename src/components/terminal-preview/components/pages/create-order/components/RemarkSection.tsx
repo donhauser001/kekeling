@@ -42,7 +42,7 @@ export function RemarkSection({ value, onChange, colors }: RemarkSectionProps) {
       </Text>
       <Textarea
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(value) => onChange(value)}
         placeholder="请输入备注信息（选填）"
         style={{
           width: '100%',

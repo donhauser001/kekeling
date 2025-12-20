@@ -245,7 +245,7 @@ export const mockWxBridge: WxBridge = {
     console.log('[mockWxBridge] 模拟获取定位', params)
 
     // 使用浏览器 Geolocation API
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       if (!navigator.geolocation) {
         // 返回默认位置（北京）
         resolve({
@@ -381,9 +381,8 @@ export const realWxBridge: WxBridge = {
   // 以下是占位实现，实际使用时会被小程序项目中的实现覆盖
 
   async login(): Promise<WxLoginResult> {
-    // @ts-expect-error wx 在小程序环境中存在
     return new Promise((resolve, reject) => {
-      wx.login({
+      wx!.login({
         success: (res: { code: string }) => resolve({ code: res.code }),
         fail: (err: Error) => reject(err),
       })
@@ -391,9 +390,8 @@ export const realWxBridge: WxBridge = {
   },
 
   async checkSession(): Promise<boolean> {
-    // @ts-expect-error wx 在小程序环境中存在
     return new Promise((resolve) => {
-      wx.checkSession({
+      wx!.checkSession({
         success: () => resolve(true),
         fail: () => resolve(false),
       })
@@ -401,9 +399,8 @@ export const realWxBridge: WxBridge = {
   },
 
   async requestPayment(params: WxPayParams): Promise<WxPayResult> {
-    // @ts-expect-error wx 在小程序环境中存在
     return new Promise((resolve) => {
-      wx.requestPayment({
+      wx!.requestPayment({
         ...params,
         success: () => resolve({ success: true }),
         fail: (err: { errMsg: string }) =>
@@ -421,9 +418,8 @@ export const realWxBridge: WxBridge = {
   },
 
   async chooseImage(params?: WxChooseImageParams): Promise<WxChooseImageResult> {
-    // @ts-expect-error wx 在小程序环境中存在
     return new Promise((resolve, reject) => {
-      wx.chooseImage({
+      wx!.chooseImage({
         count: params?.count || 9,
         sourceType: params?.sourceType || ['album', 'camera'],
         sizeType: params?.sizeType || ['original', 'compressed'],
@@ -434,9 +430,8 @@ export const realWxBridge: WxBridge = {
   },
 
   async uploadFile(params: WxUploadFileParams): Promise<WxUploadFileResult> {
-    // @ts-expect-error wx 在小程序环境中存在
     return new Promise((resolve, reject) => {
-      wx.uploadFile({
+      wx!.uploadFile({
         url: params.url,
         filePath: params.filePath,
         name: params.name,
@@ -449,17 +444,15 @@ export const realWxBridge: WxBridge = {
   },
 
   previewImage(urls: string[], current?: string): void {
-    // @ts-expect-error wx 在小程序环境中存在
-    wx.previewImage({
+    wx!.previewImage({
       urls,
       current: current || urls[0],
     })
   },
 
   async getLocation(params?: WxGetLocationParams): Promise<WxLocationResult> {
-    // @ts-expect-error wx 在小程序环境中存在
     return new Promise((resolve, reject) => {
-      wx.getLocation({
+      wx!.getLocation({
         type: params?.type || 'gcj02',
         altitude: params?.altitude,
         isHighAccuracy: params?.isHighAccuracy,
@@ -470,9 +463,8 @@ export const realWxBridge: WxBridge = {
   },
 
   async scanCode(params?: WxScanCodeParams): Promise<WxScanCodeResult> {
-    // @ts-expect-error wx 在小程序环境中存在
     return new Promise((resolve, reject) => {
-      wx.scanCode({
+      wx!.scanCode({
         onlyFromCamera: params?.onlyFromCamera,
         scanType: params?.scanType,
         success: (res: WxScanCodeResult) => resolve(res),
@@ -483,36 +475,29 @@ export const realWxBridge: WxBridge = {
 
   storage: {
     getSync(key: string): unknown {
-      // @ts-expect-error wx 在小程序环境中存在
-      return wx.getStorageSync(key)
+      return wx!.getStorageSync(key)
     },
     setSync(key: string, data: unknown): void {
-      // @ts-expect-error wx 在小程序环境中存在
-      wx.setStorageSync(key, data)
+      wx!.setStorageSync(key, data)
     },
     removeSync(key: string): void {
-      // @ts-expect-error wx 在小程序环境中存在
-      wx.removeStorageSync(key)
+      wx!.removeStorageSync(key)
     },
     clearSync(): void {
-      // @ts-expect-error wx 在小程序环境中存在
-      wx.clearStorageSync()
+      wx!.clearStorageSync()
     },
   },
 
   navigateTo(url: string): void {
-    // @ts-expect-error wx 在小程序环境中存在
-    wx.navigateTo({ url })
+    wx!.navigateTo({ url })
   },
 
   redirectTo(url: string): void {
-    // @ts-expect-error wx 在小程序环境中存在
-    wx.redirectTo({ url })
+    wx!.redirectTo({ url })
   },
 
   navigateBack(delta?: number): void {
-    // @ts-expect-error wx 在小程序环境中存在
-    wx.navigateBack({ delta: delta || 1 })
+    wx!.navigateBack({ delta: delta || 1 })
   },
 
   showToast(params: {
@@ -520,8 +505,7 @@ export const realWxBridge: WxBridge = {
     icon?: 'success' | 'error' | 'loading' | 'none'
     duration?: number
   }): void {
-    // @ts-expect-error wx 在小程序环境中存在
-    wx.showToast({
+    wx!.showToast({
       title: params.title,
       icon: params.icon || 'none',
       duration: params.duration || 1500,
@@ -529,13 +513,11 @@ export const realWxBridge: WxBridge = {
   },
 
   showLoading(title: string): void {
-    // @ts-expect-error wx 在小程序环境中存在
-    wx.showLoading({ title, mask: true })
+    wx!.showLoading({ title, mask: true })
   },
 
   hideLoading(): void {
-    // @ts-expect-error wx 在小程序环境中存在
-    wx.hideLoading()
+    wx!.hideLoading()
   },
 
   async showModal(params: {
@@ -545,9 +527,8 @@ export const realWxBridge: WxBridge = {
     cancelText?: string
     confirmText?: string
   }): Promise<{ confirm: boolean; cancel: boolean }> {
-    // @ts-expect-error wx 在小程序环境中存在
     return new Promise((resolve) => {
-      wx.showModal({
+      wx!.showModal({
         title: params.title,
         content: params.content,
         showCancel: params.showCancel ?? true,

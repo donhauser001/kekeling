@@ -12,7 +12,7 @@
  */
 
 import { useQuery } from '@tanstack/react-query'
-import { ChevronLeft, RefreshCw, Award, TrendingUp, CheckCircle, Target, Crown } from 'lucide-react'
+import { ChevronLeft, RefreshCw, Award, TrendingUp, CheckCircle, Target, Crown } from '../../../ui/lucide-compat'
 import type { ThemeSettings, PreviewViewerRole, DistributionRequirement } from '../../../types'
 import { previewApi } from '../../../api'
 import { PermissionPrompt } from '../../PermissionPrompt'

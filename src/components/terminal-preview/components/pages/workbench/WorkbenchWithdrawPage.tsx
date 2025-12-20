@@ -1,5 +1,5 @@
 /**
- * 陪诊员提现页面（预览器版本）
+ * 陪诊员提现页面
  *
  * page key: 'workbench-withdraw'
  * API: previewApi.getWithdrawStats()
@@ -11,13 +11,11 @@
  * - 提现表单（金额输入、提交按钮、禁用状态）
  * - 最近提现记录列表（5 条）
  *
- * 降级策略：
- * - 有 escortToken 时走真实请求
- * - 无 token 或请求失败时自动降级到 mock 数据
+ * @see docs/小程序页面改造规范.md
  */
 
 import { useState, useEffect } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { Box, Text, Button } from '../../../ui/primitives'
 import {
   CreditCard,
   CheckCircle,
@@ -26,15 +24,29 @@ import {
   ArrowDownRight,
   Smartphone,
   Building2,
-  type LucideIcon,
-} from 'lucide-react'
+  ChevronLeft,
+} from '../../../ui/lucide-compat'
+import { isWxEnvironment } from '../../../platform/env'
 import type { ThemeSettings, PreviewViewerRole } from '../../../types'
 import { previewApi } from '../../../api'
 import type { WithdrawStats, WithdrawAccount, WithdrawRecord } from '../../../api'
 import { PermissionPrompt } from '../../PermissionPrompt'
 import { ListSkeleton } from '../../ListSkeleton'
 import { ErrorRetry } from '../../ErrorRetry'
-import { formatMoney, formatMoneyWithComma, formatCount, formatPercent, safeNumber, getSecondaryTextClass, getTertiaryTextClass } from '../../../utils'
+import {
+  formatMoney,
+  formatMoneyWithComma,
+  formatCount,
+  formatPercent,
+  safeNumber,
+} from '../../../utils'
+
+// ============================================================================
+// 常量定义
+// ============================================================================
+
+const wxScale = isWxEnvironment() ? 1.1 : 1
+const wxSafeAreaTop = isWxEnvironment() ? 44 : 0
 
 // ============================================================================
 // 类型定义
@@ -59,88 +71,132 @@ export function WorkbenchWithdrawPage({
   isDarkMode,
   effectiveViewerRole,
   onBack,
+  onNavigate,
   onLogin,
 }: WorkbenchWithdrawPageProps) {
   const isEscort = effectiveViewerRole === 'escort'
+  const primaryColor = themeSettings.primaryColor
+  const bgColor = isDarkMode ? '#1a1a1a' : '#f5f7fa'
+  const cardBg = isDarkMode ? '#2a2a2a' : '#fff'
+  const textPrimary = isDarkMode ? '#f3f4f6' : '#111827'
+  const textSecondary = isDarkMode ? '#9ca3af' : '#6b7280'
+  const borderColor = isDarkMode ? '#3a3a3a' : '#f3f4f6'
 
   // 提现金额输入
   const [amount, setAmount] = useState('')
   const [selectedAccountId, setSelectedAccountId] = useState<string>('')
 
-  // ⚠️ 非 escort 视角时不发请求
-  const {
-    data: withdrawStats,
-    isLoading,
-    isError,
-    refetch,
-  } = useQuery({
-    queryKey: ['preview', 'workbench', 'withdraw-stats'],
-    queryFn: () => previewApi.getWithdrawStats(),
-    staleTime: 60 * 1000,
-    enabled: isEscort, // 只有 escort 视角才发请求
-  })
+  // 数据状态（规则4：使用 useState + useEffect）
+  const [withdrawStats, setWithdrawStats] = useState<WithdrawStats | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
 
-  // 自动选择默认账户
+  // 加载数据
   useEffect(() => {
-    if (withdrawStats && !selectedAccountId && withdrawStats.accounts.length > 0) {
-      const defaultAccount = withdrawStats.accounts.find(a => a.isDefault) || withdrawStats.accounts[0]
-      setSelectedAccountId(defaultAccount.id)
+    if (!isEscort) {
+      setLoading(false)
+      return
     }
-  }, [withdrawStats, selectedAccountId])
+
+    setLoading(true)
+    setError(false)
+
+    previewApi.getWithdrawStats()
+      .then((data) => {
+        setWithdrawStats(data)
+        // 自动选择默认账户
+        if (data.accounts && data.accounts.length > 0) {
+          const defaultAccount = data.accounts.find(a => a.isDefault) || data.accounts[0]
+          setSelectedAccountId(defaultAccount.id)
+        }
+      })
+      .catch((err) => {
+        console.error('[WorkbenchWithdrawPage] 加载提现数据失败:', err)
+        setError(true)
+      })
+      .finally(() => {
+        setLoading(false)
+      })
+  }, [isEscort])
+
+  // 刷新数据
+  const handleRefresh = () => {
+    setLoading(true)
+    setError(false)
+    previewApi.getWithdrawStats()
+      .then((data) => {
+        setWithdrawStats(data)
+      })
+      .catch(() => {
+        setError(true)
+      })
+      .finally(() => {
+        setLoading(false)
+      })
+  }
 
   // 非 escort 视角：显示统一的 PermissionPrompt
   if (!isEscort) {
     return (
-      <div
-        className="min-h-full flex flex-col"
+      <Box
         style={{
-          backgroundColor: isDarkMode ? '#1a1a1a' : '#f5f7fa',
+          minHeight: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          backgroundColor: bgColor,
         }}
       >
-        <Header themeSettings={themeSettings} onBack={onBack} />
-        {/* 权限提示 */}
-        <div className="flex-1">
+        <PageHeader
+          title="提现"
+          themeSettings={themeSettings}
+          onBack={onBack}
+        />
+        <Box style={{ flex: 1 }}>
           <PermissionPrompt
             title="需要陪诊员身份"
             description="请先登录陪诊员账号进行提现操作"
             onLogin={onLogin}
             showDebugInject={process.env.NODE_ENV === 'development'}
-            primaryColor={themeSettings.primaryColor}
+            primaryColor={primaryColor}
             isDarkMode={isDarkMode}
           />
-        </div>
-      </div>
+        </Box>
+      </Box>
     )
   }
 
   return (
-    <div
-      className="min-h-full"
+    <Box
       style={{
-        backgroundColor: isDarkMode ? '#1a1a1a' : '#f5f7fa',
+        minHeight: '100%',
+        backgroundColor: bgColor,
       }}
     >
       {/* 页面标题 */}
-      <Header themeSettings={themeSettings} onBack={onBack} />
+      <PageHeader
+        title="提现"
+        themeSettings={themeSettings}
+        onBack={onBack}
+      />
 
       {/* 加载中 - 骨架屏 */}
-      {isLoading && (
-        <div className="px-4 py-4">
+      {loading && (
+        <Box style={{ padding: 16 * wxScale }}>
           <ListSkeleton count={1} variant="detail" isDarkMode={isDarkMode} />
-        </div>
+        </Box>
       )}
 
       {/* 请求失败 - 带重试按钮 */}
-      {isError && !withdrawStats && (
+      {error && !withdrawStats && (
         <ErrorRetry
-          onRetry={() => refetch()}
+          onRetry={handleRefresh}
           isDarkMode={isDarkMode}
-          primaryColor={themeSettings.primaryColor}
+          primaryColor={primaryColor}
         />
       )}
 
       {/* 内容区 */}
-      {!isLoading && withdrawStats && (
+      {!loading && withdrawStats && (
         <WithdrawContent
           stats={withdrawStats}
           amount={amount}
@@ -149,12 +205,82 @@ export function WorkbenchWithdrawPage({
           setSelectedAccountId={setSelectedAccountId}
           themeSettings={themeSettings}
           isDarkMode={isDarkMode}
+          cardBg={cardBg}
+          textPrimary={textPrimary}
+          textSecondary={textSecondary}
+          borderColor={borderColor}
+          onNavigate={onNavigate}
         />
       )}
 
       {/* 底部留白 */}
-      <div className="h-20" />
-    </div>
+      <Box style={{ height: 80 * wxScale }} />
+    </Box>
+  )
+}
+
+// ============================================================================
+// 页面头部
+// ============================================================================
+
+interface PageHeaderProps {
+  title: string
+  themeSettings: ThemeSettings
+  onBack?: () => void
+}
+
+function PageHeader({ title, themeSettings, onBack }: PageHeaderProps) {
+  return (
+    <Box
+      style={{
+        position: 'sticky',
+        top: 0,
+        zIndex: 100,
+        backgroundColor: themeSettings.primaryColor,
+        paddingTop: wxSafeAreaTop,
+      }}
+    >
+      <Box
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          position: 'relative',
+          height: 44 * wxScale,
+          paddingLeft: 12 * wxScale,
+          paddingRight: 12 * wxScale,
+        }}
+      >
+        {/* 返回按钮 */}
+        {onBack && (
+          <Box
+            onClick={onBack}
+            style={{
+              position: 'absolute',
+              left: 12 * wxScale,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 36 * wxScale,
+              height: 36 * wxScale,
+            }}
+          >
+            <ChevronLeft size={22 * wxScale} color="#fff" />
+          </Box>
+        )}
+
+        {/* 标题 */}
+        <Text
+          style={{
+            fontSize: 17 * wxScale,
+            fontWeight: 600,
+            color: '#fff',
+          }}
+        >
+          {title}
+        </Text>
+      </Box>
+    </Box>
   )
 }
 
@@ -170,6 +296,11 @@ interface WithdrawContentProps {
   setSelectedAccountId: (id: string) => void
   themeSettings: ThemeSettings
   isDarkMode: boolean
+  cardBg: string
+  textPrimary: string
+  textSecondary: string
+  borderColor: string
+  onNavigate?: (page: string, params?: Record<string, string>) => void
 }
 
 function WithdrawContent({
@@ -180,7 +311,14 @@ function WithdrawContent({
   setSelectedAccountId,
   themeSettings,
   isDarkMode,
+  cardBg,
+  textPrimary,
+  textSecondary,
+  borderColor,
+  onNavigate,
 }: WithdrawContentProps) {
+  const primaryColor = themeSettings.primaryColor
+
   // 计算实际到账金额
   const inputAmount = parseFloat(amount) || 0
   const fee = inputAmount * stats.feeRate
@@ -210,120 +348,242 @@ function WithdrawContent({
   const records = stats.recentRecords ?? []
 
   return (
-    <div className="px-4 py-4 space-y-4">
+    <Box style={{ padding: 16 * wxScale }}>
       {/* 可提现余额卡片 */}
-      <div
-        className="rounded-2xl p-5 relative overflow-hidden"
+      <Box
         style={{
-          background: `linear-gradient(135deg, ${themeSettings.primaryColor} 0%, ${adjustColor(themeSettings.primaryColor, -20)} 100%)`,
+          borderRadius: 16 * wxScale,
+          padding: 20 * wxScale,
+          position: 'relative',
+          overflow: 'hidden',
+          background: `linear-gradient(135deg, ${primaryColor} 0%, ${adjustColor(primaryColor, -20)} 100%)`,
         }}
       >
         {/* 装饰 */}
-        <div
-          className="absolute -right-4 -top-4 w-20 h-20 rounded-full opacity-10"
-          style={{ backgroundColor: '#fff' }}
+        <Box
+          style={{
+            position: 'absolute',
+            right: -16 * wxScale,
+            top: -16 * wxScale,
+            width: 80 * wxScale,
+            height: 80 * wxScale,
+            borderRadius: 40 * wxScale,
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+          }}
         />
 
-        <div className="relative z-10">
-          <div className="text-white/80 text-sm">可提现余额</div>
-          <div className="text-white text-4xl font-bold mt-2 tracking-tight">
+        <Box style={{ position: 'relative', zIndex: 10 }}>
+          <Text
+            style={{
+              display: 'block',
+              fontSize: 14 * wxScale,
+              color: 'rgba(255, 255, 255, 0.8)',
+            }}
+          >
+            可提现余额
+          </Text>
+          <Text
+            style={{
+              display: 'block',
+              fontSize: 36 * wxScale,
+              fontWeight: 700,
+              color: '#fff',
+              marginTop: 8 * wxScale,
+            }}
+          >
             ¥{formatMoneyWithComma(stats.withdrawable)}
-          </div>
+          </Text>
           {safeNumber(stats.pendingAmount) > 0 && (
-            <div className="flex items-center gap-1 mt-2">
-              <Clock className="w-3.5 h-3.5 text-white/60" />
-              <span className="text-white/60 text-xs">
+            <Box
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4 * wxScale,
+                marginTop: 8 * wxScale,
+              }}
+            >
+              <Clock size={14 * wxScale} color="rgba(255, 255, 255, 0.6)" />
+              <Text
+                style={{
+                  fontSize: 12 * wxScale,
+                  color: 'rgba(255, 255, 255, 0.6)',
+                }}
+              >
                 处理中 ¥{formatMoney(stats.pendingAmount)}
-              </span>
-            </div>
+              </Text>
+            </Box>
           )}
-        </div>
-      </div>
+        </Box>
+      </Box>
 
       {/* 提现金额输入 */}
-      <div
-        className="rounded-xl p-4"
+      <Box
         style={{
-          backgroundColor: isDarkMode ? '#2a2a2a' : '#fff',
+          borderRadius: 12 * wxScale,
+          padding: 16 * wxScale,
+          marginTop: 16 * wxScale,
+          backgroundColor: cardBg,
         }}
       >
-        <div className={`text-sm mb-3 ${getSecondaryTextClass(isDarkMode)}`}>
+        <Text
+          style={{
+            display: 'block',
+            fontSize: 14 * wxScale,
+            color: textSecondary,
+            marginBottom: 12 * wxScale,
+          }}
+        >
           提现金额
-        </div>
-        <div className="flex items-baseline gap-1">
-          <span className={`text-2xl ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>¥</span>
+        </Text>
+        <Box
+          style={{
+            display: 'flex',
+            alignItems: 'baseline',
+            gap: 4 * wxScale,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 24 * wxScale,
+              color: textPrimary,
+            }}
+          >
+            ¥
+          </Text>
           <input
             type="number"
             placeholder="0.00"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            className={`flex-1 text-3xl font-bold bg-transparent outline-none ${isDarkMode ? 'text-white placeholder-gray-600' : 'text-gray-900 placeholder-gray-300'
-              }`}
+            style={{
+              flex: 1,
+              fontSize: 28 * wxScale,
+              fontWeight: 700,
+              backgroundColor: 'transparent',
+              border: 'none',
+              outline: 'none',
+              color: textPrimary,
+            }}
           />
-        </div>
-        <div className="flex items-center justify-between mt-3">
-          <button
+        </Box>
+        <Box
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginTop: 12 * wxScale,
+          }}
+        >
+          <Box
             onClick={() => setAmount(stats.withdrawable.toString())}
-            className="text-sm font-medium"
-            style={{ color: themeSettings.primaryColor }}
+            style={{ cursor: 'pointer' }}
           >
-            全部提现
-          </button>
-          <span className={`text-xs ${getTertiaryTextClass(isDarkMode)}`}>
+            <Text
+              style={{
+                fontSize: 14 * wxScale,
+                fontWeight: 500,
+                color: primaryColor,
+              }}
+            >
+              全部提现
+            </Text>
+          </Box>
+          <Text
+            style={{
+              fontSize: 12 * wxScale,
+              color: textSecondary,
+            }}
+          >
             今日剩余 {stats.remainingTimes} 次
-          </span>
-        </div>
-      </div>
+          </Text>
+        </Box>
+      </Box>
 
       {/* 提现规则 */}
-      <div className="space-y-2 px-1">
+      <Box
+        style={{
+          marginTop: 12 * wxScale,
+          paddingLeft: 4 * wxScale,
+          paddingRight: 4 * wxScale,
+        }}
+      >
         <RuleItem
-          Icon={AlertCircle}
           text={`最低提现 ¥${safeNumber(stats.minAmount)}，单笔最高 ¥${formatCount(stats.maxAmount)}`}
-          themeSettings={themeSettings}
-          isDarkMode={isDarkMode}
+          primaryColor={primaryColor}
+          textSecondary={textSecondary}
         />
         {safeNumber(stats.feeRate) > 0 && (
           <RuleItem
-            Icon={AlertCircle}
             text={`手续费 ${formatPercent(stats.feeRate, 1)}%`}
-            themeSettings={themeSettings}
-            isDarkMode={isDarkMode}
+            primaryColor={primaryColor}
+            textSecondary={textSecondary}
           />
         )}
         <RuleItem
-          Icon={Clock}
           text={`预计 ${stats.estimatedHours} 小时内到账`}
-          themeSettings={themeSettings}
-          isDarkMode={isDarkMode}
+          primaryColor={primaryColor}
+          textSecondary={textSecondary}
         />
-      </div>
+      </Box>
 
       {/* 提现账户选择 */}
-      <div
-        className="rounded-xl p-4"
+      <Box
         style={{
-          backgroundColor: isDarkMode ? '#2a2a2a' : '#fff',
+          borderRadius: 12 * wxScale,
+          padding: 16 * wxScale,
+          marginTop: 16 * wxScale,
+          backgroundColor: cardBg,
         }}
       >
-        <div className={`text-sm mb-3 ${getSecondaryTextClass(isDarkMode)}`}>
+        <Text
+          style={{
+            display: 'block',
+            fontSize: 14 * wxScale,
+            color: textSecondary,
+            marginBottom: 12 * wxScale,
+          }}
+        >
           提现至
-        </div>
+        </Text>
 
         {accounts.length === 0 ? (
-          <div className="text-center py-4">
-            <div className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>
-              暂无绑定账户
-            </div>
-            <button
-              className="mt-2 text-sm font-medium"
-              style={{ color: themeSettings.primaryColor }}
+          <Box
+            style={{
+              paddingTop: 16 * wxScale,
+              paddingBottom: 16 * wxScale,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 14 * wxScale,
+                color: textSecondary,
+              }}
             >
-              + 添加提现账户
-            </button>
-          </div>
+              暂无绑定账户
+            </Text>
+            <Box
+              onClick={() => onNavigate?.('workbench-settings')}
+              style={{
+                marginTop: 8 * wxScale,
+                cursor: 'pointer',
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 14 * wxScale,
+                  fontWeight: 500,
+                  color: primaryColor,
+                }}
+              >
+                + 添加提现账户
+              </Text>
+            </Box>
+          </Box>
         ) : (
-          <div className="space-y-2">
+          <Box style={{ display: 'flex', flexDirection: 'column', gap: 8 * wxScale }}>
             {accounts.map((account) => (
               <AccountCard
                 key={account.id}
@@ -334,57 +594,101 @@ function WithdrawContent({
                 isDarkMode={isDarkMode}
               />
             ))}
-          </div>
+          </Box>
         )}
 
         {accounts.length > 0 && (
-          <button
-            className="w-full mt-3 py-2 text-sm font-medium rounded-lg border border-dashed"
+          <Box
+            onClick={() => onNavigate?.('workbench-settings')}
             style={{
-              borderColor: themeSettings.primaryColor,
-              color: themeSettings.primaryColor,
+              marginTop: 12 * wxScale,
+              paddingTop: 10 * wxScale,
+              paddingBottom: 10 * wxScale,
+              borderRadius: 8 * wxScale,
+              borderWidth: 1,
+              borderStyle: 'dashed',
+              borderColor: primaryColor,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
             }}
           >
-            + 添加提现账户
-          </button>
+            <Text
+              style={{
+                fontSize: 14 * wxScale,
+                fontWeight: 500,
+                color: primaryColor,
+              }}
+            >
+              + 添加提现账户
+            </Text>
+          </Box>
         )}
-      </div>
+      </Box>
 
       {/* 到账金额预览 */}
       {inputAmount > 0 && (
-        <div
-          className="rounded-xl p-4 text-center"
+        <Box
           style={{
-            backgroundColor: isDarkMode ? '#2a2a2a' : '#fff',
+            borderRadius: 12 * wxScale,
+            padding: 16 * wxScale,
+            marginTop: 16 * wxScale,
+            backgroundColor: cardBg,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
           }}
         >
-          <span className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>
+          <Text
+            style={{
+              fontSize: 14 * wxScale,
+              color: textSecondary,
+            }}
+          >
             实际到账
-          </span>
-          <div
-            className="text-2xl font-bold mt-1"
-            style={{ color: themeSettings.primaryColor }}
+          </Text>
+          <Text
+            style={{
+              display: 'block',
+              fontSize: 24 * wxScale,
+              fontWeight: 700,
+              color: primaryColor,
+              marginTop: 4 * wxScale,
+            }}
           >
             ¥{formatMoney(actualAmount)}
-          </div>
+          </Text>
           {fee > 0 && (
-            <span className={`text-xs ${getTertiaryTextClass(isDarkMode)}`}>
+            <Text
+              style={{
+                fontSize: 12 * wxScale,
+                color: textSecondary,
+                marginTop: 4 * wxScale,
+              }}
+            >
               (手续费 ¥{formatMoney(fee)})
-            </span>
+            </Text>
           )}
-        </div>
+        </Box>
       )}
 
-      {/* 提现按钮 - Step 14.20 Batch 2: 禁用态对比度优化 */}
-      <button
+      {/* 提现按钮 */}
+      <Button
         disabled={!canWithdraw}
         onClick={() => {
           console.log('[WorkbenchWithdrawPage] 提现:', { amount: inputAmount, accountId: selectedAccountId })
         }}
-        className="w-full py-3.5 rounded-full font-semibold transition-all shadow-lg disabled:shadow-none"
         style={{
+          width: '100%',
+          marginTop: 16 * wxScale,
+          paddingTop: isWxEnvironment() ? 14 * wxScale : 12,
+          paddingBottom: isWxEnvironment() ? 14 * wxScale : 12,
+          borderRadius: 9999,
+          fontSize: 16 * wxScale,
+          fontWeight: 600,
           backgroundColor: canWithdraw
-            ? themeSettings.primaryColor
+            ? primaryColor
             : (isDarkMode ? '#4b5563' : '#e5e7eb'),
           color: canWithdraw
             ? '#ffffff'
@@ -392,27 +696,49 @@ function WithdrawContent({
         }}
       >
         {disabledReason || '确认提现'}
-      </button>
+      </Button>
 
       {/* 最近提现记录 */}
       {records.length > 0 && (
-        <div className="pt-2">
-          <div className="flex items-center justify-between mb-3">
-            <div className={`text-sm font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-              提现记录
-            </div>
-            <button
-              className="text-xs font-medium"
-              style={{ color: themeSettings.primaryColor }}
-            >
-              查看全部
-            </button>
-          </div>
-
-          <div
-            className="rounded-xl overflow-hidden"
+        <Box style={{ marginTop: 24 * wxScale }}>
+          <Box
             style={{
-              backgroundColor: isDarkMode ? '#2a2a2a' : '#fff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: 12 * wxScale,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 14 * wxScale,
+                fontWeight: 600,
+                color: textPrimary,
+              }}
+            >
+              提现记录
+            </Text>
+            <Box
+              onClick={() => onNavigate?.('workbench-withdraw-records')}
+              style={{ cursor: 'pointer' }}
+            >
+              <Text
+                style={{
+                  fontSize: 12 * wxScale,
+                  fontWeight: 500,
+                  color: primaryColor,
+                }}
+              >
+                查看全部
+              </Text>
+            </Box>
+          </Box>
+
+          <Box
+            style={{
+              borderRadius: 12 * wxScale,
+              overflow: 'hidden',
+              backgroundColor: cardBg,
             }}
           >
             {records.map((record, index) => (
@@ -421,13 +747,16 @@ function WithdrawContent({
                 record={record}
                 themeSettings={themeSettings}
                 isDarkMode={isDarkMode}
+                textPrimary={textPrimary}
+                textSecondary={textSecondary}
+                borderColor={borderColor}
                 isLast={index === records.length - 1}
               />
             ))}
-          </div>
-        </div>
+          </Box>
+        </Box>
       )}
-    </div>
+    </Box>
   )
 }
 
@@ -435,46 +764,32 @@ function WithdrawContent({
 // 子组件
 // ============================================================================
 
-interface HeaderProps {
-  themeSettings: ThemeSettings
-  onBack?: () => void
+interface RuleItemProps {
+  text: string
+  primaryColor: string
+  textSecondary: string
 }
 
-function Header({ themeSettings, onBack }: HeaderProps) {
+function RuleItem({ text, primaryColor, textSecondary }: RuleItemProps) {
   return (
-    <div
-      className="sticky top-0 z-10 px-4 py-3 flex items-center"
+    <Box
       style={{
-        backgroundColor: themeSettings.primaryColor,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8 * wxScale,
+        marginTop: 8 * wxScale,
       }}
     >
-      {onBack && (
-        <button onClick={onBack} className="text-white mr-3 hover:opacity-80 transition-opacity">
-          ←
-        </button>
-      )}
-      <h1 className="text-lg font-semibold text-white flex-1 text-center pr-6">
-        提现
-      </h1>
-    </div>
-  )
-}
-
-interface RuleItemProps {
-  Icon: LucideIcon
-  text: string
-  themeSettings: ThemeSettings
-  isDarkMode: boolean
-}
-
-function RuleItem({ Icon, text, themeSettings, isDarkMode }: RuleItemProps) {
-  return (
-    <div className="flex items-center gap-2">
-      <Icon className="w-4 h-4 flex-shrink-0" style={{ color: themeSettings.primaryColor }} />
-      <span className={`text-xs ${getSecondaryTextClass(isDarkMode)}`}>
+      <AlertCircle size={14 * wxScale} color={primaryColor} />
+      <Text
+        style={{
+          fontSize: 12 * wxScale,
+          color: textSecondary,
+        }}
+      >
         {text}
-      </span>
-    </div>
+      </Text>
+    </Box>
   )
 }
 
@@ -493,56 +808,93 @@ function AccountCard({
   themeSettings,
   isDarkMode,
 }: AccountCardProps) {
+  const primaryColor = themeSettings.primaryColor
   const IconComponent = getAccountIcon(account.type)
 
   return (
-    <div
+    <Box
       onClick={onSelect}
-      className="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all"
       style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12 * wxScale,
+        padding: 12 * wxScale,
+        borderRadius: 8 * wxScale,
         backgroundColor: isDarkMode ? '#3a3a3a' : '#f5f7fa',
-        boxShadow: isSelected ? `0 0 0 2px ${themeSettings.primaryColor}` : 'none',
+        borderWidth: isSelected ? 2 : 0,
+        borderStyle: 'solid',
+        borderColor: isSelected ? primaryColor : 'transparent',
+        cursor: 'pointer',
       }}
     >
-      <div
-        className="w-10 h-10 rounded-full flex items-center justify-center"
+      <Box
         style={{
-          backgroundColor: `${themeSettings.primaryColor}15`,
+          width: 40 * wxScale,
+          height: 40 * wxScale,
+          borderRadius: 20 * wxScale,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: `${primaryColor}15`,
         }}
       >
-        <IconComponent
-          className="w-5 h-5"
-          style={{ color: themeSettings.primaryColor }}
-        />
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+        <IconComponent size={20 * wxScale} color={primaryColor} />
+      </Box>
+      <Box style={{ flex: 1, minWidth: 0 }}>
+        <Box
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8 * wxScale,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 14 * wxScale,
+              fontWeight: 500,
+              color: isDarkMode ? '#fff' : '#111827',
+            }}
+          >
             {account.bankName || account.name}
-          </span>
+          </Text>
           {account.isDefault && (
-            <span
-              className="px-1.5 py-0.5 text-[10px] font-medium rounded"
+            <Box
               style={{
-                backgroundColor: `${themeSettings.primaryColor}15`,
-                color: themeSettings.primaryColor,
+                paddingLeft: 6 * wxScale,
+                paddingRight: 6 * wxScale,
+                paddingTop: 2 * wxScale,
+                paddingBottom: 2 * wxScale,
+                borderRadius: 4 * wxScale,
+                backgroundColor: `${primaryColor}15`,
               }}
             >
-              默认
-            </span>
+              <Text
+                style={{
+                  fontSize: 10 * wxScale,
+                  fontWeight: 500,
+                  color: primaryColor,
+                }}
+              >
+                默认
+              </Text>
+            </Box>
           )}
-        </div>
-        <div className={`text-xs ${getSecondaryTextClass(isDarkMode)}`}>
+        </Box>
+        <Text
+          style={{
+            display: 'block',
+            fontSize: 12 * wxScale,
+            color: isDarkMode ? '#9ca3af' : '#6b7280',
+            marginTop: 2 * wxScale,
+          }}
+        >
           {account.type === 'bank' ? `尾号 ${account.accountNo.replace(/\*/g, '')}` : account.accountNo}
-        </div>
-      </div>
+        </Text>
+      </Box>
       {isSelected && (
-        <CheckCircle
-          className="w-5 h-5 flex-shrink-0"
-          style={{ color: themeSettings.primaryColor }}
-        />
+        <CheckCircle size={20 * wxScale} color={primaryColor} />
       )}
-    </div>
+    </Box>
   )
 }
 
@@ -550,68 +902,146 @@ interface WithdrawRecordRowProps {
   record: WithdrawRecord
   themeSettings: ThemeSettings
   isDarkMode: boolean
+  textPrimary: string
+  textSecondary: string
+  borderColor: string
   isLast: boolean
 }
 
 function WithdrawRecordRow({
   record,
   isDarkMode,
+  textPrimary,
+  textSecondary,
+  borderColor,
   isLast,
 }: WithdrawRecordRowProps) {
-  const statusConfig = {
+  const statusConfig: Record<string, { text: string; color: string }> = {
     pending: { text: '待处理', color: '#f59e0b' },
     processing: { text: '处理中', color: '#3b82f6' },
     completed: { text: '已到账', color: '#10b981' },
     failed: { text: '失败', color: '#ef4444' },
   }
-  const status = statusConfig[record.status]
+  const status = statusConfig[record.status] || { text: '未知', color: '#6b7280' }
 
   return (
-    <div
-      className="flex items-center px-4 py-3.5"
+    <Box
       style={{
-        borderBottom: isLast ? 'none' : `1px solid ${isDarkMode ? '#3a3a3a' : '#f3f4f6'}`,
+        display: 'flex',
+        alignItems: 'center',
+        paddingLeft: 16 * wxScale,
+        paddingRight: 16 * wxScale,
+        paddingTop: 14 * wxScale,
+        paddingBottom: 14 * wxScale,
+        borderBottomWidth: isLast ? 0 : 1,
+        borderBottomColor: borderColor,
+        borderBottomStyle: 'solid',
       }}
     >
       {/* 图标 */}
-      <div
-        className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+      <Box
         style={{
+          width: 40 * wxScale,
+          height: 40 * wxScale,
+          borderRadius: 20 * wxScale,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
           backgroundColor: isDarkMode ? '#3a3a3a' : '#f3f4f6',
+          flexShrink: 0,
         }}
       >
         <ArrowDownRight
-          className="w-5 h-5"
-          style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}
+          size={20 * wxScale}
+          color={isDarkMode ? '#9ca3af' : '#6b7280'}
         />
-      </div>
+      </Box>
 
       {/* 信息 */}
-      <div className="flex-1 ml-3 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-            提现至 {record.accountName.split(' ')[0]}
-          </span>
-          <span
-            className="px-1.5 py-0.5 rounded text-[10px] font-medium flex-shrink-0"
+      <Box
+        style={{
+          flex: 1,
+          marginLeft: 12 * wxScale,
+          minWidth: 0,
+        }}
+      >
+        <Box
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          {/* 左侧：标题+状态 */}
+          <Box
             style={{
-              backgroundColor: `${status.color}15`,
-              color: status.color,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8 * wxScale,
+              flex: 1,
+              minWidth: 0,
             }}
           >
-            {status.text}
-          </span>
-        </div>
-        <div className={`text-xs mt-0.5 ${getTertiaryTextClass(isDarkMode)}`}>
-          {record.createdAt}
-        </div>
-      </div>
+            <Text
+              style={{
+                fontSize: 14 * wxScale,
+                fontWeight: 500,
+                color: textPrimary,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              提现至 {record.accountName?.split(' ')[0] || '账户'}
+            </Text>
+            <Box
+              style={{
+                paddingLeft: 6 * wxScale,
+                paddingRight: 6 * wxScale,
+                paddingTop: 2 * wxScale,
+                paddingBottom: 2 * wxScale,
+                borderRadius: 4 * wxScale,
+                backgroundColor: `${status.color}15`,
+                flexShrink: 0,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 10 * wxScale,
+                  fontWeight: 500,
+                  color: status.color,
+                }}
+              >
+                {status.text}
+              </Text>
+            </Box>
+          </Box>
 
-      {/* 金额 */}
-      <div className={`text-sm font-semibold flex-shrink-0 ${getSecondaryTextClass(isDarkMode)}`}>
-        -¥{formatMoney(record.amount)}
-      </div>
-    </div>
+          {/* 右侧：金额 */}
+          <Text
+            style={{
+              fontSize: 15 * wxScale,
+              fontWeight: 600,
+              color: textPrimary,
+              flexShrink: 0,
+              marginLeft: 12 * wxScale,
+            }}
+          >
+            -¥{formatMoney(record.amount)}
+          </Text>
+        </Box>
+
+        {/* 时间 */}
+        <Text
+          style={{
+            display: 'block',
+            fontSize: 12 * wxScale,
+            color: textSecondary,
+            marginTop: 4 * wxScale,
+          }}
+        >
+          {record.createdAt}
+        </Text>
+      </Box>
+    </Box>
   )
 }
 

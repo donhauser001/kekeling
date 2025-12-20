@@ -94,8 +94,8 @@ export function WithdrawPayoutModal({
   // 打款 mutation
   const payoutMutation = useAdminWithdrawPayout()
 
-  // 格式化时间
-  const formatTime = (dateStr?: string) => {
+  // 格式化时间 - 保留用于未来时间显示
+  const _formatTime = (dateStr?: string) => {
     if (!dateStr) return '--'
     try {
       return format(new Date(dateStr), 'yyyy-MM-dd HH:mm:ss', { locale: zhCN })
@@ -103,6 +103,7 @@ export function WithdrawPayoutModal({
       return dateStr
     }
   }
+  void _formatTime
 
   const methodInfo = detail ? methodConfig[detail.method] : null
 

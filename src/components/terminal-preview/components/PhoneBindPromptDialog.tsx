@@ -252,27 +252,38 @@ export function PhoneBindPromptDialog({
           {isWxEnvironment() ? (
             // 小程序环境：使用微信授权按钮
             <Box>
-              {/* @ts-expect-error 小程序原生按钮 */}
-              <button
-                open-type="getPhoneNumber"
-                onGetPhoneNumber={handleGetPhoneNumber}
-                disabled={isBinding}
-                style={{
-                  width: '100%',
-                  height: 44,
-                  borderRadius: 22,
-                  border: 'none',
-                  backgroundColor: isBinding ? '#9ca3af' : themeSettings.primaryColor,
-                  color: '#ffffff',
-                  fontSize: 16,
-                  fontWeight: 500,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                {isBinding ? '绑定中...' : '授权绑定手机号'}
-              </button>
+              {/* 小程序原生按钮 - 使用类型断言支持微信特有属性 */}
+              {(() => {
+                const WxButton = 'button' as unknown as React.ComponentType<{
+                  'open-type': string
+                  onGetPhoneNumber: (e: unknown) => void
+                  disabled: boolean
+                  style: React.CSSProperties
+                  children: React.ReactNode
+                }>
+                return (
+                  <WxButton
+                    open-type="getPhoneNumber"
+                    onGetPhoneNumber={handleGetPhoneNumber}
+                    disabled={isBinding}
+                    style={{
+                      width: '100%',
+                      height: 44,
+                      borderRadius: 22,
+                      border: 'none',
+                      backgroundColor: isBinding ? '#9ca3af' : themeSettings.primaryColor,
+                      color: '#ffffff',
+                      fontSize: 16,
+                      fontWeight: 500,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    {isBinding ? '绑定中...' : '授权绑定手机号'}
+                  </WxButton>
+                )
+              })()}
             </Box>
           ) : (
             // Web 预览环境：模拟按钮

@@ -203,11 +203,10 @@ export function EmployeesPermissionsDialog({
                         return (
                           <div
                             key={permission.id}
-                            className={`flex items-center gap-2 rounded-md border p-2 transition-colors ${
-                              isEnabled
-                                ? 'border-primary/50 bg-primary/5'
-                                : 'border-border'
-                            }`}
+                            className={`flex items-center gap-2 rounded-md border p-2 transition-colors ${isEnabled
+                              ? 'border-primary/50 bg-primary/5'
+                              : 'border-border'
+                              }`}
                           >
                             <Checkbox
                               id={`user-perm-${permission.id}`}
@@ -215,17 +214,17 @@ export function EmployeesPermissionsDialog({
                               onCheckedChange={() => togglePermission(permission.key)}
                             />
                             <div className='flex-1'>
-                            <label
-                              htmlFor={`user-perm-${permission.id}`}
-                              className='flex cursor-pointer items-center gap-1.5 text-sm'
-                            >
-                              {permission.name}
-                              {isFromRole && (
-                                <Badge variant='secondary' className='ml-1 text-[10px]'>
-                                  角色
-                                </Badge>
-                              )}
-                            </label>
+                              <label
+                                htmlFor={`user-perm-${permission.id}`}
+                                className='flex cursor-pointer items-center gap-1.5 text-sm'
+                              >
+                                {permission.name}
+                                {isFromRole && (
+                                  <Badge variant='secondary' className='ml-1 text-[10px]'>
+                                    角色
+                                  </Badge>
+                                )}
+                              </label>
                               <p className='text-muted-foreground text-xs'>
                                 {permission.description}
                               </p>

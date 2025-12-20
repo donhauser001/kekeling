@@ -17,7 +17,9 @@ export class TasksService implements OnModuleInit, OnModuleDestroy {
   private promotionCheckTimer: NodeJS.Timeout | null = null;
   private distributionSettlementTimer: NodeJS.Timeout | null = null;
   private orderReminderTimer: NodeJS.Timeout | null = null;
+  private unfreezeTimer: NodeJS.Timeout | null = null;
   private membershipService: any;
+  private settlementService: any;
 
   constructor(
     private prisma: PrismaService,
@@ -56,6 +58,8 @@ export class TasksService implements OnModuleInit, OnModuleDestroy {
     this.scheduleBirthdayCoupons();
     // 启动服务提醒任务
     this.scheduleOrderReminder();
+    // 启动冻结资金解冻任务
+    this.scheduleUnfreeze();
     this.logger.log('定时任务服务已启动');
   }
 
@@ -87,6 +91,9 @@ export class TasksService implements OnModuleInit, OnModuleDestroy {
     }
     if (this.orderReminderTimer) {
       clearInterval(this.orderReminderTimer);
+    }
+    if (this.unfreezeTimer) {
+      clearInterval(this.unfreezeTimer);
     }
     this.logger.log('定时任务服务已停止');
   }
@@ -1220,6 +1227,49 @@ export class TasksService implements OnModuleInit, OnModuleDestroy {
       }
     } catch (error) {
       this.logger.error('服务提醒任务失败:', error);
+    }
+  }
+
+  /**
+   * 调度冻结资金解冻任务
+   * 每小时执行一次
+   */
+  private scheduleUnfreeze() {
+    // 立即执行一次
+    this.processUnfreeze();
+
+    // 然后每小时执行一次
+    this.unfreezeTimer = setInterval(() => {
+      this.processUnfreeze();
+    }, 60 * 60 * 1000);
+
+    this.logger.log('冻结资金解冻任务已启动（每小时执行一次）');
+  }
+
+  /**
+   * 处理冻结资金解冻
+   * 将已到期的冻结资金转为可用余额
+   */
+  async processUnfreeze() {
+    const startTime = Date.now();
+    this.logger.log('开始执行冻结资金解冻...');
+
+    try {
+      if (!this.settlementService) {
+        const { AdminSettlementService } = await import('../admin/services/admin-settlement.service');
+        this.settlementService = new AdminSettlementService(this.prisma);
+      }
+
+      const result = await this.settlementService.processUnfreeze();
+
+      const duration = Date.now() - startTime;
+      if (result.processed > 0) {
+        this.logger.log(
+          `冻结资金解冻完成: 处理了 ${result.processed} 笔记录，总金额 ¥${result.totalAmount.toFixed(2)}，耗时 ${duration}ms`,
+        );
+      }
+    } catch (error) {
+      this.logger.error('冻结资金解冻失败:', error);
     }
   }
 }

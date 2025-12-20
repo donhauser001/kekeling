@@ -299,7 +299,7 @@ export function UserOrdersPage({
             </Text>
           </Box>
         ) : (
-          filteredOrders.map((order, index) => (
+          filteredOrders.map((order) => (
             <Box
               key={order.id}
               onClick={() => onNavigate?.('user-order-detail', { id: order.id })}

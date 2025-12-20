@@ -224,8 +224,8 @@ export function Withdrawals() {
                 </div>
                 <div>
                   <p className='text-muted-foreground text-sm'>待审核</p>
-                  <p className='text-2xl font-bold'>{stats.pendingCount}</p>
-                  <p className='text-xs text-muted-foreground'>¥{stats.pendingAmount.toLocaleString()}</p>
+                  <p className='text-2xl font-bold'>{stats.pendingCount || 0}</p>
+                  <p className='text-xs text-muted-foreground'>¥{(stats.pendingAmount || 0).toLocaleString()}</p>
                 </div>
               </CardContent>
             </Card>
@@ -236,8 +236,8 @@ export function Withdrawals() {
                 </div>
                 <div>
                   <p className='text-muted-foreground text-sm'>今日提现</p>
-                  <p className='text-2xl font-bold'>{stats.todayCount}</p>
-                  <p className='text-xs text-muted-foreground'>¥{stats.todayAmount.toLocaleString()}</p>
+                  <p className='text-2xl font-bold'>{stats.todayCount || 0}</p>
+                  <p className='text-xs text-muted-foreground'>¥{(stats.todayAmount || 0).toLocaleString()}</p>
                 </div>
               </CardContent>
             </Card>
@@ -248,8 +248,8 @@ export function Withdrawals() {
                 </div>
                 <div>
                   <p className='text-muted-foreground text-sm'>本月提现</p>
-                  <p className='text-2xl font-bold'>{stats.monthCount}</p>
-                  <p className='text-xs text-muted-foreground'>¥{stats.monthAmount.toLocaleString()}</p>
+                  <p className='text-2xl font-bold'>{stats.monthCount || 0}</p>
+                  <p className='text-xs text-muted-foreground'>¥{(stats.monthAmount || 0).toLocaleString()}</p>
                 </div>
               </CardContent>
             </Card>

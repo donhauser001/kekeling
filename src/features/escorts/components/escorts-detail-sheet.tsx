@@ -147,7 +147,7 @@ export function EscortsDetailSheet({
                                             <p className='text-muted-foreground text-xs'>服务订单</p>
                                         </div>
                                         <div className='bg-muted/50 rounded-lg p-3'>
-                                            <p className='text-xl font-bold'>{escort.reviewCount || 0}</p>
+                                            <p className='text-xl font-bold'>{(escort as Escort & { reviewCount?: number }).reviewCount || 0}</p>
                                             <p className='text-muted-foreground text-xs'>评价数</p>
                                         </div>
                                     </div>

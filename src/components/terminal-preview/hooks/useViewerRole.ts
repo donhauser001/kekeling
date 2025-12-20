@@ -181,7 +181,7 @@ export function useViewerRole(options: UseViewerRoleOptions = {}): UseViewerRole
   /**
    * 处理验证失败
    */
-  const handleVerificationFailed = useCallback((token: string) => {
+  const handleVerificationFailed = useCallback((_token: string) => {
     console.warn('[useViewerRole] escortToken 验证失败，清理 token 并回落到 user 视角')
 
     // 清理 localStorage

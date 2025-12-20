@@ -71,9 +71,12 @@ export function Orders() {
   const { data: availableEscorts } = useAvailableEscorts()
 
   const assignMutation = useAssignOrder()
-  const confirmMutation = useConfirmOrder()
-  const startMutation = useStartOrderService()
-  const completeMutation = useCompleteOrder()
+  const _confirmMutation = useConfirmOrder()
+  const _startMutation = useStartOrderService()
+  const _completeMutation = useCompleteOrder()
+  void _confirmMutation
+  void _startMutation
+  void _completeMutation
   const cancelMutation = useCancelOrder()
 
   // 转换 API 数据为组件需要的格式
@@ -106,18 +109,20 @@ export function Orders() {
   }
 
   // 打开派单对话框
-  const openAssignDialog = (order: Order) => {
+  const _openAssignDialog = (order: Order) => {
     setSelectedOrder(order)
     setSelectedEscortId('')
     setAssignDialogOpen(true)
   }
+  void _openAssignDialog
 
   // 打开取消对话框
-  const openCancelDialog = (order: Order) => {
+  const _openCancelDialog = (order: Order) => {
     setSelectedOrder(order)
     setCancelReason('')
     setCancelDialogOpen(true)
   }
+  void _openCancelDialog
 
   // 派单
   const handleAssign = async () => {
@@ -231,7 +236,7 @@ export function Orders() {
         <OrdersTable
           data={orders}
           search={search as Record<string, unknown>}
-          navigate={(opts) => navigate({ search: opts.search as Record<string, unknown> })}
+          navigate={(opts) => void navigate({ search: opts.search as unknown as true })}
           isLoading={isLoading}
           onView={handleView}
         />

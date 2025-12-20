@@ -16,6 +16,8 @@ import { AdminDistributionController } from './controllers/admin-distribution.co
 import { AdminDistributionSettingsController } from './controllers/admin-distribution-settings.controller';
 import { AdminEscortIdentityController } from './controllers/admin-escort-identity.controller';
 import { AdminPatientsController, AdminUserPatientsController } from './controllers/admin-patients.controller';
+import { AdminSettlementController } from './controllers/admin-settlement.controller';
+import { AdminFinanceController } from './controllers/admin-finance.controller';
 import { AdminOrdersService } from './services/admin-orders.service';
 import { AdminEscortsService } from './services/admin-escorts.service';
 import { AdminEscortLevelsService } from './services/admin-escort-levels.service';
@@ -27,6 +29,7 @@ import { AdminUsersService } from './services/admin-users.service';
 import { AdminBannersService } from './services/admin-banners.service';
 import { AdminEscortIdentityService } from './services/admin-escort-identity.service';
 import { AdminPatientsService } from './services/admin-patients.service';
+import { AdminSettlementService } from './services/admin-settlement.service';
 import { EscortAppModule } from '../escort-app/escort-app.module';
 import { MembershipModule } from '../membership/membership.module';
 import { CouponsModule } from '../coupons/coupons.module';
@@ -63,6 +66,8 @@ import { DistributionModule } from '../distribution/distribution.module';
     AdminEscortIdentityController,
     AdminPatientsController,
     AdminUserPatientsController,
+    AdminSettlementController,
+    AdminFinanceController,
   ],
   providers: [
     AdminOrdersService,
@@ -76,7 +81,9 @@ import { DistributionModule } from '../distribution/distribution.module';
     AdminBannersService,
     AdminEscortIdentityService,
     AdminPatientsService,
+    AdminSettlementService,
   ],
+  exports: [AdminSettlementService],
 })
 export class AdminModule { }
 

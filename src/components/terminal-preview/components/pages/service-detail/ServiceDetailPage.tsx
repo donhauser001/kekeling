@@ -155,7 +155,7 @@ export function ServiceDetailPage({
 
       {/* 服务内容（富文本） */}
       <ServiceRichContent
-        content={service.content}
+        content={service.content ?? null}
         themeSettings={themeSettings}
         colors={colors}
         isDarkMode={isDarkMode}

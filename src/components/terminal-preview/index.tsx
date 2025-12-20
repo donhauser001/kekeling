@@ -85,6 +85,8 @@ import {
   WorkbenchEarningsPage,
   WorkbenchWithdrawPage,
   OrderDetailPage,
+  PoolOrderDetailPage,
+  EscortOrderDetailPage,
   WorkbenchSettingsPage,
   ServiceTypesPage,
   MyOrdersPage,
@@ -853,18 +855,63 @@ export function TerminalPreview({
           />
         )
 
-      // 订单详情
-      case 'workbench-order-detail':
+      // 订单池订单详情（可抢单）
+      case 'workbench-pool-order-detail':
         return (
-          <OrderDetailPage
+          <PoolOrderDetailPage
             themeSettings={themeSettings}
             isDarkMode={isDarkMode}
             effectiveViewerRole={effectiveViewerRole}
             orderId={pageParams?.id}
             onBack={() => navigateToPage('workbench-orders-pool')}
             onNavigate={(page, params) => navigateToPage(page, params)}
+            onLogin={() => setShowEscortLoginDialog(true)}
           />
         )
+
+      // 陪诊员已接订单详情（服务流程）
+      case 'workbench-my-order-detail':
+        return (
+          <EscortOrderDetailPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            effectiveViewerRole={effectiveViewerRole}
+            orderId={pageParams?.id}
+            onBack={() => navigateToPage('workbench-my-orders')}
+            onNavigate={(page, params) => navigateToPage(page, params)}
+            onLogin={() => setShowEscortLoginDialog(true)}
+          />
+        )
+
+      // 兼容旧路由（根据 source 自动分发）
+      case 'workbench-order-detail':
+        {
+          const source = pageParams?.source
+          if (source === 'my-orders') {
+        return (
+              <EscortOrderDetailPage
+                themeSettings={themeSettings}
+                isDarkMode={isDarkMode}
+                effectiveViewerRole={effectiveViewerRole}
+                orderId={pageParams?.id}
+                onBack={() => navigateToPage('workbench-my-orders')}
+                onNavigate={(page, params) => navigateToPage(page, params)}
+                onLogin={() => setShowEscortLoginDialog(true)}
+              />
+            )
+          }
+          return (
+            <PoolOrderDetailPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            effectiveViewerRole={effectiveViewerRole}
+            orderId={pageParams?.id}
+            onBack={() => navigateToPage('workbench-orders-pool')}
+            onNavigate={(page, params) => navigateToPage(page, params)}
+              onLogin={() => setShowEscortLoginDialog(true)}
+          />
+        )
+        }
 
       // Step 13: 工作台设置
       case 'workbench-settings':
@@ -891,6 +938,7 @@ export function TerminalPreview({
         )
 
       // Step 14.13 FIX-P3-01: 我的订单页面（陪诊员）
+      case 'workbench-my-orders':
       case 'my-orders':
         return (
           <MyOrdersPage

@@ -17,6 +17,7 @@ const escortCategorySchema = z.union([
 
 const escortSchema = z.object({
   id: z.string(),
+  userId: z.string().nullable().optional(),
   firstName: z.string(),
   lastName: z.string(),
   username: z.string(),
@@ -26,6 +27,7 @@ const escortSchema = z.object({
   category: escortCategorySchema,
   consultCount: z.number(),
   satisfaction: z.number(),
+  reviewCount: z.number().optional(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 })

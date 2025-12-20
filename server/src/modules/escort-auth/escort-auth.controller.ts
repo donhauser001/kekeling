@@ -92,8 +92,8 @@ export class EscortAuthController {
   @ApiResponse({ status: 200, description: '自动登录成功' })
   @ApiResponse({ status: 403, description: '开发模式未开启' })
   @ApiResponse({ status: 404, description: '未找到关联的陪诊员' })
-  async devModeAutoLogin(@CurrentUser() user: { userId: string }) {
-    const result = await this.escortAuthService.devModeAutoLogin(user.userId);
+  async devModeAutoLogin(@CurrentUser('sub') userId: string) {
+    const result = await this.escortAuthService.devModeAutoLogin(userId);
     if (!result) {
       return ApiRes.error('未找到关联的陪诊员账号', 404);
     }

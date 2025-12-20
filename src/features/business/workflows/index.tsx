@@ -90,11 +90,11 @@ export function Workflows() {
     useEffect(() => {
         const currentView = searchParams.view
         if (viewMode !== (currentView === 'list' ? 'list' : 'grid')) {
-            navigate({
-                search: (prev: Record<string, unknown>) => ({
+            void navigate({
+                search: ((prev: Record<string, unknown>) => ({
                     ...prev,
                     view: viewMode === 'list' ? 'list' : undefined,
-                }),
+                })) as unknown as true,
                 replace: true,
             })
         }

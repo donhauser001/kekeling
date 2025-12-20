@@ -28,9 +28,20 @@ export function ProfileCard({
   const [showStatusPicker, setShowStatusPicker] = useState(false)
   const currentConfig = STATUS_CONFIG[workStatus]
 
+  // 服务中时禁止切换状态
+  const isBusy = workStatus === 'busy'
+  // 可选择的状态列表（排除 busy，因为 busy 是系统自动设置的）
+  const selectableStatuses = STATUS_ORDER.filter(s => s !== 'busy')
+
   const handleStatusSelect = (status: EscortWorkStatus) => {
+    if (isBusy) return // 服务中禁止切换
     onStatusChange(status)
     setShowStatusPicker(false)
+  }
+  
+  const handleTogglePicker = () => {
+    if (isBusy) return // 服务中禁止打开选择器
+    setShowStatusPicker(!showStatusPicker)
   }
 
   // 脱敏手机号
@@ -45,7 +56,7 @@ export function ProfileCard({
     <Box
       style={{
         borderRadius: 12 * wxScale,
-        overflow: 'hidden',
+        // 不设置 overflow: hidden，否则会裁切下拉菜单
       }}
     >
       {/* 上半部分：头像和基本信息 */}
@@ -55,6 +66,8 @@ export function ProfileCard({
           paddingBottom: 16 * wxScale,
           position: 'relative',
           background: `linear-gradient(135deg, ${themeSettings.primaryColor} 0%, ${themeSettings.primaryColor}dd 100%)`,
+          borderTopLeftRadius: 12 * wxScale,
+          borderTopRightRadius: 12 * wxScale,
         }}
       >
         {/* 右上角设置按钮 */}
@@ -182,7 +195,7 @@ export function ProfileCard({
           {/* 状态选择按钮 */}
           <Box style={{ position: 'relative' }}>
             <Box
-              onClick={() => setShowStatusPicker(!showStatusPicker)}
+              onClick={handleTogglePicker}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -193,6 +206,7 @@ export function ProfileCard({
                 paddingBottom: 6 * wxScale,
                 borderRadius: 9999,
                 backgroundColor: 'rgba(255,255,255,0.15)',
+                opacity: isBusy ? 0.7 : 1,
               }}
             >
               <Box
@@ -212,6 +226,8 @@ export function ProfileCard({
               >
                 {currentConfig.shortLabel}
               </Text>
+              {/* 服务中不显示下拉箭头 */}
+              {!isBusy && (
               <ChevronDown
                 size={16 * wxScale}
                 color="rgba(255,255,255,0.7)"
@@ -219,10 +235,11 @@ export function ProfileCard({
                   transform: showStatusPicker ? 'rotate(180deg)' : 'rotate(0deg)',
                 }}
               />
+              )}
             </Box>
 
-            {/* 状态选择面板 */}
-            {showStatusPicker && (
+            {/* 状态选择面板（服务中时不显示） */}
+            {showStatusPicker && !isBusy && (
               <Box
                 style={{
                   position: 'absolute',
@@ -236,7 +253,7 @@ export function ProfileCard({
                   zIndex: 20,
                 }}
               >
-                {STATUS_ORDER.map((status) => {
+                {selectableStatuses.map((status) => {
                   const config = STATUS_CONFIG[status]
                   const isActive = workStatus === status
                   return (
@@ -292,7 +309,7 @@ export function ProfileCard({
               color: 'rgba(255,255,255,0.6)',
             }}
           >
-            {currentConfig.description}
+            {isBusy ? '服务完成后可切换状态' : currentConfig.description}
           </Text>
         </Box>
       </Box>
@@ -307,6 +324,8 @@ export function ProfileCard({
           paddingLeft: 16 * wxScale,
           paddingRight: 16 * wxScale,
           backgroundColor: isDarkMode ? '#2a2a2a' : '#fff',
+          borderBottomLeftRadius: 12 * wxScale,
+          borderBottomRightRadius: 12 * wxScale,
         }}
       >
         <StatItem

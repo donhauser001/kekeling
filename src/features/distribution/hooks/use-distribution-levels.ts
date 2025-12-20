@@ -10,7 +10,7 @@ import {
   Trophy,
   Sparkles,
 } from 'lucide-react'
-import { distributionApi, type DistributionLevel } from '@/lib/api'
+import { distributionApi } from '@/lib/api'
 
 // 图标映射
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -37,7 +37,7 @@ export interface LevelConfig {
   color: string
   bgColor: string
   icon: string
-  IconComponent: React.ComponentType<{ className?: string }>
+  IconComponent: React.ComponentType<{ className?: string; style?: React.CSSProperties }>
   commissionRate: number
 }
 
@@ -88,15 +88,23 @@ export function useDistributionLevels() {
   }
 
   // 获取所有等级列表（用于下拉选择等）
-  const levelOptions = levels?.map((level) => ({
-    value: level.level,
-    label: level.name,
-    ...getLevelConfig(level.level),
-  })) || Object.entries(defaultLevels).map(([key, value]) => ({
-    value: Number(key),
-    label: value.label,
-    ...getLevelConfig(Number(key)),
-  }))
+  const levelOptions = levels?.map((level) => {
+    const { label: _, ...rest } = getLevelConfig(level.level)
+    void _
+    return {
+      ...rest,
+      value: level.level,
+      label: level.name,
+    }
+  }) || Object.entries(defaultLevels).map(([key, value]) => {
+    const { label: _, ...rest } = getLevelConfig(Number(key))
+    void _
+    return {
+      ...rest,
+      value: Number(key),
+      label: value.label,
+    }
+  })
 
   return {
     levels,

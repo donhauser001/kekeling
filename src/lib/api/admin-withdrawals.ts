@@ -22,7 +22,7 @@ const getToken = (): string | null => {
   return null
 }
 
-export type AdminWithdrawStatus = 'pending' | 'processing' | 'completed' | 'failed'
+export type AdminWithdrawStatus = 'pending' | 'approved' | 'rejected' | 'processing' | 'completed' | 'failed'
 export type AdminWithdrawMethod = 'bank' | 'alipay' | 'wechat'
 
 export interface AdminEscortWithdrawRecord {

@@ -161,14 +161,10 @@ export function getMockPointsRecords(): PointsRecordsResponse {
 export function getMockReferralInfo(): ReferralInfo {
   return {
     inviteCode: 'ABC123XY',
-    totalInvited: 15,
-    totalReward: 380,
-    pendingReward: 50,
-    rules: [
-      '邀请好友注册即可获得10积分',
-      '好友首次下单，您将获得订单金额5%的现金奖励',
-      '奖励将在好友完成订单后7天内发放',
-    ],
+    invitedCount: 15,
+    earnedPoints: 380,
+    pendingPoints: 50,
+    rewardPoints: 10,
   }
 }
 
@@ -183,32 +179,29 @@ export function getMockCampaigns(): Campaign[] {
   return [
     {
       id: 'campaign-1',
-      title: '新用户专享',
-      subtitle: '首单立减20元',
+      title: '新用户专享 - 首单立减20元',
       description: '新用户首次下单即可享受20元优惠',
-      imageUrl: 'https://picsum.photos/400/200?random=1',
-      startAt: '2024-12-01',
-      endAt: '2024-12-31',
-      status: 'active',
+      coverImage: 'https://picsum.photos/400/200?random=1',
+      startTime: '2024-12-01',
+      endTime: '2024-12-31',
+      status: 'ongoing',
     },
     {
       id: 'campaign-2',
-      title: '会员专属',
-      subtitle: '会员积分翻倍',
+      title: '会员专属 - 会员积分翻倍',
       description: '活动期间会员下单积分翻倍',
-      imageUrl: 'https://picsum.photos/400/200?random=2',
-      startAt: '2024-12-01',
-      endAt: '2024-12-31',
-      status: 'active',
+      coverImage: 'https://picsum.photos/400/200?random=2',
+      startTime: '2024-12-01',
+      endTime: '2024-12-31',
+      status: 'ongoing',
     },
     {
       id: 'campaign-3',
-      title: '邀请有礼',
-      subtitle: '邀请好友得现金',
+      title: '邀请有礼 - 邀请好友得现金',
       description: '邀请好友注册可获得现金奖励',
-      imageUrl: 'https://picsum.photos/400/200?random=3',
-      startAt: '2024-11-01',
-      endAt: '2024-11-30',
+      coverImage: 'https://picsum.photos/400/200?random=3',
+      startTime: '2024-11-01',
+      endTime: '2024-11-30',
       status: 'ended',
     },
   ]
@@ -220,15 +213,13 @@ export function getMockCampaigns(): Campaign[] {
 export function getMockCampaignDetail(id: string): CampaignDetail {
   return {
     id,
-    title: '新用户专享活动',
-    subtitle: '首单立减20元',
+    title: '新用户专享活动 - 首单立减20元',
     description: '新用户首次下单即可享受20元优惠，活动期间不限次数',
-    imageUrl: 'https://picsum.photos/400/200?random=1',
-    startAt: '2024-12-01',
-    endAt: '2024-12-31',
-    status: 'active',
-    content: `
-## 活动规则
+    coverImage: 'https://picsum.photos/400/200?random=1',
+    startTime: '2024-12-01',
+    endTime: '2024-12-31',
+    status: 'ongoing',
+    rules: `## 活动规则
 
 1. 活动仅限新注册用户参与
 2. 每位用户限享受一次优惠
@@ -239,12 +230,10 @@ export function getMockCampaignDetail(id: string): CampaignDetail {
 
 1. 下载并注册APP
 2. 选择服务并下单
-3. 结算时自动减免20元
-    `,
-    rules: [
-      '活动仅限新注册用户参与',
-      '每位用户限享受一次优惠',
-      '优惠不可与其他活动叠加使用',
+3. 结算时自动减免20元`,
+    rewards: [
+      '首单立减20元',
+      '额外赠送100积分',
     ],
   }
 }
@@ -261,36 +250,25 @@ export function getMockAvailableCoupons(): AvailableCoupon[] {
     {
       id: 'coupon-available-1',
       name: '新人专享券',
-      type: 'discount',
-      value: 20,
-      minAmount: 100,
       description: '满100减20',
-      validFrom: '2024-12-01',
-      validTo: '2024-12-31',
-      isLimited: true,
+      amount: 20,
+      minAmount: 100,
       remaining: 50,
     },
     {
       id: 'coupon-available-2',
       name: '会员折扣券',
-      type: 'percent',
-      value: 15,
-      minAmount: 0,
       description: '全场8.5折',
-      validFrom: '2024-12-01',
-      validTo: '2024-12-31',
-      isLimited: false,
+      amount: 15,
+      minAmount: 0,
+      remaining: 999,
     },
     {
       id: 'coupon-available-3',
       name: '限时特惠券',
-      type: 'discount',
-      value: 50,
-      minAmount: 200,
       description: '满200减50',
-      validFrom: '2024-12-10',
-      validTo: '2024-12-15',
-      isLimited: true,
+      amount: 50,
+      minAmount: 200,
       remaining: 10,
     },
   ]
@@ -305,47 +283,38 @@ export function getMockCouponsData(): CouponsResponse {
       {
         id: 'coupon-1',
         name: '新人专享券',
-        type: 'discount',
-        value: 20,
+        amount: 20,
         minAmount: 100,
         description: '满100减20，仅限新用户使用',
-        validFrom: '2024-12-01',
-        validTo: '2024-12-31',
+        expireAt: '2024-12-31',
         status: 'available',
       },
       {
         id: 'coupon-2',
         name: '会员折扣券',
-        type: 'percent',
-        value: 15,
+        amount: 15,
         minAmount: 0,
         description: '全场8.5折',
-        validFrom: '2024-12-01',
-        validTo: '2024-12-31',
+        expireAt: '2024-12-31',
         status: 'available',
       },
       {
         id: 'coupon-3',
         name: '满减优惠券',
-        type: 'discount',
-        value: 50,
+        amount: 50,
         minAmount: 200,
         description: '满200减50',
-        validFrom: '2024-11-01',
-        validTo: '2024-11-30',
+        expireAt: '2024-11-30',
         status: 'expired',
       },
       {
         id: 'coupon-4',
         name: '限时特惠券',
-        type: 'discount',
-        value: 30,
+        amount: 30,
         minAmount: 150,
         description: '满150减30',
-        validFrom: '2024-12-01',
-        validTo: '2024-12-15',
+        expireAt: '2024-12-15',
         status: 'used',
-        usedAt: '2024-12-10',
       },
     ],
     total: 4,
@@ -361,9 +330,9 @@ export function getMockCouponsData(): CouponsResponse {
  */
 export function getMockEscorts(): EscortListItem[] {
   return [
-    { id: 'escort-1', name: '张护士', avatar: 'https://picsum.photos/100/100?random=1', rating: 4.9, orderCount: 128, specialty: '儿童陪诊' },
-    { id: 'escort-2', name: '李医生', avatar: 'https://picsum.photos/100/100?random=2', rating: 4.8, orderCount: 256, specialty: '老年陪诊' },
-    { id: 'escort-3', name: '王护师', avatar: 'https://picsum.photos/100/100?random=3', rating: 4.7, orderCount: 89, specialty: '产检陪诊' },
+    { id: 'escort-1', name: '张护士', avatar: 'https://picsum.photos/100/100?random=1', rating: 4.9, serviceCount: 128, tags: ['儿童陪诊'], status: 'available' },
+    { id: 'escort-2', name: '李医生', avatar: 'https://picsum.photos/100/100?random=2', rating: 4.8, serviceCount: 256, tags: ['老年陪诊'], status: 'available' },
+    { id: 'escort-3', name: '王护师', avatar: 'https://picsum.photos/100/100?random=3', rating: 4.7, serviceCount: 89, tags: ['产检陪诊'], status: 'available' },
   ]
 }
 
@@ -376,15 +345,12 @@ export function getMockEscortDetail(id: string): EscortDetail {
     name: '张护士',
     avatar: 'https://picsum.photos/200/200?random=1',
     rating: 4.9,
-    orderCount: 128,
-    specialty: '儿童陪诊',
+    serviceCount: 128,
+    tags: ['儿童陪诊'],
+    status: 'available',
     bio: '从业8年，专注儿童陪诊服务，熟悉各大儿童医院就诊流程',
-    hospital: '北京儿童医院',
-    services: ['门诊陪同', '检查陪同', '取药代办'],
-    reviews: [
-      { id: 'review-1', userName: '王**', rating: 5, content: '非常专业，孩子很喜欢', createdAt: '2024-12-10' },
-      { id: 'review-2', userName: '李**', rating: 5, content: '服务周到，省心省力', createdAt: '2024-12-08' },
-    ],
+    experience: 8,
+    serviceAreas: ['北京儿童医院', '首都儿科研究所'],
   }
 }
 

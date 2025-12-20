@@ -19,7 +19,8 @@ export function EscortInfoSection({
   isDarkMode,
 }: EscortInfoSectionProps) {
   const [expandedGuideId, setExpandedGuideId] = useState<string | null>(null)
-  const { cardBg, textPrimary, textSecondary, textMuted } = colors
+  const { cardBg: _cardBg, textPrimary, textSecondary, textMuted } = colors
+  void _cardBg // 保留用于未来样式扩展
 
   return (
     <Box

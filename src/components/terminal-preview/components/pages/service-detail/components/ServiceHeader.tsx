@@ -13,25 +13,32 @@ const wxScale = isWxEnvironment() ? 1.1 : 1
 
 // 小程序胶囊按钮位置参数（用于对齐）
 const wxStatusBarHeight = 44
-const wxCapsuleTop = 6
-const wxCapsuleHeight = 32
+const _wxCapsuleTop = 6 // 保留用于未来胶囊对齐
+const _wxCapsuleHeight = 32 // 保留用于未来胶囊对齐
 
 export function ServiceHeader({
-  service,
-  serviceId,
-  themeSettings,
-  colors,
+  service: _service,
+  serviceId: _serviceId,
+  themeSettings: _themeSettings,
+  colors: _colors,
   isDarkMode,
-  isFavorite,
-  onFavoriteToggle,
+  isFavorite: _isFavorite,
+  onFavoriteToggle: _onFavoriteToggle,
   onBack,
 }: ServiceHeaderProps) {
+  // 保留未使用参数以保持接口兼容
+  void _service
+  void _serviceId
+  void _themeSettings
+  void _colors
+  void _isFavorite
+  void _onFavoriteToggle
 
   // 按钮尺寸
   const buttonSize = 36 * wxScale
 
   // 计算返回按钮的 top 值，使其与胶囊按钮垂直居中对齐
-  const capsuleCenter = wxStatusBarHeight + wxCapsuleTop + wxCapsuleHeight / 2
+  const capsuleCenter = wxStatusBarHeight + _wxCapsuleTop + _wxCapsuleHeight / 2
   const buttonTop = isWxEnvironment() ? capsuleCenter - buttonSize / 2 : 12
 
   return (

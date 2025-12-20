@@ -16,7 +16,7 @@
  */
 
 import { useState, useEffect } from 'react'
-import { Box, Text, Image, Icon, Button, Input } from '../../ui/primitives'
+import { Box, Text, Image, Icon, Input } from '../../ui/primitives'
 import { isWxEnvironment, getFullImageUrl } from '../../platform/env'
 import { previewApi } from '../../api'
 import type { ThemeSettings } from '../../types'
@@ -123,6 +123,7 @@ export function UserProfileEditPage({
     setIsLoading(true)
     previewApi.getUserProfile()
       .then((data) => {
+        if (!data) return
         setProfile(data)
         setNickname(data.nickname || '')
         setGender(data.gender || '')
@@ -147,24 +148,21 @@ export function UserProfileEditPage({
 
       if (result) {
         // 保存成功，小程序环境显示提示
-        if (isWxEnvironment() && typeof wx !== 'undefined') {
-          // @ts-expect-error wx 在小程序环境中存在
+        if (isWxEnvironment() && typeof wx !== 'undefined' && wx) {
           wx.showToast?.({ title: '保存成功', icon: 'success' })
         }
         // 延迟返回，让用户看到提示
         setTimeout(() => onBack?.(), 500)
       } else {
         // 保存失败
-        if (isWxEnvironment() && typeof wx !== 'undefined') {
-          // @ts-expect-error wx 在小程序环境中存在
+        if (isWxEnvironment() && typeof wx !== 'undefined' && wx) {
           wx.showToast?.({ title: '保存失败', icon: 'none' })
         }
         console.error('保存失败: API 返回 null')
       }
     } catch (error) {
       console.error('保存失败:', error)
-      if (isWxEnvironment() && typeof wx !== 'undefined') {
-        // @ts-expect-error wx 在小程序环境中存在
+      if (isWxEnvironment() && typeof wx !== 'undefined' && wx) {
         wx.showToast?.({ title: '保存失败', icon: 'none' })
       }
     } finally {
@@ -192,10 +190,11 @@ export function UserProfileEditPage({
     input.click()
   }
 
-  // 更新头像（供小程序调用）
-  const handleAvatarChange = (url: string) => {
+  // 更新头像（供小程序调用）- 保留用于小程序集成
+  const _handleAvatarChange = (url: string) => {
     setAvatarPreview(url)
   }
+  void _handleAvatarChange
 
   // 刷新用户资料（绑定手机号后调用）
   const handlePhoneBindSuccess = () => {

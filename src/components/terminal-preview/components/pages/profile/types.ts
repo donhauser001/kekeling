@@ -43,9 +43,9 @@ export interface ThemeColors {
 // ============================================================================
 
 export interface UserProfile {
-  nickname?: string
-  phone?: string
-  avatar?: string
+  nickname?: string | null
+  phone?: string | null
+  avatar?: string | null
   isEscort?: boolean  // 是否已是陪诊员（审核通过）
   escortId?: string | null
 }

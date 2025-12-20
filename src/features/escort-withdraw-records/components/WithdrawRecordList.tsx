@@ -83,6 +83,16 @@ const statusConfig: Record<
     color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
     icon: <Clock className='h-3.5 w-3.5' />,
   },
+  approved: {
+    label: '已审核',
+    color: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400',
+    icon: <CheckCircle className='h-3.5 w-3.5' />,
+  },
+  rejected: {
+    label: '已拒绝',
+    color: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400',
+    icon: <XCircle className='h-3.5 w-3.5' />,
+  },
   processing: {
     label: '处理中',
     color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
@@ -147,8 +157,8 @@ export function WithdrawRecordList({
 }: WithdrawRecordListProps) {
   // 筛选状态
   const [keyword, setKeyword] = useState('')
-  const [statusFilter, setStatusFilter] = useState<string>('')
-  const [methodFilter, setMethodFilter] = useState<string>('')
+  const [statusFilter, setStatusFilter] = useState<AdminWithdrawStatus | ''>('')
+  const [methodFilter, setMethodFilter] = useState<AdminWithdrawMethod | ''>('')
   const [startDate, setStartDate] = useState<Date | undefined>()
   const [endDate, setEndDate] = useState<Date | undefined>()
   const [page, setPage] = useState(1)
@@ -288,7 +298,7 @@ export function WithdrawRecordList({
                 <Select
                   value={statusFilter}
                   onValueChange={(v) => {
-                    setStatusFilter(v === 'all' ? '' : v)
+                    setStatusFilter(v === 'all' ? '' : v as AdminWithdrawStatus)
                     setPage(1)
                   }}
                 >
@@ -311,7 +321,7 @@ export function WithdrawRecordList({
                 <Select
                   value={methodFilter}
                   onValueChange={(v) => {
-                    setMethodFilter(v === 'all' ? '' : v)
+                    setMethodFilter(v === 'all' ? '' : v as AdminWithdrawMethod)
                     setPage(1)
                   }}
                 >
@@ -382,7 +392,7 @@ export function WithdrawRecordList({
                         setEndDate(date)
                         setPage(1)
                       }}
-                      disabled={(date) => date > new Date() || (startDate && date < startDate)}
+                      disabled={(date) => date > new Date() || (startDate ? date < startDate : false)}
                       initialFocus
                     />
                   </PopoverContent>

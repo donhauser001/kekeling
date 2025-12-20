@@ -261,6 +261,7 @@ export const XCircle = createLucideIcon('x-circle', 'close-one')
 // 通讯类
 export const Phone = createLucideIcon('phone', 'phone-telephone')
 export const MapPin = createLucideIcon('map-pin', 'map-draw')
+export const MapPinned = createLucideIcon('map-pinned', 'user-positioning')
 export const Clock = createLucideIcon('clock', 'time')
 export const Calendar = createLucideIcon('calendar', 'date-comes-back')
 export const MessageCircle = createLucideIcon('message-circle', 'comment')
@@ -346,6 +347,8 @@ export const Award = createLucideIcon('award', 'medal-one')
 export const Crown = createLucideIcon('crown', 'vip-one')
 export const ThumbsUp = createLucideIcon('thumbs-up', 'like')
 export const ThumbsDown = createLucideIcon('thumbs-down', 'dislike')
+export const Flag = createLucideIcon('flag', 'done-all')
+export const Play = createLucideIcon('play', 'play')
 
 // 安全
 export const Shield = createLucideIcon('shield', 'shield')

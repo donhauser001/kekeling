@@ -58,30 +58,16 @@ export function getMockWorkbenchStats(): WorkbenchStats {
  */
 export function getMockWorkbenchSummary(): WorkbenchSummary {
   return {
-    pendingOrders: 3,
     todayOrders: 5,
-    todayEarnings: 680,
-    weekEarnings: 3200,
+    weekOrders: 28,
+    monthOrders: 120,
+    totalOrders: 580,
+    todayIncome: 680,
+    weekIncome: 3200,
+    monthIncome: 12800,
+    totalIncome: 68000,
     rating: 4.9,
-    completionRate: 98.5,
-    recentOrders: [
-      {
-        id: 'order-1',
-        serviceName: '门诊陪同',
-        userName: '王**',
-        appointmentTime: '2024-12-13 09:00',
-        status: 'pending',
-        amount: 180,
-      },
-      {
-        id: 'order-2',
-        serviceName: '检查陪同',
-        userName: '李**',
-        appointmentTime: '2024-12-13 14:00',
-        status: 'accepted',
-        amount: 220,
-      },
-    ],
+    satisfactionRate: 98.5,
   }
 }
 
@@ -97,29 +83,37 @@ export function getMockOrdersPool(): OrdersPoolResponse {
     items: [
       {
         id: 'pool-order-1',
+        orderNo: 'ORD-2024-001',
+        serviceType: '陪诊服务',
         serviceName: '门诊陪同',
         hospitalName: '北京协和医院',
+        department: '内科',
         appointmentTime: '2024-12-14 09:00',
-        estimatedEarnings: 180,
-        distance: 2.5,
+        amount: 180,
+        commission: 162,
         createdAt: '2024-12-13 08:00',
       },
       {
         id: 'pool-order-2',
+        orderNo: 'ORD-2024-002',
+        serviceType: '陪诊服务',
         serviceName: '检查陪同',
         hospitalName: '北京儿童医院',
+        department: '儿科',
         appointmentTime: '2024-12-14 10:30',
-        estimatedEarnings: 220,
-        distance: 3.8,
+        amount: 220,
+        commission: 198,
         createdAt: '2024-12-13 07:30',
       },
       {
         id: 'pool-order-3',
+        orderNo: 'ORD-2024-003',
+        serviceType: '跑腿服务',
         serviceName: '取药代办',
         hospitalName: '北京大学第一医院',
         appointmentTime: '2024-12-14 14:00',
-        estimatedEarnings: 100,
-        distance: 1.2,
+        amount: 100,
+        commission: 90,
         createdAt: '2024-12-13 09:00',
       },
     ],
@@ -137,41 +131,36 @@ export function getMockOrdersPool(): OrdersPoolResponse {
  */
 export function getMockEarnings(): EarningsResponse {
   return {
+    balance: 5800,
+    totalEarned: 12800,
+    totalWithdrawn: 7000,
+    pendingSettlement: 1200,
     items: [
       {
         id: 'earning-1',
-        orderId: 'order-101',
-        serviceName: '门诊陪同',
-        amount: 180,
-        commission: 18,
-        netAmount: 162,
-        status: 'settled',
-        settledAt: '2024-12-12',
+        type: 'order',
+        title: '门诊陪同订单收入',
+        amount: 162,
         createdAt: '2024-12-10',
+        orderNo: 'ORD-2024-101',
       },
       {
         id: 'earning-2',
-        orderId: 'order-102',
-        serviceName: '检查陪同',
-        amount: 220,
-        commission: 22,
-        netAmount: 198,
-        status: 'settled',
-        settledAt: '2024-12-11',
+        type: 'order',
+        title: '检查陪同订单收入',
+        amount: 198,
         createdAt: '2024-12-09',
+        orderNo: 'ORD-2024-102',
       },
       {
         id: 'earning-3',
-        orderId: 'order-103',
-        serviceName: '取药代办',
-        amount: 100,
-        commission: 10,
-        netAmount: 90,
-        status: 'pending',
+        type: 'order',
+        title: '取药代办订单收入',
+        amount: 90,
         createdAt: '2024-12-13',
+        orderNo: 'ORD-2024-103',
       },
     ],
-    total: 3,
     hasMore: false,
   }
 }
@@ -182,10 +171,16 @@ export function getMockEarnings(): EarningsResponse {
 export function getMockEarningsStats(): EarningsStats {
   return {
     totalEarnings: 12800,
-    pendingEarnings: 1200,
-    settledEarnings: 11600,
-    thisMonthEarnings: 3500,
-    lastMonthEarnings: 4200,
+    monthlyEarnings: 3500,
+    withdrawable: 5800,
+    pendingWithdraw: 1200,
+    totalOrders: 120,
+    monthlyOrders: 28,
+    monthlyOrdersGrowth: 15.5,
+    recentRecords: [
+      { id: 'record-1', type: 'order', title: '门诊陪同订单', amount: 162, createdAt: '2024-12-13', status: 'completed' },
+      { id: 'record-2', type: 'order', title: '检查陪同订单', amount: 198, createdAt: '2024-12-12', status: 'completed' },
+    ],
   }
 }
 
@@ -199,13 +194,12 @@ export function getMockEarningsStats(): EarningsStats {
 export function getMockWithdrawInfo(): WithdrawInfo {
   return {
     withdrawable: 5800,
-    pendingAmount: 1200,
-    frozenAmount: 500,
     minWithdrawAmount: 100,
-    withdrawMethods: [
-      { type: 'alipay', name: '支付宝', account: '138****8888' },
-      { type: 'wechat', name: '微信', account: '微信用户***' },
-      { type: 'bank', name: '银行卡', account: '****6789', bankName: '中国工商银行' },
+    feeRate: 0.006,
+    estimatedHours: 24,
+    bankCards: [
+      { id: 'card-1', bankName: '中国工商银行', cardNo: '6789', isDefault: true },
+      { id: 'card-2', bankName: '中国建设银行', cardNo: '4321', isDefault: false },
     ],
   }
 }
@@ -215,33 +209,21 @@ export function getMockWithdrawInfo(): WithdrawInfo {
  */
 export function getMockWithdrawStats(): WithdrawStats {
   return {
-    totalWithdrawn: 28000,
-    thisMonthWithdrawn: 3500,
-    lastWithdrawAt: '2024-12-10',
-    withdrawRecords: [
-      {
-        id: 'withdraw-1',
-        amount: 1000,
-        status: 'completed',
-        method: 'alipay',
-        createdAt: '2024-12-10 15:30',
-        completedAt: '2024-12-10 16:00',
-      },
-      {
-        id: 'withdraw-2',
-        amount: 2000,
-        status: 'completed',
-        method: 'bank',
-        createdAt: '2024-12-05 10:00',
-        completedAt: '2024-12-06 09:00',
-      },
-      {
-        id: 'withdraw-3',
-        amount: 500,
-        status: 'pending',
-        method: 'wechat',
-        createdAt: '2024-12-13 08:00',
-      },
+    withdrawable: 5800,
+    pendingAmount: 1200,
+    minAmount: 100,
+    maxAmount: 50000,
+    feeRate: 0.006,
+    estimatedHours: 24,
+    remainingTimes: 3,
+    accounts: [
+      { id: 'acc-1', type: 'bank', name: '储蓄卡', accountNo: '****6789', bankName: '中国工商银行', isDefault: true },
+      { id: 'acc-2', type: 'alipay', name: '支付宝', accountNo: '138****8888', isDefault: false },
+    ],
+    recentRecords: [
+      { id: 'withdraw-1', amount: 1000, fee: 6, actualAmount: 994, accountName: '中国工商银行 ****6789', createdAt: '2024-12-10 15:30', completedAt: '2024-12-10 16:00', status: 'completed' },
+      { id: 'withdraw-2', amount: 2000, fee: 12, actualAmount: 1988, accountName: '中国工商银行 ****6789', createdAt: '2024-12-05 10:00', completedAt: '2024-12-06 09:00', status: 'completed' },
+      { id: 'withdraw-3', amount: 500, fee: 3, actualAmount: 497, accountName: '支付宝 138****8888', createdAt: '2024-12-13 08:00', status: 'pending' },
     ],
   }
 }
@@ -257,21 +239,34 @@ export function getMockWorkbenchOrderDetail(orderId: string): WorkbenchOrderDeta
   return {
     id: orderId,
     orderNo: `ORD${orderId.toUpperCase()}`,
-    serviceName: '门诊陪同',
-    serviceType: 'outpatient',
     status: 'accepted',
-    userName: '王小明',
-    userPhone: '138****8888',
-    hospitalName: '北京协和医院',
-    departmentName: '内科',
-    appointmentTime: '2024-12-14 09:00',
-    estimatedDuration: 3,
-    amount: 180,
-    commission: 18,
-    netAmount: 162,
-    requirements: '需要帮忙挂号、陪同就诊、取药',
+    statusText: '已接单',
+    service: {
+      id: 'svc-1',
+      name: '门诊陪同',
+      type: 'outpatient',
+      duration: 180,
+    },
+    appointment: {
+      date: '2024-12-14',
+      time: '09:00',
+      hospitalName: '北京协和医院',
+      department: '内科',
+      address: '北京市东城区帅府园一号',
+    },
+    user: {
+      id: 'user-1',
+      name: '王小明',
+      phone: '13888888888',
+      maskedPhone: '138****8888',
+    },
+    payment: {
+      amount: 180,
+      commission: 162,
+    },
+    remark: '需要帮忙挂号、陪同就诊、取药',
     createdAt: '2024-12-13 08:00',
-    acceptedAt: '2024-12-13 08:30',
+    updatedAt: '2024-12-13 08:30',
   }
 }
 
@@ -321,8 +316,11 @@ export function getMockWorkbenchSettings(): WorkbenchSettings {
  */
 export function getMockEarningsEmpty(): EarningsResponse {
   return {
+    balance: 0,
+    totalEarned: 0,
+    totalWithdrawn: 0,
+    pendingSettlement: 0,
     items: [],
-    total: 0,
     hasMore: false,
   }
 }
@@ -344,11 +342,11 @@ export function getMockOrdersPoolEmpty(): OrdersPoolResponse {
 export function getMockWithdrawLargeAmount(): WithdrawInfo {
   return {
     withdrawable: 100000,
-    pendingAmount: 50000,
-    frozenAmount: 10000,
     minWithdrawAmount: 100,
-    withdrawMethods: [
-      { type: 'bank', name: '银行卡', account: '****6789', bankName: '中国工商银行' },
+    feeRate: 0.006,
+    estimatedHours: 24,
+    bankCards: [
+      { id: 'card-1', bankName: '中国工商银行', cardNo: '6789', isDefault: true },
     ],
   }
 }
@@ -359,11 +357,11 @@ export function getMockWithdrawLargeAmount(): WithdrawInfo {
 export function getMockWithdrawZeroBalance(): WithdrawInfo {
   return {
     withdrawable: 0,
-    pendingAmount: 0,
-    frozenAmount: 0,
     minWithdrawAmount: 100,
-    withdrawMethods: [
-      { type: 'alipay', name: '支付宝', account: '138****8888' },
+    feeRate: 0.006,
+    estimatedHours: 24,
+    bankCards: [
+      { id: 'card-1', bankName: '支付宝', cardNo: '8888', isDefault: true },
     ],
   }
 }

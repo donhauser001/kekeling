@@ -195,7 +195,9 @@ function PlanCard({ plan, isSelected, onSelect, themeSettings, isDarkMode }: Pla
         }`}
       style={{
         backgroundColor: isDarkMode ? '#2a2a2a' : '#fff',
-        ringColor: themeSettings.primaryColor,
+        borderColor: isSelected ? themeSettings.primaryColor : 'transparent',
+        borderWidth: isSelected ? 2 : 0,
+        borderStyle: 'solid',
       }}
     >
       {/* 推荐标签 */}

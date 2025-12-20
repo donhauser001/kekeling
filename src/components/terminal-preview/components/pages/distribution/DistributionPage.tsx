@@ -11,7 +11,7 @@
  */
 
 import { useQuery } from '@tanstack/react-query'
-import { ChevronRight, Users, FileText, Gift, TrendingUp, RefreshCw } from 'lucide-react'
+import { ChevronRight, Users, FileText, Gift, TrendingUp, RefreshCw } from '../../../ui/lucide-compat'
 import type { ThemeSettings, PreviewViewerRole, DistributionStats } from '../../../types'
 import { previewApi } from '../../../api'
 import { PermissionPrompt } from '../../PermissionPrompt'

@@ -1,19 +1,40 @@
 /**
- * 陪诊员提现页面（预览器版本）
+ * 陪诊员提现记录页面
  *
- * page key: 'workbench-withdraw'
- * API: previewApi.getWorkbenchWithdrawInfo()
+ * page key: 'workbench-withdraw-records'
+ * API: previewApi.getWithdrawRecords()
  * 数据通道: escortRequest（⚠️ 需要 escortToken）
+ *
+ * 功能：
+ * - 提现记录列表
+ * - 筛选（全部/处理中/已完成/失败）
+ * - 空态展示
+ *
+ * @see docs/小程序页面改造规范.md
  */
 
-import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { CreditCard, CheckCircle, AlertCircle } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Box, Text } from '../../../ui/primitives'
+import {
+  ArrowDownRight,
+  ChevronLeft,
+  FileText,
+} from '../../../ui/lucide-compat'
+import { isWxEnvironment } from '../../../platform/env'
 import type { ThemeSettings, PreviewViewerRole } from '../../../types'
 import { previewApi } from '../../../api'
-import type { WithdrawInfo } from '../../../api'
+import type { WithdrawRecord } from '../../../api'
 import { PermissionPrompt } from '../../PermissionPrompt'
-import { formatMoney, formatPercent, safeNumber, getSecondaryTextClass, getTertiaryTextClass } from '../../../utils'
+import { ListSkeleton } from '../../ListSkeleton'
+import { ErrorRetry } from '../../ErrorRetry'
+import { formatMoney } from '../../../utils'
+
+// ============================================================================
+// 常量定义
+// ============================================================================
+
+const wxScale = isWxEnvironment() ? 1.1 : 1
+const wxSafeAreaTop = isWxEnvironment() ? 44 : 0
 
 // ============================================================================
 // 类型定义
@@ -29,6 +50,8 @@ export interface WithdrawPageProps {
   onLogin?: () => void
 }
 
+type FilterType = 'all' | 'pending' | 'completed' | 'failed'
+
 // ============================================================================
 // 组件实现
 // ============================================================================
@@ -41,301 +64,504 @@ export function WithdrawPage({
   onLogin,
 }: WithdrawPageProps) {
   const isEscort = effectiveViewerRole === 'escort'
+  const primaryColor = themeSettings.primaryColor
+  const bgColor = isDarkMode ? '#1a1a1a' : '#f5f7fa'
+  const cardBg = isDarkMode ? '#2a2a2a' : '#fff'
+  const textPrimary = isDarkMode ? '#f3f4f6' : '#111827'
+  const textSecondary = isDarkMode ? '#9ca3af' : '#6b7280'
+  const borderColor = isDarkMode ? '#3a3a3a' : '#f3f4f6'
 
-  // 提现金额输入
-  const [amount, setAmount] = useState('')
-  const [selectedCardId, setSelectedCardId] = useState<string | null>(null)
+  // 筛选状态
+  const [filter, setFilter] = useState<FilterType>('all')
 
-  // ⚠️ 非 escort 视角时不发请求
-  const {
-    data: withdrawInfo,
-    isLoading,
-    isError,
-  } = useQuery({
-    queryKey: ['preview', 'workbench', 'withdraw-info'],
-    queryFn: () => previewApi.getWorkbenchWithdrawInfo(),
-    staleTime: 60 * 1000,
-    enabled: isEscort,
-  })
+  // 数据状态（规则4：使用 useState + useEffect）
+  const [records, setRecords] = useState<WithdrawRecord[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
+
+  // 加载数据
+  useEffect(() => {
+    if (!isEscort) {
+      setLoading(false)
+      return
+    }
+
+    loadRecords()
+  }, [isEscort, filter])
+
+  const loadRecords = () => {
+    setLoading(true)
+    setError(false)
+
+    previewApi.getWithdrawRecords({ status: filter === 'all' ? undefined : filter })
+      .then((data) => {
+        setRecords(data.items || [])
+      })
+      .catch((err) => {
+        console.error('[WithdrawPage] 加载提现记录失败:', err)
+        setError(true)
+      })
+      .finally(() => {
+        setLoading(false)
+      })
+  }
 
   // 非 escort 视角：显示统一的 PermissionPrompt
   if (!isEscort) {
     return (
-      <div
-        className="min-h-full flex flex-col"
+      <Box
         style={{
-          backgroundColor: isDarkMode ? '#1a1a1a' : '#f5f7fa',
+          minHeight: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          backgroundColor: bgColor,
         }}
       >
-        <div
-          className="px-4 py-3 flex items-center"
-          style={{
-            backgroundColor: themeSettings.primaryColor,
-          }}
-        >
-          {onBack && (
-            <button onClick={onBack} className="text-white mr-3">
-              ←
-            </button>
-          )}
-          <h1 className="text-lg font-semibold text-white flex-1 text-center pr-6">
-            提现
-          </h1>
-        </div>
-
-        {/* 权限提示 */}
-        <div className="flex-1">
+        <PageHeader
+          title="提现记录"
+          themeSettings={themeSettings}
+          onBack={onBack}
+        />
+        <Box style={{ flex: 1 }}>
           <PermissionPrompt
             title="需要陪诊员身份"
-            description="请先登录陪诊员账号进行提现操作"
+            description="请先登录陪诊员账号查看提现记录"
             onLogin={onLogin}
             showDebugInject={process.env.NODE_ENV === 'development'}
-            primaryColor={themeSettings.primaryColor}
+            primaryColor={primaryColor}
             isDarkMode={isDarkMode}
           />
-        </div>
-      </div>
+        </Box>
+      </Box>
     )
   }
 
-  const bankCards = withdrawInfo?.bankCards ?? []
-  const hasNoBankCard = !isLoading && bankCards.length === 0
-
-  // 自动选择默认银行卡
-  if (withdrawInfo && !selectedCardId && bankCards.length > 0) {
-    const defaultCard = bankCards.find((c) => c.isDefault) || bankCards[0]
-    setSelectedCardId(defaultCard.id)
-  }
-
-  // 计算实际到账金额
-  const inputAmount = parseFloat(amount) || 0
-  const feeRate = withdrawInfo?.feeRate ?? 0
-  const fee = inputAmount * feeRate
-  const actualAmount = inputAmount - fee
-
-  // 是否可提现
-  const canWithdraw =
-    inputAmount >= (withdrawInfo?.minWithdrawAmount ?? 0) &&
-    inputAmount <= (withdrawInfo?.withdrawable ?? 0) &&
-    selectedCardId !== null
-
   return (
-    <div
-      className="min-h-full"
+    <Box
       style={{
-        backgroundColor: isDarkMode ? '#1a1a1a' : '#f5f7fa',
+        minHeight: '100%',
+        backgroundColor: bgColor,
       }}
     >
       {/* 页面标题 */}
-      <div
-        className="sticky top-0 z-10 px-4 py-3 flex items-center"
-        style={{
-          backgroundColor: themeSettings.primaryColor,
-        }}
-      >
-        {onBack && (
-          <button onClick={onBack} className="text-white mr-3">
-            ←
-          </button>
-        )}
-        <h1 className="text-lg font-semibold text-white flex-1 text-center pr-6">
-          提现
-        </h1>
-      </div>
+      <PageHeader
+        title="提现记录"
+        themeSettings={themeSettings}
+        onBack={onBack}
+      />
+
+      {/* 筛选标签 */}
+      <FilterTabs
+        filter={filter}
+        setFilter={setFilter}
+        themeSettings={themeSettings}
+        isDarkMode={isDarkMode}
+      />
+
+      {/* 加载中 - 骨架屏 */}
+      {loading && (
+        <Box style={{ padding: 16 * wxScale }}>
+          <ListSkeleton count={5} variant="card" isDarkMode={isDarkMode} />
+        </Box>
+      )}
+
+      {/* 请求失败 - 带重试按钮 */}
+      {error && !loading && (
+        <ErrorRetry
+          onRetry={loadRecords}
+          isDarkMode={isDarkMode}
+          primaryColor={primaryColor}
+        />
+      )}
 
       {/* 内容区 */}
-      <div className="px-4 py-4">
-        {/* 加载中 */}
-        {isLoading && (
-          <div className="flex items-center justify-center py-12">
-            <div className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>加载中...</div>
-          </div>
-        )}
-
-        {/* 请求失败 */}
-        {isError && (
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="text-4xl mb-2">😔</div>
-            <div className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>加载失败，请稍后重试</div>
-          </div>
-        )}
-
-        {/* 提现表单 */}
-        {!isLoading && !isError && withdrawInfo && (
-          <>
-            {/* 可提现金额 */}
-            <div
-              className="rounded-xl p-4"
-              style={{
-                backgroundColor: isDarkMode ? '#2a2a2a' : '#fff',
-              }}
-            >
-              <div className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>
-                可提现金额
-              </div>
-              <div
-                className="text-3xl font-bold mt-1"
-                style={{ color: themeSettings.primaryColor }}
-              >
-                ¥{formatMoney(withdrawInfo.withdrawable)}
-              </div>
-            </div>
-
-            {/* 提现金额输入 */}
-            <div
-              className="rounded-xl p-4 mt-4"
-              style={{
-                backgroundColor: isDarkMode ? '#2a2a2a' : '#fff',
-              }}
-            >
-              <div className={`text-sm mb-3 ${getSecondaryTextClass(isDarkMode)}`}>
-                提现金额
-              </div>
-              <div className="flex items-baseline gap-1">
-                <span className={`text-2xl ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>¥</span>
-                <input
-                  type="number"
-                  placeholder="0.00"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  className={`flex-1 text-3xl font-bold bg-transparent outline-none ${isDarkMode ? 'text-white placeholder-gray-600' : 'text-gray-900 placeholder-gray-300'
-                    }`}
-                />
-              </div>
-              <button
-                onClick={() => setAmount(withdrawInfo.withdrawable.toString())}
-                className="mt-2 text-sm"
-                style={{ color: themeSettings.primaryColor }}
-              >
-                全部提现
-              </button>
-            </div>
-
-            {/* 提现规则 */}
-            <div className="mt-4 space-y-2">
-              <div className="flex items-center gap-2">
-                <AlertCircle className="w-4 h-4" style={{ color: themeSettings.primaryColor }} />
-                <span className={`text-xs ${getSecondaryTextClass(isDarkMode)}`}>
-                  最低提现金额：¥{withdrawInfo.minWithdrawAmount}
-                </span>
-              </div>
-              {safeNumber(withdrawInfo.feeRate) > 0 && (
-                <div className="flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4" style={{ color: themeSettings.primaryColor }} />
-                  <span className={`text-xs ${getSecondaryTextClass(isDarkMode)}`}>
-                    手续费：{formatPercent(withdrawInfo.feeRate, 1)}%
-                  </span>
-                </div>
-              )}
-              <div className="flex items-center gap-2">
-                <AlertCircle className="w-4 h-4" style={{ color: themeSettings.primaryColor }} />
-                <span className={`text-xs ${getSecondaryTextClass(isDarkMode)}`}>
-                  预计 {withdrawInfo.estimatedHours} 小时内到账
-                </span>
-              </div>
-            </div>
-
-            {/* 银行卡选择 */}
-            <div
-              className="rounded-xl p-4 mt-4"
-              style={{
-                backgroundColor: isDarkMode ? '#2a2a2a' : '#fff',
-              }}
-            >
-              <div className={`text-sm mb-3 ${getSecondaryTextClass(isDarkMode)}`}>
-                提现至
-              </div>
-
-              {hasNoBankCard ? (
-                <div className="text-center py-4">
-                  <div className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>
-                    暂无绑定银行卡
-                  </div>
-                  <button
-                    className="mt-2 text-sm"
-                    style={{ color: themeSettings.primaryColor }}
-                  >
-                    + 添加银行卡
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {bankCards.map((card) => (
-                    <div
-                      key={card.id}
-                      onClick={() => setSelectedCardId(card.id)}
-                      className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${selectedCardId === card.id
-                        ? 'ring-2'
-                        : ''
-                        }`}
-                      style={{
-                        backgroundColor: isDarkMode ? '#3a3a3a' : '#f5f7fa',
-                        ringColor: selectedCardId === card.id ? themeSettings.primaryColor : 'transparent',
-                      }}
-                    >
-                      <CreditCard
-                        className="w-6 h-6"
-                        style={{ color: themeSettings.primaryColor }}
-                      />
-                      <div className="flex-1">
-                        <div className={`text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                          {card.bankName}
-                        </div>
-                        <div className={`text-xs ${getSecondaryTextClass(isDarkMode)}`}>
-                          尾号 {card.cardNo}
-                        </div>
-                      </div>
-                      {selectedCardId === card.id && (
-                        <CheckCircle
-                          className="w-5 h-5"
-                          style={{ color: themeSettings.primaryColor }}
-                        />
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* 到账金额预览 */}
-            {inputAmount > 0 && (
-              <div className="mt-4 text-center">
-                <span className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>
-                  实际到账：
-                </span>
-                <span
-                  className="text-lg font-bold ml-1"
-                  style={{ color: themeSettings.primaryColor }}
-                >
-                  ¥{formatMoney(actualAmount)}
-                </span>
-                {fee > 0 && (
-                  <span className={`text-xs ml-2 ${getTertiaryTextClass(isDarkMode)}`}>
-                    (手续费 ¥{formatMoney(fee)})
-                  </span>
-                )}
-              </div>
-            )}
-
-            {/* 提现按钮 */}
-            <button
-              disabled={!canWithdraw}
-              onClick={() => {
-                // TODO: 提现逻辑
-                console.log('[WithdrawPage] 提现:', { amount: inputAmount, cardId: selectedCardId })
-              }}
-              className="mt-6 w-full py-3 rounded-full text-white font-medium disabled:opacity-50 transition-opacity"
-              style={{ backgroundColor: themeSettings.primaryColor }}
-            >
-              确认提现
-            </button>
-          </>
-        )}
-      </div>
+      {!loading && !error && (
+        <RecordsList
+          records={records}
+          themeSettings={themeSettings}
+          isDarkMode={isDarkMode}
+          cardBg={cardBg}
+          textPrimary={textPrimary}
+          textSecondary={textSecondary}
+          borderColor={borderColor}
+        />
+      )}
 
       {/* 底部留白 */}
-      <div className="h-16" />
-    </div>
+      <Box style={{ height: 64 * wxScale }} />
+    </Box>
   )
 }
 
+// ============================================================================
+// 页面头部
+// ============================================================================
+
+interface PageHeaderProps {
+  title: string
+  themeSettings: ThemeSettings
+  onBack?: () => void
+}
+
+function PageHeader({ title, themeSettings, onBack }: PageHeaderProps) {
+  return (
+    <Box
+      style={{
+        position: 'sticky',
+        top: 0,
+        zIndex: 100,
+        backgroundColor: themeSettings.primaryColor,
+        paddingTop: wxSafeAreaTop,
+      }}
+    >
+      <Box
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          position: 'relative',
+          height: 44 * wxScale,
+          paddingLeft: 12 * wxScale,
+          paddingRight: 12 * wxScale,
+        }}
+      >
+        {/* 返回按钮 */}
+        {onBack && (
+          <Box
+            onClick={onBack}
+            style={{
+              position: 'absolute',
+              left: 12 * wxScale,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 36 * wxScale,
+              height: 36 * wxScale,
+            }}
+          >
+            <ChevronLeft size={22 * wxScale} color="#fff" />
+          </Box>
+        )}
+
+        {/* 标题 */}
+        <Text
+          style={{
+            fontSize: 17 * wxScale,
+            fontWeight: 600,
+            color: '#fff',
+          }}
+        >
+          {title}
+        </Text>
+      </Box>
+    </Box>
+  )
+}
+
+// ============================================================================
+// 筛选标签
+// ============================================================================
+
+interface FilterTabsProps {
+  filter: FilterType
+  setFilter: (value: FilterType) => void
+  themeSettings: ThemeSettings
+  isDarkMode: boolean
+}
+
+function FilterTabs({ filter, setFilter, themeSettings, isDarkMode }: FilterTabsProps) {
+  const primaryColor = themeSettings.primaryColor
+  const tabs: { key: FilterType; label: string }[] = [
+    { key: 'all', label: '全部' },
+    { key: 'pending', label: '处理中' },
+    { key: 'completed', label: '已完成' },
+    { key: 'failed', label: '失败' },
+  ]
+
+  return (
+    <Box
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12 * wxScale,
+        paddingLeft: 16 * wxScale,
+        paddingRight: 16 * wxScale,
+        paddingTop: 12 * wxScale,
+        paddingBottom: 12 * wxScale,
+        backgroundColor: isDarkMode ? '#2a2a2a' : '#fff',
+      }}
+    >
+      {tabs.map((tab) => {
+        const isActive = filter === tab.key
+        return (
+          <Box
+            key={tab.key}
+            onClick={() => setFilter(tab.key)}
+            style={{
+              paddingLeft: 12 * wxScale,
+              paddingRight: 12 * wxScale,
+              paddingTop: 6 * wxScale,
+              paddingBottom: 6 * wxScale,
+              borderRadius: 16 * wxScale,
+              backgroundColor: isActive ? primaryColor : 'transparent',
+              cursor: 'pointer',
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 13 * wxScale,
+                fontWeight: isActive ? 500 : 400,
+                color: isActive ? '#fff' : (isDarkMode ? '#9ca3af' : '#6b7280'),
+              }}
+            >
+              {tab.label}
+            </Text>
+          </Box>
+        )
+      })}
+    </Box>
+  )
+}
+
+// ============================================================================
+// 记录列表
+// ============================================================================
+
+interface RecordsListProps {
+  records: WithdrawRecord[]
+  themeSettings: ThemeSettings
+  isDarkMode: boolean
+  cardBg: string
+  textPrimary: string
+  textSecondary: string
+  borderColor: string
+}
+
+function RecordsList({
+  records,
+  themeSettings,
+  isDarkMode,
+  cardBg,
+  textPrimary,
+  textSecondary,
+  borderColor,
+}: RecordsListProps) {
+  const primaryColor = themeSettings.primaryColor
+
+  if (records.length === 0) {
+    return (
+      <Box
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          paddingTop: 80 * wxScale,
+          paddingBottom: 80 * wxScale,
+        }}
+      >
+        <Box
+          style={{
+            width: 64 * wxScale,
+            height: 64 * wxScale,
+            borderRadius: 32 * wxScale,
+            backgroundColor: `${primaryColor}15`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <FileText size={32 * wxScale} color={primaryColor} />
+        </Box>
+        <Text
+          style={{
+            display: 'block',
+            fontSize: 14 * wxScale,
+            color: textSecondary,
+            marginTop: 16 * wxScale,
+          }}
+        >
+          暂无提现记录
+        </Text>
+      </Box>
+    )
+  }
+
+  return (
+    <Box style={{ padding: 16 * wxScale }}>
+      <Box
+        style={{
+          borderRadius: 12 * wxScale,
+          overflow: 'hidden',
+          backgroundColor: cardBg,
+        }}
+      >
+        {records.map((record, index) => (
+          <WithdrawRecordRow
+            key={record.id}
+            record={record}
+            isDarkMode={isDarkMode}
+            textPrimary={textPrimary}
+            textSecondary={textSecondary}
+            borderColor={borderColor}
+            isLast={index === records.length - 1}
+          />
+        ))}
+      </Box>
+    </Box>
+  )
+}
+
+// ============================================================================
+// 记录行
+// ============================================================================
+
+interface WithdrawRecordRowProps {
+  record: WithdrawRecord
+  isDarkMode: boolean
+  textPrimary: string
+  textSecondary: string
+  borderColor: string
+  isLast: boolean
+}
+
+function WithdrawRecordRow({
+  record,
+  isDarkMode,
+  textPrimary,
+  textSecondary,
+  borderColor,
+  isLast,
+}: WithdrawRecordRowProps) {
+  const statusConfig: Record<string, { text: string; color: string }> = {
+    pending: { text: '待处理', color: '#f59e0b' },
+    processing: { text: '处理中', color: '#3b82f6' },
+    completed: { text: '已到账', color: '#10b981' },
+    failed: { text: '失败', color: '#ef4444' },
+  }
+  const status = statusConfig[record.status] || { text: '未知', color: '#6b7280' }
+
+  return (
+    <Box
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        paddingLeft: 16 * wxScale,
+        paddingRight: 16 * wxScale,
+        paddingTop: 14 * wxScale,
+        paddingBottom: 14 * wxScale,
+        borderBottomWidth: isLast ? 0 : 1,
+        borderBottomColor: borderColor,
+        borderBottomStyle: 'solid',
+      }}
+    >
+      {/* 图标 */}
+      <Box
+        style={{
+          width: 40 * wxScale,
+          height: 40 * wxScale,
+          borderRadius: 20 * wxScale,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: isDarkMode ? '#3a3a3a' : '#f3f4f6',
+          flexShrink: 0,
+        }}
+      >
+        <ArrowDownRight
+          size={20 * wxScale}
+          color={isDarkMode ? '#9ca3af' : '#6b7280'}
+        />
+      </Box>
+
+      {/* 信息 */}
+      <Box
+        style={{
+          flex: 1,
+          marginLeft: 12 * wxScale,
+          minWidth: 0,
+        }}
+      >
+        <Box
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8 * wxScale,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 14 * wxScale,
+              fontWeight: 500,
+              color: textPrimary,
+            }}
+          >
+            提现至 {record.accountName?.split(' ')[0] || '账户'}
+          </Text>
+          <Box
+            style={{
+              paddingLeft: 6 * wxScale,
+              paddingRight: 6 * wxScale,
+              paddingTop: 2 * wxScale,
+              paddingBottom: 2 * wxScale,
+              borderRadius: 4 * wxScale,
+              backgroundColor: `${status.color}15`,
+              flexShrink: 0,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 10 * wxScale,
+                fontWeight: 500,
+                color: status.color,
+              }}
+            >
+              {status.text}
+            </Text>
+          </Box>
+        </Box>
+        <Text
+          style={{
+            display: 'block',
+            fontSize: 12 * wxScale,
+            color: textSecondary,
+            marginTop: 2 * wxScale,
+          }}
+        >
+          {record.createdAt}
+        </Text>
+      </Box>
+
+      {/* 金额 */}
+      <Box
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'flex-end',
+          flexShrink: 0,
+        }}
+      >
+        <Text
+          style={{
+            fontSize: 14 * wxScale,
+            fontWeight: 600,
+            color: textSecondary,
+          }}
+        >
+          -¥{formatMoney(record.amount)}
+        </Text>
+        {record.actualAmount && record.actualAmount !== record.amount && (
+          <Text
+            style={{
+              fontSize: 11 * wxScale,
+              color: textSecondary,
+              marginTop: 2 * wxScale,
+            }}
+          >
+            实际 ¥{formatMoney(record.actualAmount)}
+          </Text>
+        )}
+      </Box>
+    </Box>
+  )
+}

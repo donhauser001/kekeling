@@ -222,14 +222,10 @@ export const Input = forwardRef<any, InputProps>(function Input(
   // 小程序 Input 类型映射
   const inputType = type === 'tel' ? 'number' : type
 
-  // 模拟 Web 事件对象，使业务代码可以使用 e.target.value
+  // 小程序事件转换为统一接口
   const handleInput = (e: { detail: { value: string } }) => {
     if (onChange) {
-      const syntheticEvent = {
-        target: { value: e.detail.value },
-        currentTarget: { value: e.detail.value },
-      }
-      onChange(syntheticEvent as unknown as React.ChangeEvent<HTMLInputElement>)
+      onChange(e.detail.value)
     }
   }
 
@@ -278,14 +274,10 @@ export const Textarea = forwardRef<any, TextareaProps>(function Textarea(
   const filteredProps: Record<string, unknown> = {}
   if (rest['data-testid']) filteredProps['data-testid'] = rest['data-testid']
 
-  // 模拟 Web 事件对象，使业务代码可以使用 e.target.value
+  // 小程序事件转换为统一接口
   const handleInput = (e: { detail: { value: string } }) => {
     if (onChange) {
-      const syntheticEvent = {
-        target: { value: e.detail.value },
-        currentTarget: { value: e.detail.value },
-      }
-      onChange(syntheticEvent as unknown as React.ChangeEvent<HTMLTextAreaElement>)
+      onChange(e.detail.value)
     }
   }
 
@@ -327,7 +319,7 @@ export const ScrollView = forwardRef<any, ScrollViewProps>(function ScrollView(
       style={style}
       scrollX={scrollX}
       scrollY={scrollY}
-      onScroll={(e) => onScroll?.({ scrollTop: e.detail.scrollTop, scrollLeft: e.detail.scrollLeft })}
+      onScroll={(e: { detail: { scrollTop: number; scrollLeft: number } }) => onScroll?.({ scrollTop: e.detail.scrollTop, scrollLeft: e.detail.scrollLeft })}
       onScrollToUpper={onScrollToUpper}
       onScrollToLower={onScrollToLower}
       {...filteredProps}
@@ -342,7 +334,12 @@ export const ScrollView = forwardRef<any, ScrollViewProps>(function ScrollView(
 // ============================================================================
 
 export interface IconProps {
-  name: IconName
+  /**
+   * 图标名称
+   * - 推荐使用 IconName 类型（775 个预定义图标）
+   * - 也接受 string 类型以兼容动态场景，无效名称会显示空占位符
+   */
+  name: IconName | (string & {})
   size?: number
   color?: string
   className?: string
@@ -361,7 +358,7 @@ export const Icon = forwardRef<any, IconProps>(function Icon(
   { name, size = 24, color = '#000000', className = '', style },
   _ref
 ) {
-  const unicode = iconUnicodeMap[name]
+  const unicode = iconUnicodeMap[name as IconName]
 
   if (!unicode) {
     console.warn(`[Icon] 图标 "${name}" 未定义`)

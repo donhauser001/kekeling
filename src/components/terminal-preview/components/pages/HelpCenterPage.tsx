@@ -5,7 +5,7 @@
  */
 
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, ChevronRight, HelpCircle, FileText } from 'lucide-react'
+import { ArrowLeft, ChevronRight, HelpCircle, FileText } from '../../ui/lucide-compat'
 import type { ThemeSettings } from '../../types'
 import { previewApi } from '../../api'
 

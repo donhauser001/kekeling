@@ -27,7 +27,7 @@ import { ConfigDrawer } from '@/components/config-drawer'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { TerminalPreview } from '@/components/terminal-preview'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -61,7 +61,6 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   distributionApi,
-  type DistributionLevel,
   type DistributionLevelWithStats,
   type CreateDistributionLevelData,
   type UpdateDistributionLevelData,
@@ -232,8 +231,8 @@ export function DistributionSettings() {
     // 清理空的 promotionConfig 字段
     const cleanedPromotionConfig = formData.promotionConfig
       ? Object.fromEntries(
-        Object.entries(formData.promotionConfig).filter(([, v]) => v !== undefined && v !== null && v !== '')
-      )
+        Object.entries(formData.promotionConfig).filter(([, v]) => v !== undefined && v !== null)
+      ) as typeof formData.promotionConfig
       : undefined
     const hasPromotionConfig = cleanedPromotionConfig && Object.keys(cleanedPromotionConfig).length > 0
 
@@ -252,7 +251,7 @@ export function DistributionSettings() {
           bgColor: formData.bgColor,
           description: formData.description,
           commissionRate: formData.commissionRate,
-          promotionConfig: hasPromotionConfig ? cleanedPromotionConfig : null,
+          promotionConfig: hasPromotionConfig ? cleanedPromotionConfig : undefined,
           isDefault: formData.isDefault,
         },
       })
@@ -452,8 +451,7 @@ export function DistributionSettings() {
           <div className='hidden xl:block sticky top-4 h-fit'>
             <TerminalPreview
               page='distribution'
-              containerWidth={375}
-              containerHeight={680}
+              height={680}
             />
           </div>
         </div>

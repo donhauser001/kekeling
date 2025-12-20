@@ -7,7 +7,7 @@
  */
 
 import { useState, useCallback, useEffect } from 'react'
-import { Box, Text, Button, Input, Icon } from '../ui/primitives'
+import { Box, Text, Input, Icon } from '../ui/primitives'
 import { isBrowserEnvironment, isWxEnvironment } from '../platform/env'
 import { platformRequest } from '../platform'
 import { getApiUrl } from '../api/request'
@@ -88,7 +88,7 @@ export function EscortLoginDialog({
       })
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
+        const errorData = (await response.json().catch(() => ({}))) as { message?: string }
         throw new Error(errorData.message || '发送失败')
       }
 
@@ -131,11 +131,11 @@ export function EscortLoginDialog({
       })
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
+        const errorData = (await response.json().catch(() => ({}))) as { message?: string }
         throw new Error(errorData.message || '登录失败')
       }
 
-      const result = await response.json()
+      const result = (await response.json()) as { data?: { escortToken?: string } }
       const escortToken = result.data?.escortToken
 
       if (!escortToken) {
@@ -293,7 +293,11 @@ export function EscortLoginDialog({
               type="tel"
               placeholder="请输入手机号"
               value={phone}
-              onChange={(e: any) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 11))}
+              onChange={(e: any) => {
+                // 兼容小程序和 Web 的事件对象结构
+                const value = e?.detail?.value ?? e?.target?.value ?? ''
+                setPhone(value.replace(/\D/g, '').slice(0, 11))
+              }}
               style={{
                 flex: 1,
                 backgroundColor: 'transparent',
@@ -326,7 +330,11 @@ export function EscortLoginDialog({
               type="text"
               placeholder="请输入验证码"
               value={code}
-              onChange={(e: any) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              onChange={(e: any) => {
+                // 兼容小程序和 Web 的事件对象结构
+                const value = e?.detail?.value ?? e?.target?.value ?? ''
+                setCode(value.replace(/\D/g, '').slice(0, 6))
+              }}
               style={{
                 flex: 1,
                 backgroundColor: 'transparent',

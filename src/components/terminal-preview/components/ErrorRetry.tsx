@@ -5,7 +5,6 @@
  * 使用跨宿主原语组件，支持 Web 和小程序
  */
 
-import React from 'react'
 import { Box, Text, Button } from '../ui/primitives'
 
 // ============================================================================

@@ -137,6 +137,8 @@ export const previewApi = {
 
   // 订单
   getWorkbenchOrdersPool: escortApi.getWorkbenchOrdersPool,
+  grabOrder: escortApi.grabOrder,
+  updateOrderAction: escortApi.updateOrderAction,
   getMyOrders: escortApi.getMyOrders,
   getWorkbenchOrderDetail: escortApi.getWorkbenchOrderDetail,
 
@@ -147,6 +149,7 @@ export const previewApi = {
   // 提现
   getWorkbenchWithdrawInfo: escortApi.getWorkbenchWithdrawInfo,
   getWithdrawStats: escortApi.getWithdrawStats,
+  getWithdrawRecords: escortApi.getWithdrawRecords,
 
   // 设置与资料
   getWorkbenchSettings: escortApi.getWorkbenchSettings,

@@ -24,11 +24,12 @@ import type {
  */
 export function getMockDistributionStats(): DistributionStats {
   return {
+    totalTeamSize: 184,
+    directCount: 28,
+    indirectCount: 156,
     totalDistribution: 12580.5,
+    monthlyDistribution: 1200,
     pendingDistribution: 1200,
-    settledDistribution: 11380.5,
-    directMembers: 28,
-    indirectMembers: 156,
     currentLevel: 'gold',
     nextLevel: 'platinum',
     promotionProgress: 68,
@@ -41,11 +42,12 @@ export function getMockDistributionStats(): DistributionStats {
  */
 export function getMockDistributionStatsZeroProgress(): DistributionStats {
   return {
+    totalTeamSize: 2,
+    directCount: 2,
+    indirectCount: 0,
     totalDistribution: 500,
+    monthlyDistribution: 100,
     pendingDistribution: 100,
-    settledDistribution: 400,
-    directMembers: 2,
-    indirectMembers: 0,
     currentLevel: 'basic',
     nextLevel: 'silver',
     promotionProgress: 0,
@@ -58,11 +60,12 @@ export function getMockDistributionStatsZeroProgress(): DistributionStats {
  */
 export function getMockDistributionStatsMaxLevel(): DistributionStats {
   return {
+    totalTeamSize: 1700,
+    directCount: 200,
+    indirectCount: 1500,
     totalDistribution: 150000,
+    monthlyDistribution: 5000,
     pendingDistribution: 5000,
-    settledDistribution: 145000,
-    directMembers: 200,
-    indirectMembers: 1500,
     currentLevel: 'diamond',
     nextLevel: undefined,
     promotionProgress: undefined,
@@ -78,7 +81,7 @@ export function getMockDistributionStatsMaxLevel(): DistributionStats {
  */
 export function getMockDistributionMembers(params?: DistributionMembersParams): DistributionMembersResponse {
   const relation = params?.relation || 'direct'
-  
+
   if (relation === 'direct') {
     return {
       items: [
@@ -86,35 +89,41 @@ export function getMockDistributionMembers(params?: DistributionMembersParams): 
           id: 'member-1',
           name: '张三',
           avatar: 'https://picsum.photos/100/100?random=10',
+          phone: '138****8888',
           level: 'silver',
+          relation: 'direct' as const,
           joinedAt: '2024-11-15',
-          totalContribution: 580,
-          lastOrderAt: '2024-12-12',
+          totalOrders: 5,
+          totalDistribution: 580,
         },
         {
           id: 'member-2',
           name: '李四',
           avatar: 'https://picsum.photos/100/100?random=11',
+          phone: '139****6666',
           level: 'gold',
+          relation: 'direct' as const,
           joinedAt: '2024-10-20',
-          totalContribution: 1280,
-          lastOrderAt: '2024-12-10',
+          totalOrders: 12,
+          totalDistribution: 1280,
         },
         {
           id: 'member-3',
           name: '王五',
           avatar: 'https://picsum.photos/100/100?random=12',
+          phone: '137****5555',
           level: 'basic',
+          relation: 'direct' as const,
           joinedAt: '2024-12-01',
-          totalContribution: 120,
-          lastOrderAt: '2024-12-08',
+          totalOrders: 2,
+          totalDistribution: 120,
         },
       ],
       total: 28,
       hasMore: true,
     }
   }
-  
+
   // 间接成员
   return {
     items: [
@@ -122,19 +131,23 @@ export function getMockDistributionMembers(params?: DistributionMembersParams): 
         id: 'member-i1',
         name: '赵六',
         avatar: 'https://picsum.photos/100/100?random=20',
+        phone: '136****4444',
         level: 'basic',
+        relation: 'indirect' as const,
         joinedAt: '2024-11-20',
-        totalContribution: 80,
-        inviterName: '张三',
+        totalOrders: 1,
+        totalDistribution: 80,
       },
       {
         id: 'member-i2',
         name: '钱七',
         avatar: 'https://picsum.photos/100/100?random=21',
+        phone: '135****3333',
         level: 'silver',
+        relation: 'indirect' as const,
         joinedAt: '2024-11-25',
-        totalContribution: 320,
-        inviterName: '李四',
+        totalOrders: 4,
+        totalDistribution: 320,
       },
     ],
     total: 156,
@@ -162,49 +175,46 @@ export function getMockDistributionMembersEmpty(): DistributionMembersResponse {
  */
 export function getMockDistributionRecords(params?: DistributionRecordsParams): DistributionRecordsResponse {
   const status = params?.status
-  
-  const allRecords = [
+
+  const allRecords: DistributionRecordsResponse['items'] = [
     {
       id: 'record-d1',
-      orderId: 'order-201',
-      memberName: '张三',
-      serviceName: '门诊陪同',
-      orderAmount: 200,
-      distributionAmount: 20,
-      rate: 10,
-      status: 'settled' as const,
-      settledAt: '2024-12-12',
+      type: 'order',
+      title: '门诊陪同订单分润',
+      amount: 20,
+      status: 'settled',
+      sourceEscortName: '张三',
+      orderNo: 'ORD-2024-201',
       createdAt: '2024-12-10',
+      settledAt: '2024-12-12',
     },
     {
       id: 'record-d2',
-      orderId: 'order-202',
-      memberName: '李四',
-      serviceName: '检查陪同',
-      orderAmount: 300,
-      distributionAmount: 30,
-      rate: 10,
-      status: 'settled' as const,
-      settledAt: '2024-12-11',
+      type: 'order',
+      title: '检查陪同订单分润',
+      amount: 30,
+      status: 'settled',
+      sourceEscortName: '李四',
+      orderNo: 'ORD-2024-202',
       createdAt: '2024-12-09',
+      settledAt: '2024-12-11',
     },
     {
       id: 'record-d3',
-      orderId: 'order-203',
-      memberName: '王五',
-      serviceName: '取药代办',
-      orderAmount: 100,
-      distributionAmount: 10,
-      rate: 10,
-      status: 'pending' as const,
+      type: 'order',
+      title: '取药代办订单分润',
+      amount: 10,
+      status: 'pending',
+      sourceEscortName: '王五',
+      orderNo: 'ORD-2024-203',
       createdAt: '2024-12-13',
     },
   ]
-  
-  const filteredRecords = status 
+
+  const filteredRecords = status
     ? allRecords.filter(r => r.status === status)
     : allRecords
-  
+
   return {
     items: filteredRecords,
     total: filteredRecords.length,
@@ -233,16 +243,20 @@ export function getMockDistributionRecordsEmpty(): DistributionRecordsResponse {
 export function getMockDistributionInvite(): DistributionInvite {
   return {
     inviteCode: 'DIST2024ABC',
-    inviteUrl: 'https://example.com/invite/DIST2024ABC',
+    inviteLink: 'https://example.com/invite/DIST2024ABC',
     qrCodeUrl: 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=DIST2024ABC',
-    inviteReward: 50,
-    inviteRules: [
-      '邀请好友成为分销员，获得50元现金奖励',
-      '好友完成首单后奖励自动发放',
-      '无邀请上限，多邀多得',
-    ],
+    totalInvited: 28,
+    rewardPerInvite: 50,
   }
 }
+
+// 保留邀请规则供 UI 使用
+const _inviteRules = [
+  '邀请好友成为分销员，获得50元现金奖励',
+  '好友完成首单后奖励自动发放',
+  '无邀请上限，多邀多得',
+]
+void _inviteRules
 
 // ============================================================================
 // 晋升信息 Mock
@@ -253,21 +267,23 @@ export function getMockDistributionInvite(): DistributionInvite {
  */
 export function getMockDistributionPromotion(): DistributionPromotion {
   return {
-    currentLevel: 'gold',
-    currentLevelName: '黄金分销员',
-    nextLevel: 'platinum',
-    nextLevelName: '铂金分销员',
-    promotionProgress: 68,
-    promotionConditions: [
-      { name: '累计分润金额', current: 12580, target: 20000, unit: '元' },
-      { name: '直属成员数', current: 28, target: 50, unit: '人' },
-      { name: '本月活跃成员', current: 15, target: 20, unit: '人' },
-    ],
-    nextLevelBenefits: [
-      '分润比例提升至15%',
-      '优先获得新订单推送',
-      '专属客服支持',
-    ],
+    currentLevel: {
+      code: 'gold',
+      name: '黄金分销员',
+      commissionRate: 0.12,
+      benefits: ['分润比例12%', '团队管理权限'],
+    },
+    nextLevel: {
+      code: 'platinum',
+      name: '铂金分销员',
+      commissionRate: 0.15,
+      benefits: ['分润比例提升至15%', '优先获得新订单推送', '专属客服支持'],
+      requirements: [
+        { type: 'team_size', current: 28, required: 50 },
+        { type: 'total_orders', current: 156, required: 200 },
+        { type: 'monthly_orders', current: 15, required: 20 },
+      ],
+    },
   }
 }
 
@@ -276,14 +292,13 @@ export function getMockDistributionPromotion(): DistributionPromotion {
  */
 export function getMockDistributionPromotionMaxLevel(): DistributionPromotion {
   return {
-    currentLevel: 'diamond',
-    currentLevelName: '钻石分销员',
+    currentLevel: {
+      code: 'diamond',
+      name: '钻石分销员',
+      commissionRate: 0.20,
+      benefits: ['最高分润比例20%', '专属VIP客服', '优先推送高价值订单', '团队数据报表'],
+    },
     nextLevel: undefined,
-    nextLevelName: undefined,
-    promotionProgress: undefined,
-    promotionConditions: [],
-    nextLevelBenefits: [],
-    isMaxLevel: true,
   }
 }
 
@@ -292,19 +307,22 @@ export function getMockDistributionPromotionMaxLevel(): DistributionPromotion {
  */
 export function getMockDistributionPromotionZeroProgress(): DistributionPromotion {
   return {
-    currentLevel: 'basic',
-    currentLevelName: '普通分销员',
-    nextLevel: 'silver',
-    nextLevelName: '白银分销员',
-    promotionProgress: 0,
-    promotionConditions: [
-      { name: '累计分润金额', current: 0, target: 1000, unit: '元' },
-      { name: '直属成员数', current: 0, target: 5, unit: '人' },
-    ],
-    nextLevelBenefits: [
-      '分润比例提升至8%',
-      '获得团队管理权限',
-    ],
+    currentLevel: {
+      code: 'basic',
+      name: '普通分销员',
+      commissionRate: 0.05,
+      benefits: ['基础分润比例5%'],
+    },
+    nextLevel: {
+      code: 'silver',
+      name: '白银分销员',
+      commissionRate: 0.08,
+      benefits: ['分润比例提升至8%', '获得团队管理权限'],
+      requirements: [
+        { type: 'team_size', current: 0, required: 5 },
+        { type: 'total_orders', current: 0, required: 10 },
+      ],
+    },
   }
 }
 

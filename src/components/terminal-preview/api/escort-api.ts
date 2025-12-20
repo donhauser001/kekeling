@@ -250,6 +250,67 @@ export const getWorkbenchOrdersPool = async (): Promise<OrdersPoolResponse> => {
 }
 
 /**
+ * 接单响应
+ */
+export interface GrabOrderResponse {
+  success: boolean
+  message?: string
+}
+
+/**
+ * 接单（抢单）
+ * 接口: POST /escort-app/orders/:id/grab
+ * 通道: escortRequest（⚠️ 必须 escortToken）
+ */
+export const grabOrder = async (orderId: string): Promise<GrabOrderResponse> => {
+  const escortToken = getEscortToken()
+
+  // mock token 直接返回成功
+  if (escortToken?.startsWith('mock-')) {
+    console.log('[previewApi.grabOrder] mock token, 模拟接单成功')
+    return { success: true, message: '接单成功' }
+  }
+
+  return await escortRequest<GrabOrderResponse>(`/escort-app/orders/${orderId}/grab`, {
+    method: 'POST',
+  })
+}
+
+/**
+ * 订单状态操作类型
+ */
+export type OrderActionType = 'arrive' | 'start' | 'complete'
+
+/**
+ * 更新订单状态（服务流程）
+ * 接口: POST /escort-app/orders/:id/action
+ * 通道: escortRequest（⚠️ 必须 escortToken）
+ * 
+ * @param orderId 订单ID
+ * @param action 操作类型: arrive(确认到达), start(开始服务), complete(完成服务)
+ */
+export const updateOrderAction = async (
+  orderId: string, 
+  action: OrderActionType
+): Promise<{ success: boolean; message: string }> => {
+  const escortToken = getEscortToken()
+
+  // mock token 直接返回成功
+  if (escortToken?.startsWith('mock-')) {
+    console.log(`[previewApi.updateOrderAction] mock token, 模拟 ${action} 成功`)
+    return { success: true, message: '操作成功' }
+  }
+
+  return await escortRequest<{ success: boolean; message: string }>(
+    `/escort-app/orders/${orderId}/action`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ action }),
+    }
+  )
+}
+
+/**
  * 获取我的订单列表
  * 接口: GET /escort-app/my-orders
  * 通道: escortRequest（⚠️ 必须 escortToken）
@@ -449,6 +510,54 @@ export const getWithdrawStats = async (): Promise<WithdrawStats> => {
     // 401 等其他错误：也降级到 mock，保证预览器可用
     console.warn('[previewApi.getWithdrawStats] 请求失败，降级使用 mock 数据:', error)
     return getMockWithdrawStats()
+  }
+}
+
+/**
+ * 获取提现记录列表
+ * 接口: GET /escort-app/withdraw/records
+ * 通道: escortRequest（⚠️ 必须 escortToken）
+ */
+export const getWithdrawRecords = async (params?: {
+  status?: 'pending' | 'completed' | 'failed'
+  page?: number
+  pageSize?: number
+}): Promise<{ items: WithdrawRecord[]; total: number }> => {
+  const currentEscortToken = getEscortToken()
+
+  // 无 token 直接返回 mock
+  if (!currentEscortToken) {
+    console.log('[previewApi.getWithdrawRecords] 无 escortToken，返回 mock 数据')
+    return getMockWithdrawRecords()
+  }
+
+  // mock token 直接返回 mock
+  if (currentEscortToken.startsWith('mock-')) {
+    console.log('[previewApi.getWithdrawRecords] mock token, 返回 mock 数据')
+    return getMockWithdrawRecords()
+  }
+
+  try {
+    const queryParams = new URLSearchParams()
+    if (params?.status) queryParams.append('status', params.status)
+    if (params?.page) queryParams.append('page', String(params.page))
+    if (params?.pageSize) queryParams.append('pageSize', String(params.pageSize))
+    const queryString = queryParams.toString()
+    const url = `/escort-app/withdraw/records${queryString ? `?${queryString}` : ''}`
+    return await escortRequest<{ items: WithdrawRecord[]; total: number }>(url)
+  } catch (error) {
+    // 降级到 mock 数据
+    console.warn('[previewApi.getWithdrawRecords] 请求失败，降级使用 mock 数据:', error)
+    return getMockWithdrawRecords()
+  }
+}
+
+// Mock 提现记录
+function getMockWithdrawRecords(): { items: WithdrawRecord[]; total: number } {
+  const mockStats = getMockWithdrawStats()
+  return {
+    items: mockStats.recentRecords,
+    total: mockStats.recentRecords.length,
   }
 }
 

@@ -93,7 +93,7 @@ export function RichEditor({
   const [imageUrl, setImageUrl] = useState('')
 
   // 上传 hook
-  const { uploadFile, uploading } = useUpload({
+  const { uploadFile, uploading: _uploading } = useUpload({
     folder: 'service',
     onSuccess: (result) => {
       insertImage(result.url)

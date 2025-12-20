@@ -75,7 +75,8 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
 
   // 服务列表数据
   const [services, setServices] = useState<ServiceListItem[]>([])
-  const [servicesLoading, setServicesLoading] = useState(true)
+  const [_servicesLoading, setServicesLoading] = useState(true)
+  void _servicesLoading // 保留用于未来加载状态显示
 
   // 获取轮播图
   useEffect(() => {
@@ -149,7 +150,7 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
   }
 
   // 分享
-  const handleShare = (service: ServiceListItem, e: React.MouseEvent) => {
+  const handleShare = (_service: ServiceListItem, e: React.MouseEvent) => {
     e.stopPropagation()
     // 预览器中只做 UI 展示
   }

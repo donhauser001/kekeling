@@ -2,7 +2,6 @@ import { useState, useRef } from 'react'
 import {
   Image as ImageIcon,
   Plus,
-  MoreHorizontal,
   Pencil,
   Trash2,
   Loader2,
@@ -10,7 +9,6 @@ import {
   Link as LinkIcon,
   X,
   Settings2,
-  Power,
   PowerOff,
 } from 'lucide-react'
 import { TerminalPreview } from '@/components/terminal-preview'
@@ -25,13 +23,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import {
   Dialog,
   DialogContent,
@@ -325,13 +316,14 @@ function BannerAreaSection({
     }
   }
 
-  const handleToggleStatus = async (banner: Banner) => {
+  const _handleToggleStatus = async (banner: Banner) => {
     const newStatus = banner.status === 'active' ? 'inactive' : 'active'
     updateMutation.mutate({
       id: banner.id,
       data: { status: newStatus },
     })
   }
+  void _handleToggleStatus // 保留用于状态切换功能
 
   const handleSaveSettings = () => {
     onUpdateSize(sizeConfig.width, sizeConfig.height)

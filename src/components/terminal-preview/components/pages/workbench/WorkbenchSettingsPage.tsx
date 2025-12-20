@@ -23,7 +23,7 @@ import {
   Loader2,
   Building2,
   Stethoscope,
-} from 'lucide-react'
+} from '../../../ui/lucide-compat'
 import type { ThemeSettings, PreviewViewerRole } from '../../../types'
 import { previewApi } from '../../../api'
 import { PermissionPrompt } from '../../PermissionPrompt'

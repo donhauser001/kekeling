@@ -12,15 +12,9 @@ import {
 import {
     Tag,
     Plus,
-    MoreHorizontal,
-    Pencil,
-    Trash2,
-    Users,
-    FolderPlus,
     Layers,
     LayoutGrid,
     List,
-    Eye,
     Loader2,
     AlertCircle,
 } from 'lucide-react'
@@ -33,14 +27,6 @@ import {
     CardTitle,
 } from '@/components/ui/card'
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuShortcut,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import {
     Dialog,
     DialogContent,
     DialogDescription,
@@ -50,7 +36,6 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
@@ -75,11 +60,8 @@ import {
     EscortTagsDetailSheet,
 } from './components'
 
-// 扩展 EscortTag 类型以兼容本地使用
-interface LocalEscortTag extends EscortTag {
-    description?: string
-    escortCount?: number
-}
+// 本地使用的标签类型别名（与 API 类型一致）
+type LocalEscortTag = EscortTag
 
 interface TagCategory {
     value: string
@@ -218,8 +200,8 @@ export function EscortTags() {
     // 切换视图时更新 URL
     const handleViewModeChange = (mode: string) => {
         setViewMode(mode as 'grid' | 'list')
-        navigate({
-            search: (prev: Record<string, unknown>) => ({ ...prev, view: mode }),
+        void navigate({
+            search: ((prev: Record<string, unknown>) => ({ ...prev, view: mode })) as unknown as true,
             replace: true,
         })
     }
@@ -486,11 +468,11 @@ export function EscortTags() {
                 open={deleteDialogOpen}
                 onOpenChange={setDeleteDialogOpen}
                 title='确认删除'
-                description={`确定要删除标签「${deletingTag?.name}」吗？此操作不可撤销。`}
+                desc={`确定要删除标签「${deletingTag?.name}」吗？此操作不可撤销。`}
                 confirmText={deleteMutation.isPending ? '删除中...' : '删除'}
-                cancelText='取消'
-                onConfirm={handleDeleteTag}
-                variant='destructive'
+                cancelBtnText='取消'
+                handleConfirm={handleDeleteTag}
+                destructive
                 disabled={deleteMutation.isPending}
             />
 

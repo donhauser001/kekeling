@@ -38,12 +38,13 @@ import type { ServiceFormData } from '../types'
 import { BUILTIN_FIELDS, CUSTOM_FIELD_TYPES } from '../constants'
 import { SortableFieldItem } from './sortable-field-item'
 
-// 获取自定义字段类型图标
-function getFieldTypeIcon(type: CustomField['type']) {
+// 获取自定义字段类型图标 - 保留用于未来字段类型显示
+function _getFieldTypeIcon(type: CustomField['type']) {
     const TypeIcon = CUSTOM_FIELD_TYPES.find(t => t.value === type)?.icon
     if (!TypeIcon) return null
     return <TypeIcon className='h-4 w-4' />
 }
+void _getFieldTypeIcon
 
 interface BusinessConfigCardProps {
     formData: ServiceFormData

@@ -16,7 +16,7 @@ import {
   Briefcase,
   Check,
   ChevronRight,
-} from 'lucide-react'
+} from '../../ui/lucide-compat'
 import { areaList } from '@vant/area-data'
 import type { ThemeSettings } from '../../types'
 import { previewApi } from '../../api'
@@ -108,8 +108,9 @@ export function AddressEditPage({
   addressId,
   mode = 'create',
   onBack,
-  onNavigate,
+  onNavigate: _onNavigate,
 }: AddressEditPageProps) {
+  void _onNavigate // 保留接口兼容
   const queryClient = useQueryClient()
   const isEdit = mode === 'edit' || !!addressId
   const [formData, setFormData] = useState<FormData>(defaultFormData)

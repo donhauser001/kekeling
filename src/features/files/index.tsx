@@ -39,7 +39,8 @@ const route = getRouteApi('/_authenticated/files/')
 
 type FilterType = 'all' | 'starred' | 'shared' | FileType
 
-const filterOptions: { value: FilterType; label: string }[] = [
+// 保留用于未来筛选功能
+const _filterOptions: { value: FilterType; label: string }[] = [
     { value: 'all', label: '全部文件' },
     { value: 'starred', label: '已收藏' },
     { value: 'shared', label: '已分享' },
@@ -52,6 +53,7 @@ const filterOptions: { value: FilterType; label: string }[] = [
     { value: 'spreadsheet', label: '表格' },
     { value: 'presentation', label: '演示' },
 ]
+void _filterOptions
 
 // 根据文件夹ID映射到筛选类型
 function getFolderFilter(folderId: string): FilterType {
