@@ -34,6 +34,7 @@ export interface CouponsPageProps {
   themeSettings: ThemeSettings
   isDarkMode: boolean
   onBack?: () => void
+  onNavigate?: (page: string, params?: Record<string, string>) => void
   /**
    * 优惠券数据覆盖
    * - undefined: 不覆盖，使用 API 数据
@@ -47,7 +48,7 @@ export interface CouponsPageProps {
 
 /**
  * 优惠券项
- * 与后端接口 GET /marketing/coupons/my 返回结构对应
+ * 与后端接口 GET /coupons/my 返回结构对应
  */
 export interface CouponItem {
   id: string
@@ -372,6 +373,7 @@ export function CouponsPage({
   themeSettings,
   isDarkMode,
   onBack,
+  onNavigate,
   couponsOverride,
 }: CouponsPageProps) {
   // 是否使用覆盖数据
@@ -445,6 +447,7 @@ export function CouponsPage({
 
   // 颜色定义
   const bgColor = isDarkMode ? '#1a1a1a' : '#f5f7fa'
+  const textPrimary = isDarkMode ? '#f3f4f6' : '#111827'
   const textMuted = isDarkMode ? '#6b7280' : '#9ca3af'
   const primaryColor = themeSettings.primaryColor
 
@@ -511,9 +514,39 @@ export function CouponsPage({
             我的优惠券
           </Text>
 
-          {/* 占位 */}
+          {/* 占位（避免胶囊遮挡） */}
           <Box style={{ width: 32 * wxScale }} />
         </Box>
+      </Box>
+
+      {/* 领券中心入口卡片 */}
+      <Box
+        onClick={() => onNavigate?.('coupons-available')}
+        style={{
+          marginLeft: 16 * wxScale,
+          marginRight: 16 * wxScale,
+          marginTop: 16 * wxScale,
+          paddingLeft: 16 * wxScale,
+          paddingRight: 16 * wxScale,
+          paddingTop: 12 * wxScale,
+          paddingBottom: 12 * wxScale,
+          borderRadius: 12 * wxScale,
+          backgroundColor: `${primaryColor}15`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
+        <Box style={{ display: 'flex', alignItems: 'center', gap: 8 * wxScale }}>
+          <Icon name="coupon" size={20 * wxScale} color={primaryColor} />
+          <Text style={{ fontSize: 14 * wxScale, color: textPrimary, fontWeight: 500 }}>
+            领券中心
+          </Text>
+          <Text style={{ fontSize: 12 * wxScale, color: textMuted }}>
+            更多优惠等你领
+          </Text>
+        </Box>
+        <Icon name="right" size={16 * wxScale} color={textMuted} />
       </Box>
 
       {/* 内容区 */}
@@ -588,6 +621,7 @@ export function CouponsPage({
               暂无优惠券
             </Text>
             <Button
+              onClick={() => onNavigate?.('coupons-available')}
               style={{
                 marginTop: 16 * wxScale,
                 paddingLeft: 24 * wxScale,

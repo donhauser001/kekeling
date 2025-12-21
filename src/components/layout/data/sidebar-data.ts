@@ -367,6 +367,11 @@ export const sidebarData: SidebarData = {
               icon: AlertCircle,
             },
             {
+              title: '意见反馈',
+              url: '/support/feedback',
+              icon: MessageSquareText,
+            },
+            {
               title: '评价管理',
               url: '/support/reviews',
               icon: Star,

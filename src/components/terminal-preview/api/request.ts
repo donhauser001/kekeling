@@ -196,15 +196,24 @@ export async function userRequest<T>(
 
   // 统一错误处理
   if (!response.ok) {
+    // 尝试从响应体获取错误消息
+    let errorMessage = `HTTP ${response.status}`
+    try {
+      const errorBody = await response.json() as { message?: string; error?: string }
+      errorMessage = errorBody.message || errorBody.error || errorMessage
+    } catch {
+      // 解析失败，使用默认消息
+    }
+
     if (response.status === 401) {
       // TODO: 用户登录失效处理
       console.warn('[userRequest] 401 Unauthorized:', endpoint)
-      throw new ApiError(401, '登录已过期，请重新登录', endpoint)
+      throw new ApiError(401, errorMessage || '登录已过期，请重新登录', endpoint)
     }
     if (response.status === 403) {
-      throw new ApiError(403, '无权限访问', endpoint)
+      throw new ApiError(403, errorMessage || '无权限访问', endpoint)
     }
-    throw new ApiError(response.status, `HTTP ${response.status}`, endpoint)
+    throw new ApiError(response.status, errorMessage, endpoint)
   }
 
   const result = await response.json() as { data: T }
@@ -245,17 +254,26 @@ export async function escortRequest<T>(
 
   // 统一错误处理
   if (!response.ok) {
+    // 尝试从响应体获取错误消息
+    let errorMessage = `HTTP ${response.status}`
+    try {
+      const errorBody = await response.json() as { message?: string; error?: string }
+      errorMessage = errorBody.message || errorBody.error || errorMessage
+    } catch {
+      // 解析失败，使用默认消息
+    }
+
     if (response.status === 401) {
       // 清除无效的 escortToken
       clearEscortToken()
       // TODO: 触发视角回退到 user
       console.warn('[escortRequest] 401 - escortToken 已清除:', endpoint)
-      throw new ApiError(401, '陪诊员登录已失效，请重新登录', endpoint)
+      throw new ApiError(401, errorMessage || '陪诊员登录已失效，请重新登录', endpoint)
     }
     if (response.status === 403) {
-      throw new ApiError(403, '无权限访问', endpoint)
+      throw new ApiError(403, errorMessage || '无权限访问', endpoint)
     }
-    throw new ApiError(response.status, `HTTP ${response.status}`, endpoint)
+    throw new ApiError(response.status, errorMessage, endpoint)
   }
 
   const result = await response.json() as { data: T }

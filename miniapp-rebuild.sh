@@ -6,7 +6,8 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+# 脚本在项目根目录，直接使用 SCRIPT_DIR 作为项目根目录
+PROJECT_ROOT="$SCRIPT_DIR"
 MINIAPP_DIR="$PROJECT_ROOT/miniapp-shell"
 
 # 颜色定义

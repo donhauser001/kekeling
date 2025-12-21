@@ -42,6 +42,7 @@ model User {
   messages       Message[]
   addresses      UserAddress[]
   escortApplications EscortApplication[]
+  feedbacks     Feedback[]
 
   @@map("users")
 }
@@ -2063,4 +2064,33 @@ model Article {
   @@index([isTop, sort])
   @@index([publishedAt])
   @@map("cms_articles")
+}
+
+// ========== 意见反馈模块 ==========
+
+model Feedback {
+  id        String   @id @default(uuid())
+  userId    String?  @map("user_id")          // 用户ID（可选，匿名反馈时为空）
+  type      String                             // suggestion(功能建议), bug(问题反馈), service(服务相关), experience(体验优化), other(其他)
+  content   String   @db.Text                  // 反馈内容
+  contact   String?                            // 联系方式（手机号或微信号）
+  images    String[] @default([])              // 反馈截图
+  status    String   @default("pending")       // pending(待处理), processing(处理中), resolved(已解决), closed(已关闭)
+  
+  // 处理信息
+  handlerId   String?   @map("handler_id")     // 处理人ID
+  handlerName String?   @map("handler_name")   // 处理人姓名
+  handleNote  String?   @map("handle_note")    // 处理备注
+  handledAt   DateTime? @map("handled_at")     // 处理时间
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+  @@map("feedbacks")
 }

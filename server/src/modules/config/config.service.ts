@@ -159,21 +159,15 @@ export class ConfigService {
       autoCompleteHours:
         configs[ORDER_CONFIG_KEYS.AUTO_COMPLETE_HOURS] ??
         ORDER_CONFIG_DEFAULTS[ORDER_CONFIG_KEYS.AUTO_COMPLETE_HOURS],
-      platformFeeRate:
-        configs[ORDER_CONFIG_KEYS.PLATFORM_FEE_RATE] ??
-        ORDER_CONFIG_DEFAULTS[ORDER_CONFIG_KEYS.PLATFORM_FEE_RATE],
       dispatchMode:
         configs[ORDER_CONFIG_KEYS.DISPATCH_MODE] ??
         ORDER_CONFIG_DEFAULTS[ORDER_CONFIG_KEYS.DISPATCH_MODE],
       grabTimeoutMinutes:
         configs[ORDER_CONFIG_KEYS.GRAB_TIMEOUT_MINUTES] ??
         ORDER_CONFIG_DEFAULTS[ORDER_CONFIG_KEYS.GRAB_TIMEOUT_MINUTES],
-      allowRefundBeforeStart:
-        configs[ORDER_CONFIG_KEYS.ALLOW_REFUND_BEFORE_START] ??
-        ORDER_CONFIG_DEFAULTS[ORDER_CONFIG_KEYS.ALLOW_REFUND_BEFORE_START],
-      refundFeeRate:
-        configs[ORDER_CONFIG_KEYS.REFUND_FEE_RATE] ??
-        ORDER_CONFIG_DEFAULTS[ORDER_CONFIG_KEYS.REFUND_FEE_RATE],
+      cancellationFeeRules:
+        configs[ORDER_CONFIG_KEYS.CANCELLATION_FEE_RULES] ??
+        ORDER_CONFIG_DEFAULTS[ORDER_CONFIG_KEYS.CANCELLATION_FEE_RULES],
     };
   }
 
@@ -195,12 +189,6 @@ export class ConfigService {
         value: settings.autoCompleteHours,
       });
     }
-    if (settings.platformFeeRate !== undefined) {
-      configs.push({
-        key: ORDER_CONFIG_KEYS.PLATFORM_FEE_RATE,
-        value: settings.platformFeeRate,
-      });
-    }
     if (settings.dispatchMode !== undefined) {
       configs.push({
         key: ORDER_CONFIG_KEYS.DISPATCH_MODE,
@@ -213,16 +201,10 @@ export class ConfigService {
         value: settings.grabTimeoutMinutes,
       });
     }
-    if (settings.allowRefundBeforeStart !== undefined) {
+    if (settings.cancellationFeeRules !== undefined) {
       configs.push({
-        key: ORDER_CONFIG_KEYS.ALLOW_REFUND_BEFORE_START,
-        value: settings.allowRefundBeforeStart,
-      });
-    }
-    if (settings.refundFeeRate !== undefined) {
-      configs.push({
-        key: ORDER_CONFIG_KEYS.REFUND_FEE_RATE,
-        value: settings.refundFeeRate,
+        key: ORDER_CONFIG_KEYS.CANCELLATION_FEE_RULES,
+        value: settings.cancellationFeeRules,
       });
     }
 

@@ -5,10 +5,9 @@ import {
     Clock,
     Percent,
     Users,
-    CreditCard,
     Loader2,
     AlertTriangle,
-    Settings2,
+    Info,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -26,17 +25,24 @@ import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { useOrderSettings, useUpdateOrderSettings } from '@/hooks/use-api'
-import type { OrderSettings as OrderSettingsType } from '@/lib/api'
+import type { OrderSettings as OrderSettingsType, CancellationFeeRules } from '@/lib/api'
+
+// 默认取消扣费规则
+const defaultCancellationFeeRules: CancellationFeeRules = {
+    unassigned: { enabled: true, feeRate: 0 },       // 未指派：允许退款，全额退
+    assigned: { enabled: true, feeRate: 0.1 },       // 已指派：允许退款，扣10%
+    beforeOneDay: { enabled: true, feeRate: 0.2 },   // 距服务超1天：允许退款，扣20%
+    sameDay: { enabled: true, feeRate: 0.5 },        // 服务当天：允许退款，扣50%
+    afterStart: { enabled: false, feeRate: 0.8 },    // 服务已开始：默认不允许退款
+}
 
 // 默认值
 const defaultSettings: OrderSettingsType = {
     autoCancelMinutes: 15,
     autoCompleteHours: 24,
-    platformFeeRate: 0.2,
     dispatchMode: 'assign',
     grabTimeoutMinutes: 30,
-    allowRefundBeforeStart: true,
-    refundFeeRate: 0.5,
+    cancellationFeeRules: defaultCancellationFeeRules,
 }
 
 export function OrderSettings() {
@@ -283,170 +289,312 @@ export function OrderSettings() {
 
                             {(formData.dispatchMode === 'grab' ||
                                 formData.dispatchMode === 'mixed') && (
-                                <div className='space-y-2'>
-                                    <Label htmlFor='grabTimeoutMinutes'>
-                                        抢单超时时间（分钟）
-                                    </Label>
-                                    <Input
-                                        id='grabTimeoutMinutes'
-                                        type='number'
-                                        min={5}
-                                        max={120}
-                                        value={formData.grabTimeoutMinutes}
-                                        onChange={e =>
-                                            updateField(
-                                                'grabTimeoutMinutes',
-                                                parseInt(e.target.value) || 30
-                                            )
-                                        }
-                                    />
-                                    <p className='text-muted-foreground text-xs'>
-                                        {formData.dispatchMode === 'mixed'
-                                            ? '超过此时间无人抢单，将转为指派模式'
-                                            : '超过此时间无人抢单，订单将被系统处理'}
-                                    </p>
-                                </div>
-                            )}
+                                    <div className='space-y-2'>
+                                        <Label htmlFor='grabTimeoutMinutes'>
+                                            抢单超时时间（分钟）
+                                        </Label>
+                                        <Input
+                                            id='grabTimeoutMinutes'
+                                            type='number'
+                                            min={5}
+                                            max={120}
+                                            value={formData.grabTimeoutMinutes}
+                                            onChange={e =>
+                                                updateField(
+                                                    'grabTimeoutMinutes',
+                                                    parseInt(e.target.value) || 30
+                                                )
+                                            }
+                                        />
+                                        <p className='text-muted-foreground text-xs'>
+                                            {formData.dispatchMode === 'mixed'
+                                                ? '超过此时间无人抢单，将转为指派模式'
+                                                : '超过此时间无人抢单，订单将被系统处理'}
+                                        </p>
+                                    </div>
+                                )}
                         </CardContent>
                     </Card>
 
-                    {/* 费用设置 */}
-                    <Card>
+                    {/* 取消与退款规则 - 占满整行 */}
+                    <Card className='lg:col-span-2'>
                         <CardHeader>
                             <CardTitle className='flex items-center gap-2 text-lg'>
                                 <Percent className='h-5 w-5' />
-                                费用设置
+                                取消与退款规则
                             </CardTitle>
                             <CardDescription>
-                                配置平台抽成和退款扣款比例
+                                根据订单不同阶段配置是否允许退款及扣费比例，平台抽成在服务项目中单独设置
                             </CardDescription>
                         </CardHeader>
-                        <CardContent className='space-y-6'>
-                            <div className='space-y-2'>
-                                <Label htmlFor='platformFeeRate'>
-                                    平台抽成比例（%）
-                                </Label>
-                                <Input
-                                    id='platformFeeRate'
-                                    type='number'
-                                    min={0}
-                                    max={100}
-                                    value={Math.round(formData.platformFeeRate * 100)}
-                                    onChange={e =>
-                                        updateField(
-                                            'platformFeeRate',
-                                            (parseInt(e.target.value) || 0) / 100
-                                        )
-                                    }
-                                />
-                                <p className='text-muted-foreground text-xs'>
-                                    从陪诊员服务收入中扣除的平台费用比例
-                                </p>
-                            </div>
-
-                            <Separator />
-
-                            <div className='space-y-2'>
-                                <Label htmlFor='refundFeeRate'>
-                                    取消订单扣款比例（%）
-                                </Label>
-                                <Input
-                                    id='refundFeeRate'
-                                    type='number'
-                                    min={0}
-                                    max={100}
-                                    value={Math.round(formData.refundFeeRate * 100)}
-                                    onChange={e =>
-                                        updateField(
-                                            'refundFeeRate',
-                                            (parseInt(e.target.value) || 0) / 100
-                                        )
-                                    }
-                                />
-                                <p className='text-muted-foreground text-xs'>
-                                    服务开始后取消订单时扣除的费用比例
-                                </p>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    {/* 退款政策 */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className='flex items-center gap-2 text-lg'>
-                                <CreditCard className='h-5 w-5' />
-                                退款政策
-                            </CardTitle>
-                            <CardDescription>
-                                配置订单退款相关规则
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className='space-y-6'>
-                            <div className='flex items-center justify-between'>
-                                <div className='space-y-0.5'>
-                                    <Label className='text-base'>允许服务前退款</Label>
-                                    <p className='text-muted-foreground text-sm'>
-                                        服务开始前用户可申请全额退款
-                                    </p>
-                                </div>
-                                <Switch
-                                    checked={formData.allowRefundBeforeStart}
-                                    onCheckedChange={v =>
-                                        updateField('allowRefundBeforeStart', v)
-                                    }
-                                />
-                            </div>
-
-                            <Separator />
-
-                            <div className='bg-muted/50 rounded-lg p-4'>
-                                <h4 className='text-sm font-medium mb-2'>当前退款规则说明</h4>
-                                <ul className='text-muted-foreground space-y-1 text-sm'>
-                                    {formData.allowRefundBeforeStart ? (
-                                        <li>• 服务开始前：可申请全额退款</li>
+                        <CardContent>
+                            <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
+                                {/* 未指派陪诊员 */}
+                                <div className='rounded-lg border p-4 space-y-3'>
+                                    <div className='flex items-center justify-between'>
+                                        <div>
+                                            <Label className='text-sm font-medium'>未指派陪诊员</Label>
+                                            <p className='text-muted-foreground text-xs mt-0.5'>
+                                                已支付，尚未分配陪诊员
+                                            </p>
+                                        </div>
+                                        <Switch
+                                            checked={formData.cancellationFeeRules?.unassigned?.enabled ?? true}
+                                            onCheckedChange={v =>
+                                                updateField('cancellationFeeRules', {
+                                                    ...formData.cancellationFeeRules,
+                                                    unassigned: {
+                                                        ...formData.cancellationFeeRules?.unassigned,
+                                                        enabled: v,
+                                                    },
+                                                })
+                                            }
+                                        />
+                                    </div>
+                                    {formData.cancellationFeeRules?.unassigned?.enabled ? (
+                                        <div className='flex items-center gap-2 pt-1'>
+                                            <span className='text-xs text-muted-foreground'>扣费比例</span>
+                                            <Input
+                                                type='number'
+                                                min={0}
+                                                max={100}
+                                                className='w-20 h-8'
+                                                value={Math.round((formData.cancellationFeeRules?.unassigned?.feeRate ?? 0) * 100)}
+                                                onChange={e =>
+                                                    updateField('cancellationFeeRules', {
+                                                        ...formData.cancellationFeeRules,
+                                                        unassigned: {
+                                                            ...formData.cancellationFeeRules?.unassigned,
+                                                            feeRate: (parseInt(e.target.value) || 0) / 100,
+                                                        },
+                                                    })
+                                                }
+                                            />
+                                            <span className='text-xs text-muted-foreground'>%</span>
+                                        </div>
                                     ) : (
-                                        <li>• 服务开始前：不支持退款</li>
+                                        <p className='text-xs text-destructive pt-1'>不允许退款</p>
                                     )}
-                                    <li>
-                                        • 服务开始后：扣除{' '}
-                                        {Math.round(formData.refundFeeRate * 100)}% 费用后退款
-                                    </li>
-                                    <li>• 服务完成后：不支持退款</li>
-                                </ul>
+                                </div>
+
+                                {/* 已指派陪诊员 */}
+                                <div className='rounded-lg border p-4 space-y-3'>
+                                    <div className='flex items-center justify-between'>
+                                        <div>
+                                            <Label className='text-sm font-medium'>已指派陪诊员</Label>
+                                            <p className='text-muted-foreground text-xs mt-0.5'>
+                                                已分配陪诊员
+                                            </p>
+                                        </div>
+                                        <Switch
+                                            checked={formData.cancellationFeeRules?.assigned?.enabled ?? true}
+                                            onCheckedChange={v =>
+                                                updateField('cancellationFeeRules', {
+                                                    ...formData.cancellationFeeRules,
+                                                    assigned: {
+                                                        ...formData.cancellationFeeRules?.assigned,
+                                                        enabled: v,
+                                                    },
+                                                })
+                                            }
+                                        />
+                                    </div>
+                                    {formData.cancellationFeeRules?.assigned?.enabled ? (
+                                        <div className='flex items-center gap-2 pt-1'>
+                                            <span className='text-xs text-muted-foreground'>扣费比例</span>
+                                            <Input
+                                                type='number'
+                                                min={0}
+                                                max={100}
+                                                className='w-20 h-8'
+                                                value={Math.round((formData.cancellationFeeRules?.assigned?.feeRate ?? 0) * 100)}
+                                                onChange={e =>
+                                                    updateField('cancellationFeeRules', {
+                                                        ...formData.cancellationFeeRules,
+                                                        assigned: {
+                                                            ...formData.cancellationFeeRules?.assigned,
+                                                            feeRate: (parseInt(e.target.value) || 0) / 100,
+                                                        },
+                                                    })
+                                                }
+                                            />
+                                            <span className='text-xs text-muted-foreground'>%</span>
+                                        </div>
+                                    ) : (
+                                        <p className='text-xs text-destructive pt-1'>不允许退款</p>
+                                    )}
+                                </div>
+
+                                {/* 距服务开始超过1天 */}
+                                <div className='rounded-lg border p-4 space-y-3'>
+                                    <div className='flex items-center justify-between'>
+                                        <div>
+                                            <Label className='text-sm font-medium'>距服务超1天</Label>
+                                            <p className='text-muted-foreground text-xs mt-0.5'>
+                                                距服务开始还有1天以上
+                                            </p>
+                                        </div>
+                                        <Switch
+                                            checked={formData.cancellationFeeRules?.beforeOneDay?.enabled ?? true}
+                                            onCheckedChange={v =>
+                                                updateField('cancellationFeeRules', {
+                                                    ...formData.cancellationFeeRules,
+                                                    beforeOneDay: {
+                                                        ...formData.cancellationFeeRules?.beforeOneDay,
+                                                        enabled: v,
+                                                    },
+                                                })
+                                            }
+                                        />
+                                    </div>
+                                    {formData.cancellationFeeRules?.beforeOneDay?.enabled ? (
+                                        <div className='flex items-center gap-2 pt-1'>
+                                            <span className='text-xs text-muted-foreground'>扣费比例</span>
+                                            <Input
+                                                type='number'
+                                                min={0}
+                                                max={100}
+                                                className='w-20 h-8'
+                                                value={Math.round((formData.cancellationFeeRules?.beforeOneDay?.feeRate ?? 0) * 100)}
+                                                onChange={e =>
+                                                    updateField('cancellationFeeRules', {
+                                                        ...formData.cancellationFeeRules,
+                                                        beforeOneDay: {
+                                                            ...formData.cancellationFeeRules?.beforeOneDay,
+                                                            feeRate: (parseInt(e.target.value) || 0) / 100,
+                                                        },
+                                                    })
+                                                }
+                                            />
+                                            <span className='text-xs text-muted-foreground'>%</span>
+                                        </div>
+                                    ) : (
+                                        <p className='text-xs text-destructive pt-1'>不允许退款</p>
+                                    )}
+                                </div>
+
+                                {/* 服务当天 */}
+                                <div className='rounded-lg border p-4 space-y-3'>
+                                    <div className='flex items-center justify-between'>
+                                        <div>
+                                            <Label className='text-sm font-medium'>服务当天</Label>
+                                            <p className='text-muted-foreground text-xs mt-0.5'>
+                                                距离服务开始不足1天
+                                            </p>
+                                        </div>
+                                        <Switch
+                                            checked={formData.cancellationFeeRules?.sameDay?.enabled ?? true}
+                                            onCheckedChange={v =>
+                                                updateField('cancellationFeeRules', {
+                                                    ...formData.cancellationFeeRules,
+                                                    sameDay: {
+                                                        ...formData.cancellationFeeRules?.sameDay,
+                                                        enabled: v,
+                                                    },
+                                                })
+                                            }
+                                        />
+                                    </div>
+                                    {formData.cancellationFeeRules?.sameDay?.enabled ? (
+                                        <div className='flex items-center gap-2 pt-1'>
+                                            <span className='text-xs text-muted-foreground'>扣费比例</span>
+                                            <Input
+                                                type='number'
+                                                min={0}
+                                                max={100}
+                                                className='w-20 h-8'
+                                                value={Math.round((formData.cancellationFeeRules?.sameDay?.feeRate ?? 0) * 100)}
+                                                onChange={e =>
+                                                    updateField('cancellationFeeRules', {
+                                                        ...formData.cancellationFeeRules,
+                                                        sameDay: {
+                                                            ...formData.cancellationFeeRules?.sameDay,
+                                                            feeRate: (parseInt(e.target.value) || 0) / 100,
+                                                        },
+                                                    })
+                                                }
+                                            />
+                                            <span className='text-xs text-muted-foreground'>%</span>
+                                        </div>
+                                    ) : (
+                                        <p className='text-xs text-destructive pt-1'>不允许退款</p>
+                                    )}
+                                </div>
+
+                                {/* 服务已开始 */}
+                                <div className='rounded-lg border p-4 space-y-3'>
+                                    <div className='flex items-center justify-between'>
+                                        <div>
+                                            <Label className='text-sm font-medium'>服务已开始</Label>
+                                            <p className='text-muted-foreground text-xs mt-0.5'>
+                                                陪诊员已开始服务
+                                            </p>
+                                        </div>
+                                        <Switch
+                                            checked={formData.cancellationFeeRules?.afterStart?.enabled ?? false}
+                                            onCheckedChange={v =>
+                                                updateField('cancellationFeeRules', {
+                                                    ...formData.cancellationFeeRules,
+                                                    afterStart: {
+                                                        ...formData.cancellationFeeRules?.afterStart,
+                                                        enabled: v,
+                                                    },
+                                                })
+                                            }
+                                        />
+                                    </div>
+                                    {formData.cancellationFeeRules?.afterStart?.enabled ? (
+                                        <div className='flex items-center gap-2 pt-1'>
+                                            <span className='text-xs text-muted-foreground'>扣费比例</span>
+                                            <Input
+                                                type='number'
+                                                min={0}
+                                                max={100}
+                                                className='w-20 h-8'
+                                                value={Math.round((formData.cancellationFeeRules?.afterStart?.feeRate ?? 0) * 100)}
+                                                onChange={e =>
+                                                    updateField('cancellationFeeRules', {
+                                                        ...formData.cancellationFeeRules,
+                                                        afterStart: {
+                                                            ...formData.cancellationFeeRules?.afterStart,
+                                                            feeRate: (parseInt(e.target.value) || 0) / 100,
+                                                        },
+                                                    })
+                                                }
+                                            />
+                                            <span className='text-xs text-muted-foreground'>%</span>
+                                        </div>
+                                    ) : (
+                                        <p className='text-xs text-destructive pt-1'>不允许退款</p>
+                                    )}
+                                </div>
+
+                                {/* 服务已完成 - 固定不可退款 */}
+                                <div className='rounded-lg border border-dashed p-4 space-y-3 bg-muted/30'>
+                                    <div className='flex items-center justify-between'>
+                                        <div>
+                                            <Label className='text-sm font-medium text-muted-foreground'>服务已完成</Label>
+                                            <p className='text-muted-foreground text-xs mt-0.5'>
+                                                订单已完成确认
+                                            </p>
+                                        </div>
+                                        <Switch checked={false} disabled />
+                                    </div>
+                                    <p className='text-xs text-muted-foreground pt-1'>不支持取消</p>
+                                </div>
+                            </div>
+
+                            {/* 规则说明提示 */}
+                            <div className='mt-6 flex items-start gap-2 text-muted-foreground bg-muted/50 rounded-lg p-3'>
+                                <Info className='h-4 w-4 mt-0.5 flex-shrink-0' />
+                                <div className='text-xs space-y-1'>
+                                    <p><strong>规则说明：</strong>订单取消时，根据当前所处阶段按对应扣费比例退款。</p>
+                                    <p>例如：订单金额100元，扣费20%，则退还80元给用户，扣除的20元按服务项目抽成比例分配。</p>
+                                </div>
                             </div>
                         </CardContent>
                     </Card>
                 </div>
-
-                {/* 设置说明 */}
-                <Card className='mt-6'>
-                    <CardHeader>
-                        <CardTitle className='flex items-center gap-2 text-lg'>
-                            <Settings2 className='h-5 w-5' />
-                            设置说明
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className='text-muted-foreground space-y-2 text-sm'>
-                            <p>
-                                <strong>订单超时设置：</strong>
-                                控制订单各环节的超时时间，确保订单流程顺畅进行。
-                            </p>
-                            <p>
-                                <strong>派单模式：</strong>
-                                "抢单模式"适合陪诊员主动性强的团队；"指派模式"适合需要精细管控的场景；"混合模式"兼顾效率和灵活性。
-                            </p>
-                            <p>
-                                <strong>费用设置：</strong>
-                                平台抽成将从每笔订单的陪诊员收入中自动扣除，请根据实际运营成本合理设置。
-                            </p>
-                            <p>
-                                <strong>退款政策：</strong>
-                                合理的退款政策可以提升用户信任度，同时保护陪诊员的劳动权益。
-                            </p>
-                        </div>
-                    </CardContent>
-                </Card>
             </Main>
         </>
     )

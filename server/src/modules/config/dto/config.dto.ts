@@ -21,33 +21,60 @@ export class BatchUpdateConfigDto {
 export const ORDER_CONFIG_KEYS = {
   AUTO_CANCEL_MINUTES: 'order.auto_cancel_minutes',
   AUTO_COMPLETE_HOURS: 'order.auto_complete_hours',
-  PLATFORM_FEE_RATE: 'order.platform_fee_rate',
   DISPATCH_MODE: 'order.dispatch_mode',
   GRAB_TIMEOUT_MINUTES: 'order.grab_timeout_minutes',
-  ALLOW_REFUND_BEFORE_START: 'order.allow_refund_before_start',
-  REFUND_FEE_RATE: 'order.refund_fee_rate',
+  // 分阶段取消扣费规则
+  CANCELLATION_FEE_RULES: 'order.cancellation_fee_rules',
 } as const;
+
+// 单个阶段的取消扣费配置
+export interface CancellationFeeStage {
+  /** 是否允许退款 */
+  enabled: boolean;
+  /** 扣费比例 (0-1) */
+  feeRate: number;
+}
+
+// 取消扣费规则类型
+export interface CancellationFeeRules {
+  /** 未指派陪诊员阶段 */
+  unassigned: CancellationFeeStage;
+  /** 已指派陪诊员阶段 */
+  assigned: CancellationFeeStage;
+  /** 距离服务开始超过1天 */
+  beforeOneDay: CancellationFeeStage;
+  /** 服务当天（不足1天） */
+  sameDay: CancellationFeeStage;
+  /** 服务已开始 */
+  afterStart: CancellationFeeStage;
+}
+
+// 默认取消扣费规则
+export const DEFAULT_CANCELLATION_FEE_RULES: CancellationFeeRules = {
+  unassigned: { enabled: true, feeRate: 0 },       // 未指派：允许退款，全额退
+  assigned: { enabled: true, feeRate: 0.1 },       // 已指派：允许退款，扣10%
+  beforeOneDay: { enabled: true, feeRate: 0.2 },   // 距服务超1天：允许退款，扣20%
+  sameDay: { enabled: true, feeRate: 0.5 },        // 服务当天：允许退款，扣50%
+  afterStart: { enabled: false, feeRate: 0.8 },    // 服务已开始：默认不允许退款
+};
 
 // 订单设置默认值
 export const ORDER_CONFIG_DEFAULTS: Record<string, any> = {
   [ORDER_CONFIG_KEYS.AUTO_CANCEL_MINUTES]: 15,
   [ORDER_CONFIG_KEYS.AUTO_COMPLETE_HOURS]: 24,
-  [ORDER_CONFIG_KEYS.PLATFORM_FEE_RATE]: 0.2,
   [ORDER_CONFIG_KEYS.DISPATCH_MODE]: 'assign', // grab, assign, mixed
   [ORDER_CONFIG_KEYS.GRAB_TIMEOUT_MINUTES]: 30,
-  [ORDER_CONFIG_KEYS.ALLOW_REFUND_BEFORE_START]: true,
-  [ORDER_CONFIG_KEYS.REFUND_FEE_RATE]: 0.5,
+  [ORDER_CONFIG_KEYS.CANCELLATION_FEE_RULES]: DEFAULT_CANCELLATION_FEE_RULES,
 };
 
 // 订单设置类型
 export interface OrderSettings {
   autoCancelMinutes: number;
   autoCompleteHours: number;
-  platformFeeRate: number;
   dispatchMode: 'grab' | 'assign' | 'mixed';
   grabTimeoutMinutes: number;
-  allowRefundBeforeStart: boolean;
-  refundFeeRate: number;
+  /** 分阶段取消扣费规则 */
+  cancellationFeeRules: CancellationFeeRules;
 }
 
 // ============================================

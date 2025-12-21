@@ -20,6 +20,7 @@ const TaroImage = TaroComponents.Image
 const TaroInput = TaroComponents.Input
 const TaroTextarea = TaroComponents.Textarea
 const TaroScrollView = TaroComponents.ScrollView
+const TaroRichText = TaroComponents.RichText
 import type {
   BoxProps,
   TextProps,
@@ -326,6 +327,39 @@ export const ScrollView = forwardRef<any, ScrollViewProps>(function ScrollView(
     >
       {children}
     </TaroScrollView>
+  )
+})
+
+// ============================================================================
+// RichText 组件 - 小程序端使用 Taro RichText
+// ============================================================================
+
+export interface RichTextProps {
+  /** HTML 内容（nodes 为字符串时直接使用） */
+  nodes?: string
+  className?: string
+  style?: React.CSSProperties
+}
+
+/**
+ * RichText - 富文本组件
+ * 小程序端使用 Taro RichText 渲染 HTML 内容
+ */
+export const RichText = forwardRef<any, RichTextProps>(function RichText(
+  { nodes, className, style, ...rest },
+  _ref
+) {
+  if (!nodes) {
+    return null
+  }
+
+  return (
+    <TaroRichText
+      className={className}
+      style={style}
+      nodes={nodes}
+      {...rest}
+    />
   )
 })
 

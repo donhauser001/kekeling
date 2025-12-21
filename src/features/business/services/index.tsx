@@ -7,7 +7,6 @@ import {
     type ColumnFiltersState,
 } from '@tanstack/react-table'
 import {
-    PackageSearch,
     Plus,
     MoreHorizontal,
     Pencil,
@@ -20,7 +19,10 @@ import {
     Percent,
     ArrowUpCircle,
     ArrowDownCircle,
+    ImageOff,
+    PackageSearch,
 } from 'lucide-react'
+import { AppIcon, type IconName } from '@/components/ui/icon-picker'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
@@ -60,13 +62,8 @@ import {
 import type { Service } from '@/lib/api'
 import { ServicesDetailSheet, getColumns, ServicesTable } from './components'
 
-// 分类颜色映射
-const categoryColors: Record<string, string> = {
-    '陪诊服务': 'bg-blue-500',
-    '代办服务': 'bg-green-500',
-    '陪护服务': 'bg-pink-500',
-    '其他服务': 'bg-gray-500',
-}
+// 默认分类颜色
+const DEFAULT_CATEGORY_COLOR = '#6b7280'
 
 // 状态选项
 const statusOptions = [
@@ -134,10 +131,16 @@ export function Services() {
         return categories?.find(c => c.id === categoryId)?.name || '未知分类'
     }
 
-    // 获取分类颜色
+    // 获取分类颜色（直接返回颜色值或默认颜色）
     const getCategoryColor = (categoryId: string) => {
-        const name = getCategoryName(categoryId)
-        return categoryColors[name] || 'bg-gray-500'
+        const category = categories?.find(c => c.id === categoryId)
+        return category?.color || DEFAULT_CATEGORY_COLOR
+    }
+
+    // 获取分类图标
+    const getCategoryIcon = (categoryId: string) => {
+        const category = categories?.find(c => c.id === categoryId)
+        return (category?.icon || 'package-search') as IconName
     }
 
     // 查看详情
@@ -211,6 +214,7 @@ export function Services() {
                 onToggleStatus: handleToggleStatus,
                 getCategoryName,
                 getCategoryColor,
+                getCategoryIcon,
             }),
         [categories]
     )
@@ -250,124 +254,141 @@ export function Services() {
     // 卡片视图
     const renderGridView = () => (
         <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'>
-            {services.map(service => (
-                <Card
-                    key={service.id}
-                    className={cn('group cursor-pointer transition-shadow hover:shadow-md', service.status !== 'active' && 'opacity-60')}
-                    onClick={() => handleView(service)}
-                >
-                    <CardHeader className='pb-3'>
-                        <div className='flex items-start justify-between'>
-                            <div className='flex items-center gap-3'>
-                                <div
-                                    className={cn(
-                                        'flex h-10 w-10 items-center justify-center rounded-lg',
-                                        getCategoryColor(service.categoryId)
-                                    )}
-                                >
-                                    <PackageSearch className='h-5 w-5 text-white' />
-                                </div>
-                                <div>
-                                    <CardTitle className='text-sm font-medium line-clamp-1'>
-                                        {service.name}
-                                    </CardTitle>
-                                    <Badge variant='outline' className='mt-1 text-xs'>
-                                        {getCategoryName(service.categoryId)}
-                                    </Badge>
-                                </div>
-                            </div>
-                            <DropdownMenu modal={false}>
-                                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                    <Button
-                                        variant='ghost'
-                                        size='icon'
-                                        className='h-8 w-8 opacity-0 group-hover:opacity-100'
-                                    >
-                                        <MoreHorizontal className='h-4 w-4' />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align='end' className='w-[160px]'>
-                                    <DropdownMenuItem
-                                        onClick={(e) => { e.stopPropagation(); handleView(service) }}
-                                    >
-                                        查看详情
-                                        <DropdownMenuShortcut><Eye className='h-4 w-4' /></DropdownMenuShortcut>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                        onClick={(e) => { e.stopPropagation(); handleEdit(service) }}
-                                    >
-                                        编辑
-                                        <DropdownMenuShortcut><Pencil className='h-4 w-4' /></DropdownMenuShortcut>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                        onClick={(e) => { e.stopPropagation(); handleToggleStatus(service) }}
-                                    >
-                                        {service.status === 'active' ? '下架' : '上架'}
-                                        <DropdownMenuShortcut>
-                                            {service.status === 'active' ? (
-                                                <ArrowDownCircle className='h-4 w-4' />
-                                            ) : (
-                                                <ArrowUpCircle className='h-4 w-4' />
-                                            )}
-                                        </DropdownMenuShortcut>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem
-                                        className='text-destructive focus:text-destructive focus:bg-destructive/10'
-                                        onClick={(e) => { e.stopPropagation(); handleDelete(service) }}
-                                    >
-                                        删除
-                                        <DropdownMenuShortcut><Trash2 className='h-4 w-4' /></DropdownMenuShortcut>
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </div>
-                    </CardHeader>
-                    <CardContent className='space-y-2.5'>
-                        <CardDescription className='line-clamp-2 text-xs'>
-                            {service.description || '暂无描述'}
-                        </CardDescription>
-                        <div className='flex items-center justify-between text-sm'>
-                            <div className='font-semibold text-primary'>
-                                ¥{service.price}
-                                {service.originalPrice && (
-                                    <span className='text-muted-foreground ml-1 text-xs line-through'>
-                                        ¥{service.originalPrice}
-                                    </span>
-                                )}
-                                <span className='text-muted-foreground text-xs font-normal'>
-                                    /{service.unit}
-                                </span>
-                            </div>
-                            {service.duration && (
-                                <div className='text-muted-foreground flex items-center gap-1 text-xs'>
-                                    <Clock className='h-3 w-3' />
-                                    {service.duration}
+            {services.map(service => {
+                // 优先使用服务数据中的分类信息
+                const categoryColor = service.category?.color || getCategoryColor(service.categoryId)
+                const categoryIcon = (service.category?.icon || getCategoryIcon(service.categoryId)) as IconName
+                const categoryName = service.category?.name || getCategoryName(service.categoryId)
+
+                return (
+                    <Card
+                        key={service.id}
+                        className={cn('group cursor-pointer overflow-hidden transition-shadow hover:shadow-md p-0', service.status !== 'active' && 'opacity-60')}
+                        onClick={() => handleView(service)}
+                    >
+                        {/* 封面图区域 */}
+                        <div className='relative aspect-[16/9] overflow-hidden bg-muted'>
+                            {service.coverImage ? (
+                                <img
+                                    src={service.coverImage}
+                                    alt={service.name}
+                                    className='h-full w-full object-cover transition-transform group-hover:scale-105'
+                                />
+                            ) : (
+                                <div className='flex h-full w-full items-center justify-center'>
+                                    <ImageOff className='h-12 w-12 text-muted-foreground/40' />
                                 </div>
                             )}
-                        </div>
-                        <div className='border-t pt-2'>
-                            <div className='flex items-center gap-4 text-xs'>
-                                <div className='text-muted-foreground'>
-                                    <span className='font-medium'>
-                                        {service.orderCount.toLocaleString()}
-                                    </span>{' '}
-                                    单
-                                </div>
-                                <div className='flex items-center gap-1 text-amber-500'>
-                                    <Star className='h-3 w-3 fill-current' />
-                                    <span className='font-medium'>{service.rating}%</span>
-                                </div>
-                                <div className='flex items-center gap-1 text-emerald-600'>
-                                    <Percent className='h-3 w-3' />
-                                    <span className='font-medium'>{service.commissionRate ?? 70}</span>
-                                </div>
-                                <div className='ml-auto'>{getStatusBadge(service.status)}</div>
+                            {/* 分类标签 */}
+                            <div
+                                className='absolute left-2 top-2 flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-white shadow-sm'
+                                style={{ backgroundColor: categoryColor }}
+                            >
+                                <AppIcon name={categoryIcon} size={14} className='text-white' />
+                                {categoryName}
+                            </div>
+                            {/* 操作菜单 */}
+                            <div className='absolute right-2 top-2'>
+                                <DropdownMenu modal={false}>
+                                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                        <Button
+                                            variant='secondary'
+                                            size='icon'
+                                            className='h-8 w-8 opacity-0 shadow-sm group-hover:opacity-100'
+                                        >
+                                            <MoreHorizontal className='h-4 w-4' />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align='end' className='w-[160px]'>
+                                        <DropdownMenuItem
+                                            onClick={(e) => { e.stopPropagation(); handleView(service) }}
+                                        >
+                                            查看详情
+                                            <DropdownMenuShortcut><Eye className='h-4 w-4' /></DropdownMenuShortcut>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                            onClick={(e) => { e.stopPropagation(); handleEdit(service) }}
+                                        >
+                                            编辑
+                                            <DropdownMenuShortcut><Pencil className='h-4 w-4' /></DropdownMenuShortcut>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                            onClick={(e) => { e.stopPropagation(); handleToggleStatus(service) }}
+                                        >
+                                            {service.status === 'active' ? '下架' : '上架'}
+                                            <DropdownMenuShortcut>
+                                                {service.status === 'active' ? (
+                                                    <ArrowDownCircle className='h-4 w-4' />
+                                                ) : (
+                                                    <ArrowUpCircle className='h-4 w-4' />
+                                                )}
+                                            </DropdownMenuShortcut>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem
+                                            className='text-destructive focus:text-destructive focus:bg-destructive/10'
+                                            onClick={(e) => { e.stopPropagation(); handleDelete(service) }}
+                                        >
+                                            删除
+                                            <DropdownMenuShortcut><Trash2 className='h-4 w-4' /></DropdownMenuShortcut>
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
                             </div>
                         </div>
-                    </CardContent>
-                </Card>
-            ))}
+
+                        <CardHeader className='px-3 pb-2 pt-3'>
+                            <CardTitle className='text-sm font-medium line-clamp-1'>
+                                {service.name}
+                            </CardTitle>
+                            <CardDescription className='line-clamp-2 text-xs'>
+                                {service.description || '暂无描述'}
+                            </CardDescription>
+                        </CardHeader>
+
+                        <CardContent className='space-y-2.5 px-3 pb-3 pt-0'>
+                            <div className='flex items-center justify-between text-sm'>
+                                <div className='font-semibold text-primary'>
+                                    ¥{service.price}
+                                    {service.originalPrice && (
+                                        <span className='text-muted-foreground ml-1 text-xs line-through'>
+                                            ¥{service.originalPrice}
+                                        </span>
+                                    )}
+                                    <span className='text-muted-foreground text-xs font-normal'>
+                                        /{service.unit}
+                                    </span>
+                                </div>
+                                {service.duration && (
+                                    <div className='text-muted-foreground flex items-center gap-1 text-xs'>
+                                        <Clock className='h-3 w-3' />
+                                        {service.duration}
+                                    </div>
+                                )}
+                            </div>
+                            <div className='border-t pt-2'>
+                                <div className='flex items-center gap-4 text-xs'>
+                                    <div className='text-muted-foreground'>
+                                        <span className='font-medium'>
+                                            {service.orderCount.toLocaleString()}
+                                        </span>{' '}
+                                        单
+                                    </div>
+                                    <div className='flex items-center gap-1 text-amber-500'>
+                                        <Star className='h-3 w-3 fill-current' />
+                                        <span className='font-medium'>{service.rating}%</span>
+                                    </div>
+                                    <div className='flex items-center gap-1 text-emerald-600'>
+                                        <Percent className='h-3 w-3' />
+                                        <span className='font-medium'>{service.commissionRate ?? 70}</span>
+                                    </div>
+                                    <div className='ml-auto'>{getStatusBadge(service.status)}</div>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )
+            })}
         </div>
     )
 
@@ -375,21 +396,14 @@ export function Services() {
     const renderGridSkeleton = () => (
         <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'>
             {Array.from({ length: 8 }).map((_, i) => (
-                <Card key={i}>
-                    <CardHeader className='pb-3'>
-                        <div className='flex items-start justify-between'>
-                            <div className='flex items-center gap-3'>
-                                <Skeleton className='h-10 w-10 rounded-lg' />
-                                <div className='space-y-2'>
-                                    <Skeleton className='h-4 w-24' />
-                                    <Skeleton className='h-5 w-16' />
-                                </div>
-                            </div>
-                            <Skeleton className='h-8 w-8 rounded' />
-                        </div>
+                <Card key={i} className='overflow-hidden'>
+                    {/* 封面图骨架 */}
+                    <Skeleton className='aspect-[16/9] w-full' />
+                    <CardHeader className='pb-2 pt-3'>
+                        <Skeleton className='h-4 w-32' />
+                        <Skeleton className='mt-1 h-8 w-full' />
                     </CardHeader>
-                    <CardContent className='space-y-2.5'>
-                        <Skeleton className='h-8 w-full' />
+                    <CardContent className='space-y-2.5 pb-3'>
                         <div className='flex justify-between'>
                             <Skeleton className='h-5 w-20' />
                             <Skeleton className='h-4 w-12' />

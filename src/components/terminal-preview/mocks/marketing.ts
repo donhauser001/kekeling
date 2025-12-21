@@ -67,7 +67,8 @@ export function getMockMembershipPlans(): MembershipPlan[] {
       description: '适合短期体验',
       price: 29,
       originalPrice: 39,
-      durationDays: 30,
+      duration: 30,
+      features: ['基础权益', '专属客服'],
     },
     {
       id: 'plan-2',
@@ -75,8 +76,9 @@ export function getMockMembershipPlans(): MembershipPlan[] {
       description: '超值推荐',
       price: 79,
       originalPrice: 117,
-      durationDays: 90,
-      isRecommended: true,
+      duration: 90,
+      recommended: true,
+      features: ['全部权益', '专属折扣', '积分加倍'],
     },
     {
       id: 'plan-3',
@@ -84,7 +86,8 @@ export function getMockMembershipPlans(): MembershipPlan[] {
       description: '最划算的选择',
       price: 268,
       originalPrice: 468,
-      durationDays: 365,
+      duration: 365,
+      features: ['全部权益', '专属折扣', '积分双倍', '优先预约'],
     },
   ]
 }
@@ -110,44 +113,56 @@ export function getMockPointsData(): PointsInfo {
  */
 export function getMockPointsRecords(): PointsRecordsResponse {
   return {
-    items: [
+    data: [
       {
         id: 'record-1',
-        title: '每日签到',
         points: 10,
+        balance: 1280,
         type: 'earn',
-        createdAt: '2024-12-12 09:00',
+        source: 'daily_checkin',
+        description: '每日签到',
+        createdAt: '2024-12-12T09:00:00Z',
       },
       {
         id: 'record-2',
-        title: '完成订单奖励',
         points: 50,
+        balance: 1270,
         type: 'earn',
-        createdAt: '2024-12-11 15:30',
+        source: 'order_complete',
+        description: '完成订单奖励',
+        createdAt: '2024-12-11T15:30:00Z',
       },
       {
         id: 'record-3',
-        title: '兑换优惠券',
-        points: 100,
+        points: -100,
+        balance: 1220,
         type: 'use',
-        createdAt: '2024-12-10 12:00',
+        source: 'coupon_exchange',
+        description: '兑换优惠券',
+        createdAt: '2024-12-10T12:00:00Z',
       },
       {
         id: 'record-4',
-        title: '邀请好友奖励',
         points: 200,
+        balance: 1320,
         type: 'earn',
-        createdAt: '2024-12-09 18:00',
+        source: 'referral_reward',
+        description: '邀请好友奖励',
+        createdAt: '2024-12-09T18:00:00Z',
       },
       {
         id: 'record-5',
-        title: '抵扣订单',
-        points: 50,
+        points: -50,
+        balance: 1120,
         type: 'use',
-        createdAt: '2024-12-08 10:30',
+        source: 'order_consume',
+        description: '抵扣订单',
+        createdAt: '2024-12-08T10:30:00Z',
       },
     ],
     total: 5,
+    page: 1,
+    pageSize: 20,
   }
 }
 
@@ -363,8 +378,10 @@ export function getMockEscortDetail(id: string): EscortDetail {
  */
 export function getMockPointsRecordsEmpty(): PointsRecordsResponse {
   return {
-    items: [],
+    data: [],
     total: 0,
+    page: 1,
+    pageSize: 20,
   }
 }
 

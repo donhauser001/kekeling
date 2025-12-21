@@ -1,11 +1,16 @@
 /**
  * 地址管理列表页面
+ * 
+ * 改造记录 (2025-12-21):
+ * - useQuery/useMutation → useState + useEffect
+ * - HTML 元素 → 跨平台原语 (Box/Text)
+ * - 添加 wxScale 和 style 双写
+ * - 图标使用 size 和 color props
  */
 
-import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState, useEffect } from 'react'
+import { Box, Text, ScrollView, Image, Icon } from '../../ui/primitives'
 import {
-  ArrowLeft,
   Plus,
   MapPin,
   Phone,
@@ -14,8 +19,9 @@ import {
   Trash,
   Star,
 } from '../../ui/lucide-compat'
+import { isWxEnvironment } from '../../platform/env'
 import type { ThemeSettings } from '../../types'
-import { previewApi } from '../../api'
+import { previewApi, type Address } from '../../api'
 
 interface AddressListPageProps {
   themeSettings: ThemeSettings
@@ -24,228 +30,438 @@ interface AddressListPageProps {
   onNavigate?: (page: string, params?: Record<string, string>) => void
 }
 
+const wxScale = isWxEnvironment() ? 1.1 : 1
+const wxSafeAreaTop = isWxEnvironment() ? 44 : 0
+
 export function AddressListPage({
   themeSettings,
   isDarkMode = false,
   onBack,
   onNavigate,
 }: AddressListPageProps) {
-  const queryClient = useQueryClient()
-  const [_menuOpenId, setMenuOpenId] = useState<string | null>(null)
-  void _menuOpenId // 状态值保留用于后续菜单逻辑
-
-  // 获取地址列表
-  const { data: addresses = [], isLoading } = useQuery({
-    queryKey: ['preview', 'addresses'],
-    queryFn: () => previewApi.getAddresses(),
-  })
-
-  // 删除地址
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => previewApi.deleteAddress(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['preview', 'addresses'] })
-    },
-  })
-
-  // 设为默认
-  const setDefaultMutation = useMutation({
-    mutationFn: (id: string) => previewApi.setDefaultAddress(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['preview', 'addresses'] })
-    },
-  })
+  // 状态管理
+  const [addresses, setAddresses] = useState<Address[]>([])
+  const [loading, setLoading] = useState(true)
+  const [actionLoading, setActionLoading] = useState<string | null>(null)
 
   // 颜色配置
+  const primaryColor = themeSettings.primaryColor
   const bgColor = isDarkMode ? '#1a1a1a' : '#f5f7fa'
   const cardBg = isDarkMode ? '#2a2a2a' : '#ffffff'
   const textPrimary = isDarkMode ? '#f3f4f6' : '#111827'
   const textSecondary = isDarkMode ? '#9ca3af' : '#6b7280'
   const borderColor = isDarkMode ? '#3a3a3a' : '#f3f4f6'
 
-  const handleDelete = (id: string) => {
-    if (confirm('确定要删除这个地址吗？')) {
-      deleteMutation.mutate(id)
+  // 获取地址列表
+  useEffect(() => {
+    setLoading(true)
+    previewApi.getAddresses()
+      .then(data => setAddresses(data || []))
+      .catch(console.error)
+      .finally(() => setLoading(false))
+  }, [])
+
+  // 刷新列表
+  const refreshList = () => {
+    previewApi.getAddresses()
+      .then(data => setAddresses(data || []))
+      .catch(console.error)
+  }
+
+  // 删除地址
+  const handleDelete = async (id: string) => {
+    if (!confirm('确定要删除这个地址吗？')) return
+
+    setActionLoading(id)
+    try {
+      await previewApi.deleteAddress(id)
+      refreshList()
+    } catch (err) {
+      console.error('删除失败:', err)
+    } finally {
+      setActionLoading(null)
     }
-    setMenuOpenId(null)
   }
 
-  const handleSetDefault = (id: string) => {
-    setDefaultMutation.mutate(id)
-    setMenuOpenId(null)
+  // 设为默认
+  const handleSetDefault = async (id: string) => {
+    setActionLoading(id)
+    try {
+      await previewApi.setDefaultAddress(id)
+      refreshList()
+    } catch (err) {
+      console.error('设置默认失败:', err)
+    } finally {
+      setActionLoading(null)
+    }
   }
 
-  return (
-    <div style={{ backgroundColor: bgColor }} className='min-h-full'>
-      {/* 顶部导航 */}
-      <div
-        className='sticky top-0 z-10 flex items-center justify-between px-4 py-3 border-b'
+  // 骨架屏
+  const renderSkeleton = () => (
+    <Box style={{ padding: 16 * wxScale, display: 'flex', flexDirection: 'column', gap: 12 * wxScale }}>
+      {[1, 2, 3].map((i) => (
+        <Box
+          key={i}
+          style={{
+            padding: 16 * wxScale,
+            borderRadius: 8 * wxScale,
+            backgroundColor: cardBg,
+          }}
+        >
+          <Box
+            style={{
+              height: 20 * wxScale,
+              width: 96 * wxScale,
+              borderRadius: 4 * wxScale,
+              backgroundColor: borderColor,
+              marginBottom: 8 * wxScale,
+            }}
+          />
+          <Box
+            style={{
+              height: 16 * wxScale,
+              width: '100%',
+              borderRadius: 4 * wxScale,
+              backgroundColor: borderColor,
+              marginBottom: 8 * wxScale,
+            }}
+          />
+          <Box
+            style={{
+              height: 16 * wxScale,
+              width: 128 * wxScale,
+              borderRadius: 4 * wxScale,
+              backgroundColor: borderColor,
+            }}
+          />
+        </Box>
+      ))}
+    </Box>
+  )
+
+  // 空状态
+  const renderEmpty = () => (
+    <Box
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingTop: 64 * wxScale,
+        paddingBottom: 64 * wxScale,
+        paddingLeft: 16 * wxScale,
+        paddingRight: 16 * wxScale,
+      }}
+    >
+      <Box
         style={{
-          backgroundColor: cardBg,
-          borderColor,
+          width: 64 * wxScale,
+          height: 64 * wxScale,
+          borderRadius: 32 * wxScale,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: `${primaryColor}15`,
+          marginBottom: 16 * wxScale,
         }}
       >
-        <div className='flex items-center gap-3'>
-          <button
-            onClick={onBack}
-            className='p-1 -ml-1 rounded-full hover:bg-black/5 active:bg-black/10'
-          >
-            <ArrowLeft className='h-5 w-5' style={{ color: textPrimary }} />
-          </button>
-          <span className='font-medium' style={{ color: textPrimary }}>
-            地址管理
-          </span>
-        </div>
-        <button
-          onClick={() => onNavigate?.('address-edit', { mode: 'create' })}
-          className='p-2 rounded-full'
-          style={{ backgroundColor: `${themeSettings.primaryColor}15` }}
+        <MapPin size={32 * wxScale} color={primaryColor} />
+      </Box>
+      <Text
+        style={{
+          display: 'block',
+          textAlign: 'center',
+          fontWeight: 500,
+          fontSize: 16 * wxScale,
+          color: textPrimary,
+          marginBottom: 8 * wxScale,
+        }}
+      >
+        暂无收货地址
+      </Text>
+      <Text
+        style={{
+          display: 'block',
+          textAlign: 'center',
+          fontSize: 14 * wxScale,
+          color: textSecondary,
+          marginBottom: 16 * wxScale,
+        }}
+      >
+        添加地址后可快速选择
+      </Text>
+      <Box
+        onClick={() => onNavigate?.('address-edit', { mode: 'create' })}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8 * wxScale,
+          paddingLeft: 16 * wxScale,
+          paddingRight: 16 * wxScale,
+          paddingTop: 8 * wxScale,
+          paddingBottom: 8 * wxScale,
+          borderRadius: 9999,
+          backgroundColor: primaryColor,
+        }}
+      >
+        <Plus size={16 * wxScale} color="#fff" />
+        <Text style={{ fontSize: 14 * wxScale, color: '#fff' }}>
+          添加地址
+        </Text>
+      </Box>
+    </Box>
+  )
+
+  // 地址列表
+  const renderAddressList = () => (
+    <Box style={{ padding: 16 * wxScale, display: 'flex', flexDirection: 'column', gap: 12 * wxScale }}>
+      {addresses.map((addr) => (
+        <Box
+          key={addr.id}
+          style={{
+            position: 'relative',
+            borderRadius: 8 * wxScale,
+            overflow: 'hidden',
+            backgroundColor: cardBg,
+          }}
         >
-          <Plus className='h-5 w-5' style={{ color: themeSettings.primaryColor }} />
-        </button>
-      </div>
-
-      {/* 加载状态 */}
-      {isLoading && (
-        <div className='p-4 space-y-3'>
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className='p-4 rounded-lg animate-pulse'
-              style={{ backgroundColor: cardBg }}
+          {/* 默认标签 */}
+          {addr.isDefault && (
+            <Box
+              style={{
+                position: 'absolute',
+                top: 0,
+                right: 0,
+                paddingLeft: 8 * wxScale,
+                paddingRight: 8 * wxScale,
+                paddingTop: 2 * wxScale,
+                paddingBottom: 2 * wxScale,
+                fontSize: 12 * wxScale,
+                color: '#fff',
+                backgroundColor: primaryColor,
+                borderBottomLeftRadius: 8 * wxScale,
+              }}
             >
-              <div className='h-5 w-24 rounded mb-2' style={{ backgroundColor: borderColor }} />
-              <div className='h-4 w-full rounded mb-2' style={{ backgroundColor: borderColor }} />
-              <div className='h-4 w-32 rounded' style={{ backgroundColor: borderColor }} />
-            </div>
-          ))}
-        </div>
-      )}
+              <Text style={{ fontSize: 12 * wxScale, color: '#fff' }}>默认</Text>
+            </Box>
+          )}
 
-      {/* 地址列表 */}
-      {!isLoading && addresses.length > 0 && (
-        <div className='p-4 space-y-3'>
-          {addresses.map((addr) => (
-            <div
-              key={addr.id}
-              className='relative rounded-lg overflow-hidden'
-              style={{ backgroundColor: cardBg }}
+          {/* 地址信息 - 点击进入编辑 */}
+          <Box
+            onClick={() => onNavigate?.('address-edit', { id: addr.id })}
+            style={{ padding: 16 * wxScale }}
+          >
+            {/* 联系人信息 */}
+            <Box
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12 * wxScale,
+                marginBottom: 8 * wxScale,
+                flexWrap: 'wrap',
+              }}
             >
-              {/* 默认标签 */}
-              {addr.isDefault && (
-                <div
-                  className='absolute top-0 right-0 px-2 py-0.5 text-xs text-white rounded-bl'
-                  style={{ backgroundColor: themeSettings.primaryColor }}
+              <Box style={{ display: 'flex', alignItems: 'center', gap: 6 * wxScale }}>
+                <User size={16 * wxScale} color={textSecondary} />
+                <Text style={{ fontWeight: 500, fontSize: 14 * wxScale, color: textPrimary }}>
+                  {addr.name}
+                </Text>
+              </Box>
+              <Box style={{ display: 'flex', alignItems: 'center', gap: 6 * wxScale }}>
+                <Phone size={16 * wxScale} color={textSecondary} />
+                <Text style={{ fontSize: 14 * wxScale, color: textSecondary }}>
+                  {addr.phone}
+                </Text>
+              </Box>
+              {addr.tag && (
+                <Box
+                  style={{
+                    paddingLeft: 6 * wxScale,
+                    paddingRight: 6 * wxScale,
+                    paddingTop: 2 * wxScale,
+                    paddingBottom: 2 * wxScale,
+                    borderRadius: 4 * wxScale,
+                    backgroundColor: `${primaryColor}15`,
+                  }}
                 >
-                  默认
-                </div>
+                  <Text style={{ fontSize: 12 * wxScale, color: primaryColor }}>
+                    {addr.tag}
+                  </Text>
+                </Box>
               )}
+            </Box>
 
-              <div
-                className='p-4 cursor-pointer'
-                onClick={() => onNavigate?.('address-edit', { id: addr.id })}
-              >
-                {/* 联系人信息 */}
-                <div className='flex items-center gap-3 mb-2'>
-                  <div className='flex items-center gap-1.5'>
-                    <User className='h-4 w-4' style={{ color: textSecondary }} />
-                    <span className='font-medium' style={{ color: textPrimary }}>
-                      {addr.name}
-                    </span>
-                  </div>
-                  <div className='flex items-center gap-1.5'>
-                    <Phone className='h-4 w-4' style={{ color: textSecondary }} />
-                    <span className='text-sm' style={{ color: textSecondary }}>
-                      {addr.phone}
-                    </span>
-                  </div>
-                  {addr.tag && (
-                    <span
-                      className='px-1.5 py-0.5 text-xs rounded'
-                      style={{
-                        backgroundColor: `${themeSettings.primaryColor}15`,
-                        color: themeSettings.primaryColor,
-                      }}
-                    >
-                      {addr.tag}
-                    </span>
-                  )}
-                </div>
+            {/* 地址信息 */}
+            <Box style={{ display: 'flex', alignItems: 'flex-start', gap: 6 * wxScale }}>
+              <Box style={{ marginTop: 2 * wxScale, flexShrink: 0 }}>
+                <MapPin size={16 * wxScale} color={textSecondary} />
+              </Box>
+              <Text style={{ fontSize: 14 * wxScale, color: textSecondary, lineHeight: 1.5 }}>
+                {addr.province}
+                {addr.city}
+                {addr.district}
+                {addr.address}
+              </Text>
+            </Box>
+          </Box>
 
-                {/* 地址信息 */}
-                <div className='flex items-start gap-1.5'>
-                  <MapPin className='h-4 w-4 mt-0.5 flex-shrink-0' style={{ color: textSecondary }} />
-                  <span className='text-sm' style={{ color: textSecondary }}>
-                    {addr.province}
-                    {addr.city}
-                    {addr.district}
-                    {addr.address}
-                  </span>
-                </div>
-              </div>
-
-              {/* 操作按钮 */}
-              <div
-                className='flex items-center justify-end gap-4 px-4 py-2 border-t'
-                style={{ borderColor }}
-              >
-                {!addr.isDefault && (
-                  <button
-                    className='flex items-center gap-1 text-xs'
-                    style={{ color: textSecondary }}
-                    onClick={() => handleSetDefault(addr.id)}
-                  >
-                    <Star className='h-3.5 w-3.5' />
-                    设为默认
-                  </button>
-                )}
-                <button
-                  className='flex items-center gap-1 text-xs'
-                  style={{ color: textSecondary }}
-                  onClick={() => onNavigate?.('address-edit', { id: addr.id })}
-                >
-                  <Edit className='h-3.5 w-3.5' />
-                  编辑
-                </button>
-                <button
-                  className='flex items-center gap-1 text-xs text-red-500'
-                  onClick={() => handleDelete(addr.id)}
-                >
-                  <Trash className='h-3.5 w-3.5' />
-                  删除
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* 空状态 */}
-      {!isLoading && addresses.length === 0 && (
-        <div className='flex flex-col items-center justify-center py-16 px-4'>
-          <div
-            className='w-16 h-16 rounded-full flex items-center justify-center mb-4'
-            style={{ backgroundColor: `${themeSettings.primaryColor}15` }}
+          {/* 操作按钮 */}
+          <Box
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-end',
+              gap: 16 * wxScale,
+              paddingLeft: 16 * wxScale,
+              paddingRight: 16 * wxScale,
+              paddingTop: 8 * wxScale,
+              paddingBottom: 8 * wxScale,
+              borderTopWidth: 1,
+              borderTopColor: borderColor,
+              borderTopStyle: 'solid',
+            }}
           >
-            <MapPin className='h-8 w-8' style={{ color: themeSettings.primaryColor }} />
-          </div>
-          <p className='text-center font-medium mb-2' style={{ color: textPrimary }}>
-            暂无收货地址
-          </p>
-          <p className='text-center text-sm mb-4' style={{ color: textSecondary }}>
-            添加地址后可快速选择
-          </p>
-          <button
-            className='flex items-center gap-2 px-4 py-2 rounded-full text-white text-sm'
-            style={{ backgroundColor: themeSettings.primaryColor }}
-            onClick={() => onNavigate?.('address-edit', { mode: 'create' })}
+            {!addr.isDefault && (
+              <Box
+                onClick={() => handleSetDefault(addr.id)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4 * wxScale,
+                  opacity: actionLoading === addr.id ? 0.5 : 1,
+                }}
+              >
+                <Star size={14 * wxScale} color={textSecondary} />
+                <Text style={{ fontSize: 12 * wxScale, color: textSecondary }}>
+                  设为默认
+                </Text>
+              </Box>
+            )}
+            <Box
+              onClick={() => onNavigate?.('address-edit', { id: addr.id })}
+              style={{ display: 'flex', alignItems: 'center', gap: 4 * wxScale }}
+            >
+              <Edit size={14 * wxScale} color={textSecondary} />
+              <Text style={{ fontSize: 12 * wxScale, color: textSecondary }}>
+                编辑
+              </Text>
+            </Box>
+            <Box
+              onClick={() => handleDelete(addr.id)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4 * wxScale,
+                opacity: actionLoading === addr.id ? 0.5 : 1,
+              }}
+            >
+              <Trash size={14 * wxScale} color="#ef4444" />
+              <Text style={{ fontSize: 12 * wxScale, color: '#ef4444' }}>
+                删除
+              </Text>
+            </Box>
+          </Box>
+        </Box>
+      ))}
+    </Box>
+  )
+
+  return (
+    <Box
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: '100%',
+        backgroundColor: bgColor,
+        paddingBottom: 80 * wxScale,
+      }}
+    >
+      {/* 顶部导航栏 - 按规范 3.3.2 自定义导航栏 Type A */}
+      <Box
+        style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 100,
+          backgroundColor: primaryColor,
+          paddingTop: wxSafeAreaTop,
+        }}
+      >
+        <Box
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'relative',
+            height: 44 * wxScale,
+            paddingLeft: 12 * wxScale,
+            paddingRight: 12 * wxScale,
+          }}
+        >
+          {/* 返回按钮（绝对定位左侧） */}
+          <Box
+            onClick={onBack}
+            style={{
+              position: 'absolute',
+              left: 12 * wxScale,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 36 * wxScale,
+              height: 36 * wxScale,
+            }}
           >
-            <Plus className='h-4 w-4' />
-            添加地址
-          </button>
-        </div>
-      )}
-    </div>
+            <Icon name="left" size={22 * wxScale} color="#fff" />
+          </Box>
+
+          {/* 标题（居中） */}
+          <Text style={{ fontSize: 17 * wxScale, fontWeight: 600, color: '#fff' }}>
+            地址管理
+          </Text>
+        </Box>
+      </Box>
+
+      {/* 内容区 */}
+      <ScrollView style={{ flex: 1 }}>
+        {loading && renderSkeleton()}
+        {!loading && addresses.length === 0 && renderEmpty()}
+        {!loading && addresses.length > 0 && renderAddressList()}
+      </ScrollView>
+
+      {/* 底部新增按钮 - 按规范放在底部，避免右上角被胶囊遮挡 */}
+      <Box
+        style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          padding: 16 * wxScale,
+          backgroundColor: cardBg,
+          borderTopWidth: 1,
+          borderTopColor: borderColor,
+          borderTopStyle: 'solid',
+        }}
+      >
+        <Box
+          onClick={() => onNavigate?.('address-edit', { mode: 'create' })}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8 * wxScale,
+            width: '100%',
+            paddingTop: isWxEnvironment() ? 14 * wxScale : 12,
+            paddingBottom: isWxEnvironment() ? 14 * wxScale : 12,
+            borderRadius: 8 * wxScale,
+            backgroundColor: primaryColor,
+          }}
+        >
+          <Plus size={18 * wxScale} color="#fff" />
+          <Text style={{ fontSize: 16 * wxScale, fontWeight: 500, color: '#fff' }}>
+            新增地址
+          </Text>
+        </Box>
+      </Box>
+    </Box>
   )
 }
 

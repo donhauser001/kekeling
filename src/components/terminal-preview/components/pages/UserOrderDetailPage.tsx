@@ -55,6 +55,7 @@ const mockOrderDetail = {
   patientAge: 45,
   patientIdCard: '110***********1234',
   // 陪诊员信息
+  escortId: 'escort-001',
   escortName: '李护士',
   escortPhone: '139****9999',
   escortAvatar: '',
@@ -256,7 +257,7 @@ export function UserOrderDetailPage({
                 }}
               >
                 <Icon
-                  name="document"
+                  name="checklist"
                   size={24 * wxScale}
                   color={statusColors[order.status]?.text || '#8c8c8c'}
                 />
@@ -312,7 +313,7 @@ export function UserOrderDetailPage({
 
           {/* 服务名称 */}
           <Box style={{ display: 'flex', alignItems: 'flex-start', gap: 12 * wxScale, marginBottom: 12 * wxScale }}>
-            <Icon name="document" size={16 * wxScale} color={primaryColor} />
+            <Icon name="checklist" size={16 * wxScale} color={primaryColor} />
             <Box style={{ flex: 1 }}>
               <Text style={{ display: 'block', fontSize: 14 * wxScale, fontWeight: 500, color: textPrimary }}>
                 {order.serviceName}
@@ -339,7 +340,7 @@ export function UserOrderDetailPage({
 
           {/* 医院地址 */}
           <Box style={{ display: 'flex', alignItems: 'flex-start', gap: 12 * wxScale, marginBottom: 12 * wxScale }}>
-            <Icon name="local-two" size={16 * wxScale} color={textMuted} />
+            <Icon name="hospital" size={16 * wxScale} color={textMuted} />
             <Box style={{ flex: 1 }}>
               <Text style={{ display: 'block', fontSize: 14 * wxScale, color: textPrimary }}>
                 {order.hospitalName} · {order.departmentName}
@@ -373,7 +374,16 @@ export function UserOrderDetailPage({
           <InfoCard cardBg={cardBg}>
             <CardTitle color={textPrimary}>陪诊员信息</CardTitle>
             <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Box style={{ display: 'flex', alignItems: 'center', gap: 12 * wxScale }}>
+              {/* 陪诊员信息（可点击查看详情） */}
+              <Box
+                onClick={() => order.escortId && onNavigate?.('escort-detail', { id: order.escortId })}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12 * wxScale,
+                  cursor: order.escortId ? 'pointer' : 'default',
+                }}
+              >
                 <Box
                   style={{
                     width: 40 * wxScale,
@@ -388,9 +398,14 @@ export function UserOrderDetailPage({
                   <Icon name="user" size={20 * wxScale} color={primaryColor} />
                 </Box>
                 <Box>
-                  <Text style={{ display: 'block', fontSize: 14 * wxScale, fontWeight: 500, color: textPrimary }}>
-                    {order.escortName}
-                  </Text>
+                  <Box style={{ display: 'flex', alignItems: 'center', gap: 4 * wxScale }}>
+                    <Text style={{ fontSize: 14 * wxScale, fontWeight: 500, color: textPrimary }}>
+                      {order.escortName}
+                    </Text>
+                    {order.escortId && (
+                      <Icon name="right" size={14 * wxScale} color={textMuted} />
+                    )}
+                  </Box>
                   <Box style={{ display: 'flex', alignItems: 'center', gap: 8 * wxScale, marginTop: 4 * wxScale }}>
                     <Text style={{ fontSize: 12 * wxScale, color: textMuted }}>评分 {order.escortRating}</Text>
                     <Text style={{ fontSize: 12 * wxScale, color: textMuted }}>|</Text>
@@ -398,6 +413,7 @@ export function UserOrderDetailPage({
                   </Box>
                 </Box>
               </Box>
+              {/* 操作按钮 */}
               <Box style={{ display: 'flex', alignItems: 'center', gap: 8 * wxScale }}>
                 <Box
                   style={{
@@ -410,7 +426,7 @@ export function UserOrderDetailPage({
                     backgroundColor: '#52c41a20',
                   }}
                 >
-                  <Icon name="phone" size={16 * wxScale} color="#52c41a" />
+                  <Icon name="phone-telephone" size={16 * wxScale} color="#52c41a" />
                 </Box>
                 <Box
                   style={{

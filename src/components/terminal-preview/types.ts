@@ -35,7 +35,7 @@ export type FooterVisiblePage = 'home' | 'services' | 'cases' | 'profile'
  * 预览页面类型
  * - 现有页面：home, services, cases, profile
  * - 营销中心：membership, coupons, points, referrals, campaigns
- * - 陪诊员（用户视角）：escort-list, escort-detail
+ * - 陪诊员（用户视角）：escort-detail（入口：用户订单详情页）
  * - 工作台（陪诊员视角）：workbench, workbench-orders-pool, workbench-earnings, workbench-withdraw
  * - 分销中心（陪诊员视角）：distribution, distribution-members, distribution-records, distribution-invite, distribution-promotion
  */
@@ -64,8 +64,7 @@ export type PreviewPage =
   // 就诊人管理
   | 'patients'
   | 'patient-edit'
-  // 陪诊员（用户视角可查看）
-  | 'escort-list'
+  // 陪诊员（用户视角可查看，入口：用户订单详情页）
   | 'escort-detail'
   | 'escort-apply'
   // 工作台（陪诊员视角）
@@ -93,6 +92,8 @@ export type PreviewPage =
   // 个人资料编辑
   | 'user-profile-edit'
   | 'escort-profile-edit'
+  // 意见反馈
+  | 'feedback'
 
 /**
  * 有效的页面 key 列表（用于开发环境校验）
@@ -123,8 +124,7 @@ export const VALID_PAGE_KEYS: readonly PreviewPage[] = [
   // 就诊人管理
   'patients',
   'patient-edit',
-  // 陪诊员（用户视角可查看）
-  'escort-list',
+  // 陪诊员（用户视角可查看，入口：用户订单详情页）
   'escort-detail',
   'escort-apply',
   // 工作台（陪诊员视角）
@@ -155,6 +155,8 @@ export const VALID_PAGE_KEYS: readonly PreviewPage[] = [
   // 个人资料编辑
   'user-profile-edit',
   'escort-profile-edit',
+  // 意见反馈
+  'feedback',
 ] as const
 
 // ============================================================================
@@ -209,8 +211,7 @@ export const PAGE_METADATA: Record<PreviewPage, PageMetadata> = {
   'patients': { entryAllowed: false, description: '就诊人列表' },
   'patient-edit': { entryAllowed: false, description: '就诊人编辑' },
 
-  // 陪诊员公开页
-  'escort-list': { entryAllowed: true, description: '陪诊员列表' },
+  // 陪诊员公开页（入口：用户订单详情页点击陪诊员信息）
   'escort-detail': { entryAllowed: false, requiredParams: ['id'], description: '陪诊员详情' },
   'escort-apply': { entryAllowed: true, description: '陪诊员入驻申请' },
 
@@ -243,6 +244,9 @@ export const PAGE_METADATA: Record<PreviewPage, PageMetadata> = {
   // 个人资料编辑
   'user-profile-edit': { entryAllowed: false, description: '用户资料编辑' },
   'escort-profile-edit': { entryAllowed: false, description: '陪诊员资料编辑' },
+
+  // 意见反馈
+  'feedback': { entryAllowed: false, description: '意见反馈' },
 } as const
 
 /**
@@ -290,8 +294,7 @@ export interface PreviewPageParamsMap {
   'user-order-detail': { id: string }
   'order-complaint': { id: string }
 
-  // 陪诊员公开页
-  'escort-list': Record<string, never>
+  // 陪诊员公开页（入口：用户订单详情页点击陪诊员信息）
   'escort-detail': { id: string }
 
   // 工作台
@@ -327,6 +330,9 @@ export interface PreviewPageParamsMap {
   // 个人资料编辑
   'user-profile-edit': Record<string, never>
   'escort-profile-edit': Record<string, never>
+
+  // 意见反馈
+  'feedback': Record<string, never>
 }
 
 /**

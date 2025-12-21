@@ -1,23 +1,20 @@
 /**
- * 活动列表页面（预览器版本）
+ * 活动列表页面
  *
- * Step 8 批次 C: campaigns
- * - page key: 'campaigns'
- * - API: previewApi.getCampaigns()
- * - 数据通道: userRequest
- *
- * Step 14.8 UI-D-2: 支持 marketingData.campaigns 覆盖
+ * 遵循《小程序页面改造规范》：
+ * - 使用原语组件 Box, Text, Icon, Image
+ * - 布局属性在 style 中定义
+ * - 使用 wxScale 缩放视觉尺寸
+ * - 使用 useState + useEffect 获取数据
+ * - Image 组件显式指定 mode 属性
  */
 
-import { useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useState, useEffect, useMemo } from 'react'
+import { Box, Text, Icon, Image } from '../../../ui/primitives'
+import { isWxEnvironment } from '../../../platform/env'
 import type { ThemeSettings, CampaignsDataOverride, CampaignOverride } from '../../../types'
 import { previewApi } from '../../../api'
 import type { Campaign } from '../../../api'
-import { ListSkeleton } from '../../ListSkeleton'
-import { ErrorRetry } from '../../ErrorRetry'
-import { getRefreshingClass } from '../../PageTransition'
-import { getSecondaryTextClass, getTertiaryTextClass } from '../../../utils'
 
 // ============================================================================
 // 类型定义
@@ -26,112 +23,247 @@ import { getSecondaryTextClass, getTertiaryTextClass } from '../../../utils'
 export interface CampaignsPageProps {
   themeSettings: ThemeSettings
   isDarkMode: boolean
+  onBack?: () => void
   onNavigate?: (page: string, params?: { id: string }) => void
   /** 活动数据覆盖（管理后台实时预览用） */
   campaignsOverride?: CampaignsDataOverride
 }
 
 // ============================================================================
-// 组件实现
+// 常量
 // ============================================================================
 
-export function CampaignsPage({ themeSettings, isDarkMode, onNavigate, campaignsOverride }: CampaignsPageProps) {
-  // 获取活动列表（当有覆盖数据时不发起请求）
-  const {
-    data: apiCampaigns,
-    isLoading: isApiLoading,
-    isError: isApiError,
-    isFetching: isApiFetching,
-    refetch,
-  } = useQuery({
-    queryKey: ['preview', 'campaigns'],
-    queryFn: previewApi.getCampaigns,
-    staleTime: 60 * 1000,
-    enabled: !campaignsOverride, // 有覆盖数据时禁用 API 请求
-  })
+const wxScale = isWxEnvironment() ? 1.1 : 1
+const wxSafeAreaTop = isWxEnvironment() ? 44 : 0
+
+// ============================================================================
+// 主组件
+// ============================================================================
+
+export function CampaignsPage({
+  themeSettings,
+  isDarkMode,
+  onBack,
+  onNavigate,
+  campaignsOverride,
+}: CampaignsPageProps) {
+  const [apiCampaigns, setApiCampaigns] = useState<Campaign[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isError, setIsError] = useState(false)
+
+  // 颜色配置
+  const primaryColor = themeSettings.primaryColor
+  const bgColor = isDarkMode ? '#1a1a1a' : '#f5f7fa'
+  const cardBg = isDarkMode ? '#2a2a2a' : '#ffffff'
+  const textPrimary = isDarkMode ? '#f3f4f6' : '#111827'
+  const textSecondary = isDarkMode ? '#9ca3af' : '#6b7280'
+
+  // 是否使用覆盖数据
+  const hasOverride = campaignsOverride !== undefined
+
+  // 获取活动列表
+  const fetchCampaigns = () => {
+    if (hasOverride) {
+      setIsLoading(false)
+      return
+    }
+    setIsLoading(true)
+    setIsError(false)
+    previewApi
+      .getCampaigns()
+      .then((data) => setApiCampaigns(data ?? []))
+      .catch(() => setIsError(true))
+      .finally(() => setIsLoading(false))
+  }
+
+  useEffect(() => {
+    fetchCampaigns()
+  }, [hasOverride])
 
   // 合并数据：覆盖优先
-  const campaigns = useMemo<Campaign[] | undefined>(() => {
+  const campaigns = useMemo<Campaign[]>(() => {
     if (campaignsOverride?.items) {
       return campaignsOverride.items.map(mapOverrideToCampaign)
     }
     return apiCampaigns
   }, [campaignsOverride, apiCampaigns])
 
-  // 加载状态
-  const isLoading = !campaignsOverride && isApiLoading
-  const isError = !campaignsOverride && isApiError
-  const isFetching = !campaignsOverride && isApiFetching
+  const isEmpty = !isLoading && campaigns.length === 0
 
-  const isEmpty = !isLoading && (!campaigns || campaigns.length === 0)
-
-  // 点击活动条目
   const handleCampaignClick = (campaign: Campaign) => {
-    // 预留跳转到详情页
     onNavigate?.('campaigns-detail', { id: campaign.id })
   }
 
   return (
-    <div
-      className="min-h-full"
+    <Box
       style={{
-        backgroundColor: isDarkMode ? '#1a1a1a' : '#f5f7fa',
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: '100vh',
+        backgroundColor: bgColor,
       }}
     >
-      {/* 页面标题 */}
-      <div
-        className="sticky top-0 z-10 px-4 py-3"
+      {/* ========== 导航栏 ========== */}
+      <Box
         style={{
-          backgroundColor: themeSettings.primaryColor,
+          position: 'sticky',
+          top: 0,
+          zIndex: 100,
+          backgroundColor: primaryColor,
+          paddingTop: wxSafeAreaTop,
         }}
       >
-        <h1 className="text-lg font-semibold text-white text-center">
-          活动中心
-        </h1>
-      </div>
-
-      {/* 内容区 */}
-      <div className="px-4 py-4">
-        {/* 加载中 - 骨架屏 */}
-        {isLoading && (
-          <ListSkeleton count={3} variant="card" isDarkMode={isDarkMode} />
-        )}
-
-        {/* 请求失败 - 带重试按钮 */}
-        {isError && (
-          <ErrorRetry
-            onRetry={() => refetch()}
-            isDarkMode={isDarkMode}
-            primaryColor={themeSettings.primaryColor}
-          />
-        )}
-
-        {/* 空态 - Step 14.21: 添加引导文案 */}
-        {isEmpty && !isError && (
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="text-5xl mb-3">🎉</div>
-            <div className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>
-              暂无进行中的活动
-            </div>
-            <div className={`text-xs mt-1 ${getTertiaryTextClass(isDarkMode)}`}>
-              敬请期待更多精彩活动
-            </div>
-            <button
-              onClick={() => window.location.reload()}
-              className="mt-4 px-4 py-2 rounded-lg text-sm font-medium"
+        <Box
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'relative',
+            height: 44 * wxScale,
+            paddingLeft: 12 * wxScale,
+            paddingRight: 12 * wxScale,
+          }}
+        >
+          {onBack && (
+            <Box
+              onClick={onBack}
               style={{
-                backgroundColor: isDarkMode ? '#374151' : '#f3f4f6',
-                color: isDarkMode ? '#d1d5db' : '#4b5563',
+                position: 'absolute',
+                left: 12 * wxScale,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 36 * wxScale,
+                height: 36 * wxScale,
               }}
             >
-              刷新查看
-            </button>
-          </div>
+              <Icon name="left" size={22 * wxScale} color="#fff" />
+            </Box>
+          )}
+          <Text style={{ fontSize: 17 * wxScale, fontWeight: 600, color: '#fff' }}>活动中心</Text>
+        </Box>
+      </Box>
+
+      {/* ========== 内容区 ========== */}
+      <Box style={{ flex: 1, padding: 12 * wxScale }}>
+        {/* 加载状态 - 骨架屏 */}
+        {isLoading && (
+          <Box style={{ display: 'flex', flexDirection: 'column', gap: 16 * wxScale }}>
+            {[1, 2, 3].map((i) => (
+              <Box
+                key={i}
+                style={{
+                  borderRadius: 12 * wxScale,
+                  backgroundColor: cardBg,
+                  overflow: 'hidden',
+                }}
+              >
+                <Box
+                  style={{
+                    height: 128 * wxScale,
+                    backgroundColor: isDarkMode ? '#3a3a3a' : '#e5e7eb',
+                  }}
+                />
+                <Box style={{ padding: 12 * wxScale }}>
+                  <Box
+                    style={{
+                      height: 16 * wxScale,
+                      width: 160 * wxScale,
+                      borderRadius: 4 * wxScale,
+                      backgroundColor: isDarkMode ? '#3a3a3a' : '#e5e7eb',
+                      marginBottom: 8 * wxScale,
+                    }}
+                  />
+                  <Box
+                    style={{
+                      height: 12 * wxScale,
+                      width: 120 * wxScale,
+                      borderRadius: 4 * wxScale,
+                      backgroundColor: isDarkMode ? '#3a3a3a' : '#e5e7eb',
+                    }}
+                  />
+                </Box>
+              </Box>
+            ))}
+          </Box>
         )}
 
-        {/* 活动列表 - Step 14.10-C: 刷新过渡效果 */}
-        {!isLoading && !isError && campaigns && campaigns.length > 0 && (
-          <div className={`space-y-4 ${getRefreshingClass(isFetching, true)}`}>
+        {/* 请求失败 */}
+        {isError && (
+          <Box
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              paddingTop: 48 * wxScale,
+            }}
+          >
+            <Icon name="close" size={48 * wxScale} color={textSecondary} />
+            <Text style={{ marginTop: 12 * wxScale, fontSize: 14 * wxScale, color: textSecondary }}>
+              加载失败
+            </Text>
+            <Box
+              onClick={fetchCampaigns}
+              style={{
+                marginTop: 16 * wxScale,
+                paddingLeft: 16 * wxScale,
+                paddingRight: 16 * wxScale,
+                paddingTop: 8 * wxScale,
+                paddingBottom: 8 * wxScale,
+                borderRadius: 8 * wxScale,
+                backgroundColor: primaryColor,
+              }}
+            >
+              <Text style={{ fontSize: 14 * wxScale, color: '#fff' }}>点击重试</Text>
+            </Box>
+          </Box>
+        )}
+
+        {/* 空状态 */}
+        {isEmpty && !isError && (
+          <Box
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              paddingTop: 48 * wxScale,
+            }}
+          >
+            <Icon name="gift" size={48 * wxScale} color={textSecondary} />
+            <Text style={{ marginTop: 12 * wxScale, fontSize: 14 * wxScale, color: textSecondary }}>
+              暂无进行中的活动
+            </Text>
+            <Text style={{ marginTop: 4 * wxScale, fontSize: 12 * wxScale, color: textSecondary }}>
+              敬请期待更多精彩活动
+            </Text>
+            <Box
+              onClick={fetchCampaigns}
+              style={{
+                marginTop: 16 * wxScale,
+                paddingLeft: 16 * wxScale,
+                paddingRight: 16 * wxScale,
+                paddingTop: 8 * wxScale,
+                paddingBottom: 8 * wxScale,
+                borderRadius: 8 * wxScale,
+                backgroundColor: isDarkMode ? '#374151' : '#f3f4f6',
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 14 * wxScale,
+                  fontWeight: 500,
+                  color: isDarkMode ? '#d1d5db' : '#4b5563',
+                }}
+              >
+                刷新查看
+              </Text>
+            </Box>
+          </Box>
+        )}
+
+        {/* 活动列表 */}
+        {!isLoading && !isError && campaigns.length > 0 && (
+          <Box style={{ display: 'flex', flexDirection: 'column', gap: 16 * wxScale }}>
             {campaigns.map((campaign) => (
               <CampaignCard
                 key={campaign.id}
@@ -141,13 +273,13 @@ export function CampaignsPage({ themeSettings, isDarkMode, onNavigate, campaigns
                 onClick={() => handleCampaignClick(campaign)}
               />
             ))}
-          </div>
+          </Box>
         )}
-      </div>
+      </Box>
 
       {/* 底部留白 */}
-      <div className="h-16" />
-    </div>
+      <Box style={{ height: 64 * wxScale }} />
+    </Box>
   )
 }
 
@@ -163,65 +295,110 @@ interface CampaignCardProps {
 }
 
 function CampaignCard({ campaign, themeSettings, isDarkMode, onClick }: CampaignCardProps) {
-  // Step 14.14: 活动状态配置，添加 default 处理未知枚举值
-  const statusConfig: Record<string, { label: string; className: string }> = {
-    ended: { label: '已结束', className: 'bg-gray-500' },
-    upcoming: { label: '即将开始', className: 'bg-blue-500' },
-    pending: { label: '即将开始', className: 'bg-blue-500' },
-    ongoing: { label: '进行中', className: 'bg-green-500' },
-    active: { label: '进行中', className: 'bg-green-500' },
-    // 未知状态降级为进行中
-    default: { label: '进行中', className: 'bg-green-500' },
+  const primaryColor = themeSettings.primaryColor
+  const cardBg = isDarkMode ? '#2a2a2a' : '#ffffff'
+  const textPrimary = isDarkMode ? '#f3f4f6' : '#111827'
+  const textSecondary = isDarkMode ? '#9ca3af' : '#6b7280'
+
+  // 活动状态配置
+  const statusConfig: Record<string, { label: string; bgColor: string }> = {
+    ended: { label: '已结束', bgColor: '#6b7280' },
+    upcoming: { label: '即将开始', bgColor: '#3b82f6' },
+    pending: { label: '即将开始', bgColor: '#3b82f6' },
+    ongoing: { label: '进行中', bgColor: '#22c55e' },
+    active: { label: '进行中', bgColor: '#22c55e' },
+    default: { label: '进行中', bgColor: '#22c55e' },
   }
 
   const status = statusConfig[campaign.status] ?? statusConfig.default
   const isExpired = campaign.status === 'ended'
 
   return (
-    <div
+    <Box
       onClick={onClick}
-      className={`rounded-xl overflow-hidden cursor-pointer transition-transform active:scale-[0.98] ${isExpired ? 'opacity-60' : ''
-        }`}
       style={{
-        backgroundColor: isDarkMode ? '#2a2a2a' : '#fff',
+        borderRadius: 12 * wxScale,
+        backgroundColor: cardBg,
+        overflow: 'hidden',
+        opacity: isExpired ? 0.6 : 1,
+        cursor: 'pointer',
       }}
     >
       {/* 活动封面 */}
-      <div
-        className="h-32 bg-cover bg-center relative"
+      <Box
         style={{
-          backgroundColor: themeSettings.primaryColor,
-          backgroundImage: campaign.coverImage ? `url(${campaign.coverImage})` : undefined,
+          position: 'relative',
+          height: 128 * wxScale,
+          backgroundColor: primaryColor,
         }}
       >
-        {/* 状态标签 - Step 14.14: 使用 statusConfig 统一处理 */}
-        <div className="absolute top-2 right-2">
-          <span className={`px-2 py-0.5 rounded text-xs text-white ${status.className}`}>
-            {status.label}
-          </span>
-        </div>
-
-        {/* 无封面时显示 emoji */}
-        {!campaign.coverImage && (
-          <div className="absolute inset-0 flex items-center justify-center text-5xl opacity-50">
-            🎊
-          </div>
+        {campaign.coverImage ? (
+          <Image
+            src={campaign.coverImage}
+            mode="aspectFill"
+            style={{
+              width: '100%',
+              height: 128 * wxScale,
+            }}
+          />
+        ) : (
+          <Box
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: 128 * wxScale,
+            }}
+          >
+            <Icon name="gift" size={48 * wxScale} color="rgba(255,255,255,0.5)" />
+          </Box>
         )}
-      </div>
+
+        {/* 状态标签 */}
+        <Box
+          style={{
+            position: 'absolute',
+            top: 8 * wxScale,
+            right: 8 * wxScale,
+            paddingLeft: 8 * wxScale,
+            paddingRight: 8 * wxScale,
+            paddingTop: 2 * wxScale,
+            paddingBottom: 2 * wxScale,
+            borderRadius: 4 * wxScale,
+            backgroundColor: status.bgColor,
+          }}
+        >
+          <Text style={{ fontSize: 12 * wxScale, color: '#fff' }}>{status.label}</Text>
+        </Box>
+      </Box>
 
       {/* 活动信息 */}
-      <div className="p-3">
-        <div className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+      <Box style={{ padding: 12 * wxScale }}>
+        <Text style={{ fontSize: 15 * wxScale, fontWeight: 500, color: textPrimary }}>
           {campaign.title}
-        </div>
-        <div className={`text-xs mt-1 ${getSecondaryTextClass(isDarkMode)}`}>
+        </Text>
+        <Text
+          style={{
+            display: 'block',
+            marginTop: 4 * wxScale,
+            fontSize: 12 * wxScale,
+            color: textSecondary,
+          }}
+        >
           {campaign.description}
-        </div>
-        <div className={`text-xs mt-2 ${getTertiaryTextClass(isDarkMode)}`}>
+        </Text>
+        <Text
+          style={{
+            display: 'block',
+            marginTop: 8 * wxScale,
+            fontSize: 12 * wxScale,
+            color: textSecondary,
+          }}
+        >
           {campaign.startTime} ~ {campaign.endTime}
-        </div>
-      </div>
-    </div>
+        </Text>
+      </Box>
+    </Box>
   )
 }
 
@@ -242,7 +419,6 @@ function mapOverrideToCampaign(override: CampaignOverride): Campaign {
     }
   }
 
-  // 根据 status 映射 - Step 14.14: 未知状态降级为 'ongoing'
   const statusMap: Record<string, Campaign['status']> = {
     pending: 'upcoming',
     active: 'ongoing',
@@ -257,7 +433,6 @@ function mapOverrideToCampaign(override: CampaignOverride): Campaign {
     coverImage: override.bannerUrl,
     startTime: formatDate(override.startAt),
     endTime: formatDate(override.endAt),
-    // 未知状态降级为 'ongoing'（进行中）
     status: statusMap[override.status] || 'ongoing',
   }
 }
@@ -275,4 +450,3 @@ function getDiscountText(override: CampaignOverride): string {
   }
   return `${override.discountValue}折优惠`
 }
-

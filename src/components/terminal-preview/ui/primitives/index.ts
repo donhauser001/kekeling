@@ -15,7 +15,7 @@
  */
 
 // 导出 Web 实现的组件
-export { Box, Text, Button, Image, Input, Textarea, ScrollView, Icon } from './web'
+export { Box, Text, Button, Image, Input, Textarea, ScrollView, Icon, RichText } from './web'
 
 // 导出类型定义
 export type {
@@ -27,6 +27,9 @@ export type {
   TextareaProps,
   ScrollViewProps,
 } from './types'
+
+// RichText 类型
+export type { RichTextProps } from './web'
 
 // Icon 类型从共享类型导出
 export type { IconName } from '@/shared/types/icon'

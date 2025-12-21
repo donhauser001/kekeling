@@ -137,7 +137,7 @@ export interface ServiceDetail {
 
 /**
  * 优惠券项
- * 对应接口: GET /marketing/coupons/my
+ * 对应接口: GET /coupons/my
  */
 export interface CouponItem {
   id: string
@@ -161,7 +161,7 @@ export interface CouponsResponse {
 
 /**
  * 会员信息
- * 对应接口: GET /marketing/membership/my
+ * 对应接口: GET /membership/my
  */
 export interface MembershipInfo {
   id: string
@@ -173,24 +173,62 @@ export interface MembershipInfo {
   expireAt: string
   /** 积分余额 */
   points: number
+  /** 剩余天数 */
+  daysLeft?: number
+  /** 折扣率 */
+  discount?: number
+  /** 超时费减免 */
+  overtimeFeeWaiver?: number
 }
 
 /**
  * 会员套餐
- * 对应接口: GET /marketing/membership/plans
+ * 对应接口: GET /membership/plans
  */
 export interface MembershipPlan {
   id: string
   name: string
-  description: string
-  /** 价格 */
+  description?: string
+  /** 价格（元） */
   price: number
-  /** 原价 */
+  /** 原价（元） */
   originalPrice?: number
   /** 有效天数 */
-  durationDays: number
+  duration: number
   /** 是否推荐 */
-  isRecommended?: boolean
+  recommended?: boolean
+  /** 排序 */
+  sort?: number
+  /** 套餐特点 */
+  features?: string[]
+  /** 等级信息 */
+  level?: {
+    id: string
+    name: string
+    code?: string
+    icon?: string
+    color?: string
+    discount?: number
+  }
+}
+
+/**
+ * 购买会员请求参数
+ * 对应接口: POST /membership/purchase
+ */
+export interface PurchaseMembershipParams {
+  planId: string
+}
+
+/**
+ * 购买会员响应
+ */
+export interface PurchaseMembershipResponse {
+  orderId: string
+  /** 支付金额（分） */
+  amount: number
+  /** 订单状态 */
+  status: string
 }
 
 /**
@@ -210,24 +248,60 @@ export interface PointsInfo {
 
 /**
  * 积分记录
- * 对应接口: GET /marketing/points/records
+ * 对应接口: GET /points/records
  */
 export interface PointsRecord {
   id: string
-  /** 标题 */
-  title: string
   /** 积分变动数量 */
   points: number
-  /** 类型: earn=获得, use=使用 */
-  type: 'earn' | 'use'
+  /** 变动后余额 */
+  balance: number
+  /** 类型: earn=获得, use=使用, expire=过期, refund=退还 */
+  type: 'earn' | 'use' | 'expire' | 'refund'
+  /** 来源 */
+  source: string
+  /** 来源ID */
+  sourceId?: string
+  /** 描述 */
+  description: string
+  /** 过期时间 */
+  expireAt?: string
   /** 创建时间 */
   createdAt: string
 }
 
 /** 积分记录列表响应 */
 export interface PointsRecordsResponse {
-  items: PointsRecord[]
+  data: PointsRecord[]
   total: number
+  page: number
+  pageSize: number
+}
+
+/**
+ * 签到状态
+ * 对应接口: GET /points/checkin/status
+ */
+export interface CheckInStatus {
+  /** 今日是否已签到 */
+  checkedIn: boolean
+  /** 连续签到天数 */
+  consecutiveDays: number
+  /** 今日获得积分 */
+  todayPoints: number
+}
+
+/**
+ * 签到结果
+ * 对应接口: POST /points/checkin
+ */
+export interface CheckInResult {
+  /** 获得积分 */
+  points: number
+  /** 连续签到天数 */
+  consecutiveDays: number
+  /** 当前总积分 */
+  totalPoints: number
 }
 
 /**
@@ -280,7 +354,7 @@ export interface CampaignDetail extends Campaign {
 
 /**
  * 可领取优惠券
- * 对应接口: GET /marketing/coupons/available
+ * 对应接口: GET /coupons/available
  */
 export interface AvailableCoupon {
   id: string
@@ -292,6 +366,12 @@ export interface AvailableCoupon {
   minAmount: number
   /** 剩余可领数量 */
   remaining: number
+  /** 是否可以领取（未达到限领上限） */
+  canClaim: boolean
+  /** 用户已领取数量 */
+  claimedCount: number
+  /** 每人限领数量 */
+  perUserLimit: number
 }
 
 // ============================================================================

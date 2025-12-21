@@ -91,6 +91,9 @@ export function ProfilePage({
       case 'address':
         onNavigate?.('address-list')
         break
+      case 'feedback':
+        onNavigate?.('feedback')
+        break
       case 'help':
         onNavigate?.('help-center')
         break

@@ -75,6 +75,10 @@ export const UserProfileEditPage = lazy(() =>
   import('./UserProfileEditPage').then(m => ({ default: m.UserProfileEditPage }))
 )
 
+export const FeedbackPage = lazy(() =>
+  import('./FeedbackPage').then(m => ({ default: m.FeedbackPage }))
+)
+
 // ============================================================================
 // 营销中心页面（9 个）
 // ============================================================================
@@ -84,7 +88,7 @@ export const CouponsPage = lazy(() =>
 )
 
 export const MembershipPage = lazy(() =>
-  import('./marketing').then(m => ({ default: m.MembershipPage }))
+  import('./membership').then(m => ({ default: m.MembershipPage }))
 )
 
 export const MembershipPlansPage = lazy(() =>
@@ -92,7 +96,7 @@ export const MembershipPlansPage = lazy(() =>
 )
 
 export const PointsPage = lazy(() =>
-  import('./marketing').then(m => ({ default: m.PointsPage }))
+  import('./points').then(m => ({ default: m.PointsPage }))
 )
 
 export const PointsRecordsPage = lazy(() =>
@@ -116,12 +120,8 @@ export const CouponsAvailablePage = lazy(() =>
 )
 
 // ============================================================================
-// 陪诊员页面（3 个）
+// 陪诊员页面（2 个）
 // ============================================================================
-
-export const EscortListPage = lazy(() =>
-  import('./escort').then(m => ({ default: m.EscortListPage }))
-)
 
 export const EscortDetailPage = lazy(() =>
   import('./escort').then(m => ({ default: m.EscortDetailPage }))

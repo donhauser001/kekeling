@@ -5,9 +5,8 @@
 export { CouponsPage } from './CouponsPage'
 export type { CouponItem, CouponsResponse, CouponsPageProps } from './CouponsPage'
 
-// Step 6 批次 A
-export { MembershipPage } from './MembershipPage'
-export type { MembershipPageProps } from './MembershipPage'
+// MembershipPage 已迁移到 membership/ 目录
+// export { MembershipPage } from '../membership'
 
 export { MembershipPlansPage } from './MembershipPlansPage'
 export type { MembershipPlansPageProps } from './MembershipPlansPage'

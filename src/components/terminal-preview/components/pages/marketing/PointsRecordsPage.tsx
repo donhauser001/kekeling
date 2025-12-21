@@ -1,20 +1,19 @@
 /**
- * 积分明细页面（预览器版本）
+ * 积分明细页面
  *
- * Step 7 批次 B: points-records
- * - page key: 'points-records'
- * - API: previewApi.getPointsRecords()
- * - 数据通道: userRequest
+ * 遵循《小程序页面改造规范》：
+ * - 使用原语组件 Box, Text, Icon
+ * - 布局属性在 style 中定义
+ * - 使用 wxScale 缩放视觉尺寸
+ * - 使用 useState + useEffect 获取数据
  */
 
-import { useQuery } from '@tanstack/react-query'
+import { useState, useEffect } from 'react'
+import { Box, Text, Icon } from '../../../ui/primitives'
+import { isWxEnvironment } from '../../../platform/env'
 import type { ThemeSettings } from '../../../types'
 import { previewApi } from '../../../api'
 import type { PointsRecord } from '../../../api'
-import { ListSkeleton } from '../../ListSkeleton'
-import { ErrorRetry } from '../../ErrorRetry'
-import { getRefreshingClass } from '../../PageTransition'
-import { getSecondaryTextClass, getTertiaryTextClass } from '../../../utils'
 
 // ============================================================================
 // 类型定义
@@ -24,107 +23,234 @@ export interface PointsRecordsPageProps {
   themeSettings: ThemeSettings
   isDarkMode: boolean
   onBack?: () => void
-  /** 导航回调（用于空态引导按钮） */
   onNavigate?: (page: string) => void
 }
 
 // ============================================================================
-// 组件实现
+// 常量
 // ============================================================================
 
-export function PointsRecordsPage({ themeSettings, isDarkMode, onBack, onNavigate }: PointsRecordsPageProps) {
-  // 获取积分记录
-  const {
-    data: recordsData,
-    isLoading,
-    isError,
-    isFetching,
-    refetch,
-  } = useQuery({
-    queryKey: ['preview', 'points', 'records'],
-    queryFn: () => previewApi.getPointsRecords(),
-    staleTime: 60 * 1000,
-  })
+const wxScale = isWxEnvironment() ? 1.1 : 1
+const wxSafeAreaTop = isWxEnvironment() ? 44 : 0
 
-  const records = recordsData?.items ?? []
+// ============================================================================
+// 主组件
+// ============================================================================
+
+export function PointsRecordsPage({
+  themeSettings,
+  isDarkMode,
+  onBack,
+  onNavigate,
+}: PointsRecordsPageProps) {
+  const [records, setRecords] = useState<PointsRecord[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isError, setIsError] = useState(false)
+
+  // 颜色配置
+  const primaryColor = themeSettings.primaryColor
+  const bgColor = isDarkMode ? '#1a1a1a' : '#f5f7fa'
+  const cardBg = isDarkMode ? '#2a2a2a' : '#ffffff'
+  const textPrimary = isDarkMode ? '#f3f4f6' : '#111827'
+  const textSecondary = isDarkMode ? '#9ca3af' : '#6b7280'
+
+  // 获取积分记录
+  const fetchRecords = () => {
+    setIsLoading(true)
+    setIsError(false)
+    previewApi
+      .getPointsRecords()
+      .then((data) => setRecords(data?.data ?? []))
+      .catch(() => setIsError(true))
+      .finally(() => setIsLoading(false))
+  }
+
+  useEffect(() => {
+    fetchRecords()
+  }, [])
+
   const isEmpty = !isLoading && records.length === 0
 
   return (
-    <div
-      className="min-h-full"
+    <Box
       style={{
-        backgroundColor: isDarkMode ? '#1a1a1a' : '#f5f7fa',
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: '100vh',
+        backgroundColor: bgColor,
       }}
     >
-      {/* 页面标题 */}
-      <div
-        className="sticky top-0 z-10 px-4 py-3 flex items-center"
+      {/* ========== 导航栏 ========== */}
+      <Box
         style={{
-          backgroundColor: themeSettings.primaryColor,
+          position: 'sticky',
+          top: 0,
+          zIndex: 100,
+          backgroundColor: primaryColor,
+          paddingTop: wxSafeAreaTop,
         }}
       >
-        {onBack && (
-          <button onClick={onBack} className="text-white mr-3">
-            ←
-          </button>
-        )}
-        <h1 className="text-lg font-semibold text-white flex-1 text-center pr-6">
-          积分明细
-        </h1>
-      </div>
+        <Box
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'relative',
+            height: 44 * wxScale,
+            paddingLeft: 12 * wxScale,
+            paddingRight: 12 * wxScale,
+          }}
+        >
+          {onBack && (
+            <Box
+              onClick={onBack}
+              style={{
+                position: 'absolute',
+                left: 12 * wxScale,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 36 * wxScale,
+                height: 36 * wxScale,
+              }}
+            >
+              <Icon name="left" size={22 * wxScale} color="#fff" />
+            </Box>
+          )}
+          <Text style={{ fontSize: 17 * wxScale, fontWeight: 600, color: '#fff' }}>
+            积分明细
+          </Text>
+        </Box>
+      </Box>
 
-      {/* 内容区 */}
-      <div className="px-4 py-4">
-        {/* 加载中 - 骨架屏 */}
+      {/* ========== 内容区 ========== */}
+      <Box style={{ flex: 1, padding: 12 * wxScale }}>
+        {/* 加载状态 - 骨架屏 */}
         {isLoading && (
-          <ListSkeleton count={5} variant="row" isDarkMode={isDarkMode} />
-        )}
-
-        {/* 请求失败 - 带重试按钮 */}
-        {isError && (
-          <ErrorRetry
-            onRetry={() => refetch()}
-            isDarkMode={isDarkMode}
-            primaryColor={themeSettings.primaryColor}
-          />
-        )}
-
-        {/* 空态 - Step 14.21: 添加引导按钮 */}
-        {isEmpty && !isError && (
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="text-5xl mb-3">📋</div>
-            <div className={`text-sm ${getSecondaryTextClass(isDarkMode)}`}>
-              暂无积分记录
-            </div>
-            {onNavigate && (
-              <button
-                onClick={() => onNavigate('points')}
-                className="mt-4 px-4 py-2 rounded-lg text-sm font-medium text-white"
-                style={{ backgroundColor: themeSettings.primaryColor }}
+          <Box style={{ display: 'flex', flexDirection: 'column', gap: 8 * wxScale }}>
+            {[1, 2, 3, 4, 5].map((i) => (
+              <Box
+                key={i}
+                style={{
+                  padding: 12 * wxScale,
+                  borderRadius: 8 * wxScale,
+                  backgroundColor: cardBg,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}
               >
-                去赚积分
-              </button>
-            )}
-          </div>
+                <Box>
+                  <Box
+                    style={{
+                      height: 14 * wxScale,
+                      width: 120 * wxScale,
+                      borderRadius: 4 * wxScale,
+                      backgroundColor: isDarkMode ? '#3a3a3a' : '#e5e7eb',
+                      marginBottom: 8 * wxScale,
+                    }}
+                  />
+                  <Box
+                    style={{
+                      height: 12 * wxScale,
+                      width: 80 * wxScale,
+                      borderRadius: 4 * wxScale,
+                      backgroundColor: isDarkMode ? '#3a3a3a' : '#e5e7eb',
+                    }}
+                  />
+                </Box>
+                <Box
+                  style={{
+                    height: 16 * wxScale,
+                    width: 40 * wxScale,
+                    borderRadius: 4 * wxScale,
+                    backgroundColor: isDarkMode ? '#3a3a3a' : '#e5e7eb',
+                  }}
+                />
+              </Box>
+            ))}
+          </Box>
         )}
 
-        {/* 记录列表 - Step 14.10-C: 刷新过渡效果 */}
-        {!isLoading && !isError && records.length > 0 && (
-          <div className={`space-y-2 ${getRefreshingClass(isFetching, records.length > 0)}`}>
-            {records.map((record) => (
-              <RecordItem
-                key={record.id}
-                record={record}
-                isDarkMode={isDarkMode}
-              />
-            ))}
-          </div>
+        {/* 请求失败 */}
+        {isError && (
+          <Box
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              paddingTop: 48 * wxScale,
+            }}
+          >
+            <Icon name="close" size={48 * wxScale} color={textSecondary} />
+            <Text style={{ marginTop: 12 * wxScale, fontSize: 14 * wxScale, color: textSecondary }}>
+              加载失败
+            </Text>
+            <Box
+              onClick={fetchRecords}
+              style={{
+                marginTop: 16 * wxScale,
+                paddingLeft: 16 * wxScale,
+                paddingRight: 16 * wxScale,
+                paddingTop: 8 * wxScale,
+                paddingBottom: 8 * wxScale,
+                borderRadius: 8 * wxScale,
+                backgroundColor: primaryColor,
+              }}
+            >
+              <Text style={{ fontSize: 14 * wxScale, color: '#fff' }}>点击重试</Text>
+            </Box>
+          </Box>
         )}
-      </div>
+
+        {/* 空状态 */}
+        {isEmpty && !isError && (
+          <Box
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              paddingTop: 48 * wxScale,
+            }}
+          >
+            <Icon name="checklist" size={48 * wxScale} color={textSecondary} />
+            <Text style={{ marginTop: 12 * wxScale, fontSize: 14 * wxScale, color: textSecondary }}>
+              暂无积分记录
+            </Text>
+            {onNavigate && (
+              <Box
+                onClick={() => onNavigate('points')}
+                style={{
+                  marginTop: 16 * wxScale,
+                  paddingLeft: 16 * wxScale,
+                  paddingRight: 16 * wxScale,
+                  paddingTop: 8 * wxScale,
+                  paddingBottom: 8 * wxScale,
+                  borderRadius: 8 * wxScale,
+                  backgroundColor: primaryColor,
+                }}
+              >
+                <Text style={{ fontSize: 14 * wxScale, fontWeight: 500, color: '#fff' }}>
+                  去赚积分
+                </Text>
+              </Box>
+            )}
+          </Box>
+        )}
+
+        {/* 记录列表 */}
+        {!isLoading && !isError && records.length > 0 && (
+          <Box style={{ display: 'flex', flexDirection: 'column', gap: 8 * wxScale }}>
+            {records.map((record) => (
+              <RecordItem key={record.id} record={record} isDarkMode={isDarkMode} />
+            ))}
+          </Box>
+        )}
+      </Box>
 
       {/* 底部留白 */}
-      <div className="h-16" />
-    </div>
+      <Box style={{ height: 64 * wxScale }} />
+    </Box>
   )
 }
 
@@ -138,27 +264,59 @@ interface RecordItemProps {
 }
 
 function RecordItem({ record, isDarkMode }: RecordItemProps) {
-  const isEarn = record.type === 'earn'
+  const isEarn = record.type === 'earn' || record.type === 'refund'
+  const cardBg = isDarkMode ? '#2a2a2a' : '#ffffff'
+  const textPrimary = isDarkMode ? '#f3f4f6' : '#111827'
+  const textSecondary = isDarkMode ? '#9ca3af' : '#6b7280'
+
+  // 格式化日期
+  const formatDate = (dateStr: string) => {
+    try {
+      const date = new Date(dateStr)
+      return date.toLocaleString('zh-CN', {
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    } catch {
+      return dateStr
+    }
+  }
 
   return (
-    <div
-      className="flex items-center justify-between p-3 rounded-lg"
+    <Box
       style={{
-        backgroundColor: isDarkMode ? '#2a2a2a' : '#fff',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: 12 * wxScale,
+        borderRadius: 8 * wxScale,
+        backgroundColor: cardBg,
       }}
     >
-      <div>
-        <div className={`text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-          {record.title}
-        </div>
-        <div className={`text-xs mt-1 ${getTertiaryTextClass(isDarkMode)}`}>
-          {record.createdAt}
-        </div>
-      </div>
-      <div className={`font-medium ${isEarn ? 'text-green-500' : 'text-red-500'}`}>
-        {isEarn ? '+' : '-'}{record.points}
-      </div>
-    </div>
+      <Box>
+        <Text style={{ fontSize: 14 * wxScale, color: textPrimary }}>{record.description}</Text>
+        <Text
+          style={{
+            display: 'block',
+            marginTop: 4 * wxScale,
+            fontSize: 12 * wxScale,
+            color: textSecondary,
+          }}
+        >
+          {formatDate(record.createdAt)}
+        </Text>
+      </Box>
+      <Text
+        style={{
+          fontSize: 16 * wxScale,
+          fontWeight: 500,
+          color: isEarn ? '#22c55e' : '#ef4444',
+        }}
+      >
+        {record.points > 0 ? '+' : ''}{record.points}
+      </Text>
+    </Box>
   )
 }
-

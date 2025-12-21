@@ -41,6 +41,8 @@ import type {
   Campaign,
   CampaignDetail,
   AvailableCoupon,
+  CheckInStatus,
+  CheckInResult,
 } from './types'
 import {
   getMockMembershipData,
@@ -354,12 +356,40 @@ export const getServiceDetail = (id: string) =>
 
 /**
  * 获取我的优惠券
- * 接口: GET /marketing/coupons/my
+ * 接口: GET /coupons/my
  * 通道: userRequest
  */
 export const getMyCoupons = async (): Promise<CouponsResponse> => {
   try {
-    return await userRequest<CouponsResponse>('/marketing/coupons/my')
+    // 后端返回格式: { data: [...], total, page, pageSize }
+    const response = await userRequest<{
+      data: Array<{
+        id: string
+        value: number
+        minAmount: number
+        expireAt: string
+        status: string
+        template?: {
+          name: string
+          description?: string
+        }
+      }>
+      total: number
+    }>('/coupons/my')
+
+    // 转换为前端格式: { items: [...], total }
+    return {
+      items: response.data.map(item => ({
+        id: item.id,
+        name: item.template?.name || '优惠券',
+        description: item.template?.description,
+        amount: item.value,
+        minAmount: item.minAmount,
+        expireAt: item.expireAt,
+        status: item.status as 'available' | 'used' | 'expired',
+      })),
+      total: response.total,
+    }
   } catch (error) {
     // 404/500 降级到 mock 数据
     if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
@@ -374,12 +404,12 @@ export const getMyCoupons = async (): Promise<CouponsResponse> => {
 
 /**
  * 获取我的会员信息
- * 接口: GET /marketing/membership/my
+ * 接口: GET /membership/my
  * 通道: userRequest
  */
 export const getMyMembership = async (): Promise<MembershipInfo | null> => {
   try {
-    return await userRequest<MembershipInfo | null>('/marketing/membership/my')
+    return await userRequest<MembershipInfo | null>('/membership/my')
   } catch (error) {
     if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
       console.warn('[previewApi.getMyMembership] 接口错误，使用 mock 数据')
@@ -392,12 +422,12 @@ export const getMyMembership = async (): Promise<MembershipInfo | null> => {
 
 /**
  * 获取会员套餐列表
- * 接口: GET /marketing/membership/plans
+ * 接口: GET /membership/plans
  * 通道: userRequest
  */
 export const getMembershipPlans = async (): Promise<MembershipPlan[]> => {
   try {
-    return await userRequest<MembershipPlan[]>('/marketing/membership/plans')
+    return await userRequest<MembershipPlan[]>('/membership/plans')
   } catch (error) {
     if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
       console.warn('[previewApi.getMembershipPlans] 接口错误，使用 mock 数据')
@@ -409,13 +439,49 @@ export const getMembershipPlans = async (): Promise<MembershipPlan[]> => {
 }
 
 /**
+ * 购买会员套餐
+ * 接口: POST /membership/purchase
+ * 通道: userRequest
+ */
+export const purchaseMembership = async (planId: string): Promise<{ success: boolean; orderId?: string; message?: string }> => {
+  try {
+    const response = await userRequest<{ orderId: string; amount: number; status: string }>('/membership/purchase', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ planId }),
+    })
+    return { success: true, orderId: response.orderId }
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return { success: false, message: error.message }
+    }
+    return { success: false, message: '网络错误，请重试' }
+  }
+}
+
+/**
  * 获取我的积分信息
- * 接口: GET /marketing/points/my
+ * 接口: GET /points/overview
  * 通道: userRequest
  */
 export const getMyPoints = async (): Promise<PointsInfo> => {
   try {
-    return await userRequest<PointsInfo>('/marketing/points/my')
+    // 后端返回的是 overview 结构，需要映射为前端结构
+    const data = await userRequest<{
+      totalPoints: number
+      usedPoints: number
+      expiredPoints: number
+      currentPoints: number
+      expiringPoints: number
+    }>('/points/overview')
+    return {
+      balance: data.currentPoints,
+      totalEarned: data.totalPoints,
+      totalUsed: data.usedPoints,
+      expiringSoon: data.expiringPoints,
+    }
   } catch (error) {
     if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
       console.warn('[previewApi.getMyPoints] 接口错误，使用 mock 数据')
@@ -428,16 +494,17 @@ export const getMyPoints = async (): Promise<PointsInfo> => {
 
 /**
  * 获取积分记录
- * 接口: GET /marketing/points/records
+ * 接口: GET /points/records
  * 通道: userRequest
  */
-export const getPointsRecords = async (params?: { page?: number; pageSize?: number }): Promise<PointsRecordsResponse> => {
+export const getPointsRecords = async (params?: { page?: number; pageSize?: number; type?: string }): Promise<PointsRecordsResponse> => {
   try {
     const searchParams = new URLSearchParams()
     if (params?.page) searchParams.set('page', params.page.toString())
     if (params?.pageSize) searchParams.set('pageSize', params.pageSize.toString())
+    if (params?.type) searchParams.set('type', params.type)
     const query = searchParams.toString()
-    return await userRequest<PointsRecordsResponse>(`/marketing/points/records${query ? `?${query}` : ''}`)
+    return await userRequest<PointsRecordsResponse>(`/points/records${query ? `?${query}` : ''}`)
   } catch (error) {
     if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
       console.warn('[previewApi.getPointsRecords] 接口错误，使用 mock 数据')
@@ -445,6 +512,47 @@ export const getPointsRecords = async (params?: { page?: number; pageSize?: numb
     }
     console.warn('[previewApi.getPointsRecords] 请求失败，降级 mock:', error)
     return getMockPointsRecords()
+  }
+}
+
+/**
+ * 获取签到状态
+ * 接口: GET /points/checkin/status
+ * 通道: userRequest
+ */
+export const getCheckInStatus = async (): Promise<CheckInStatus> => {
+  try {
+    return await userRequest<CheckInStatus>('/points/checkin/status')
+  } catch (error) {
+    console.warn('[previewApi.getCheckInStatus] 请求失败:', error)
+    return {
+      checkedIn: false,
+      consecutiveDays: 0,
+      todayPoints: 0,
+    }
+  }
+}
+
+/**
+ * 每日签到
+ * 接口: POST /points/checkin
+ * 通道: userRequest
+ */
+export const checkIn = async (): Promise<{ success: boolean; data?: CheckInResult; message?: string }> => {
+  try {
+    const data = await userRequest<CheckInResult>('/points/checkin', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({}),
+    })
+    return { success: true, data }
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return { success: false, message: error.message }
+    }
+    return { success: false, message: '签到失败，请重试' }
   }
 }
 
@@ -503,13 +611,60 @@ export const getCampaignDetail = async (id: string): Promise<CampaignDetail> => 
 }
 
 /**
+ * 领取优惠券
+ * 接口: POST /coupons/claim
+ * 通道: userRequest
+ */
+export const claimCoupon = async (templateId: string): Promise<{ success: boolean; message?: string }> => {
+  try {
+    await userRequest<unknown>('/coupons/claim', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ templateId }),
+    })
+    return { success: true }
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return { success: false, message: error.message || '领取失败' }
+    }
+    return { success: false, message: '网络错误，请重试' }
+  }
+}
+
+/**
  * 获取可领取优惠券列表
- * 接口: GET /marketing/coupons/available
+ * 接口: GET /coupons/available
  * 通道: userRequest
  */
 export const getAvailableCoupons = async (): Promise<AvailableCoupon[]> => {
   try {
-    return await userRequest<AvailableCoupon[]>('/marketing/coupons/available')
+    // 后端返回格式: CouponTemplate[] (带 canClaim, claimedCount 等字段)
+    const response = await userRequest<Array<{
+      id: string
+      name: string
+      description?: string
+      value: number
+      minAmount: number
+      totalQuantity: number | null
+      perUserLimit: number
+      canClaim: boolean
+      claimedCount: number
+    }>>('/coupons/available')
+
+    // 转换为前端格式（不过滤，显示所有优惠券，用 canClaim 控制按钮状态）
+    return response.map(item => ({
+      id: item.id,
+      name: item.name,
+      description: item.description,
+      amount: item.value,
+      minAmount: item.minAmount,
+      remaining: item.totalQuantity ? Math.max(0, item.totalQuantity - item.claimedCount) : 999,
+      canClaim: item.canClaim,
+      claimedCount: item.claimedCount,
+      perUserLimit: item.perUserLimit,
+    }))
   } catch (error) {
     if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
       console.warn('[previewApi.getAvailableCoupons] 接口错误，使用 mock 数据')
@@ -591,6 +746,30 @@ export const submitComplaint = async (
     console.warn('[previewApi.submitComplaint] 提交投诉失败:', error)
     // Mock 模式下模拟成功
     return { id: `complaint-${Date.now()}`, status: 'pending' }
+  }
+}
+
+/**
+ * 提交意见反馈
+ * 接口: POST /feedback
+ * 通道: userRequest
+ */
+export const submitFeedback = async (data: {
+  type: string
+  content: string
+  contact?: string
+  images?: string[]
+}): Promise<{ id: string; status: string }> => {
+  try {
+    return await userRequest<{ id: string; status: string }>('/feedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    })
+  } catch (error) {
+    console.warn('[previewApi.submitFeedback] 提交反馈失败:', error)
+    // Mock 模式下模拟成功
+    return { id: `feedback-${Date.now()}`, status: 'pending' }
   }
 }
 

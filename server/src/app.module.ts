@@ -33,6 +33,7 @@ import { CouponsModule } from './modules/coupons/coupons.module';
 import { PointsModule } from './modules/points/points.module';
 import { ReferralsModule } from './modules/referrals/referrals.module';
 import { CampaignsModule } from './modules/campaigns/campaigns.module';
+import { FeedbackModule } from './modules/feedback/feedback.module';
 import { DistributionModule } from './modules/distribution/distribution.module';
 import { RedisModule } from './modules/redis/redis.module';
 import { PagesModule } from './modules/cms/pages/pages.module';
@@ -87,6 +88,7 @@ import { UserAddressesModule } from './modules/user-addresses/user-addresses.mod
     PointsModule,       // 积分系统
     ReferralsModule,    // 邀请系统
     CampaignsModule,    // 活动系统
+    FeedbackModule,     // 意见反馈系统
     DistributionModule, // 分销系统
     PagesModule,            // CMS 页面管理
     ArticleCategoriesModule, // CMS 文章分类管理

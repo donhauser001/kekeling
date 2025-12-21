@@ -1,29 +1,52 @@
 /**
- * 文章详情页面预览组件
+ * 文章详情页面
  *
- * 显示单篇文章内容，使用 iframe 隔离样式
+ * 显示单篇文章内容
+ * Web 端使用 iframe 隔离样式，小程序端使用 RichText 组件
+ *
+ * 遵循《小程序页面改造规范》：
+ * - 使用原语组件 Box, Text, Icon, RichText
+ * - 布局属性在 style 中定义
+ * - 使用 wxScale 缩放视觉尺寸
+ * - 使用 useState + useEffect 获取数据
  */
 
-import { useRef, useEffect, useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, AlertCircle } from '../../ui/lucide-compat'
+import { useState, useEffect, useRef, useMemo } from 'react'
+import { Box, Text, Icon, RichText, Image } from '../../ui/primitives'
+import { isWxEnvironment, isBrowserEnvironment } from '../../platform/env'
 import type { ThemeSettings } from '../../types'
 import { previewApi } from '../../api'
 
+// ============================================================================
+// 类型定义
+// ============================================================================
+
 interface ArticleDetailPageProps {
-  /** 文章 ID */
   articleId: string
-  /** 主题设置 */
   themeSettings: ThemeSettings
-  /** 是否深色模式 */
   isDarkMode?: boolean
-  /** 返回回调 */
   onBack?: () => void
 }
 
-/**
- * 内容渲染组件（使用 iframe 隔离样式）
- */
+interface Article {
+  id: string
+  title: string
+  content: string
+  coverImage?: string
+  excerpt?: string
+}
+
+// ============================================================================
+// 常量
+// ============================================================================
+
+const wxScale = isWxEnvironment() ? 1.1 : 1
+const wxSafeAreaTop = isWxEnvironment() ? 44 : 0
+
+// ============================================================================
+// 子组件：Web 端 iframe 内容渲染
+// ============================================================================
+
 function IsolatedContent({
   html,
   coverImage,
@@ -37,7 +60,6 @@ function IsolatedContent({
 }) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
 
-  // 生成完整的 HTML 文档
   const fullDocument = useMemo(() => {
     const bgColor = isDarkMode ? '#2a2a2a' : '#ffffff'
     const textPrimary = isDarkMode ? '#f3f4f6' : '#111827'
@@ -50,20 +72,15 @@ function IsolatedContent({
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       font-size: 14px;
       line-height: 1.6;
       color: ${textPrimary};
       background-color: ${bgColor};
       padding: 16px;
       word-wrap: break-word;
-      overflow-wrap: break-word;
     }
     .cover-image {
       width: 100%;
@@ -72,7 +89,6 @@ function IsolatedContent({
       border-radius: 8px;
       margin-bottom: 16px;
     }
-    /* 基础排版样式 */
     h1, h2, h3, h4, h5, h6 {
       margin-top: 1.5em;
       margin-bottom: 0.5em;
@@ -83,31 +99,13 @@ function IsolatedContent({
     h1 { font-size: 1.5em; }
     h2 { font-size: 1.25em; }
     h3 { font-size: 1.125em; }
-    h1:first-child, h2:first-child, h3:first-child {
-      margin-top: 0;
-    }
-    p {
-      margin-bottom: 1em;
-    }
-    a {
-      color: ${primaryColor};
-      text-decoration: none;
-    }
-    a:hover {
-      text-decoration: underline;
-    }
-    ul, ol {
-      margin-bottom: 1em;
-      padding-left: 1.5em;
-    }
-    li {
-      margin-bottom: 0.25em;
-    }
-    img {
-      max-width: 100%;
-      height: auto;
-      border-radius: 4px;
-    }
+    h1:first-child, h2:first-child, h3:first-child { margin-top: 0; }
+    p { margin-bottom: 1em; }
+    a { color: ${primaryColor}; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    ul, ol { margin-bottom: 1em; padding-left: 1.5em; }
+    li { margin-bottom: 0.25em; }
+    img { max-width: 100%; height: auto; border-radius: 4px; }
     blockquote {
       margin: 1em 0;
       padding: 0.5em 1em;
@@ -123,35 +121,17 @@ function IsolatedContent({
       overflow-x: auto;
     }
     code {
-      font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+      font-family: 'SF Mono', Monaco, monospace;
       font-size: 0.875em;
       padding: 0.125em 0.25em;
       background-color: ${isDarkMode ? '#3a3a3a' : '#f3f4f6'};
       border-radius: 2px;
     }
-    pre code {
-      padding: 0;
-      background: none;
-    }
-    table {
-      width: 100%;
-      margin: 1em 0;
-      border-collapse: collapse;
-    }
-    th, td {
-      padding: 0.5em;
-      border: 1px solid ${borderColor};
-      text-align: left;
-    }
-    th {
-      background-color: ${isDarkMode ? '#3a3a3a' : '#f9fafb'};
-      font-weight: 600;
-    }
-    hr {
-      margin: 1.5em 0;
-      border: none;
-      border-top: 1px solid ${borderColor};
-    }
+    pre code { padding: 0; background: none; }
+    table { width: 100%; margin: 1em 0; border-collapse: collapse; }
+    th, td { padding: 0.5em; border: 1px solid ${borderColor}; text-align: left; }
+    th { background-color: ${isDarkMode ? '#3a3a3a' : '#f9fafb'}; font-weight: 600; }
+    hr { margin: 1.5em 0; border: none; border-top: 1px solid ${borderColor}; }
   </style>
 </head>
 <body>
@@ -161,7 +141,6 @@ function IsolatedContent({
 </html>`
   }, [html, coverImage, isDarkMode, primaryColor])
 
-  // 将内容写入 iframe
   useEffect(() => {
     const iframe = iframeRef.current
     if (!iframe) return
@@ -173,40 +152,36 @@ function IsolatedContent({
     doc.write(fullDocument)
     doc.close()
 
-    // 自动调整高度
     const adjustHeight = () => {
       if (doc.body) {
-        const height = doc.body.scrollHeight
-        iframe.style.height = `${height}px`
+        iframe.style.height = `${doc.body.scrollHeight}px`
       }
     }
 
-    // 等待内容加载完成
     const timer = setTimeout(adjustHeight, 100)
-
-    // 监听图片加载完成后重新调整高度
     const images = doc.querySelectorAll('img')
-    images.forEach(img => {
+    images.forEach((img) => {
       if (!img.complete) {
         img.addEventListener('load', adjustHeight)
       }
     })
 
-    return () => {
-      clearTimeout(timer)
-    }
+    return () => clearTimeout(timer)
   }, [fullDocument])
 
   return (
     <iframe
       ref={iframeRef}
-      title='文章内容'
-      className='w-full border-0'
-      style={{ minHeight: 200 }}
-      sandbox='allow-same-origin'
+      title="文章内容"
+      style={{ width: '100%', border: 'none', minHeight: 200 }}
+      sandbox="allow-same-origin"
     />
   )
 }
+
+// ============================================================================
+// 主组件
+// ============================================================================
 
 export function ArticleDetailPage({
   articleId,
@@ -214,120 +189,301 @@ export function ArticleDetailPage({
   isDarkMode = false,
   onBack,
 }: ArticleDetailPageProps) {
-  // 获取文章数据
-  const { data: article, isLoading } = useQuery({
-    queryKey: ['preview', 'article', articleId],
-    queryFn: () => previewApi.getArticleById(articleId),
-    enabled: !!articleId,
-  })
+  const [article, setArticle] = useState<Article | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
   // 颜色配置
+  const primaryColor = themeSettings.primaryColor
   const bgColor = isDarkMode ? '#1a1a1a' : '#f5f7fa'
   const cardBg = isDarkMode ? '#2a2a2a' : '#ffffff'
   const textPrimary = isDarkMode ? '#f3f4f6' : '#111827'
   const textSecondary = isDarkMode ? '#9ca3af' : '#6b7280'
+  const borderColor = isDarkMode ? '#3a3a3a' : '#f3f4f6'
 
-  // 加载状态
+  // 获取文章数据
+  useEffect(() => {
+    if (!articleId) return
+    setIsLoading(true)
+    previewApi
+      .getArticleById(articleId)
+      .then(setArticle)
+      .catch(console.error)
+      .finally(() => setIsLoading(false))
+  }, [articleId])
+
+  // 加载状态 - 骨架屏
   if (isLoading) {
     return (
-      <div style={{ backgroundColor: bgColor }} className='min-h-full'>
-        {/* 顶部导航 */}
-        <div
-          className='sticky top-0 z-10 flex items-center gap-3 px-4 py-3'
-          style={{ backgroundColor: cardBg }}
+      <Box
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: '100vh',
+          backgroundColor: bgColor,
+        }}
+      >
+        {/* 导航栏 */}
+        <Box
+          style={{
+            position: 'sticky',
+            top: 0,
+            zIndex: 100,
+            backgroundColor: primaryColor,
+            paddingTop: wxSafeAreaTop,
+          }}
         >
-          <button
-            onClick={onBack}
-            className='p-1 -ml-1 rounded-full hover:bg-black/5 active:bg-black/10'
+          <Box
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              position: 'relative',
+              height: 44 * wxScale,
+              paddingLeft: 12 * wxScale,
+              paddingRight: 12 * wxScale,
+            }}
           >
-            <ArrowLeft className='h-5 w-5' style={{ color: textPrimary }} />
-          </button>
-          <span className='font-medium' style={{ color: textPrimary }}>
-            加载中...
-          </span>
-        </div>
+            <Box
+              onClick={onBack}
+              style={{
+                position: 'absolute',
+                left: 12 * wxScale,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 36 * wxScale,
+                height: 36 * wxScale,
+              }}
+            >
+              <Icon name="left" size={22 * wxScale} color="#fff" />
+            </Box>
+            <Text style={{ fontSize: 17 * wxScale, fontWeight: 600, color: '#fff' }}>加载中...</Text>
+          </Box>
+        </Box>
 
-        {/* 加载骨架屏 */}
-        <div className='p-4 space-y-4'>
-          <div className='h-8 w-48 rounded animate-pulse' style={{ backgroundColor: isDarkMode ? '#3a3a3a' : '#e5e7eb' }} />
-          <div className='h-4 w-full rounded animate-pulse' style={{ backgroundColor: isDarkMode ? '#3a3a3a' : '#e5e7eb' }} />
-          <div className='h-4 w-3/4 rounded animate-pulse' style={{ backgroundColor: isDarkMode ? '#3a3a3a' : '#e5e7eb' }} />
-          <div className='h-4 w-5/6 rounded animate-pulse' style={{ backgroundColor: isDarkMode ? '#3a3a3a' : '#e5e7eb' }} />
-        </div>
-      </div>
+        {/* 骨架屏 */}
+        <Box style={{ padding: 16 * wxScale }}>
+          <Box
+            style={{
+              height: 32 * wxScale,
+              width: 192 * wxScale,
+              borderRadius: 4 * wxScale,
+              backgroundColor: borderColor,
+              marginBottom: 16 * wxScale,
+            }}
+          />
+          {[1, 2, 3].map((i) => (
+            <Box
+              key={i}
+              style={{
+                height: 16 * wxScale,
+                width: i === 3 ? '66%' : '100%',
+                borderRadius: 4 * wxScale,
+                backgroundColor: borderColor,
+                marginBottom: 8 * wxScale,
+              }}
+            />
+          ))}
+        </Box>
+      </Box>
     )
   }
 
   // 文章不存在
   if (!article) {
     return (
-      <div style={{ backgroundColor: bgColor }} className='min-h-full'>
-        {/* 顶部导航 */}
-        <div
-          className='sticky top-0 z-10 flex items-center gap-3 px-4 py-3'
-          style={{ backgroundColor: cardBg }}
+      <Box
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: '100vh',
+          backgroundColor: bgColor,
+        }}
+      >
+        {/* 导航栏 */}
+        <Box
+          style={{
+            position: 'sticky',
+            top: 0,
+            zIndex: 100,
+            backgroundColor: primaryColor,
+            paddingTop: wxSafeAreaTop,
+          }}
         >
-          <button
-            onClick={onBack}
-            className='p-1 -ml-1 rounded-full hover:bg-black/5 active:bg-black/10'
+          <Box
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              position: 'relative',
+              height: 44 * wxScale,
+              paddingLeft: 12 * wxScale,
+              paddingRight: 12 * wxScale,
+            }}
           >
-            <ArrowLeft className='h-5 w-5' style={{ color: textPrimary }} />
-          </button>
-          <span className='font-medium' style={{ color: textPrimary }}>
-            文章详情
-          </span>
-        </div>
+            <Box
+              onClick={onBack}
+              style={{
+                position: 'absolute',
+                left: 12 * wxScale,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 36 * wxScale,
+                height: 36 * wxScale,
+              }}
+            >
+              <Icon name="left" size={22 * wxScale} color="#fff" />
+            </Box>
+            <Text style={{ fontSize: 17 * wxScale, fontWeight: 600, color: '#fff' }}>文章详情</Text>
+          </Box>
+        </Box>
 
         {/* 空状态 */}
-        <div className='flex flex-col items-center justify-center py-16 px-4'>
-          <div
-            className='w-16 h-16 rounded-full flex items-center justify-center mb-4'
-            style={{ backgroundColor: isDarkMode ? '#3a3a3a' : '#f3f4f6' }}
+        <Box
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingTop: 64 * wxScale,
+            paddingBottom: 64 * wxScale,
+            paddingLeft: 16 * wxScale,
+            paddingRight: 16 * wxScale,
+          }}
+        >
+          <Box
+            style={{
+              width: 64 * wxScale,
+              height: 64 * wxScale,
+              borderRadius: 32 * wxScale,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: 16 * wxScale,
+              backgroundColor: borderColor,
+            }}
           >
-            <AlertCircle className='h-8 w-8' style={{ color: textSecondary }} />
-          </div>
-          <p className='text-center font-medium mb-2' style={{ color: textPrimary }}>
+            <Icon name="caution" size={32 * wxScale} color={textSecondary} />
+          </Box>
+          <Text
+            style={{
+              fontSize: 16 * wxScale,
+              fontWeight: 500,
+              color: textPrimary,
+              marginBottom: 8 * wxScale,
+              textAlign: 'center',
+            }}
+          >
             文章不存在
-          </p>
-          <p className='text-center text-sm' style={{ color: textSecondary }}>
+          </Text>
+          <Text style={{ fontSize: 14 * wxScale, color: textSecondary, textAlign: 'center' }}>
             该文章可能已被删除或未发布
-          </p>
-        </div>
-      </div>
+          </Text>
+        </Box>
+      </Box>
     )
   }
 
+  // 正常渲染
   return (
-    <div style={{ backgroundColor: bgColor }} className='min-h-full'>
-      {/* 顶部导航 */}
-      <div
-        className='sticky top-0 z-10 flex items-center gap-3 px-4 py-3 border-b'
+    <Box
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: '100vh',
+        backgroundColor: bgColor,
+      }}
+    >
+      {/* 导航栏 */}
+      <Box
         style={{
-          backgroundColor: cardBg,
-          borderColor: isDarkMode ? '#3a3a3a' : '#f3f4f6',
+          position: 'sticky',
+          top: 0,
+          zIndex: 100,
+          backgroundColor: primaryColor,
+          paddingTop: wxSafeAreaTop,
         }}
       >
-        <button
-          onClick={onBack}
-          className='p-1 -ml-1 rounded-full hover:bg-black/5 active:bg-black/10'
+        <Box
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'relative',
+            height: 44 * wxScale,
+            paddingLeft: 12 * wxScale,
+            paddingRight: 12 * wxScale,
+          }}
         >
-          <ArrowLeft className='h-5 w-5' style={{ color: textPrimary }} />
-        </button>
-        <span className='font-medium truncate flex-1' style={{ color: textPrimary }}>
-          {article.title}
-        </span>
-      </div>
+          <Box
+            onClick={onBack}
+            style={{
+              position: 'absolute',
+              left: 12 * wxScale,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 36 * wxScale,
+              height: 36 * wxScale,
+            }}
+          >
+            <Icon name="left" size={22 * wxScale} color="#fff" />
+          </Box>
+          <Text
+            style={{
+              fontSize: 17 * wxScale,
+              fontWeight: 600,
+              color: '#fff',
+              maxWidth: '60%',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {article.title}
+          </Text>
+        </Box>
+      </Box>
 
-      {/* 文章内容（使用 iframe 隔离样式） */}
-      <IsolatedContent
-        html={article.content}
-        coverImage={article.coverImage}
-        isDarkMode={isDarkMode}
-        primaryColor={themeSettings.primaryColor}
-      />
-    </div>
+      {/* 文章内容 */}
+      <Box style={{ flex: 1 }}>
+        {isBrowserEnvironment() ? (
+          // Web 端：使用 iframe 隔离样式
+          <IsolatedContent
+            html={article.content}
+            coverImage={article.coverImage}
+            isDarkMode={isDarkMode}
+            primaryColor={primaryColor}
+          />
+        ) : (
+          // 小程序端：使用 RichText + 封面图
+          <Box style={{ backgroundColor: cardBg }}>
+            {article.coverImage && (
+              <Image
+                src={article.coverImage}
+                mode="aspectFill"
+                style={{
+                  width: '100%',
+                  height: 160 * wxScale,
+                }}
+              />
+            )}
+            <Box style={{ padding: 16 * wxScale }}>
+              <RichText
+                nodes={article.content}
+                style={{
+                  fontSize: 14 * wxScale,
+                  lineHeight: 1.6,
+                  color: textPrimary,
+                }}
+              />
+            </Box>
+          </Box>
+        )}
+      </Box>
+    </Box>
   )
 }
 
 export default ArticleDetailPage
-

@@ -30,9 +30,11 @@ export class CouponsController {
   constructor(private readonly couponsService: CouponsService) { }
 
   @Get('available')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: '获取可领取的优惠券列表' })
   async getAvailableTemplates(
-    @CurrentUser('sub') userId: string | undefined,
+    @CurrentUser('sub') userId: string,
   ) {
     const data = await this.couponsService.getAvailableTemplates(userId);
     return ApiResponse.success(data);

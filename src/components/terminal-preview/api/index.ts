@@ -98,12 +98,16 @@ export const previewApi = {
   getMyCoupons: userApi.getMyCoupons,
   getMyMembership: userApi.getMyMembership,
   getMembershipPlans: userApi.getMembershipPlans,
+  purchaseMembership: userApi.purchaseMembership,
   getMyPoints: userApi.getMyPoints,
   getPointsRecords: userApi.getPointsRecords,
+  getCheckInStatus: userApi.getCheckInStatus,
+  checkIn: userApi.checkIn,
   getReferralInfo: userApi.getReferralInfo,
   getCampaigns: userApi.getCampaigns,
   getCampaignDetail: userApi.getCampaignDetail,
   getAvailableCoupons: userApi.getAvailableCoupons,
+  claimCoupon: userApi.claimCoupon,
 
   // 陪诊员公开信息
   getEscorts: userApi.getEscorts,
@@ -111,6 +115,9 @@ export const previewApi = {
 
   // 订单投诉
   submitComplaint: userApi.submitComplaint,
+
+  // 意见反馈
+  submitFeedback: userApi.submitFeedback,
 
   // 陪诊员申请
   sendEscortApplyVerifyCode: userApi.sendEscortApplyVerifyCode,

@@ -57,6 +57,7 @@ import { Route as ClerkauthSignInRouteImport } from './routes/clerk/(auth)/sign-
 import { Route as AuthenticatedWithdrawalsSettingsRouteImport } from './routes/_authenticated/withdrawals/settings'
 import { Route as AuthenticatedUsersPatientsRouteImport } from './routes/_authenticated/users/patients'
 import { Route as AuthenticatedUsersUserIdRouteImport } from './routes/_authenticated/users/$userId'
+import { Route as AuthenticatedSupportFeedbackRouteImport } from './routes/_authenticated/support/feedback'
 import { Route as AuthenticatedSettingsSmsRouteImport } from './routes/_authenticated/settings/sms'
 import { Route as AuthenticatedSettingsPaymentRouteImport } from './routes/_authenticated/settings/payment'
 import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings/notifications'
@@ -354,6 +355,12 @@ const AuthenticatedUsersUserIdRoute =
     path: '/users/$userId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedSupportFeedbackRoute =
+  AuthenticatedSupportFeedbackRouteImport.update({
+    id: '/support/feedback',
+    path: '/support/feedback',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSettingsSmsRoute =
   AuthenticatedSettingsSmsRouteImport.update({
     id: '/sms',
@@ -584,6 +591,7 @@ export interface FileRoutesByFullPath {
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/settings/payment': typeof AuthenticatedSettingsPaymentRoute
   '/settings/sms': typeof AuthenticatedSettingsSmsRoute
+  '/support/feedback': typeof AuthenticatedSupportFeedbackRoute
   '/users/$userId': typeof AuthenticatedUsersUserIdRoute
   '/users/patients': typeof AuthenticatedUsersPatientsRoute
   '/withdrawals/settings': typeof AuthenticatedWithdrawalsSettingsRoute
@@ -663,6 +671,7 @@ export interface FileRoutesByTo {
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/settings/payment': typeof AuthenticatedSettingsPaymentRoute
   '/settings/sms': typeof AuthenticatedSettingsSmsRoute
+  '/support/feedback': typeof AuthenticatedSupportFeedbackRoute
   '/users/$userId': typeof AuthenticatedUsersUserIdRoute
   '/users/patients': typeof AuthenticatedUsersPatientsRoute
   '/withdrawals/settings': typeof AuthenticatedWithdrawalsSettingsRoute
@@ -747,6 +756,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/_authenticated/settings/payment': typeof AuthenticatedSettingsPaymentRoute
   '/_authenticated/settings/sms': typeof AuthenticatedSettingsSmsRoute
+  '/_authenticated/support/feedback': typeof AuthenticatedSupportFeedbackRoute
   '/_authenticated/users/$userId': typeof AuthenticatedUsersUserIdRoute
   '/_authenticated/users/patients': typeof AuthenticatedUsersPatientsRoute
   '/_authenticated/withdrawals/settings': typeof AuthenticatedWithdrawalsSettingsRoute
@@ -829,6 +839,7 @@ export interface FileRouteTypes {
     | '/settings/notifications'
     | '/settings/payment'
     | '/settings/sms'
+    | '/support/feedback'
     | '/users/$userId'
     | '/users/patients'
     | '/withdrawals/settings'
@@ -908,6 +919,7 @@ export interface FileRouteTypes {
     | '/settings/notifications'
     | '/settings/payment'
     | '/settings/sms'
+    | '/support/feedback'
     | '/users/$userId'
     | '/users/patients'
     | '/withdrawals/settings'
@@ -991,6 +1003,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/notifications'
     | '/_authenticated/settings/payment'
     | '/_authenticated/settings/sms'
+    | '/_authenticated/support/feedback'
     | '/_authenticated/users/$userId'
     | '/_authenticated/users/patients'
     | '/_authenticated/withdrawals/settings'
@@ -1391,6 +1404,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedUsersUserIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/support/feedback': {
+      id: '/_authenticated/support/feedback'
+      path: '/support/feedback'
+      fullPath: '/support/feedback'
+      preLoaderRoute: typeof AuthenticatedSupportFeedbackRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/settings/sms': {
       id: '/_authenticated/settings/sms'
       path: '/sms'
@@ -1670,6 +1690,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedFinanceSettlementsRoute: typeof AuthenticatedFinanceSettlementsRoute
   AuthenticatedFinanceTransactionsRoute: typeof AuthenticatedFinanceTransactionsRoute
   AuthenticatedServicesIdRoute: typeof AuthenticatedServicesIdRoute
+  AuthenticatedSupportFeedbackRoute: typeof AuthenticatedSupportFeedbackRoute
   AuthenticatedUsersUserIdRoute: typeof AuthenticatedUsersUserIdRoute
   AuthenticatedUsersPatientsRoute: typeof AuthenticatedUsersPatientsRoute
   AuthenticatedWithdrawalsSettingsRoute: typeof AuthenticatedWithdrawalsSettingsRoute
@@ -1732,6 +1753,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedFinanceSettlementsRoute: AuthenticatedFinanceSettlementsRoute,
   AuthenticatedFinanceTransactionsRoute: AuthenticatedFinanceTransactionsRoute,
   AuthenticatedServicesIdRoute: AuthenticatedServicesIdRoute,
+  AuthenticatedSupportFeedbackRoute: AuthenticatedSupportFeedbackRoute,
   AuthenticatedUsersUserIdRoute: AuthenticatedUsersUserIdRoute,
   AuthenticatedUsersPatientsRoute: AuthenticatedUsersPatientsRoute,
   AuthenticatedWithdrawalsSettingsRoute: AuthenticatedWithdrawalsSettingsRoute,

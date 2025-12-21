@@ -2,10 +2,6 @@
  * 陪诊员页面组件导出
  */
 
-// Step 10 批次 E
-export { EscortListPage } from './EscortListPage'
-export type { EscortListPageProps } from './EscortListPage'
-
+// 陪诊员详情页（入口：用户订单详情页点击陪诊员信息）
 export { EscortDetailPage } from './EscortDetailPage'
 export type { EscortDetailPageProps } from './EscortDetailPage'
-

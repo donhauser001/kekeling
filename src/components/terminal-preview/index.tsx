@@ -77,7 +77,6 @@ import {
   CampaignsPage,
   CampaignDetailPage,
   CouponsAvailablePage,
-  EscortListPage,
   EscortDetailPage,
   EscortApplyPage,
   WorkbenchPage,
@@ -108,6 +107,8 @@ import {
   // 个人资料编辑
   UserProfileEditPage,
   EscortProfileEditPage,
+  // 意见反馈
+  FeedbackPage,
   // 分销中心页面（Step 11.3-11.5）
   DistributionPage,
   DistributionMembersPage,
@@ -294,9 +295,11 @@ export function TerminalPreview({
     validatePageParams(page, params)
 
     // 小程序环境：特定页面跳转到原生页面
+    // 注意：目前 user-profile-edit 在 TerminalPreview 内部渲染效果更好
+    // 分包页面 /packageB/pages/user-settings/index 存在兼容性问题，暂不启用
     if (isWxEnvironment()) {
       const nativePageMap: Record<string, string> = {
-        'user-profile-edit': '/pages/user-settings/index',
+        // 'user-profile-edit': '/packageB/pages/user-settings/index',
       }
       const nativePath = nativePageMap[page]
       if (nativePath) {
@@ -702,6 +705,7 @@ export function TerminalPreview({
             themeSettings={themeSettings}
             isDarkMode={isDarkMode}
             onBack={() => navigateToPage('profile')}
+            onNavigate={(page, params) => navigateToPage(page, params)}
             couponsOverride={marketingData?.coupons}
           />
         )
@@ -779,22 +783,14 @@ export function TerminalPreview({
           />
         )
 
-      // Step 10: 陪诊员公开页面
-      case 'escort-list':
-        return (
-          <EscortListPage
-            themeSettings={themeSettings}
-            isDarkMode={isDarkMode}
-            onNavigate={(page, params) => navigateToPage(page, params)}
-          />
-        )
+      // Step 10: 陪诊员公开页面（入口：用户订单详情页点击陪诊员信息）
       case 'escort-detail':
         return (
           <EscortDetailPage
             themeSettings={themeSettings}
             isDarkMode={isDarkMode}
             escortId={pageParams.id}
-            onBack={() => navigateToPage('escort-list')}
+            onBack={() => navigateToPage('user-orders')}
           />
         )
       case 'escort-apply':
@@ -888,7 +884,7 @@ export function TerminalPreview({
         {
           const source = pageParams?.source
           if (source === 'my-orders') {
-        return (
+            return (
               <EscortOrderDetailPage
                 themeSettings={themeSettings}
                 isDarkMode={isDarkMode}
@@ -902,15 +898,15 @@ export function TerminalPreview({
           }
           return (
             <PoolOrderDetailPage
-            themeSettings={themeSettings}
-            isDarkMode={isDarkMode}
-            effectiveViewerRole={effectiveViewerRole}
-            orderId={pageParams?.id}
-            onBack={() => navigateToPage('workbench-orders-pool')}
-            onNavigate={(page, params) => navigateToPage(page, params)}
+              themeSettings={themeSettings}
+              isDarkMode={isDarkMode}
+              effectiveViewerRole={effectiveViewerRole}
+              orderId={pageParams?.id}
+              onBack={() => navigateToPage('workbench-orders-pool')}
+              onNavigate={(page, params) => navigateToPage(page, params)}
               onLogin={() => setShowEscortLoginDialog(true)}
-          />
-        )
+            />
+          )
         }
 
       // Step 13: 工作台设置
@@ -1101,6 +1097,17 @@ export function TerminalPreview({
       case 'help-center':
         return (
           <HelpCenterPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            onBack={() => navigateToPage('profile')}
+            onNavigate={(page, params) => navigateToPage(page, params)}
+          />
+        )
+
+      // 意见反馈
+      case 'feedback':
+        return (
+          <FeedbackPage
             themeSettings={themeSettings}
             isDarkMode={isDarkMode}
             onBack={() => navigateToPage('profile')}

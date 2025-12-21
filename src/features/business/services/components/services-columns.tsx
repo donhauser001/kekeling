@@ -8,7 +8,7 @@ import {
   Percent,
   ArrowUpCircle,
   ArrowDownCircle,
-  PackageSearch,
+  ImageOff,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { DataTableColumnHeader } from '@/components/data-table'
 import { cn } from '@/lib/utils'
+import { AppIcon, type IconName } from '@/components/ui/icon-picker'
 import type { Service } from '@/lib/api'
 
 // 状态颜色映射
@@ -44,6 +45,7 @@ interface ColumnsProps {
   onToggleStatus: (item: Service) => void
   getCategoryName: (categoryId: string) => string
   getCategoryColor: (categoryId: string) => string
+  getCategoryIcon: (categoryId: string) => IconName
 }
 
 export function getColumns({
@@ -53,6 +55,7 @@ export function getColumns({
   onToggleStatus,
   getCategoryName,
   getCategoryColor,
+  getCategoryIcon,
 }: ColumnsProps): ColumnDef<Service>[] {
   return [
     {
@@ -63,15 +66,31 @@ export function getColumns({
       meta: { title: '服务' },
       cell: ({ row }) => {
         const service = row.original
+        const categoryColor = getCategoryColor(service.categoryId)
+        const categoryIcon = getCategoryIcon(service.categoryId)
+
         return (
           <div className='flex items-center gap-3'>
-            <div
-              className={cn(
-                'flex h-8 w-8 items-center justify-center rounded-md',
-                getCategoryColor(service.categoryId)
+            {/* 封面图 */}
+            <div className='relative h-10 w-14 flex-shrink-0 overflow-hidden rounded bg-muted'>
+              {service.coverImage ? (
+                <img
+                  src={service.coverImage}
+                  alt={service.name}
+                  className='h-full w-full object-cover'
+                />
+              ) : (
+                <div className='flex h-full w-full items-center justify-center'>
+                  <ImageOff className='h-4 w-4 text-muted-foreground/40' />
+                </div>
               )}
-            >
-              <PackageSearch className='h-4 w-4 text-white' />
+              {/* 分类图标角标 */}
+              <div
+                className='absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-tl-md'
+                style={{ backgroundColor: categoryColor }}
+              >
+                <AppIcon name={categoryIcon} size={12} className='text-white' />
+              </div>
             </div>
             <div>
               <div className='font-medium'>{service.name}</div>

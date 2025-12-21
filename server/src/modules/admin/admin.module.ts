@@ -6,6 +6,7 @@ import { AdminEscortTagsController } from './controllers/admin-escort-tags.contr
 import { AdminWithdrawalsController, AdminWithdrawalsLegacyController } from './controllers/admin-withdrawals.controller';
 import { AdminCommissionController } from './controllers/admin-commission.controller';
 import { AdminComplaintsController } from './controllers/admin-complaints.controller';
+import { AdminFeedbackController } from './controllers/admin-feedback.controller';
 import { AdminDashboardController } from './controllers/admin-dashboard.controller';
 import { AdminUsersController } from './controllers/admin-users.controller';
 import { AdminBannersController } from './controllers/admin-banners.controller';
@@ -24,6 +25,7 @@ import { AdminEscortLevelsService } from './services/admin-escort-levels.service
 import { AdminEscortTagsService } from './services/admin-escort-tags.service';
 import { AdminWithdrawalsService } from './services/admin-withdrawals.service';
 import { AdminComplaintsService } from './services/admin-complaints.service';
+import { AdminFeedbackService } from './services/admin-feedback.service';
 import { AdminDashboardService } from './services/admin-dashboard.service';
 import { AdminUsersService } from './services/admin-users.service';
 import { AdminBannersService } from './services/admin-banners.service';
@@ -55,6 +57,7 @@ import { DistributionModule } from '../distribution/distribution.module';
     AdminWithdrawalsLegacyController,
     AdminCommissionController,
     AdminComplaintsController,
+    AdminFeedbackController,
     AdminDashboardController,
     AdminUsersController,
     AdminBannersController,
@@ -76,6 +79,7 @@ import { DistributionModule } from '../distribution/distribution.module';
     AdminEscortTagsService,
     AdminWithdrawalsService,
     AdminComplaintsService,
+    AdminFeedbackService,
     AdminDashboardService,
     AdminUsersService,
     AdminBannersService,

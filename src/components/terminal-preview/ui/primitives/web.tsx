@@ -346,6 +346,40 @@ export const ScrollView = forwardRef<HTMLDivElement, ScrollViewProps>(function S
 })
 
 // ============================================================================
+// RichText 组件
+// ============================================================================
+
+/**
+ * RichText - 富文本组件
+ * Web 端使用 dangerouslySetInnerHTML 渲染 HTML 内容
+ */
+export interface RichTextProps {
+  /** HTML 内容（nodes 为字符串时直接使用） */
+  nodes?: string
+  className?: string
+  style?: React.CSSProperties
+}
+
+export const RichText = forwardRef<HTMLDivElement, RichTextProps>(function RichText(
+  { nodes, className, style, ...rest },
+  ref
+) {
+  if (!nodes) {
+    return null
+  }
+
+  return (
+    <div
+      ref={ref}
+      className={className}
+      style={style}
+      dangerouslySetInnerHTML={{ __html: nodes }}
+      {...rest}
+    />
+  )
+})
+
+// ============================================================================
 // Icon 组件 - 重新导出
 // ============================================================================
 

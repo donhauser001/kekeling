@@ -119,6 +119,7 @@ export class EscortAppService {
   }
 
   // 获取陪诊员信息（通过用户ID）
+  // 头像策略：优先使用陪诊员头像，为空时回退到用户头像
   async getProfile(userId: string) {
     const escort = await this.prisma.escort.findFirst({
       where: { userId },
@@ -129,6 +130,11 @@ export class EscortAppService {
           },
         },
         level: true,
+        user: {
+          select: {
+            avatar: true,
+          },
+        },
       },
     });
 
@@ -136,10 +142,15 @@ export class EscortAppService {
       throw new NotFoundException('您不是陪诊员');
     }
 
-    return escort;
+    // 头像回退策略：陪诊员头像 > 用户头像
+    return {
+      ...escort,
+      avatar: escort.avatar || escort.user?.avatar || null,
+    };
   }
 
   // 获取陪诊员信息（通过 escortId，用于 escort token 验证）
+  // 头像策略：优先使用陪诊员头像，为空时回退到用户头像
   async getProfileByEscortId(escortId: string) {
     const escort = await this.prisma.escort.findUnique({
       where: { id: escortId },
@@ -150,6 +161,11 @@ export class EscortAppService {
           },
         },
         level: true,
+        user: {
+          select: {
+            avatar: true,
+          },
+        },
       },
     });
 
@@ -157,7 +173,11 @@ export class EscortAppService {
       throw new NotFoundException('陪诊员不存在');
     }
 
-    return escort;
+    // 头像回退策略：陪诊员头像 > 用户头像
+    return {
+      ...escort,
+      avatar: escort.avatar || escort.user?.avatar || null,
+    };
   }
 
   // 更新陪诊员资料
