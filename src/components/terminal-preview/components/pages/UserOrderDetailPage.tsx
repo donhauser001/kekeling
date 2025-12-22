@@ -8,10 +8,13 @@
  * @see docs/小程序页面改造规范.md
  */
 
+import { useState, useEffect } from 'react'
 import { Box, Text, ScrollView, Icon } from '../../ui/primitives'
 import { isWxEnvironment } from '../../platform/env'
 import type { ThemeSettings } from '../../types'
 import { getWxBridge } from '../../bridge'
+import { previewApi } from '../../api'
+import type { UserOrderDetail } from '../../api/user-api'
 
 // ============================================================================
 // 常量定义
@@ -32,46 +35,98 @@ export interface UserOrderDetailPageProps {
   onNavigate?: (page: string, params?: Record<string, string>) => void
 }
 
-// Mock 订单详情数据
-const mockOrderDetail = {
-  id: '1',
-  orderNo: 'KKL20241213001',
-  serviceName: '全程陪诊服务',
-  hospitalName: '北京协和医院',
-  departmentName: '心内科',
-  hospitalAddress: '北京市东城区帅府园1号',
-  appointmentDate: '2024-12-15',
-  appointmentTime: '09:00-12:00',
-  status: 'confirmed',
-  statusText: '待服务',
-  amount: 299,
-  paymentMethod: '微信支付',
-  paymentTime: '2024-12-13 10:30:25',
-  createTime: '2024-12-13 10:25:00',
+/** 订单显示数据（从 API 转换） */
+interface OrderDisplayData {
+  id: string
+  orderNo: string
+  serviceName: string
+  hospitalName: string
+  departmentName: string
+  hospitalAddress: string
+  appointmentDate: string
+  appointmentTime: string
+  status: string
+  statusText: string
+  amount: number
+  paymentMethod: string
+  paymentTime: string
+  createTime: string
   // 就诊人信息
-  patientName: '张三',
-  patientPhone: '138****8888',
-  patientGender: '男',
-  patientAge: 45,
-  patientIdCard: '110***********1234',
-  // 陪诊员信息
-  escortId: 'escort-001',
-  escortName: '李护士',
-  escortPhone: '139****9999',
-  escortAvatar: '',
-  escortRating: 4.9,
-  escortOrderCount: 328,
+  patientName: string
+  patientPhone: string
+  patientGender: string
+  patientAge?: number
+  patientIdCard: string
+  // 陪诊员信息（可能为空）
+  escortId?: string
+  escortName?: string
+  escortPhone?: string
+  escortAvatar?: string
+  escortRating?: number
+  escortOrderCount?: number
   // 服务内容
-  serviceItems: [
-    '全程陪同就医',
-    '代排队挂号',
-    '引导就诊流程',
-    '代取检查报告',
-    '用药指导说明',
-  ],
+  serviceItems: string[]
   // 备注
-  remark: '请提前10分钟到达医院门诊大厅',
+  remark: string
 }
+
+/** 状态文本映射 */
+const getStatusText = (status: string): string => {
+  const map: Record<string, string> = {
+    pending: '待支付',
+    paid: '待服务',
+    confirmed: '待服务',
+    assigned: '待服务',
+    arrived: '服务中',
+    in_progress: '服务中',
+    completed: '已完成',
+    cancelled: '已取消',
+  }
+  return map[status] || status
+}
+
+/** 状态分组映射（用于颜色） */
+const getStatusGroup = (status: string): string => {
+  if (status === 'pending') return 'pending'
+  if (['paid', 'confirmed', 'assigned'].includes(status)) return 'confirmed'
+  if (['arrived', 'in_progress'].includes(status)) return 'in_progress'
+  if (status === 'completed') return 'completed'
+  return 'cancelled'
+}
+
+/** 转换 API 数据为显示数据 */
+const transformOrderData = (data: UserOrderDetail): OrderDisplayData => ({
+  id: data.id,
+  orderNo: data.orderNo,
+  serviceName: data.service?.name || '陪诊服务',
+  hospitalName: data.hospital?.name || '-',
+  departmentName: data.departmentName || '-',
+  hospitalAddress: data.hospital?.address || '-',
+  appointmentDate: data.appointmentDate,
+  appointmentTime: data.appointmentTime,
+  status: data.status,
+  statusText: getStatusText(data.status),
+  amount: Number(data.totalAmount) || 0,
+  paymentMethod: data.paymentMethod === 'wechat' ? '微信支付' : (data.paymentMethod || '-'),
+  paymentTime: data.paidAt || data.paymentTime || '-',
+  createTime: data.createdAt,
+  // 就诊人
+  patientName: data.patient?.name || '-',
+  patientPhone: data.patient?.phone ? `${data.patient.phone.slice(0, 3)}****${data.patient.phone.slice(-4)}` : '-',
+  patientGender: data.patient?.gender || '-',
+  patientAge: data.patient?.age,
+  patientIdCard: data.patient?.idCard ? `${data.patient.idCard.slice(0, 3)}***********${data.patient.idCard.slice(-4)}` : '-',
+  // 陪诊员（可能为空）
+  escortId: data.escort?.id,
+  escortName: data.escort?.name,
+  escortPhone: data.escort?.phone ? `${data.escort.phone.slice(0, 3)}****${data.escort.phone.slice(-4)}` : undefined,
+  escortAvatar: data.escort?.avatar,
+  escortRating: data.escort?.rating,
+  escortOrderCount: data.escort?.orderCount,
+  // 其他
+  serviceItems: data.service?.description?.split(/[,，;；\n]/).filter(Boolean) || ['全程陪同就医'],
+  remark: data.userRemark || '-',
+})
 
 // 状态颜色映射
 const statusColors: Record<string, { bg: string; text: string }> = {
@@ -170,11 +225,15 @@ function InfoRow({
 export function UserOrderDetailPage({
   themeSettings,
   isDarkMode,
-  orderId: _orderId,
+  orderId,
   onBack,
   onNavigate,
 }: UserOrderDetailPageProps) {
-  void _orderId // 保留用于未来订单详情查询
+  // 状态管理
+  const [order, setOrder] = useState<OrderDisplayData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
   // 颜色定义
   const bgColor = isDarkMode ? '#1a1a1a' : '#f5f7fa'
   const cardBg = isDarkMode ? '#2a2a2a' : '#ffffff'
@@ -184,7 +243,108 @@ export function UserOrderDetailPage({
   const borderColor = isDarkMode ? '#3a3a3a' : '#e5e7eb'
   const primaryColor = themeSettings.primaryColor
 
-  const order = mockOrderDetail
+  // 加载订单数据
+  useEffect(() => {
+    if (!orderId) {
+      setError('订单ID不存在')
+      setLoading(false)
+      return
+    }
+
+    setLoading(true)
+    setError(null)
+    previewApi.getUserOrderDetail(orderId)
+      .then((data) => {
+        if (data) {
+          setOrder(transformOrderData(data))
+        } else {
+          setError('订单不存在')
+        }
+      })
+      .catch((err) => {
+        console.error('[UserOrderDetailPage] 加载订单失败:', err)
+        setError('加载失败，请重试')
+      })
+      .finally(() => {
+        setLoading(false)
+      })
+  }, [orderId])
+
+  // 加载中状态
+  if (loading) {
+    return (
+      <Box style={{ minHeight: '100%', backgroundColor: bgColor }}>
+        <Box
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: (44 + wxSafeAreaTop) * wxScale,
+            paddingTop: wxSafeAreaTop * wxScale,
+            display: 'flex',
+            alignItems: 'center',
+            backgroundColor: cardBg,
+            borderBottom: `1px solid ${borderColor}`,
+            zIndex: 100,
+          }}
+        >
+          <Box onClick={onBack} style={{ padding: 12 * wxScale, cursor: 'pointer' }}>
+            <Icon name="left" size={20 * wxScale} color={textPrimary} />
+          </Box>
+          <Text style={{ fontSize: 16 * wxScale, fontWeight: 500, color: textPrimary }}>订单详情</Text>
+        </Box>
+        <Box style={{ paddingTop: (60 + wxSafeAreaTop) * wxScale, display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
+          <Text style={{ color: textMuted, fontSize: 14 * wxScale }}>加载中...</Text>
+        </Box>
+      </Box>
+    )
+  }
+
+  // 错误状态
+  if (error || !order) {
+    return (
+      <Box style={{ minHeight: '100%', backgroundColor: bgColor }}>
+        <Box
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: (44 + wxSafeAreaTop) * wxScale,
+            paddingTop: wxSafeAreaTop * wxScale,
+            display: 'flex',
+            alignItems: 'center',
+            backgroundColor: cardBg,
+            borderBottom: `1px solid ${borderColor}`,
+            zIndex: 100,
+          }}
+        >
+          <Box onClick={onBack} style={{ padding: 12 * wxScale, cursor: 'pointer' }}>
+            <Icon name="left" size={20 * wxScale} color={textPrimary} />
+          </Box>
+          <Text style={{ fontSize: 16 * wxScale, fontWeight: 500, color: textPrimary }}>订单详情</Text>
+        </Box>
+        <Box style={{ paddingTop: (60 + wxSafeAreaTop) * wxScale, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '50vh', gap: 12 * wxScale }}>
+          <Text style={{ color: textMuted, fontSize: 14 * wxScale }}>{error || '订单不存在'}</Text>
+          <Box
+            onClick={onBack}
+            style={{
+              padding: `${8 * wxScale}px ${20 * wxScale}px`,
+              backgroundColor: primaryColor,
+              borderRadius: 20,
+              cursor: 'pointer',
+            }}
+          >
+            <Text style={{ color: '#fff', fontSize: 14 * wxScale }}>返回</Text>
+          </Box>
+        </Box>
+      </Box>
+    )
+  }
+
+  // 获取状态颜色
+  const statusGroup = getStatusGroup(order.status)
 
   return (
     <Box
@@ -253,7 +413,7 @@ export function UserOrderDetailPage({
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  backgroundColor: statusColors[order.status]?.bg || '#f5f5f5',
+                  backgroundColor: statusColors[statusGroup]?.bg || '#f5f5f5',
                 }}
               >
                 <Icon
@@ -292,13 +452,13 @@ export function UserOrderDetailPage({
                 paddingTop: 4 * wxScale,
                 paddingBottom: 4 * wxScale,
                 borderRadius: 9999,
-                backgroundColor: statusColors[order.status]?.bg || '#f5f5f5',
+                backgroundColor: statusColors[statusGroup]?.bg || '#f5f5f5',
               }}
             >
               <Text
                 style={{
                   fontSize: 12 * wxScale,
-                  color: statusColors[order.status]?.text || '#8c8c8c',
+                  color: statusColors[statusGroup]?.text || '#8c8c8c',
                 }}
               >
                 {order.statusText}
@@ -528,16 +688,86 @@ export function UserOrderDetailPage({
         <Box style={{ display: 'flex', alignItems: 'center', gap: 8 * wxScale }}>
           {order.status === 'pending' && (
             <>
-              <ActionButton label="取消订单" borderColor={borderColor} textColor={textSecondary} />
+              <ActionButton
+                label="取消订单"
+                borderColor={borderColor}
+                textColor={textSecondary}
+                onClick={async () => {
+                  const wxBridge = getWxBridge()
+                  // 确认取消
+                  const confirmed = await new Promise<boolean>((resolve) => {
+                    if (isWxEnvironment() && typeof wx !== 'undefined') {
+                      wx.showModal({
+                        title: '确认取消',
+                        content: '确定要取消此订单吗？',
+                        success: (res: { confirm: boolean }) => resolve(res.confirm),
+                        fail: () => resolve(false),
+                      })
+                    } else {
+                      resolve(window.confirm('确定要取消此订单吗？'))
+                    }
+                  })
+                  if (!confirmed) return
+
+                  wxBridge.showLoading('取消中...')
+                  try {
+                    const result = await previewApi.cancelOrder(order.id)
+                    wxBridge.hideLoading()
+                    if (result.success) {
+                      wxBridge.showToast({ title: '订单已取消', icon: 'success' })
+                      setTimeout(() => onBack?.(), 1500)
+                    } else {
+                      wxBridge.showToast({ title: result.message || '取消失败', icon: 'error' })
+                    }
+                  } catch (error: any) {
+                    wxBridge.hideLoading()
+                    wxBridge.showToast({ title: error?.message || '取消失败', icon: 'error' })
+                  }
+                }}
+              />
               <ActionButton
                 label="立即支付"
                 backgroundColor={primaryColor}
                 textColor="#fff"
                 onClick={async () => {
                   const wxBridge = getWxBridge()
-                  wxBridge.showLoading('支付中...')
-                  wxBridge.hideLoading()
-                  wxBridge.showToast({ title: '支付功能待对接', icon: 'none' })
+                  wxBridge.showLoading('获取支付信息...')
+
+                  try {
+                    // 获取支付参数
+                    const paymentParams = await previewApi.getPaymentParams(order.id)
+                    wxBridge.hideLoading()
+
+                    // 调起微信支付
+                    wxBridge.showToast({ title: '正在调起支付...', icon: 'loading' })
+                    const payResult = await wxBridge.requestPayment({
+                      timeStamp: paymentParams.timeStamp,
+                      nonceStr: paymentParams.nonceStr,
+                      package: paymentParams.package,
+                      signType: paymentParams.signType as 'MD5' | 'HMAC-SHA256' | 'RSA',
+                      paySign: paymentParams.paySign,
+                    })
+
+                    if (payResult.success) {
+                      wxBridge.showToast({ title: '支付成功', icon: 'success' })
+                      // 刷新页面或更新状态
+                      setTimeout(() => {
+                        // 可以重新获取订单详情或直接返回订单列表
+                        onNavigate?.('user-orders')
+                      }, 1500)
+                    } else {
+                      const errorMsg = payResult.errMsg || '支付未完成'
+                      if (errorMsg.includes('cancel')) {
+                        wxBridge.showToast({ title: '已取消支付', icon: 'none' })
+                      } else {
+                        wxBridge.showToast({ title: errorMsg, icon: 'error' })
+                      }
+                    }
+                  } catch (error: any) {
+                    wxBridge.hideLoading()
+                    console.error('[UserOrderDetailPage] 支付失败:', error)
+                    wxBridge.showToast({ title: error?.message || '支付失败', icon: 'error' })
+                  }
                 }}
               />
             </>

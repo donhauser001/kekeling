@@ -3,7 +3,7 @@ import { ApiTags, ApiOperation, ApiParam, ApiBody } from '@nestjs/swagger';
 import { ConfigService } from './config.service';
 import { SmsService } from '../escort-auth/sms.service';
 import { ApiResponse } from '../../common/response/api-response';
-import { type OrderSettings, type ThemeSettings, type BannerPosition, type BannerAreaConfig, type HomePageSettings, type SmsSettings, type MiniappSettings } from './dto/config.dto';
+import { type OrderSettings, type ThemeSettings, type BannerPosition, type BannerAreaConfig, type HomePageSettings, type SmsSettings, type MiniappSettings, type WechatPaySettings, type AlipaySettings } from './dto/config.dto';
 
 @ApiTags('系统配置')
 @Controller('config')
@@ -231,6 +231,85 @@ export class ConfigController {
   async updateMiniappSettings(@Body() body: Partial<MiniappSettings>) {
     const data = await this.configService.updateMiniappSettings(body);
     return ApiResponse.success(data, '保存成功');
+  }
+
+  // ============================================
+  // 支付配置专用接口
+  // ============================================
+
+  @Get('payment/wechat')
+  @ApiOperation({ summary: '获取微信支付配置' })
+  async getWechatPaySettings() {
+    const data = await this.configService.getWechatPaySettings();
+    // 敏感信息脱敏
+    const maskedData = {
+      ...data,
+      apiKey: data.apiKey ? `${data.apiKey.slice(0, 4)}****${data.apiKey.slice(-4)}` : '',
+      apiV3Key: data.apiV3Key ? `${data.apiV3Key.slice(0, 4)}****${data.apiV3Key.slice(-4)}` : '',
+      privateKey: data.privateKey ? '******（已配置）' : '',
+    };
+    return ApiResponse.success(maskedData);
+  }
+
+  @Put('payment/wechat')
+  @ApiOperation({ summary: '更新微信支付配置' })
+  async updateWechatPaySettings(@Body() body: Partial<WechatPaySettings>) {
+    const data = await this.configService.updateWechatPaySettings(body);
+    // 敏感信息脱敏
+    const maskedData = {
+      ...data,
+      apiKey: data.apiKey ? `${data.apiKey.slice(0, 4)}****${data.apiKey.slice(-4)}` : '',
+      apiV3Key: data.apiV3Key ? `${data.apiV3Key.slice(0, 4)}****${data.apiV3Key.slice(-4)}` : '',
+      privateKey: data.privateKey ? '******（已配置）' : '',
+    };
+    return ApiResponse.success(maskedData, '保存成功');
+  }
+
+  @Get('payment/alipay')
+  @ApiOperation({ summary: '获取支付宝配置' })
+  async getAlipaySettings() {
+    const data = await this.configService.getAlipaySettings();
+    // 敏感信息脱敏
+    const maskedData = {
+      ...data,
+      privateKey: data.privateKey ? '******（已配置）' : '',
+      alipayPublicKey: data.alipayPublicKey ? '******（已配置）' : '',
+    };
+    return ApiResponse.success(maskedData);
+  }
+
+  @Put('payment/alipay')
+  @ApiOperation({ summary: '更新支付宝配置' })
+  async updateAlipaySettings(@Body() body: Partial<AlipaySettings>) {
+    const data = await this.configService.updateAlipaySettings(body);
+    // 敏感信息脱敏
+    const maskedData = {
+      ...data,
+      privateKey: data.privateKey ? '******（已配置）' : '',
+      alipayPublicKey: data.alipayPublicKey ? '******（已配置）' : '',
+    };
+    return ApiResponse.success(maskedData, '保存成功');
+  }
+
+  @Get('payment/settings')
+  @ApiOperation({ summary: '获取完整支付配置' })
+  async getPaymentSettings() {
+    const data = await this.configService.getPaymentSettings();
+    // 敏感信息脱敏
+    const maskedData = {
+      wechat: {
+        ...data.wechat,
+        apiKey: data.wechat.apiKey ? `${data.wechat.apiKey.slice(0, 4)}****${data.wechat.apiKey.slice(-4)}` : '',
+        apiV3Key: data.wechat.apiV3Key ? `${data.wechat.apiV3Key.slice(0, 4)}****${data.wechat.apiV3Key.slice(-4)}` : '',
+        privateKey: data.wechat.privateKey ? '******（已配置）' : '',
+      },
+      alipay: {
+        ...data.alipay,
+        privateKey: data.alipay.privateKey ? '******（已配置）' : '',
+        alipayPublicKey: data.alipay.alipayPublicKey ? '******（已配置）' : '',
+      },
+    };
+    return ApiResponse.success(maskedData);
   }
 
   // ============================================

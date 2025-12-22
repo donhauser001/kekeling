@@ -4,15 +4,15 @@
  * 已拆分为模块化组件
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Box } from '../../../ui/primitives'
 import { isWxEnvironment } from '../../../platform/env'
 import { previewApi } from '../../../api'
 import { BannerSection } from '../../BannerSection'
 
 // 类型和常量
-import type { ProfilePageProps, UserProfile, ThemeColors } from './types'
-import { ORDER_ENTRIES, MENU_ITEMS, getThemeColors } from './constants'
+import type { ProfilePageProps, UserProfile, ThemeColors, OrderEntry, MenuItem } from './types'
+import { ORDER_ENTRY_CONFIG, MENU_ITEMS, getThemeColors } from './constants'
 
 // 子组件
 import {
@@ -24,6 +24,14 @@ import {
 } from './components'
 
 const wxScale = isWxEnvironment() ? 1.1 : 1
+
+/** 订单统计数据 */
+interface OrderStats {
+  pending: number
+  confirmed: number
+  inProgress: number
+  completed: number
+}
 
 export function ProfilePage({
   themeSettings,
@@ -41,6 +49,8 @@ export function ProfilePage({
 
   const [bannerData, setBannerData] = useState<any>(null)
   const [userProfile, setUserProfile] = useState<UserProfile | undefined>(undefined)
+  const [orderStats, setOrderStats] = useState<OrderStats>({ pending: 0, confirmed: 0, inProgress: 0, completed: 0 })
+  const [couponCount, setCouponCount] = useState<number>(0)
 
   // ============================================================================
   // 数据获取
@@ -52,6 +62,14 @@ export function ProfilePage({
     // 获取用户资料
     previewApi.getUserProfile().then((data) => {
       setUserProfile(data || undefined)
+    }).catch(console.error)
+    // 获取订单统计
+    previewApi.getOrderStats().then(setOrderStats).catch(console.error)
+    // 获取优惠券数量
+    previewApi.getMyCoupons().then((data) => {
+      // 只统计可用状态的优惠券
+      const availableCount = data.items.filter(c => c.status === 'available').length
+      setCouponCount(availableCount)
     }).catch(console.error)
   }, [])
 
@@ -69,6 +87,30 @@ export function ProfilePage({
 
   // 优先使用覆盖数据
   const effectiveBannerData = bannerDataOverride !== undefined ? bannerDataOverride : bannerData
+
+  // 合并订单统计数据与静态配置
+  const orderEntries: OrderEntry[] = useMemo(() => {
+    const statsMap: Record<string, number> = {
+      pending: orderStats.pending,
+      confirmed: orderStats.confirmed,
+      in_progress: orderStats.inProgress,
+      completed: orderStats.completed,
+    }
+    return ORDER_ENTRY_CONFIG.map(entry => ({
+      ...entry,
+      count: statsMap[entry.key] || 0,
+    }))
+  }, [orderStats])
+
+  // 动态设置菜单项 badge（优惠券数量）
+  const menuItemsWithBadge: MenuItem[] = useMemo(() => {
+    return MENU_ITEMS.map(item => {
+      if (item.key === 'coupons' && couponCount > 0) {
+        return { ...item, badge: couponCount > 99 ? '99+' : String(couponCount) }
+      }
+      return item
+    })
+  }, [couponCount])
 
   // ============================================================================
   // 事件处理
@@ -126,7 +168,7 @@ export function ProfilePage({
 
       {/* 订单统计 */}
       <OrderSection
-        orderEntries={ORDER_ENTRIES}
+        orderEntries={orderEntries}
         colors={colors}
         onViewAll={() => onNavigate?.('user-orders')}
         onOrderClick={(status) => onNavigate?.('user-orders', { status })}
@@ -145,7 +187,7 @@ export function ProfilePage({
 
       {/* 功能菜单 */}
       <MenuSection
-        menuItems={MENU_ITEMS}
+        menuItems={menuItemsWithBadge}
         colors={colors}
         onItemClick={handleMenuItemClick}
       />

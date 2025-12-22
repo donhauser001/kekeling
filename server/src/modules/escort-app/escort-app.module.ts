@@ -11,9 +11,10 @@ import { DispatchService } from './dispatch.service';
 import { PrismaModule } from '../../prisma/prisma.module';
 import { DistributionModule } from '../distribution/distribution.module';
 import { NotificationModule } from '../notification/notification.module';
+import { SystemConfigModule } from '../config/config.module';
 
 @Module({
-  imports: [PrismaModule, forwardRef(() => DistributionModule), NotificationModule],
+  imports: [PrismaModule, forwardRef(() => DistributionModule), NotificationModule, SystemConfigModule],
   controllers: [
     EscortAppController,
     EscortAppWorkbenchController,

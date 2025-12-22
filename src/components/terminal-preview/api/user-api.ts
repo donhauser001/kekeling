@@ -80,6 +80,168 @@ export const getBanners = (area: string = 'home') =>
 export const getStats = () => userRequest<StatsData>('/home/stats')
 
 // ============================================================================
+// 订单统计 API
+// ============================================================================
+
+/** 订单统计数据 */
+export interface OrderStats {
+  pending: number      // 待支付
+  confirmed: number    // 待服务
+  inProgress: number   // 服务中
+  completed: number    // 已完成
+}
+
+/**
+ * 获取订单统计
+ * 接口: GET /orders/stats
+ * 通道: userRequest
+ */
+export const getOrderStats = async (): Promise<OrderStats> => {
+  try {
+    return await userRequest<OrderStats>('/orders/stats')
+  } catch (error) {
+    console.warn('[previewApi.getOrderStats] 获取订单统计失败:', error)
+    // 返回默认值
+    return { pending: 0, confirmed: 0, inProgress: 0, completed: 0 }
+  }
+}
+
+/** 用户订单列表项 */
+export interface UserOrderItem {
+  id: string
+  orderNo: string
+  status: string
+  totalAmount: number
+  paidAmount: number
+  appointmentDate: string
+  appointmentTime: string
+  createdAt: string
+  service: {
+    id: string
+    name: string
+    coverImage?: string
+  }
+  hospital: {
+    id: string
+    name: string
+  }
+  patient: {
+    id: string
+    name: string
+  }
+  escort?: {
+    id: string
+    name: string
+    avatar?: string
+  } | null
+}
+
+/** 用户订单列表响应 */
+export interface UserOrdersResponse {
+  data: UserOrderItem[]
+  total: number
+  page: number
+  pageSize: number
+}
+
+/**
+ * 获取用户订单列表
+ * 接口: GET /orders
+ * 通道: userRequest
+ */
+export const getUserOrders = async (params?: {
+  status?: string
+  page?: number
+  pageSize?: number
+}): Promise<UserOrdersResponse> => {
+  try {
+    const searchParams = new URLSearchParams()
+    if (params?.status && params.status !== 'all') {
+      searchParams.append('status', params.status)
+    }
+    if (params?.page) {
+      searchParams.append('page', String(params.page))
+    }
+    if (params?.pageSize) {
+      searchParams.append('pageSize', String(params.pageSize))
+    }
+    const query = searchParams.toString()
+    const url = query ? `/orders?${query}` : '/orders'
+    return await userRequest<UserOrdersResponse>(url)
+  } catch (error) {
+    console.warn('[previewApi.getUserOrders] 获取订单列表失败:', error)
+    return { data: [], total: 0, page: 1, pageSize: 10 }
+  }
+}
+
+/** 用户订单详情（包含关联数据） */
+export interface UserOrderDetail {
+  id: string
+  orderNo: string
+  status: string
+  totalAmount: number | string
+  originalAmount?: number | string
+  discountAmount?: number | string
+  paymentMethod?: string
+  paymentTime?: string
+  paidAt?: string
+  transactionId?: string
+  appointmentDate: string
+  appointmentTime: string
+  departmentName?: string
+  userRemark?: string
+  createdAt: string
+  updatedAt: string
+  // 关联服务
+  service?: {
+    id: string
+    name: string
+    description?: string
+    price?: number | string
+  }
+  // 关联医院
+  hospital?: {
+    id: string
+    name: string
+    address?: string
+    level?: string
+  }
+  // 关联就诊人
+  patient?: {
+    id: string
+    name: string
+    phone?: string
+    gender?: string
+    idCard?: string
+    relation?: string
+    age?: number
+  }
+  // 关联陪诊员
+  escort?: {
+    id: string
+    name: string
+    phone?: string
+    avatar?: string
+    rating?: number
+    orderCount?: number
+  } | null
+}
+
+/**
+ * 获取订单详情
+ * 接口: GET /orders/:id
+ * 通道: userRequest
+ */
+export const getUserOrderDetail = async (orderId: string): Promise<UserOrderDetail | null> => {
+  try {
+    return await userRequest<UserOrderDetail>(`/orders/${orderId}`)
+  } catch (error) {
+    console.warn('[previewApi.getUserOrderDetail] 获取订单详情失败:', error)
+    return null
+  }
+}
+
+// ============================================================================
 // 用户资料 API
 // ============================================================================
 
@@ -321,6 +483,162 @@ export const setDefaultAddress = async (id: string) => {
   return await userRequest<{ id: string }>(`/user/addresses/${id}/default`, {
     method: 'POST',
   })
+}
+
+// ============================================================================
+// 就诊人 API
+// ============================================================================
+
+/** 就诊人类型 */
+export interface Patient {
+  id: string
+  name: string
+  relation: 'self' | 'parent' | 'child' | 'spouse' | 'other'
+  phone: string
+  idCard: string
+  gender: string
+  isDefault?: boolean
+}
+
+/** 获取就诊人列表 */
+export const getPatients = async (): Promise<Patient[]> => {
+  try {
+    return await userRequest<Patient[]>('/patients')
+  } catch (error) {
+    console.warn('[previewApi.getPatients] 获取就诊人列表失败:', error)
+    return []
+  }
+}
+
+/** 创建就诊人 */
+export const createPatient = async (data: Omit<Patient, 'id'>): Promise<Patient> => {
+  return await userRequest<Patient>('/patients', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+}
+
+/** 更新就诊人 */
+export const updatePatient = async (id: string, data: Partial<Omit<Patient, 'id'>>): Promise<Patient> => {
+  return await userRequest<Patient>(`/patients/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+}
+
+/** 删除就诊人 */
+export const deletePatient = async (id: string): Promise<void> => {
+  await userRequest(`/patients/${id}`, {
+    method: 'DELETE',
+  })
+}
+
+/** 设置默认就诊人 */
+export const setDefaultPatient = async (id: string): Promise<Patient> => {
+  return await userRequest<Patient>(`/patients/${id}/default`, {
+    method: 'POST',
+  })
+}
+
+// ============================================================================
+// 医院/科室/医生 API
+// ============================================================================
+
+/** 医院类型 */
+export interface Hospital {
+  id: string
+  name: string
+  level: string
+  type: string
+  address: string
+  phone?: string
+  introduction?: string
+  status: string
+}
+
+/** 科室类型 */
+export interface Department {
+  id: string
+  name: string
+  parentId?: string
+  children?: Department[]
+}
+
+/** 医生类型 */
+export interface Doctor {
+  id: string
+  name: string
+  title: string
+  avatar?: string
+  hospitalId: string
+  departmentId?: string
+  specialty?: string
+  introduction?: string
+}
+
+/** 获取医院列表 */
+export const getHospitals = async (params?: {
+  keyword?: string
+  level?: string
+  page?: number
+  pageSize?: number
+}): Promise<{ data: Hospital[]; total: number }> => {
+  try {
+    const searchParams = new URLSearchParams()
+    if (params?.keyword) searchParams.append('keyword', params.keyword)
+    if (params?.level) searchParams.append('level', params.level)
+    if (params?.page) searchParams.append('page', String(params.page))
+    if (params?.pageSize) searchParams.append('pageSize', String(params.pageSize))
+    const query = searchParams.toString()
+    return await userRequest<{ data: Hospital[]; total: number }>(
+      `/hospitals${query ? `?${query}` : ''}`
+    )
+  } catch (error) {
+    console.warn('[previewApi.getHospitals] 获取医院列表失败:', error)
+    return { data: [], total: 0 }
+  }
+}
+
+/** 获取医院详情 */
+export const getHospital = async (id: string): Promise<Hospital | null> => {
+  try {
+    return await userRequest<Hospital>(`/hospitals/${id}`)
+  } catch (error) {
+    console.warn('[previewApi.getHospital] 获取医院详情失败:', error)
+    return null
+  }
+}
+
+/** 获取医院科室树 */
+export const getHospitalDepartments = async (hospitalId: string): Promise<Department[]> => {
+  try {
+    return await userRequest<Department[]>(`/hospitals/${hospitalId}/departments`)
+  } catch (error) {
+    console.warn('[previewApi.getHospitalDepartments] 获取科室失败:', error)
+    return []
+  }
+}
+
+/** 获取医院医生列表 */
+export const getHospitalDoctors = async (
+  hospitalId: string,
+  params?: { departmentId?: string; page?: number; pageSize?: number }
+): Promise<{ data: Doctor[]; total: number }> => {
+  try {
+    const searchParams = new URLSearchParams()
+    if (params?.departmentId) searchParams.append('departmentId', params.departmentId)
+    if (params?.page) searchParams.append('page', String(params.page))
+    if (params?.pageSize) searchParams.append('pageSize', String(params.pageSize))
+    const query = searchParams.toString()
+    return await userRequest<{ data: Doctor[]; total: number }>(
+      `/hospitals/${hospitalId}/doctors${query ? `?${query}` : ''}`
+    )
+  } catch (error) {
+    console.warn('[previewApi.getHospitalDoctors] 获取医生失败:', error)
+    return { data: [], total: 0 }
+  }
 }
 
 // ============================================================================
@@ -959,5 +1277,128 @@ export const devModeAutoLogin = async (): Promise<DevModeAutoLoginResponse | nul
   } catch (error) {
     console.warn('[previewApi.devModeAutoLogin] 开发模式自动登录失败:', error)
     return null
+  }
+}
+
+// ============================================================================
+// 订单创建和支付 API
+// ============================================================================
+
+/** 创建订单请求参数 */
+export interface CreateOrderParams {
+  serviceId: string
+  hospitalId: string
+  patientId: string
+  appointmentDate: string
+  appointmentTime: string
+  departmentName?: string
+  remark?: string
+  couponId?: string
+  campaignId?: string
+  pointsToUse?: number
+  escortId?: string
+}
+
+/** 创建订单响应 */
+export interface CreateOrderResponse {
+  id: string
+  orderNo: string
+  status: string
+  totalAmount: number
+  paymentAmount: number
+}
+
+/**
+ * 创建订单
+ * 接口: POST /orders
+ * 通道: userRequest
+ */
+export const createOrder = async (params: CreateOrderParams): Promise<CreateOrderResponse> => {
+  return await userRequest<CreateOrderResponse>('/orders', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  })
+}
+
+/** 微信支付参数 */
+export interface WxPaymentParams {
+  appId: string
+  timeStamp: string
+  nonceStr: string
+  package: string
+  signType: string
+  paySign: string
+}
+
+/**
+ * 获取支付参数（创建预支付订单）
+ * 接口: POST /payment/prepay
+ * 通道: userRequest
+ */
+export const getPaymentParams = async (orderId: string): Promise<WxPaymentParams> => {
+  return await userRequest<WxPaymentParams>('/payment/prepay', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ orderId }),
+  })
+}
+
+/** 支付状态响应 */
+export interface PaymentStatusResponse {
+  paid: boolean
+  status: string
+  transactionId?: string
+}
+
+/**
+ * 查询支付状态
+ * 接口: GET /payment/status/:orderId
+ * 通道: userRequest
+ */
+export const getPaymentStatus = async (orderId: string): Promise<PaymentStatusResponse> => {
+  return await userRequest<PaymentStatusResponse>(`/payment/status/${orderId}`)
+}
+
+/**
+ * 模拟支付成功（仅开发环境）
+ * 接口: POST /payment/mock-pay
+ * 通道: userRequest
+ * ⚠️ 生产环境禁用
+ */
+export const mockPayment = async (orderId: string): Promise<{ success: boolean; message?: string }> => {
+  try {
+    await userRequest('/payment/mock-pay', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId }),
+    })
+    return { success: true }
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return { success: false, message: error.message || '支付失败' }
+    }
+    return { success: false, message: '网络错误' }
+  }
+}
+
+/**
+ * 取消订单
+ * 接口: POST /orders/:id/cancel
+ * 通道: userRequest
+ */
+export const cancelOrder = async (orderId: string, reason?: string): Promise<{ success: boolean; message?: string }> => {
+  try {
+    await userRequest(`/orders/${orderId}/cancel`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason }),
+    })
+    return { success: true }
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return { success: false, message: error.message || '取消失败' }
+    }
+    return { success: false, message: '网络错误' }
   }
 }

@@ -23,6 +23,13 @@ export class OrdersController {
     return ApiResponse.success(data);
   }
 
+  @Get('stats')
+  @ApiOperation({ summary: '获取订单统计（各状态数量）' })
+  async getStats(@CurrentUser('sub') userId: string) {
+    const data = await this.ordersService.getStatsByUser(userId);
+    return ApiResponse.success(data);
+  }
+
   @Get()
   @ApiOperation({ summary: '获取我的订单列表' })
   @ApiQuery({ name: 'status', required: false })

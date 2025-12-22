@@ -227,13 +227,13 @@ export class AdminEscortsService {
       throw new BadRequestException('该手机号已被注册');
     }
 
-    const { hospitalIds, tags, certificates, serviceHours, ...data } = dto;
+    const { hospitalIds, tags, certificates, serviceHours, level, ...data } = dto as any;
 
     // 创建陪诊员
     const escort = await this.prisma.escort.create({
       data: {
         ...data,
-        levelCode: data.levelCode || 'trainee', // 默认实习等级
+        levelCode: level || data.levelCode || 'trainee', // 兼容 level 和 levelCode，默认实习等级
         tags: tags || [],
         certificates: certificates ? JSON.stringify(certificates) : null,
         serviceHours: serviceHours ? JSON.stringify(serviceHours) : null,
@@ -278,9 +278,15 @@ export class AdminEscortsService {
       }
     }
 
-    const { tags, certificates, serviceHours, ...data } = dto;
+    const { tags, certificates, serviceHours, level, ...data } = dto as any;
 
     const updateData: any = { ...data };
+    
+    // 处理 level -> levelCode 的映射（前端使用 level，数据库使用 levelCode）
+    if (level !== undefined) {
+      updateData.levelCode = level;
+    }
+    
     if (tags !== undefined) {
       updateData.tags = tags || [];
     }

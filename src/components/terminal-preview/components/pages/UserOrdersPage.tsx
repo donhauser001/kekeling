@@ -15,6 +15,8 @@ import { isWxEnvironment } from '../../platform/env'
 import type { ThemeSettings } from '../../types'
 import { getWxBridge } from '../../bridge'
 import { UserOrdersPageSkeleton } from '../UserOrdersPageSkeleton'
+import { previewApi } from '../../api'
+import type { UserOrderItem } from '../../api/user-api'
 
 // ============================================================================
 // 常量定义
@@ -46,51 +48,36 @@ const STATUS_TABS: { key: OrderStatusTab; label: string }[] = [
   { key: 'completed', label: '已完成' },
 ]
 
-// Mock 订单数据
-const mockOrders = [
-  {
-    id: '1',
-    orderNo: 'KKL20241213001',
-    serviceName: '全程陪诊服务',
-    hospitalName: '北京协和医院',
-    departmentName: '心内科',
-    appointmentDate: '2024-12-15',
-    appointmentTime: '09:00-12:00',
-    status: 'confirmed',
-    statusText: '待服务',
-    amount: 299,
-    escortName: '李护士',
-    escortAvatar: '',
-  },
-  {
-    id: '2',
-    orderNo: 'KKL20241212001',
-    serviceName: '代办取药',
-    hospitalName: '北京301医院',
-    departmentName: '药房',
-    appointmentDate: '2024-12-14',
-    appointmentTime: '14:00-16:00',
-    status: 'pending',
-    statusText: '待支付',
-    amount: 99,
-    escortName: '',
-    escortAvatar: '',
-  },
-  {
-    id: '3',
-    orderNo: 'KKL20241210001',
-    serviceName: '门诊陪诊',
-    hospitalName: '北京阜外医院',
-    departmentName: '骨科',
-    appointmentDate: '2024-12-10',
-    appointmentTime: '08:00-11:00',
-    status: 'completed',
-    statusText: '已完成',
-    amount: 199,
-    escortName: '王护士',
-    escortAvatar: '',
-  },
-]
+/**
+ * 将后端订单状态映射为前端显示的状态分组
+ * pending -> pending (待支付)
+ * paid, confirmed, assigned -> confirmed (待服务)
+ * arrived, in_progress -> in_progress (服务中)
+ * completed -> completed (已完成)
+ * cancelled -> cancelled (已取消)
+ */
+const mapStatusToGroup = (status: string): OrderStatusTab | 'cancelled' => {
+  if (status === 'pending') return 'pending'
+  if (['paid', 'confirmed', 'assigned'].includes(status)) return 'confirmed'
+  if (['arrived', 'in_progress'].includes(status)) return 'in_progress'
+  if (status === 'completed') return 'completed'
+  return 'cancelled'
+}
+
+/** 获取状态显示文本 */
+const getStatusText = (status: string): string => {
+  const map: Record<string, string> = {
+    pending: '待支付',
+    paid: '待服务',
+    confirmed: '待服务',
+    assigned: '待服务',
+    arrived: '服务中',
+    in_progress: '服务中',
+    completed: '已完成',
+    cancelled: '已取消',
+  }
+  return map[status] || status
+}
 
 // 状态颜色映射
 const statusColors: Record<string, { bg: string; text: string }> = {
@@ -117,9 +104,11 @@ export function UserOrdersPage({
     (pageParams?.status as OrderStatusTab) || 'all'
   )
   // 订单列表状态
-  const [orders, setOrders] = useState<typeof mockOrders>([])
+  const [orders, setOrders] = useState<UserOrderItem[]>([])
   // 加载状态（用于骨架屏）
   const [isLoading, setIsLoading] = useState(true)
+  // 刷新触发器
+  const [refreshKey, setRefreshKey] = useState(0)
 
   // 颜色定义
   const bgColor = isDarkMode ? '#1a1a1a' : '#f5f7fa'
@@ -130,21 +119,39 @@ export function UserOrdersPage({
   const borderColor = isDarkMode ? '#3a3a3a' : '#e5e7eb'
   const primaryColor = themeSettings.primaryColor
 
-  // 模拟异步加载数据
-  useEffect(() => {
+  // 获取订单数据的函数
+  const fetchOrders = async () => {
     setIsLoading(true)
-    // 模拟 API 请求延迟
-    const timer = setTimeout(() => {
-      setOrders(mockOrders)
+    try {
+      // 根据 Tab 构建查询参数
+      // 注意：后端支持单个状态筛选，但前端 Tab 代表的是状态组
+      // all: 不传 status 参数
+      // pending: status=pending
+      // confirmed: 需要获取 paid, confirmed, assigned 三种状态
+      // in_progress: 需要获取 arrived, in_progress 两种状态
+      // completed: status=completed
+      const response = await previewApi.getUserOrders({
+        // 暂时不传 status，在前端过滤（因为后端只支持单状态筛选）
+        pageSize: 100, // 获取足够多的数据用于前端过滤
+      })
+      setOrders(response.data || [])
+    } catch (error) {
+      console.error('[UserOrdersPage] 获取订单失败:', error)
+      setOrders([])
+    } finally {
       setIsLoading(false)
-    }, 300)
-    return () => clearTimeout(timer)
-  }, [])
+    }
+  }
 
-  // 根据 Tab 过滤订单
+  // 初始加载和刷新时获取订单数据
+  useEffect(() => {
+    fetchOrders()
+  }, [refreshKey])
+
+  // 根据 Tab 过滤订单（前端过滤，因为后端只支持单状态筛选）
   const filteredOrders = activeTab === 'all'
     ? orders
-    : orders.filter(order => order.status === activeTab)
+    : orders.filter(order => mapStatusToGroup(order.status) === activeTab)
 
   // 加载中显示骨架屏
   if (isLoading) {
@@ -332,7 +339,7 @@ export function UserOrdersPage({
                     gap: 8 * wxScale,
                   }}
                 >
-                  <Icon name="document" size={16 * wxScale} color={primaryColor} />
+                  <Icon name="file-text" size={16 * wxScale} color={primaryColor} />
                   <Text
                     style={{
                       fontSize: 14 * wxScale,
@@ -340,7 +347,7 @@ export function UserOrdersPage({
                       color: textPrimary,
                     }}
                   >
-                    {order.serviceName}
+                    {order.service?.name || '服务'}
                   </Text>
                 </Box>
                 <Box
@@ -350,16 +357,16 @@ export function UserOrdersPage({
                     paddingTop: 2 * wxScale,
                     paddingBottom: 2 * wxScale,
                     borderRadius: 4 * wxScale,
-                    backgroundColor: statusColors[order.status]?.bg || '#f5f5f5',
+                    backgroundColor: statusColors[mapStatusToGroup(order.status)]?.bg || '#f5f5f5',
                   }}
                 >
                   <Text
                     style={{
                       fontSize: 12 * wxScale,
-                      color: statusColors[order.status]?.text || '#8c8c8c',
+                      color: statusColors[mapStatusToGroup(order.status)]?.text || '#8c8c8c',
                     }}
                   >
-                    {order.statusText}
+                    {getStatusText(order.status)}
                   </Text>
                 </Box>
               </Box>
@@ -382,14 +389,14 @@ export function UserOrdersPage({
                     marginBottom: 8 * wxScale,
                   }}
                 >
-                  <Icon name="local-two" size={14 * wxScale} color={textMuted} />
+                  <Icon name="hospital" size={14 * wxScale} color={textMuted} />
                   <Text
                     style={{
                       fontSize: 12 * wxScale,
                       color: textSecondary,
                     }}
                   >
-                    {order.hospitalName} · {order.departmentName}
+                    {order.hospital?.name || '医院'}
                   </Text>
                 </Box>
 
@@ -448,7 +455,7 @@ export function UserOrdersPage({
                         color: primaryColor,
                       }}
                     >
-                      {order.amount}
+                      {order.paidAmount || order.totalAmount}
                     </Text>
                   </Box>
 
@@ -465,9 +472,44 @@ export function UserOrdersPage({
                         onClick={async (e: React.MouseEvent) => {
                           e.stopPropagation()
                           const wxBridge = getWxBridge()
-                          wxBridge.showLoading('支付中...')
-                          wxBridge.hideLoading()
-                          wxBridge.showToast({ title: '支付功能待对接', icon: 'none' })
+                          
+                          try {
+                            wxBridge.showLoading('正在获取支付信息...')
+                            
+                            // 获取支付参数
+                            const paymentParams = await previewApi.getPaymentParams(order.id)
+                            wxBridge.hideLoading()
+                            
+                            // 调起微信支付
+                            const payResult = await wxBridge.requestPayment({
+                              timeStamp: paymentParams.timeStamp,
+                              nonceStr: paymentParams.nonceStr,
+                              package: paymentParams.package,
+                              signType: paymentParams.signType as 'MD5' | 'HMAC-SHA256' | 'RSA',
+                              paySign: paymentParams.paySign,
+                            })
+                            
+                            if (payResult.success) {
+                              wxBridge.showToast({ title: '支付成功', icon: 'success' })
+                              // 跳转到订单详情页
+                              setTimeout(() => {
+                                onNavigate?.('user-order-detail', { id: order.id })
+                              }, 1500)
+                            } else {
+                              const errorMsg = payResult.errMsg || '支付未完成'
+                              if (errorMsg.includes('cancel')) {
+                                wxBridge.showToast({ title: '已取消支付', icon: 'none' })
+                              } else {
+                                wxBridge.showToast({ title: errorMsg, icon: 'error' })
+                              }
+                            }
+                          } catch (error: any) {
+                            wxBridge.hideLoading()
+                            wxBridge.showToast({ 
+                              title: error?.message || '支付失败，请重试', 
+                              icon: 'error' 
+                            })
+                          }
                         }}
                         style={{
                           paddingLeft: 16 * wxScale,

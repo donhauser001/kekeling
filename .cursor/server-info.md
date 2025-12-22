@@ -192,6 +192,94 @@ rsync -avz --delete -e "..." dist/ prisma/ package.json pnpm-lock.yaml root@serv
 
 ---
 
+### 2025-12-22 部署导致服务崩溃
+
+#### 事故概述
+
+| 项目 | 内容 |
+|------|------|
+| **时间** | 10:28 - 10:32 (约4分钟) |
+| **影响** | 后端 API 完全不可用，所有请求返回 502 |
+| **PM2 重启次数** | 25+ 次 |
+| **根因** | 使用 `--prod` 安装依赖 + `.env` 端口配置被覆盖 |
+
+#### 错误命令
+
+```bash
+# ❌ 错误：--prod 跳过了 devDependencies，导致 prisma CLI 缺失
+sshpass -p '...' ssh root@server "cd /var/www/kekeling/server && CI=true pnpm install --prod && pm2 restart kekeling-api"
+```
+
+#### 问题链条
+
+```
+1. pnpm install --prod
+   ↓ 跳过 devDependencies
+2. prisma CLI 未安装
+   ↓ 无法运行 prisma generate
+3. .prisma/client 目录缺失
+   ↓ 模块加载失败
+4. 服务启动失败，PM2 疯狂重启
+   ↓
+5. 进入 errored 状态，返回 502
+```
+
+同时：
+
+```
+1. 本地 .env 同步到服务器
+   ↓
+2. DATABASE_URL 端口从 5432 变成 5434
+   ↓ 本地用 Docker (5434)，服务器用原生 PostgreSQL (5432)
+3. 数据库连接失败
+```
+
+#### 修复步骤
+
+```bash
+# 1. 重新同步 dist/ 目录（本地已编译）
+rsync -avz --delete -e "sshpass -p '...' ssh -o StrictHostKeyChecking=no" \
+  server/dist/ root@8.130.23.38:/var/www/kekeling/server/dist/
+
+# 2. 安装完整依赖（不要用 --prod）
+sshpass -p '...' ssh root@8.130.23.38 \
+  "cd /var/www/kekeling/server && pnpm install"
+
+# 3. 生成 Prisma Client
+sshpass -p '...' ssh root@8.130.23.38 \
+  "cd /var/www/kekeling/server && npx prisma generate"
+
+# 4. 修复 .env 端口配置
+sshpass -p '...' ssh root@8.130.23.38 \
+  "cd /var/www/kekeling/server && sed -i 's/localhost:5434/localhost:5432/g' .env"
+
+# 5. 重启服务
+sshpass -p '...' ssh root@8.130.23.38 "pm2 restart kekeling-api"
+```
+
+#### 根本原因分析
+
+| 原因 | 说明 | 正确做法 |
+|------|------|----------|
+| `--prod` 参数 | 跳过 `devDependencies`，`prisma` CLI 未安装 | 不要用 `--prod`，或确保 `prisma generate` 在本地完成 |
+| `.env` 被同步 | 本地端口 5434 覆盖服务器端口 5432 | 排除 `.env`：`--exclude='.env'` |
+| 本地/服务器环境差异 | 本地用 Docker 容器，服务器用原生安装 | 保持 `.env` 服务器独立管理 |
+
+#### 经验教训
+
+1. **🚫 不要在服务器使用 `pnpm install --prod`**：Prisma 需要在安装时生成客户端，`prisma` 在 `devDependencies` 中
+2. **📁 永远排除 `.env`**：本地和服务器环境配置不同，同步会导致配置错乱
+3. **✅ 正确的部署流程**：
+   ```bash
+   # 排除敏感文件同步源码
+   rsync -avz --delete --exclude='node_modules' --exclude='.env' --exclude='uploads' --exclude='dist' ...
+   
+   # 服务器安装完整依赖并构建
+   pnpm install && pnpm build && pm2 restart kekeling-api
+   ```
+
+---
+
 ## 🚨 部署安全规范（重要！）
 
 ### 服务器关键文件（不可删除）

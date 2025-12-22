@@ -76,7 +76,7 @@ export const UserProfileEditPage = lazy(() =>
 )
 
 export const FeedbackPage = lazy(() =>
-  import('./FeedbackPage').then(m => ({ default: m.FeedbackPage }))
+  import('./feedback').then(m => ({ default: m.FeedbackPage }))
 )
 
 // ============================================================================

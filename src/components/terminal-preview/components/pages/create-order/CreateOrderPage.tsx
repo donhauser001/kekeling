@@ -15,12 +15,14 @@ import type {
   CreateOrderPageProps,
   ThemeColors,
   EmergencyContact,
+  Patient,
+} from './types'
+import type {
+  Hospital,
+  Department,
+  Doctor,
 } from './types'
 import {
-  mockPatients,
-  mockHospitals,
-  mockDepartments,
-  mockDoctors,
   mockCoupons,
   mockMedicalRecords,
   generateDateOptions,
@@ -51,6 +53,8 @@ import {
 
 const wxScale = isWxEnvironment() ? 1.1 : 1
 const wxSafeAreaTop = isWxEnvironment() ? 44 : 0
+// 微信小程序底部安全区域高度（TabBar 约 50px + 底部安全区 34px）
+const wxSafeAreaBottom = isWxEnvironment() ? 84 : 0
 
 export function CreateOrderPage({
   serviceId,
@@ -67,6 +71,14 @@ export function CreateOrderPage({
   // 服务数据
   const [service, setService] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
+  
+  // 就诊人数据（从 API 获取）
+  const [patients, setPatients] = useState<Patient[]>([])
+  
+  // 医院/科室/医生数据（从 API 获取）
+  const [hospitals, setHospitals] = useState<Hospital[]>([])
+  const [departments, setDepartments] = useState<Department[]>([])
+  const [doctors, setDoctors] = useState<Doctor[]>([])
 
   // "下单后填写"开关状态
   const [fillLater, setFillLater] = useState(false)
@@ -100,6 +112,9 @@ export function CreateOrderPage({
   const [showIdCardInput, setShowIdCardInput] = useState(false)
   const [showMedicalRecordPicker, setShowMedicalRecordPicker] = useState(false)
 
+  // 提交状态
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
   // ============================================================================
   // 数据获取
   // ============================================================================
@@ -108,18 +123,81 @@ export function CreateOrderPage({
     if (!serviceId) return
 
     setIsLoading(true)
-    previewApi
-      .getServiceDetail(serviceId)
-      .then((data) => {
-        setService(data)
+    
+    // 并行获取服务详情、就诊人列表、医院列表
+    Promise.all([
+      previewApi.getServiceDetail(serviceId),
+      previewApi.getPatients(),
+      previewApi.getHospitals({ pageSize: 100 }),
+    ])
+      .then(([serviceData, patientsData, hospitalsRes]) => {
+        setService(serviceData)
+        setPatients(patientsData)
+        setHospitals(hospitalsRes.data || [])
+        
+        // 如果有默认就诊人，自动选中
+        const defaultPatient = patientsData.find((p) => p.isDefault)
+        if (defaultPatient) {
+          setSelectedPatientId(defaultPatient.id)
+        }
       })
       .catch((err) => {
-        console.error('[CreateOrderPage] 获取服务详情失败', err)
+        console.error('[CreateOrderPage] 数据加载失败', err)
       })
       .finally(() => {
         setIsLoading(false)
       })
   }, [serviceId])
+
+  // 当选择医院后，获取科室列表
+  useEffect(() => {
+    if (!selectedHospitalId) {
+      setDepartments([])
+      setSelectedDepartmentId(null)
+      return
+    }
+    
+    previewApi.getHospitalDepartments(selectedHospitalId)
+      .then((depts) => {
+        // 扁平化科室树
+        const flattenDepts = (items: Department[]): Department[] => {
+          const result: Department[] = []
+          for (const item of items) {
+            result.push({ id: item.id, name: item.name })
+            if (item.children) {
+              result.push(...flattenDepts(item.children))
+            }
+          }
+          return result
+        }
+        setDepartments(flattenDepts(depts))
+      })
+      .catch((err) => {
+        console.error('[CreateOrderPage] 获取科室失败', err)
+        setDepartments([])
+      })
+  }, [selectedHospitalId])
+
+  // 当选择科室后，获取医生列表
+  useEffect(() => {
+    if (!selectedHospitalId) {
+      setDoctors([])
+      setSelectedDoctorId(null)
+      return
+    }
+    
+    previewApi.getHospitalDoctors(selectedHospitalId, {
+      departmentId: selectedDepartmentId || undefined,
+      pageSize: 100,
+    })
+      .then((res) => {
+        setDoctors(res.data || [])
+      })
+      .catch((err) => {
+        console.error('[CreateOrderPage] 获取医生失败', err)
+        setDoctors([])
+      })
+  }, [selectedHospitalId, selectedDepartmentId])
 
   // ============================================================================
   // 派生数据
@@ -129,10 +207,10 @@ export function CreateOrderPage({
   const primaryColor = themeSettings.primaryColor
 
   // 获取选中的数据
-  const selectedPatient = mockPatients.find((p) => p.id === selectedPatientId)
-  const selectedHospital = mockHospitals.find((h) => h.id === selectedHospitalId)
-  const selectedDepartment = mockDepartments.find((d) => d.id === selectedDepartmentId)
-  const selectedDoctor = mockDoctors.find((d) => d.id === selectedDoctorId)
+  const selectedPatient = patients.find((p) => p.id === selectedPatientId)
+  const selectedHospital = hospitals.find((h) => h.id === selectedHospitalId)
+  const selectedDepartment = departments.find((d) => d.id === selectedDepartmentId)
+  const selectedDoctor = doctors.find((d) => d.id === selectedDoctorId)
   const selectedCoupon = mockCoupons.find((c) => c.id === selectedCouponId)
   const selectedMedicalRecord = mockMedicalRecords.find((r) => r.id === selectedMedicalRecordId)
 
@@ -154,6 +232,9 @@ export function CreateOrderPage({
   const handleSubmit = async () => {
     const wxBridge = getWxBridge()
 
+    // 防止重复提交
+    if (isSubmitting) return
+    
     // 表单校验
     if (service?.needPatient !== false && !selectedPatientId) {
       wxBridge.showToast({ title: '请选择就诊人', icon: 'none' })
@@ -167,9 +248,72 @@ export function CreateOrderPage({
       wxBridge.showToast({ title: '请选择日期', icon: 'none' })
       return
     }
+    if (service?.needAppointment !== false && !selectedTime) {
+      wxBridge.showToast({ title: '请选择时间', icon: 'none' })
+      return
+    }
 
-    // TODO: 调用后端创建订单 API 获取支付参数
+    setIsSubmitting(true)
     wxBridge.showToast({ title: '订单创建中...', icon: 'loading' })
+
+    try {
+      // Step 1: 创建订单
+      const orderResult = await previewApi.createOrder({
+        serviceId: serviceId,
+        hospitalId: selectedHospitalId || '',
+        patientId: selectedPatientId || '',
+        appointmentDate: selectedDate || '',
+        appointmentTime: selectedTime || '',
+        departmentName: selectedDepartment?.name,
+        remark: remark || undefined,
+        couponId: selectedCouponId || undefined,
+      })
+
+      console.log('[CreateOrderPage] 订单创建成功:', orderResult)
+
+      // Step 2: 获取支付参数
+      const paymentParams = await previewApi.getPaymentParams(orderResult.id)
+      console.log('[CreateOrderPage] 获取支付参数成功:', paymentParams)
+
+      // Step 3: 调起微信支付
+      wxBridge.showToast({ title: '正在调起支付...', icon: 'loading' })
+      
+      const payResult = await wxBridge.requestPayment({
+        timeStamp: paymentParams.timeStamp,
+        nonceStr: paymentParams.nonceStr,
+        package: paymentParams.package,
+        signType: paymentParams.signType as 'MD5' | 'HMAC-SHA256' | 'RSA',
+        paySign: paymentParams.paySign,
+      })
+
+      if (payResult.success) {
+        // 支付成功
+        wxBridge.showToast({ title: '支付成功', icon: 'success' })
+        
+        // 跳转到订单详情页
+        setTimeout(() => {
+          _onNavigate?.('user-order-detail', { id: orderResult.id })
+        }, 1500)
+      } else {
+        // 支付取消或失败
+        const errorMsg = payResult.errMsg || '支付未完成'
+        if (errorMsg.includes('cancel')) {
+          wxBridge.showToast({ title: '已取消支付', icon: 'none' })
+        } else {
+          wxBridge.showToast({ title: errorMsg, icon: 'error' })
+        }
+        // 跳转到待支付订单详情
+        setTimeout(() => {
+          _onNavigate?.('user-order-detail', { id: orderResult.id })
+        }, 1500)
+      }
+    } catch (error: any) {
+      console.error('[CreateOrderPage] 下单失败:', error)
+      const errorMsg = error?.message || '创建订单失败，请重试'
+      wxBridge.showToast({ title: errorMsg, icon: 'error' })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleCustomFieldChange = (fieldId: string, value: string | string[]) => {
@@ -267,7 +411,7 @@ export function CreateOrderPage({
   }
 
   return (
-    <Box style={{ minHeight: '100vh', paddingBottom: 96 * wxScale, backgroundColor: colors.bgColor }}>
+    <Box style={{ minHeight: '100vh', paddingBottom: 96 * wxScale + wxSafeAreaBottom, backgroundColor: colors.bgColor }}>
       {/* 悬浮返回按钮（规则 11） */}
       <HeaderButton isDarkMode={isDarkMode} onBack={onBack} />
 
@@ -356,7 +500,7 @@ export function CreateOrderPage({
       {/* 就诊人选择弹窗 */}
       {showPatientPicker && (
         <PatientPicker
-          patients={mockPatients}
+          patients={patients}
           selectedPatient={selectedPatient}
           onSelect={(patient) => setSelectedPatientId(patient.id)}
           onClose={() => setShowPatientPicker(false)}
@@ -368,7 +512,7 @@ export function CreateOrderPage({
       {/* 医院选择弹窗 */}
       {showHospitalPicker && (
         <HospitalPicker
-          hospitals={mockHospitals}
+          hospitals={hospitals}
           selectedHospital={selectedHospital}
           onSelect={(hospital) => setSelectedHospitalId(hospital.id)}
           onClose={() => setShowHospitalPicker(false)}
@@ -380,7 +524,7 @@ export function CreateOrderPage({
       {/* 科室选择弹窗 */}
       {showDepartmentPicker && (
         <DepartmentPicker
-          departments={mockDepartments}
+          departments={departments}
           selectedDepartment={selectedDepartment}
           onSelect={(department) => setSelectedDepartmentId(department.id)}
           onClose={() => setShowDepartmentPicker(false)}
@@ -392,7 +536,7 @@ export function CreateOrderPage({
       {/* 医生选择弹窗 */}
       {showDoctorPicker && (
         <DoctorPicker
-          doctors={mockDoctors}
+          doctors={doctors}
           selectedDoctor={selectedDoctor}
           onSelect={(doctor) => setSelectedDoctorId(doctor.id)}
           onClose={() => setShowDoctorPicker(false)}

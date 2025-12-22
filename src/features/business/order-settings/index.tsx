@@ -25,7 +25,7 @@ import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { useOrderSettings, useUpdateOrderSettings } from '@/hooks/use-api'
-import type { OrderSettings as OrderSettingsType, CancellationFeeRules } from '@/lib/api'
+import type { OrderSettings as OrderSettingsType, CancellationFeeRules, DispatchWeights } from '@/lib/api'
 
 // 默认取消扣费规则
 const defaultCancellationFeeRules: CancellationFeeRules = {
@@ -36,6 +36,15 @@ const defaultCancellationFeeRules: CancellationFeeRules = {
     afterStart: { enabled: false, feeRate: 0.8 },    // 服务已开始：默认不允许退款
 }
 
+// 默认派单权重
+const defaultDispatchWeights: DispatchWeights = {
+    distance: 0.30,           // 距离权重30%
+    hospitalFamiliarity: 0.25, // 医院熟悉度25%
+    rating: 0.20,             // 评分权重20%
+    levelWeight: 0.15,        // 等级权重15%
+    availability: 0.10,       // 空闲度权重10%
+}
+
 // 默认值
 const defaultSettings: OrderSettingsType = {
     autoCancelMinutes: 15,
@@ -43,6 +52,8 @@ const defaultSettings: OrderSettingsType = {
     dispatchMode: 'assign',
     grabTimeoutMinutes: 30,
     cancellationFeeRules: defaultCancellationFeeRules,
+    dispatchWeights: defaultDispatchWeights,
+    autoDispatchTimeout: 30,
 }
 
 export function OrderSettings() {
@@ -313,8 +324,200 @@ export function OrderSettings() {
                                         </p>
                                     </div>
                                 )}
+
+                            {/* 自动派单超时时间 */}
+                            {formData.dispatchMode !== 'assign' && (
+                                <div className='space-y-2'>
+                                    <Label htmlFor='autoDispatchTimeout'>
+                                        自动派单超时（分钟）
+                                    </Label>
+                                    <Input
+                                        id='autoDispatchTimeout'
+                                        type='number'
+                                        min={5}
+                                        max={120}
+                                        value={formData.autoDispatchTimeout || 30}
+                                        onChange={e =>
+                                            updateField(
+                                                'autoDispatchTimeout',
+                                                parseInt(e.target.value) || 30
+                                            )
+                                        }
+                                    />
+                                    <p className='text-muted-foreground text-xs'>
+                                        超过此时间无人抢单，系统将自动分配给最优陪诊员
+                                    </p>
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
+
+                    {/* 自动派单算法设置 */}
+                    {formData.dispatchMode !== 'assign' && (
+                        <Card className='lg:col-span-2'>
+                            <CardHeader>
+                                <CardTitle className='flex items-center gap-2 text-lg'>
+                                    <Users className='h-5 w-5' />
+                                    自动派单算法权重
+                                </CardTitle>
+                                <CardDescription>
+                                    配置系统自动派单时各因素的权重，权重总和应为100%
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-5'>
+                                    {/* 距离权重 */}
+                                    <div className='space-y-2'>
+                                        <Label>距离优先</Label>
+                                        <div className='flex items-center gap-2'>
+                                            <Input
+                                                type='number'
+                                                min={0}
+                                                max={100}
+                                                className='w-20'
+                                                value={Math.round((formData.dispatchWeights?.distance ?? 0.3) * 100)}
+                                                onChange={e =>
+                                                    updateField('dispatchWeights', {
+                                                        ...formData.dispatchWeights,
+                                                        distance: (parseInt(e.target.value) || 0) / 100,
+                                                    })
+                                                }
+                                            />
+                                            <span className='text-muted-foreground text-sm'>%</span>
+                                        </div>
+                                        <p className='text-muted-foreground text-xs'>
+                                            陪诊员与医院的距离
+                                        </p>
+                                    </div>
+
+                                    {/* 医院熟悉度权重 */}
+                                    <div className='space-y-2'>
+                                        <Label>医院熟悉度</Label>
+                                        <div className='flex items-center gap-2'>
+                                            <Input
+                                                type='number'
+                                                min={0}
+                                                max={100}
+                                                className='w-20'
+                                                value={Math.round((formData.dispatchWeights?.hospitalFamiliarity ?? 0.25) * 100)}
+                                                onChange={e =>
+                                                    updateField('dispatchWeights', {
+                                                        ...formData.dispatchWeights,
+                                                        hospitalFamiliarity: (parseInt(e.target.value) || 0) / 100,
+                                                    })
+                                                }
+                                            />
+                                            <span className='text-muted-foreground text-sm'>%</span>
+                                        </div>
+                                        <p className='text-muted-foreground text-xs'>
+                                            对目标医院的熟悉程度
+                                        </p>
+                                    </div>
+
+                                    {/* 评分权重 */}
+                                    <div className='space-y-2'>
+                                        <Label>服务评分</Label>
+                                        <div className='flex items-center gap-2'>
+                                            <Input
+                                                type='number'
+                                                min={0}
+                                                max={100}
+                                                className='w-20'
+                                                value={Math.round((formData.dispatchWeights?.rating ?? 0.2) * 100)}
+                                                onChange={e =>
+                                                    updateField('dispatchWeights', {
+                                                        ...formData.dispatchWeights,
+                                                        rating: (parseInt(e.target.value) || 0) / 100,
+                                                    })
+                                                }
+                                            />
+                                            <span className='text-muted-foreground text-sm'>%</span>
+                                        </div>
+                                        <p className='text-muted-foreground text-xs'>
+                                            历史服务评分
+                                        </p>
+                                    </div>
+
+                                    {/* 等级权重 */}
+                                    <div className='space-y-2'>
+                                        <Label>陪诊员等级</Label>
+                                        <div className='flex items-center gap-2'>
+                                            <Input
+                                                type='number'
+                                                min={0}
+                                                max={100}
+                                                className='w-20'
+                                                value={Math.round((formData.dispatchWeights?.levelWeight ?? 0.15) * 100)}
+                                                onChange={e =>
+                                                    updateField('dispatchWeights', {
+                                                        ...formData.dispatchWeights,
+                                                        levelWeight: (parseInt(e.target.value) || 0) / 100,
+                                                    })
+                                                }
+                                            />
+                                            <span className='text-muted-foreground text-sm'>%</span>
+                                        </div>
+                                        <p className='text-muted-foreground text-xs'>
+                                            陪诊员等级权重
+                                        </p>
+                                    </div>
+
+                                    {/* 空闲度权重 */}
+                                    <div className='space-y-2'>
+                                        <Label>当前空闲度</Label>
+                                        <div className='flex items-center gap-2'>
+                                            <Input
+                                                type='number'
+                                                min={0}
+                                                max={100}
+                                                className='w-20'
+                                                value={Math.round((formData.dispatchWeights?.availability ?? 0.1) * 100)}
+                                                onChange={e =>
+                                                    updateField('dispatchWeights', {
+                                                        ...formData.dispatchWeights,
+                                                        availability: (parseInt(e.target.value) || 0) / 100,
+                                                    })
+                                                }
+                                            />
+                                            <span className='text-muted-foreground text-sm'>%</span>
+                                        </div>
+                                        <p className='text-muted-foreground text-xs'>
+                                            当日剩余接单数
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* 权重总和提示 */}
+                                <div className='mt-4 flex items-center gap-2 text-sm'>
+                                    <span className='text-muted-foreground'>当前权重总和:</span>
+                                    {(() => {
+                                        const total = Math.round(
+                                            ((formData.dispatchWeights?.distance ?? 0.3) +
+                                                (formData.dispatchWeights?.hospitalFamiliarity ?? 0.25) +
+                                                (formData.dispatchWeights?.rating ?? 0.2) +
+                                                (formData.dispatchWeights?.levelWeight ?? 0.15) +
+                                                (formData.dispatchWeights?.availability ?? 0.1)) * 100
+                                        )
+                                        return (
+                                            <span className={total === 100 ? 'text-green-600 font-medium' : 'text-destructive font-medium'}>
+                                                {total}%
+                                                {total !== 100 && ' (建议调整为100%)'}
+                                            </span>
+                                        )
+                                    })()}
+                                </div>
+
+                                {/* 规则说明 */}
+                                <div className='mt-4 flex items-start gap-2 text-muted-foreground bg-muted/50 rounded-lg p-3'>
+                                    <Info className='h-4 w-4 mt-0.5 flex-shrink-0' />
+                                    <div className='text-xs space-y-1'>
+                                        <p><strong>自动派单原则：</strong>系统会根据以上权重综合评分，自动将订单分配给得分最高的陪诊员。</p>
+                                        <p>例如：距离权重30%表示距离因素在总评分中占30%的比重。权重越高，该因素对派单结果影响越大。</p>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
 
                     {/* 取消与退款规则 - 占满整行 */}
                     <Card className='lg:col-span-2'>

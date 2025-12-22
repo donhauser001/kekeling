@@ -3,7 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { Eye, EyeOff, ExternalLink, Copy, Check, Info } from 'lucide-react'
+import { Eye, EyeOff, ExternalLink, Copy, Check, Info, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -37,11 +37,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { configApi } from '@/lib/api/config'
 
 const alipayFormSchema = z.object({
   appId: z.string().min(1, '请输入应用 APPID'),
-  privateKey: z.string().min(1, '请输入应用私钥'),
-  alipayPublicKey: z.string().min(1, '请输入支付宝公钥'),
+  privateKey: z.string().optional(),
+  alipayPublicKey: z.string().optional(),
   signType: z.enum(['RSA2', 'RSA']),
   notifyUrl: z.string().url('请输入有效的回调地址').or(z.string().length(0)),
   sandbox: z.boolean(),
@@ -62,6 +63,8 @@ export function AlipayForm() {
   const [showPrivateKey, setShowPrivateKey] = useState(false)
   const [copied, setCopied] = useState(false)
   const [isConfigured, setIsConfigured] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
 
   const form = useForm<AlipayFormValues>({
     resolver: zodResolver(alipayFormSchema),
@@ -72,30 +75,57 @@ export function AlipayForm() {
   useEffect(() => {
     const fetchConfig = async () => {
       try {
-        // TODO: 从后端 API 获取配置
-        const mockConfig = {
-          appId: '',
-          privateKey: '',
-          alipayPublicKey: '',
-          signType: 'RSA2' as const,
-          notifyUrl: 'https://your-domain.com/api/payment/alipay/notify',
-          sandbox: false,
-        }
-        form.reset(mockConfig)
-        setIsConfigured(!!mockConfig.appId && !!mockConfig.privateKey)
+        setIsLoading(true)
+        const config = await configApi.getAlipaySettings()
+        form.reset({
+          appId: config.appId || '',
+          privateKey: '', // 私钥从后端返回时是脱敏的，不回填
+          alipayPublicKey: '', // 公钥从后端返回时是脱敏的，不回填
+          signType: config.signType || 'RSA2',
+          notifyUrl: config.notifyUrl || '',
+          sandbox: config.sandbox || false,
+        })
+        // 根据 appId 和私钥是否已配置来判断配置状态
+        setIsConfigured(!!config.appId && config.privateKey?.includes('已配置'))
       } catch (error) {
         console.error('获取支付宝配置失败:', error)
+        toast.error('获取支付宝配置失败')
+      } finally {
+        setIsLoading(false)
       }
     }
     fetchConfig()
   }, [form])
 
-  function onSubmit(data: AlipayFormValues) {
-    console.log('保存支付宝配置:', data)
-    toast.success('支付宝配置已保存', {
-      description: '配置将在服务重启后生效',
-    })
-    setIsConfigured(true)
+  async function onSubmit(data: AlipayFormValues) {
+    try {
+      setIsSaving(true)
+      // 构建更新数据，如果密钥为空则不更新（保留原值）
+      const updateData: Record<string, string | boolean> = {
+        appId: data.appId,
+        signType: data.signType,
+        notifyUrl: data.notifyUrl || '',
+        sandbox: data.sandbox,
+      }
+      if (data.privateKey) {
+        updateData.privateKey = data.privateKey
+      }
+      if (data.alipayPublicKey) {
+        updateData.alipayPublicKey = data.alipayPublicKey
+      }
+      
+      await configApi.updateAlipaySettings(updateData)
+      toast.success('支付宝配置已保存')
+      setIsConfigured(true)
+      // 清空密钥输入框（已保存）
+      form.setValue('privateKey', '')
+      form.setValue('alipayPublicKey', '')
+    } catch (error) {
+      console.error('保存支付宝配置失败:', error)
+      toast.error('保存失败，请重试')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const copyNotifyUrl = () => {
@@ -271,7 +301,10 @@ export function AlipayForm() {
             )}
           />
 
-          <Button type='submit'>保存配置</Button>
+          <Button type='submit' disabled={isSaving || isLoading}>
+            {isSaving && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
+            保存配置
+          </Button>
         </form>
       </Form>
 

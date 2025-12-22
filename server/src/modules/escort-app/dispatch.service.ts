@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { ConfigService } from '../config/config.service';
 
 export interface DispatchScore {
   escortId: string;
@@ -42,13 +43,37 @@ export class DispatchService {
     minRating: 4.0,
   };
 
-  constructor(private prisma: PrismaService) { }
+  constructor(
+    private prisma: PrismaService,
+    private configService: ConfigService,
+  ) { }
+
+  /**
+   * 获取派单配置（优先使用数据库配置）
+   */
+  private async getDispatchConfig(): Promise<DispatchConfig> {
+    try {
+      const orderSettings = await this.configService.getOrderSettings();
+      if (orderSettings.dispatchWeights) {
+        return {
+          weights: orderSettings.dispatchWeights,
+          maxDistanceKm: 30,
+          minRating: 4.0,
+        };
+      }
+    } catch (error) {
+      this.logger.warn('获取派单配置失败，使用默认配置:', error);
+    }
+    return this.defaultConfig;
+  }
 
   /**
    * 智能派单 - 为订单匹配最佳陪诊员
    */
   async smartDispatch(orderId: string, config?: Partial<DispatchConfig>): Promise<DispatchScore | null> {
-    const cfg = { ...this.defaultConfig, ...config };
+    // 从数据库获取配置
+    const dbConfig = await this.getDispatchConfig();
+    const cfg = { ...dbConfig, ...config };
 
     // 获取订单信息
     const order = await this.prisma.order.findUnique({
@@ -183,19 +208,35 @@ export class DispatchService {
 
   /**
    * 批量自动派单 - 处理所有待派单订单
+   * 注意：仅在派单模式为 'grab'（抢单模式）或 'hybrid'（混合模式）时执行
+   * 如果是 'assign'（指派模式），则跳过自动派单，等待管理员手动指派
    */
   async autoDispatchPendingOrders(): Promise<{ processed: number; assigned: number }> {
     const startTime = Date.now();
-    this.logger.log('开始批量自动派单...');
 
-    // 查找超过30分钟仍未被抢单的订单
-    const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+    // 检查派单模式配置
+    const dispatchMode = await this.configService.get('order.dispatch_mode');
+
+    // 如果是「指派模式」，则不执行自动派单
+    if (dispatchMode === 'assign') {
+      this.logger.log('当前为指派模式，跳过自动派单');
+      return { processed: 0, assigned: 0 };
+    }
+
+    // 获取自动派单超时时间配置（默认30分钟）
+    const orderSettings = await this.configService.getOrderSettings();
+    const autoDispatchTimeout = orderSettings.autoDispatchTimeout || 30;
+
+    this.logger.log(`开始批量自动派单...（当前模式: ${dispatchMode || '默认'}，超时: ${autoDispatchTimeout}分钟）`);
+
+    // 查找超过配置时间仍未被抢单的订单
+    const timeoutAgo = new Date(Date.now() - autoDispatchTimeout * 60 * 1000);
 
     const pendingOrders = await this.prisma.order.findMany({
       where: {
         status: 'paid',
         escortId: null,
-        paidAt: { lt: thirtyMinutesAgo },
+        paidAt: { lt: timeoutAgo },
       },
       orderBy: { paidAt: 'asc' },
       take: 50, // 每次最多处理50个

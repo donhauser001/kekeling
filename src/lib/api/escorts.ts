@@ -195,14 +195,14 @@ export const escortApi = {
 
   // 获取钱包流水
   getWalletTransactions: (id: string, params?: { type?: string; page?: number; pageSize?: number }) =>
-    request<{ data: WalletTransaction[]; total: number }>(
+    request<{ data: EscortWalletTransaction[]; total: number }>(
       `/admin/escorts/${id}/wallet/transactions`,
       { params }
     ),
 }
 
-// 钱包流水类型
-export interface WalletTransaction {
+// 陪诊员钱包流水类型
+export interface EscortWalletTransaction {
   id: string
   type: 'income' | 'withdraw' | 'refund' | 'frozen' | 'unfrozen'
   amount: number

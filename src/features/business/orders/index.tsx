@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { getRouteApi, useNavigate } from '@tanstack/react-router'
 import {
   ShoppingCart,
@@ -6,10 +6,16 @@ import {
   CheckCircle,
   DollarSign,
   Loader2,
+  LayoutGrid,
+  List,
+  Search as SearchIcon,
+  X,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Dialog,
   DialogContent,
@@ -34,6 +40,7 @@ import { MessageButton } from '@/components/message-button'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
+import { orderStatuses } from './data/data'
 import {
   useOrders,
   useOrderStats,
@@ -46,6 +53,7 @@ import {
 } from '@/hooks/use-api'
 import { type Order } from './data/schema'
 import { OrdersTable } from './components/orders-table'
+import { OrdersGridView } from './components/orders-grid-view'
 import { OrdersDetailSheet } from './components/orders-detail-sheet'
 
 const route = getRouteApi('/_authenticated/orders/')
@@ -53,6 +61,30 @@ const route = getRouteApi('/_authenticated/orders/')
 export function Orders() {
   const navigate = useNavigate()
   const search = route.useSearch()
+
+  // 视图模式
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+
+  // 搜索和筛选状态
+  const [keyword, setKeyword] = useState('')
+  const [statusFilter, setStatusFilter] = useState<string>('all')
+
+  // 从 URL 同步视图模式
+  useEffect(() => {
+    const view = (search as Record<string, unknown>).view as string | undefined
+    if (view === 'list' || view === 'grid') {
+      setViewMode(view)
+    }
+  }, [(search as Record<string, unknown>).view])
+
+  // 切换视图时更新 URL
+  const handleViewModeChange = (mode: string) => {
+    setViewMode(mode as 'grid' | 'list')
+    void navigate({
+      search: ((prev: Record<string, unknown>) => ({ ...prev, view: mode })) as unknown as true,
+      replace: true,
+    })
+  }
 
   // 弹窗状态
   const [detailSheetOpen, setDetailSheetOpen] = useState(false)
@@ -80,7 +112,7 @@ export function Orders() {
   const cancelMutation = useCancelOrder()
 
   // 转换 API 数据为组件需要的格式
-  const orders: Order[] = (data?.data || []).map(order => ({
+  const allOrders: Order[] = (data?.data || []).map(order => ({
     id: order.id,
     orderNo: order.orderNo,
     serviceName: order.service?.name || '-',
@@ -101,6 +133,31 @@ export function Orders() {
     updatedAt: order.updatedAt || '',
     remark: order.userRemark || '',
   }))
+
+  // 根据搜索和筛选条件过滤订单
+  const orders = useMemo(() => {
+    let filtered = allOrders
+
+    // 关键词搜索
+    if (keyword.trim()) {
+      const kw = keyword.trim().toLowerCase()
+      filtered = filtered.filter(order =>
+        order.orderNo.toLowerCase().includes(kw) ||
+        order.customerName.toLowerCase().includes(kw) ||
+        order.customerPhone.includes(kw) ||
+        order.hospital.toLowerCase().includes(kw) ||
+        order.serviceName.toLowerCase().includes(kw) ||
+        (order.escortName && order.escortName.toLowerCase().includes(kw))
+      )
+    }
+
+    // 状态筛选
+    if (statusFilter && statusFilter !== 'all') {
+      filtered = filtered.filter(order => order.status === statusFilter)
+    }
+
+    return filtered
+  }, [allOrders, keyword, statusFilter])
 
   // 查看详情
   const handleView = (order: Order) => {
@@ -232,14 +289,92 @@ export function Orders() {
           </div>
         )}
 
-        {/* 订单表格 */}
-        <OrdersTable
-          data={orders}
-          search={search as Record<string, unknown>}
-          navigate={(opts) => void navigate({ search: opts.search as unknown as true })}
-          isLoading={isLoading}
-          onView={handleView}
-        />
+        {/* 工具栏：搜索、筛选、视图切换 */}
+        <div className='flex flex-wrap items-center gap-3'>
+          {/* 搜索框 */}
+          <div className='relative flex-1 min-w-[200px] max-w-sm'>
+            <SearchIcon className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
+            <Input
+              placeholder='搜索订单号、客户、医院...'
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+              className='pl-9 pr-9'
+            />
+            {keyword && (
+              <Button
+                variant='ghost'
+                size='sm'
+                className='absolute right-1 top-1/2 h-6 w-6 -translate-y-1/2 p-0'
+                onClick={() => setKeyword('')}
+              >
+                <X className='h-3.5 w-3.5' />
+              </Button>
+            )}
+          </div>
+
+          {/* 状态筛选 */}
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className='w-[130px]'>
+              <SelectValue placeholder='全部状态' />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value='all'>全部状态</SelectItem>
+              {orderStatuses.map(status => (
+                <SelectItem key={status.value} value={status.value}>
+                  {status.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* 视图切换 */}
+          <Tabs value={viewMode} onValueChange={handleViewModeChange} className='ml-auto'>
+            <TabsList className='h-9'>
+              <TabsTrigger value='grid' className='px-3'>
+                <LayoutGrid className='h-4 w-4' />
+              </TabsTrigger>
+              <TabsTrigger value='list' className='px-3'>
+                <List className='h-4 w-4' />
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+
+        {/* 筛选结果统计 */}
+        {(keyword || statusFilter !== 'all') && (
+          <div className='text-sm text-muted-foreground'>
+            共找到 {orders.length} 个订单
+            {keyword && <span>，关键词："{keyword}"</span>}
+            {statusFilter !== 'all' && (
+              <span>，状态：{orderStatuses.find(s => s.value === statusFilter)?.label}</span>
+            )}
+            <Button
+              variant='link'
+              size='sm'
+              className='ml-2 h-auto p-0'
+              onClick={() => { setKeyword(''); setStatusFilter('all') }}
+            >
+              清除筛选
+            </Button>
+          </div>
+        )}
+
+        {/* 订单内容 */}
+        {viewMode === 'grid' ? (
+          <OrdersGridView
+            orders={orders}
+            isLoading={isLoading}
+            onView={handleView}
+          />
+        ) : (
+          <OrdersTable
+            data={orders}
+            search={search as Record<string, unknown>}
+            navigate={(opts) => void navigate({ search: opts.search as unknown as true })}
+            isLoading={isLoading}
+            onView={handleView}
+          />
+        )}
       </Main>
 
       {/* 详情抽屉 */}

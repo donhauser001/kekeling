@@ -251,6 +251,7 @@ export class AdminOrdersService {
 
   /**
    * 派单（分配陪诊员）
+   * 支持首次派单和重新指派
    */
   async assignEscort(orderId: string, escortId: string, adminId?: string) {
     const order = await this.prisma.order.findUnique({
@@ -261,8 +262,10 @@ export class AdminOrdersService {
       throw new NotFoundException('订单不存在');
     }
 
-    if (!['paid', 'confirmed'].includes(order.status)) {
-      throw new BadRequestException('当前状态无法派单');
+    // 允许派单的状态：已支付、已确认、已分配（重新指派）
+    const allowedStatuses = ['paid', 'confirmed', 'assigned'];
+    if (!allowedStatuses.includes(order.status)) {
+      throw new BadRequestException(`当前状态(${order.status})无法派单，仅支持：已支付、已确认、已分配状态`);
     }
 
     // 获取陪诊员完整信息（包含等级）
@@ -301,8 +304,22 @@ export class AdminOrdersService {
       rating: escort.rating,
     };
 
+    // 检查是否是重新指派（原来已有陪诊员）
+    const isReassign = !!order.escortId && order.escortId !== escortId;
+    const previousEscortId = order.escortId;
+
     // 使用事务更新订单和记录日志
     const updatedOrder = await this.prisma.$transaction(async (tx) => {
+      // 如果是重新指派，先释放原陪诊员
+      if (isReassign && previousEscortId) {
+        await tx.escort.update({
+          where: { id: previousEscortId },
+          data: {
+            currentDailyOrders: { decrement: 1 },
+          },
+        });
+      }
+
       // 更新订单（包含陪诊员快照）
       const updated = await tx.order.update({
         where: { id: orderId },
@@ -321,7 +338,7 @@ export class AdminOrdersService {
         },
       });
 
-      // 更新陪诊员当日接单数
+      // 更新新陪诊员当日接单数
       await tx.escort.update({
         where: { id: escortId },
         data: {
@@ -333,13 +350,19 @@ export class AdminOrdersService {
       await tx.orderLog.create({
         data: {
           orderId,
-          action: 'assign',
+          action: isReassign ? 'reassign' : 'assign',
           fromStatus,
           toStatus: 'assigned',
           operatorType: 'admin',
           operatorId: adminId,
-          remark: `手动派单给陪诊员: ${escort.name}`,
-          extra: JSON.stringify({ escortId, escortName: escort.name }),
+          remark: isReassign
+            ? `重新指派陪诊员: ${escort.name}`
+            : `手动派单给陪诊员: ${escort.name}`,
+          extra: JSON.stringify({
+            escortId,
+            escortName: escort.name,
+            previousEscortId: isReassign ? previousEscortId : undefined,
+          }),
         },
       });
 

@@ -1,15 +1,9 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationService } from '../notification/notification.service';
+import { ConfigService } from '../config/config.service';
 import * as crypto from 'crypto';
-
-// 微信支付配置（从环境变量读取）
-const WECHAT_PAY_CONFIG = {
-  appId: process.env.WECHAT_APPID || '',
-  mchId: process.env.WECHAT_MCH_ID || '',
-  apiKey: process.env.WECHAT_PAY_API_KEY || '',
-  notifyUrl: process.env.WECHAT_PAY_NOTIFY_URL || '',
-};
+import * as https from 'https';
 
 interface PrepayParams {
   orderId: string;
@@ -25,12 +19,52 @@ export interface WxPaymentParams {
   paySign: string;
 }
 
+/** 微信支付配置（运行时从数据库读取） */
+interface WechatPayConfig {
+  appId: string;
+  mchId: string;
+  apiKey: string;
+  notifyUrl: string;
+}
+
 @Injectable()
 export class PaymentService {
   constructor(
     private prisma: PrismaService,
     private notificationService: NotificationService,
+    private configService: ConfigService,
   ) { }
+
+  /**
+   * 获取微信支付配置（优先从数据库读取，回退到环境变量）
+   */
+  private async getWechatPayConfig(): Promise<WechatPayConfig> {
+    try {
+      const dbConfig = await this.configService.getWechatPaySettings();
+      
+      // 如果数据库中有配置且已启用，使用数据库配置
+      if (dbConfig.enabled && dbConfig.appId && dbConfig.mchId && dbConfig.apiKey) {
+        console.log('[PaymentService] 使用数据库中的微信支付配置');
+        return {
+          appId: dbConfig.appId,
+          mchId: dbConfig.mchId,
+          apiKey: dbConfig.apiKey,
+          notifyUrl: dbConfig.notifyUrl || process.env.WECHAT_PAY_NOTIFY_URL || '',
+        };
+      }
+    } catch (error) {
+      console.warn('[PaymentService] 读取数据库支付配置失败，使用环境变量:', error);
+    }
+    
+    // 回退到环境变量
+    console.log('[PaymentService] 使用环境变量中的微信支付配置');
+    return {
+      appId: process.env.WECHAT_APPID || '',
+      mchId: process.env.WECHAT_MCH_ID || '',
+      apiKey: process.env.WECHAT_PAY_API_KEY || '',
+      notifyUrl: process.env.WECHAT_PAY_NOTIFY_URL || '',
+    };
+  }
 
   /**
    * 处理用户指定陪诊员的自动分配
@@ -174,20 +208,93 @@ export class PaymentService {
     return result;
   }
 
-  // 生成签名（用于小程序调起支付）
-  private generatePaySign(params: Record<string, string>): string {
-    // 按字典序排序
-    const sortedKeys = Object.keys(params).sort();
+  // 生成签名（用于统一下单和小程序调起支付）
+  private generateSign(params: Record<string, string | number>, apiKey: string): string {
+    // 过滤空值并按字典序排序
+    const sortedKeys = Object.keys(params)
+      .filter(key => params[key] !== '' && params[key] !== undefined && params[key] !== null)
+      .sort();
     const stringA = sortedKeys.map(key => `${key}=${params[key]}`).join('&');
-    const stringSignTemp = `${stringA}&key=${WECHAT_PAY_CONFIG.apiKey}`;
+    const stringSignTemp = `${stringA}&key=${apiKey}`;
+
+    // 调试日志（生产环境应移除）
+    console.log('[Payment] 签名字符串:', stringA);
+    console.log('[Payment] 待签名字符串(含key)长度:', stringSignTemp.length);
 
     // MD5 签名
-    return crypto.createHash('md5').update(stringSignTemp).digest('hex').toUpperCase();
+    const sign = crypto.createHash('md5').update(stringSignTemp, 'utf8').digest('hex').toUpperCase();
+    console.log('[Payment] 生成签名:', sign);
+    return sign;
   }
 
-  // 创建预支付订单
+  // 构建 XML 请求体
+  private buildXml(params: Record<string, string | number>): string {
+    let xml = '<xml>';
+    for (const [key, value] of Object.entries(params)) {
+      if (value !== '' && value !== undefined && value !== null) {
+        if (typeof value === 'number') {
+          xml += `<${key}>${value}</${key}>`;
+        } else {
+          xml += `<${key}><![CDATA[${value}]]></${key}>`;
+        }
+      }
+    }
+    xml += '</xml>';
+    return xml;
+  }
+
+  // 解析 XML 响应
+  private parseXml(xml: string): Record<string, string> {
+    const result: Record<string, string> = {};
+    const regex = /<(\w+)>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/\1>/g;
+    let match;
+    while ((match = regex.exec(xml)) !== null) {
+      result[match[1]] = match[2];
+    }
+    return result;
+  }
+
+  // 发送 HTTPS 请求
+  private async httpPost(url: string, data: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const urlObj = new URL(url);
+      const options = {
+        hostname: urlObj.hostname,
+        path: urlObj.pathname,
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/xml',
+          'Content-Length': Buffer.byteLength(data, 'utf8'),
+        },
+      };
+
+      const req = https.request(options, (res) => {
+        let body = '';
+        res.setEncoding('utf8');
+        res.on('data', (chunk) => { body += chunk; });
+        res.on('end', () => { resolve(body); });
+      });
+
+      req.on('error', (e) => { reject(e); });
+      req.write(data);
+      req.end();
+    });
+  }
+
+  // 创建预支付订单（调用微信统一下单接口）
   async createPrepay(params: PrepayParams): Promise<WxPaymentParams> {
     const { orderId, openid } = params;
+
+    // 获取支付配置
+    const payConfig = await this.getWechatPayConfig();
+    
+    if (!payConfig.appId || !payConfig.mchId || !payConfig.apiKey) {
+      throw new BadRequestException('微信支付未配置，请先在后台配置支付参数');
+    }
+
+    if (!payConfig.notifyUrl) {
+      throw new BadRequestException('微信支付回调地址未配置');
+    }
 
     // 获取订单信息
     const order = await this.prisma.order.findUnique({
@@ -203,35 +310,90 @@ export class PaymentService {
       throw new BadRequestException('订单状态不允许支付');
     }
 
-    // TODO: 实际项目中需要调用微信支付统一下单接口
-    // 这里返回模拟数据，方便开发测试
-    // 正式环境需要替换为真实的微信支付接口调用
-
-    const timeStamp = Math.floor(Date.now() / 1000).toString();
+    // 构建统一下单请求参数
     const nonceStr = this.generateNonceStr();
-    const packageStr = `prepay_id=wx_prepay_${order.orderNo}_${Date.now()}`;
-
-    // 生成支付签名
-    const signParams = {
-      appId: WECHAT_PAY_CONFIG.appId,
-      timeStamp,
-      nonceStr,
-      package: packageStr,
-      signType: 'MD5',
+    const totalFee = Math.round(Number(order.totalAmount) * 100); // 转换为分
+    
+    // 确保所有参数都是字符串（签名计算需要）
+    const unifiedOrderParams: Record<string, string | number> = {
+      appid: String(payConfig.appId),
+      mch_id: String(payConfig.mchId),
+      nonce_str: nonceStr,
+      body: order.service?.name || '陪诊服务',
+      out_trade_no: order.orderNo,
+      total_fee: totalFee,
+      spbill_create_ip: '127.0.0.1', // 服务器 IP
+      notify_url: payConfig.notifyUrl,
+      trade_type: 'JSAPI',
+      openid: openid,
     };
-    const paySign = this.generatePaySign(signParams);
+    
+    console.log(`[Payment] 统一下单参数: appid=${payConfig.appId}, mch_id=${payConfig.mchId}`);
 
-    // 记录支付日志
-    console.log(`[Payment] 创建预支付订单: orderNo=${order.orderNo}, amount=${order.totalAmount}`);
+    // 生成签名
+    const sign = this.generateSign(unifiedOrderParams, payConfig.apiKey);
+    unifiedOrderParams.sign = sign;
 
-    return {
-      appId: WECHAT_PAY_CONFIG.appId,
-      timeStamp,
-      nonceStr,
-      package: packageStr,
-      signType: 'MD5',
-      paySign,
-    };
+    // 构建 XML 请求体
+    const xmlData = this.buildXml(unifiedOrderParams);
+    
+    console.log(`[Payment] 统一下单请求: orderNo=${order.orderNo}, totalFee=${totalFee}分`);
+    console.log(`[Payment] XML请求体:`, xmlData);
+
+    try {
+      // 调用微信统一下单接口
+      const responseXml = await this.httpPost('https://api.mch.weixin.qq.com/pay/unifiedorder', xmlData);
+      console.log(`[Payment] 微信响应原始XML:`, responseXml);
+      
+      const response = this.parseXml(responseXml);
+      console.log(`[Payment] 统一下单响应: return_code=${response.return_code}, result_code=${response.result_code}, return_msg=${response.return_msg}, err_code=${response.err_code}`);
+
+      if (response.return_code !== 'SUCCESS') {
+        console.error('[Payment] 统一下单失败:', response.return_msg);
+        throw new InternalServerErrorException(`微信支付请求失败: ${response.return_msg}`);
+      }
+
+      if (response.result_code !== 'SUCCESS') {
+        console.error('[Payment] 统一下单业务失败:', response.err_code, response.err_code_des);
+        throw new BadRequestException(`微信支付失败: ${response.err_code_des || response.err_code}`);
+      }
+
+      const prepayId = response.prepay_id;
+      if (!prepayId) {
+        throw new InternalServerErrorException('获取 prepay_id 失败');
+      }
+
+      // 生成小程序调起支付的参数
+      const timeStamp = Math.floor(Date.now() / 1000).toString();
+      const payNonceStr = this.generateNonceStr();
+      const packageStr = `prepay_id=${prepayId}`;
+
+      const paySignParams: Record<string, string> = {
+        appId: payConfig.appId,
+        timeStamp,
+        nonceStr: payNonceStr,
+        package: packageStr,
+        signType: 'MD5',
+      };
+      const paySign = this.generateSign(paySignParams, payConfig.apiKey);
+
+      console.log(`[Payment] 预支付订单创建成功: orderNo=${order.orderNo}, prepayId=${prepayId}`);
+
+      return {
+        appId: payConfig.appId,
+        timeStamp,
+        nonceStr: payNonceStr,
+        package: packageStr,
+        signType: 'MD5',
+        paySign,
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException || error instanceof InternalServerErrorException) {
+        throw error;
+      }
+      console.error('[Payment] 统一下单请求异常:', error);
+      throw new InternalServerErrorException('微信支付服务异常，请稍后重试');
+    }
   }
 
   // 处理支付回调

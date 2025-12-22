@@ -70,6 +70,12 @@ export const previewApi = {
   getBanners: userApi.getBanners,
   getStats: userApi.getStats,
 
+  // 订单统计
+  getOrderStats: userApi.getOrderStats,
+  // 用户订单列表
+  getUserOrders: userApi.getUserOrders,
+  getUserOrderDetail: userApi.getUserOrderDetail,
+
   // 用户资料
   getUserProfile: userApi.getUserProfile,
   updateUserProfile: userApi.updateUserProfile,
@@ -87,6 +93,19 @@ export const previewApi = {
   updateAddress: userApi.updateAddress,
   deleteAddress: userApi.deleteAddress,
   setDefaultAddress: userApi.setDefaultAddress,
+
+  // 就诊人管理
+  getPatients: userApi.getPatients,
+  createPatient: userApi.createPatient,
+  updatePatient: userApi.updatePatient,
+  deletePatient: userApi.deletePatient,
+  setDefaultPatient: userApi.setDefaultPatient,
+
+  // 医院/科室/医生
+  getHospitals: userApi.getHospitals,
+  getHospital: userApi.getHospital,
+  getHospitalDepartments: userApi.getHospitalDepartments,
+  getHospitalDoctors: userApi.getHospitalDoctors,
 
   // 服务
   getCategories: userApi.getCategories,
@@ -129,6 +148,13 @@ export const previewApi = {
   // 小程序设置
   getMiniappSettings: userApi.getMiniappSettings,
   devModeAutoLogin: userApi.devModeAutoLogin,
+
+  // 订单创建和支付
+  createOrder: userApi.createOrder,
+  getPaymentParams: userApi.getPaymentParams,
+  getPaymentStatus: userApi.getPaymentStatus,
+  mockPayment: userApi.mockPayment,
+  cancelOrder: userApi.cancelOrder,
 
   // ==========================================================================
   // Escort Channel（陪诊员通道）

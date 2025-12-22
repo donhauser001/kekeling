@@ -47,7 +47,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { escortApi, distributionApi, orderApi, withdrawalApi, type Order, type DistributionRecord, type Withdrawal, type WalletTransaction } from '@/lib/api'
+import { escortApi, distributionApi, orderApi, withdrawalApi, type Order, type DistributionRecord, type Withdrawal, type EscortWalletTransaction } from '@/lib/api'
 import { normalizeLevel } from '@/lib/utils'
 import {
   Table,
@@ -334,7 +334,7 @@ export function EscortDetail() {
           <CardContent className="p-6">
             <div className="flex flex-col md:flex-row gap-6">
               <Avatar className="h-24 w-24 flex-shrink-0">
-                <AvatarImage src={escort.avatar || undefined} />
+                <AvatarImage src={escort.avatar || escort.user?.avatar || undefined} />
                 <AvatarFallback className="text-2xl">{escort.name.slice(0, 1)}</AvatarFallback>
               </Avatar>
               <div className="flex-1 space-y-3">
@@ -895,7 +895,7 @@ export function EscortDetail() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {incomeData.data.map((record: WalletTransaction) => (
+                        {incomeData.data.map((record: EscortWalletTransaction) => (
                           <TableRow key={record.id}>
                             <TableCell className="text-sm">
                               {new Date(record.createdAt).toLocaleString()}

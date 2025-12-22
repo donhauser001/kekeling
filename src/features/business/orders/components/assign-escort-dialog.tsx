@@ -96,7 +96,7 @@ export function AssignEscortDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px]" onClick={(e) => e.stopPropagation()}>
         <DialogHeader>
           <DialogTitle>派单</DialogTitle>
           <DialogDescription>
@@ -135,7 +135,7 @@ export function AssignEscortDialog({
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-[380px] p-0">
+                <PopoverContent className="w-[380px] p-0" onClick={(e) => e.stopPropagation()}>
                   <Command>
                     <CommandInput placeholder="搜索陪诊员..." />
                     <CommandList>

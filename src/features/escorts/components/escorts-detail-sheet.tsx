@@ -94,7 +94,7 @@ export function EscortsDetailSheet({
                         <SheetHeader className='pb-4'>
                             <div className='flex items-start gap-4'>
                                 <Avatar className='h-16 w-16'>
-                                    <AvatarImage src={escort.avatar || undefined} />
+                                    <AvatarImage src={escort.avatar || escort.user?.avatar || undefined} />
                                     <AvatarFallback className={cn(getLevelConfig(escort).color, 'text-white text-lg')}>
                                         {escort.name.slice(0, 1)}
                                     </AvatarFallback>

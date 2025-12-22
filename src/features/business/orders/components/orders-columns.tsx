@@ -6,6 +6,7 @@ import { DataTableColumnHeader } from '@/components/data-table'
 import { orderStatusTypes, orderStatuses, serviceCategories } from '../data/data'
 import { type Order } from '../data/schema'
 import { DataTableRowActions } from './data-table-row-actions'
+import { EscortCell } from './escort-cell'
 
 export const ordersColumns: ColumnDef<Order>[] = [
   {
@@ -40,12 +41,30 @@ export const ordersColumns: ColumnDef<Order>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='订单号' />
     ),
-    cell: ({ row }) => (
-      <div className='ps-2'>
-        <div className='font-mono text-sm'>{row.getValue('orderNo')}</div>
-        <div className='text-muted-foreground text-xs'>{row.original.createdAt.split(' ')[0]}</div>
-      </div>
-    ),
+    cell: ({ row }) => {
+      const createdAt = row.original.createdAt
+      // 格式化下单时间：2025-12-22T05:44:10.054Z -> 2025-12-22 13:44 (北京时间)
+      let formattedTime = createdAt
+      try {
+        const date = new Date(createdAt)
+        formattedTime = date.toLocaleString('zh-CN', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+        }).replace(/\//g, '-')
+      } catch {
+        formattedTime = createdAt?.split('T')[0] || createdAt
+      }
+      return (
+        <div className='ps-2'>
+          <div className='font-mono text-sm'>{row.getValue('orderNo')}</div>
+          <div className='text-muted-foreground text-xs'>{formattedTime}</div>
+        </div>
+      )
+    },
     meta: {
       title: '订单号',
       className: cn(
@@ -61,10 +80,7 @@ export const ordersColumns: ColumnDef<Order>[] = [
       <DataTableColumnHeader column={column} title='服务' />
     ),
     cell: ({ row }) => (
-      <div>
-        <div className='font-medium'>{row.getValue('serviceName')}</div>
-        <Badge variant='outline' className='text-xs'>{row.original.serviceCategory}</Badge>
-      </div>
+      <div className='font-medium'>{row.getValue('serviceName')}</div>
     ),
     meta: { title: '服务' },
   },
@@ -86,17 +102,7 @@ export const ordersColumns: ColumnDef<Order>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='服务人员' />
     ),
-    cell: ({ row }) => {
-      const escortName = row.getValue('escortName') as string | null
-      return escortName ? (
-        <div>
-          <div>{escortName}</div>
-          <div className='text-muted-foreground text-xs'>{row.original.escortPhone}</div>
-        </div>
-      ) : (
-        <span className='text-muted-foreground text-sm'>待分配</span>
-      )
-    },
+    cell: ({ row }) => <EscortCell row={row} />,
     meta: { title: '服务人员' },
   },
   {
@@ -104,12 +110,20 @@ export const ordersColumns: ColumnDef<Order>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='预约时间' />
     ),
-    cell: ({ row }) => (
-      <div>
-        <div>{row.getValue('appointmentDate')}</div>
-        <div className='text-muted-foreground text-xs'>{row.original.appointmentTime}</div>
-      </div>
-    ),
+    cell: ({ row }) => {
+      const dateStr = row.getValue('appointmentDate') as string
+      const timeStr = row.original.appointmentTime
+      // 格式化日期：2025-12-23T00:00:00.000Z -> 2025-12-23
+      const formattedDate = dateStr ? dateStr.split('T')[0] : dateStr
+      // 格式化时间：08:00:00 -> 08:00
+      const formattedTime = timeStr ? timeStr.slice(0, 5) : timeStr
+      return (
+        <div>
+          <div>{formattedDate}</div>
+          <div className='text-muted-foreground text-xs'>{formattedTime}</div>
+        </div>
+      )
+    },
     meta: { title: '预约时间' },
   },
   {

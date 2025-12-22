@@ -8,6 +8,8 @@ import { isWxEnvironment } from '../../../../platform/env'
 import type { ThemeColors } from '../types'
 
 const wxScale = isWxEnvironment() ? 1.1 : 1
+// 微信小程序底部安全区域高度（TabBar 约 50px + 底部安全区 34px）
+const wxSafeAreaBottom = isWxEnvironment() ? 84 : 0
 
 interface BottomBarProps {
   servicePrice: number
@@ -39,7 +41,7 @@ export function BottomBar({
         paddingLeft: 16 * wxScale,
         paddingRight: 16 * wxScale,
         paddingTop: 12 * wxScale,
-        paddingBottom: 12 * wxScale,
+        paddingBottom: 12 * wxScale + wxSafeAreaBottom,
         backgroundColor: cardBg,
         borderTopWidth: 1,
         borderTopStyle: 'solid',

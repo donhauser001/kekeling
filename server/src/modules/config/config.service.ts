@@ -3,6 +3,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import {
   ORDER_CONFIG_KEYS,
   ORDER_CONFIG_DEFAULTS,
+  DEFAULT_DISPATCH_WEIGHTS,
   THEME_CONFIG_KEYS,
   THEME_CONFIG_DEFAULTS,
   BANNER_CONFIG_KEYS,
@@ -14,7 +15,10 @@ import {
   SMS_CONFIG_DEFAULTS,
   MINIAPP_CONFIG_KEYS,
   MINIAPP_CONFIG_DEFAULTS,
+  PAYMENT_CONFIG_KEYS,
+  PAYMENT_CONFIG_DEFAULTS,
   type OrderSettings,
+  type DispatchWeights,
   type ThemeSettings,
   type BannerSettings,
   type BannerAreaConfig,
@@ -22,6 +26,9 @@ import {
   type HomePageSettings,
   type SmsSettings,
   type MiniappSettings,
+  type PaymentSettings,
+  type WechatPaySettings,
+  type AlipaySettings,
 } from './dto/config.dto';
 
 @Injectable()
@@ -168,6 +175,12 @@ export class ConfigService {
       cancellationFeeRules:
         configs[ORDER_CONFIG_KEYS.CANCELLATION_FEE_RULES] ??
         ORDER_CONFIG_DEFAULTS[ORDER_CONFIG_KEYS.CANCELLATION_FEE_RULES],
+      dispatchWeights:
+        configs[ORDER_CONFIG_KEYS.DISPATCH_WEIGHTS] ??
+        ORDER_CONFIG_DEFAULTS[ORDER_CONFIG_KEYS.DISPATCH_WEIGHTS],
+      autoDispatchTimeout:
+        configs[ORDER_CONFIG_KEYS.AUTO_DISPATCH_TIMEOUT] ??
+        ORDER_CONFIG_DEFAULTS[ORDER_CONFIG_KEYS.AUTO_DISPATCH_TIMEOUT],
     };
   }
 
@@ -205,6 +218,18 @@ export class ConfigService {
       configs.push({
         key: ORDER_CONFIG_KEYS.CANCELLATION_FEE_RULES,
         value: settings.cancellationFeeRules,
+      });
+    }
+    if (settings.dispatchWeights !== undefined) {
+      configs.push({
+        key: ORDER_CONFIG_KEYS.DISPATCH_WEIGHTS,
+        value: settings.dispatchWeights,
+      });
+    }
+    if (settings.autoDispatchTimeout !== undefined) {
+      configs.push({
+        key: ORDER_CONFIG_KEYS.AUTO_DISPATCH_TIMEOUT,
+        value: settings.autoDispatchTimeout,
       });
     }
 
@@ -683,6 +708,171 @@ export class ConfigService {
     }
 
     return this.getMiniappSettings();
+  }
+
+  // ============================================
+  // 支付配置专用方法
+  // ============================================
+
+  /**
+   * 获取微信支付配置
+   */
+  async getWechatPaySettings(): Promise<WechatPaySettings> {
+    const keys = [
+      PAYMENT_CONFIG_KEYS.WECHAT_ENABLED,
+      PAYMENT_CONFIG_KEYS.WECHAT_APP_ID,
+      PAYMENT_CONFIG_KEYS.WECHAT_MCH_ID,
+      PAYMENT_CONFIG_KEYS.WECHAT_API_KEY,
+      PAYMENT_CONFIG_KEYS.WECHAT_API_V3_KEY,
+      PAYMENT_CONFIG_KEYS.WECHAT_CERT_SERIAL_NO,
+      PAYMENT_CONFIG_KEYS.WECHAT_PRIVATE_KEY,
+      PAYMENT_CONFIG_KEYS.WECHAT_NOTIFY_URL,
+    ];
+    const configs = await this.getMultiple(keys);
+
+    return {
+      enabled:
+        configs[PAYMENT_CONFIG_KEYS.WECHAT_ENABLED] ??
+        PAYMENT_CONFIG_DEFAULTS[PAYMENT_CONFIG_KEYS.WECHAT_ENABLED],
+      appId:
+        configs[PAYMENT_CONFIG_KEYS.WECHAT_APP_ID] ??
+        PAYMENT_CONFIG_DEFAULTS[PAYMENT_CONFIG_KEYS.WECHAT_APP_ID],
+      mchId:
+        configs[PAYMENT_CONFIG_KEYS.WECHAT_MCH_ID] ??
+        PAYMENT_CONFIG_DEFAULTS[PAYMENT_CONFIG_KEYS.WECHAT_MCH_ID],
+      apiKey:
+        configs[PAYMENT_CONFIG_KEYS.WECHAT_API_KEY] ??
+        PAYMENT_CONFIG_DEFAULTS[PAYMENT_CONFIG_KEYS.WECHAT_API_KEY],
+      apiV3Key:
+        configs[PAYMENT_CONFIG_KEYS.WECHAT_API_V3_KEY] ??
+        PAYMENT_CONFIG_DEFAULTS[PAYMENT_CONFIG_KEYS.WECHAT_API_V3_KEY],
+      certSerialNo:
+        configs[PAYMENT_CONFIG_KEYS.WECHAT_CERT_SERIAL_NO] ??
+        PAYMENT_CONFIG_DEFAULTS[PAYMENT_CONFIG_KEYS.WECHAT_CERT_SERIAL_NO],
+      privateKey:
+        configs[PAYMENT_CONFIG_KEYS.WECHAT_PRIVATE_KEY] ??
+        PAYMENT_CONFIG_DEFAULTS[PAYMENT_CONFIG_KEYS.WECHAT_PRIVATE_KEY],
+      notifyUrl:
+        configs[PAYMENT_CONFIG_KEYS.WECHAT_NOTIFY_URL] ??
+        PAYMENT_CONFIG_DEFAULTS[PAYMENT_CONFIG_KEYS.WECHAT_NOTIFY_URL],
+    };
+  }
+
+  /**
+   * 更新微信支付配置
+   */
+  async updateWechatPaySettings(settings: Partial<WechatPaySettings>): Promise<WechatPaySettings> {
+    const keyMap: Record<keyof WechatPaySettings, string> = {
+      enabled: PAYMENT_CONFIG_KEYS.WECHAT_ENABLED,
+      appId: PAYMENT_CONFIG_KEYS.WECHAT_APP_ID,
+      mchId: PAYMENT_CONFIG_KEYS.WECHAT_MCH_ID,
+      apiKey: PAYMENT_CONFIG_KEYS.WECHAT_API_KEY,
+      apiV3Key: PAYMENT_CONFIG_KEYS.WECHAT_API_V3_KEY,
+      certSerialNo: PAYMENT_CONFIG_KEYS.WECHAT_CERT_SERIAL_NO,
+      privateKey: PAYMENT_CONFIG_KEYS.WECHAT_PRIVATE_KEY,
+      notifyUrl: PAYMENT_CONFIG_KEYS.WECHAT_NOTIFY_URL,
+    };
+
+    const configs: { key: string; value: any }[] = [];
+
+    for (const [field, value] of Object.entries(settings)) {
+      if (value !== undefined && keyMap[field as keyof WechatPaySettings]) {
+        configs.push({
+          key: keyMap[field as keyof WechatPaySettings],
+          value,
+        });
+      }
+    }
+
+    if (configs.length > 0) {
+      await this.setMultiple(configs);
+    }
+
+    return this.getWechatPaySettings();
+  }
+
+  /**
+   * 获取支付宝配置
+   */
+  async getAlipaySettings(): Promise<AlipaySettings> {
+    const keys = [
+      PAYMENT_CONFIG_KEYS.ALIPAY_ENABLED,
+      PAYMENT_CONFIG_KEYS.ALIPAY_APP_ID,
+      PAYMENT_CONFIG_KEYS.ALIPAY_PRIVATE_KEY,
+      PAYMENT_CONFIG_KEYS.ALIPAY_PUBLIC_KEY,
+      PAYMENT_CONFIG_KEYS.ALIPAY_SIGN_TYPE,
+      PAYMENT_CONFIG_KEYS.ALIPAY_NOTIFY_URL,
+      PAYMENT_CONFIG_KEYS.ALIPAY_SANDBOX,
+    ];
+    const configs = await this.getMultiple(keys);
+
+    return {
+      enabled:
+        configs[PAYMENT_CONFIG_KEYS.ALIPAY_ENABLED] ??
+        PAYMENT_CONFIG_DEFAULTS[PAYMENT_CONFIG_KEYS.ALIPAY_ENABLED],
+      appId:
+        configs[PAYMENT_CONFIG_KEYS.ALIPAY_APP_ID] ??
+        PAYMENT_CONFIG_DEFAULTS[PAYMENT_CONFIG_KEYS.ALIPAY_APP_ID],
+      privateKey:
+        configs[PAYMENT_CONFIG_KEYS.ALIPAY_PRIVATE_KEY] ??
+        PAYMENT_CONFIG_DEFAULTS[PAYMENT_CONFIG_KEYS.ALIPAY_PRIVATE_KEY],
+      alipayPublicKey:
+        configs[PAYMENT_CONFIG_KEYS.ALIPAY_PUBLIC_KEY] ??
+        PAYMENT_CONFIG_DEFAULTS[PAYMENT_CONFIG_KEYS.ALIPAY_PUBLIC_KEY],
+      signType:
+        configs[PAYMENT_CONFIG_KEYS.ALIPAY_SIGN_TYPE] ??
+        PAYMENT_CONFIG_DEFAULTS[PAYMENT_CONFIG_KEYS.ALIPAY_SIGN_TYPE],
+      notifyUrl:
+        configs[PAYMENT_CONFIG_KEYS.ALIPAY_NOTIFY_URL] ??
+        PAYMENT_CONFIG_DEFAULTS[PAYMENT_CONFIG_KEYS.ALIPAY_NOTIFY_URL],
+      sandbox:
+        configs[PAYMENT_CONFIG_KEYS.ALIPAY_SANDBOX] ??
+        PAYMENT_CONFIG_DEFAULTS[PAYMENT_CONFIG_KEYS.ALIPAY_SANDBOX],
+    };
+  }
+
+  /**
+   * 更新支付宝配置
+   */
+  async updateAlipaySettings(settings: Partial<AlipaySettings>): Promise<AlipaySettings> {
+    const keyMap: Record<keyof AlipaySettings, string> = {
+      enabled: PAYMENT_CONFIG_KEYS.ALIPAY_ENABLED,
+      appId: PAYMENT_CONFIG_KEYS.ALIPAY_APP_ID,
+      privateKey: PAYMENT_CONFIG_KEYS.ALIPAY_PRIVATE_KEY,
+      alipayPublicKey: PAYMENT_CONFIG_KEYS.ALIPAY_PUBLIC_KEY,
+      signType: PAYMENT_CONFIG_KEYS.ALIPAY_SIGN_TYPE,
+      notifyUrl: PAYMENT_CONFIG_KEYS.ALIPAY_NOTIFY_URL,
+      sandbox: PAYMENT_CONFIG_KEYS.ALIPAY_SANDBOX,
+    };
+
+    const configs: { key: string; value: any }[] = [];
+
+    for (const [field, value] of Object.entries(settings)) {
+      if (value !== undefined && keyMap[field as keyof AlipaySettings]) {
+        configs.push({
+          key: keyMap[field as keyof AlipaySettings],
+          value,
+        });
+      }
+    }
+
+    if (configs.length > 0) {
+      await this.setMultiple(configs);
+    }
+
+    return this.getAlipaySettings();
+  }
+
+  /**
+   * 获取完整支付配置
+   */
+  async getPaymentSettings(): Promise<PaymentSettings> {
+    const [wechat, alipay] = await Promise.all([
+      this.getWechatPaySettings(),
+      this.getAlipaySettings(),
+    ]);
+
+    return { wechat, alipay };
   }
 }
 

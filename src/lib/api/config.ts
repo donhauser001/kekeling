@@ -23,12 +23,23 @@ export interface CancellationFeeRules {
   afterStart: CancellationFeeStage     // 服务已开始
 }
 
+// 自动派单权重配置
+export interface DispatchWeights {
+  distance: number              // 距离权重（0-1）
+  hospitalFamiliarity: number   // 医院熟悉度权重（0-1）
+  rating: number                // 评分权重（0-1）
+  levelWeight: number           // 等级权重（0-1）
+  availability: number          // 空闲度权重（0-1）
+}
+
 export interface OrderSettings {
   autoCancelMinutes: number     // 未支付自动取消时间（分钟）
   autoCompleteHours: number     // 服务自动完成时间（小时）
   dispatchMode: 'grab' | 'assign' | 'mixed'  // 派单模式
   grabTimeoutMinutes: number    // 抢单超时时间（分钟）
   cancellationFeeRules: CancellationFeeRules  // 分阶段取消扣费规则
+  dispatchWeights: DispatchWeights  // 自动派单权重配置
+  autoDispatchTimeout: number   // 自动派单超时时间（分钟）
 }
 
 // ============================================================================
@@ -103,6 +114,39 @@ export interface MiniappSettings {
 }
 
 // ============================================================================
+// 支付配置
+// ============================================================================
+
+// 微信支付配置
+export interface WechatPaySettings {
+  enabled: boolean
+  appId: string
+  mchId: string
+  apiKey: string
+  apiV3Key: string
+  certSerialNo: string
+  privateKey: string
+  notifyUrl: string
+}
+
+// 支付宝配置
+export interface AlipaySettings {
+  enabled: boolean
+  appId: string
+  privateKey: string
+  alipayPublicKey: string
+  signType: 'RSA' | 'RSA2'
+  notifyUrl: string
+  sandbox: boolean
+}
+
+// 完整支付配置
+export interface PaymentSettings {
+  wechat: WechatPaySettings
+  alipay: AlipaySettings
+}
+
+// ============================================================================
 // 配置 API
 // ============================================================================
 
@@ -155,4 +199,26 @@ export const configApi = {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
+
+  // 支付配置
+  getWechatPaySettings: () =>
+    request<WechatPaySettings>('/config/payment/wechat'),
+
+  updateWechatPaySettings: (data: Partial<WechatPaySettings>) =>
+    request<WechatPaySettings>('/config/payment/wechat', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  getAlipaySettings: () =>
+    request<AlipaySettings>('/config/payment/alipay'),
+
+  updateAlipaySettings: (data: Partial<AlipaySettings>) =>
+    request<AlipaySettings>('/config/payment/alipay', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  getPaymentSettings: () =>
+    request<PaymentSettings>('/config/payment/settings'),
 }

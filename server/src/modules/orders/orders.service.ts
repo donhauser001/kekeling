@@ -219,6 +219,26 @@ export class OrdersService {
     return order;
   }
 
+  /**
+   * 获取用户订单统计（各状态数量）
+   */
+  async getStatsByUser(userId: string) {
+    // 并行查询各状态订单数量
+    const [pending, confirmed, inProgress, completed] = await Promise.all([
+      this.prisma.order.count({ where: { userId, status: 'pending' } }),
+      this.prisma.order.count({ where: { userId, status: { in: ['paid', 'confirmed', 'assigned'] } } }),
+      this.prisma.order.count({ where: { userId, status: { in: ['arrived', 'in_progress'] } } }),
+      this.prisma.order.count({ where: { userId, status: 'completed' } }),
+    ]);
+
+    return {
+      pending,       // 待支付
+      confirmed,     // 待服务（已支付、已确认、已分配）
+      inProgress,    // 服务中（已到达、服务中）
+      completed,     // 已完成
+    };
+  }
+
   // 获取用户订单列表
   async findByUser(userId: string, params: {
     status?: string;

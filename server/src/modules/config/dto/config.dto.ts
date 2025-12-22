@@ -25,7 +25,34 @@ export const ORDER_CONFIG_KEYS = {
   GRAB_TIMEOUT_MINUTES: 'order.grab_timeout_minutes',
   // 分阶段取消扣费规则
   CANCELLATION_FEE_RULES: 'order.cancellation_fee_rules',
+  // 自动派单算法权重配置
+  DISPATCH_WEIGHTS: 'order.dispatch_weights',
+  // 自动派单超时时间（分钟）
+  AUTO_DISPATCH_TIMEOUT: 'order.auto_dispatch_timeout',
 } as const;
+
+// 自动派单权重配置
+export interface DispatchWeights {
+  /** 距离权重（0-1） */
+  distance: number;
+  /** 医院熟悉度权重（0-1） */
+  hospitalFamiliarity: number;
+  /** 评分权重（0-1） */
+  rating: number;
+  /** 等级权重（0-1） */
+  levelWeight: number;
+  /** 空闲度权重（0-1） */
+  availability: number;
+}
+
+// 默认自动派单权重
+export const DEFAULT_DISPATCH_WEIGHTS: DispatchWeights = {
+  distance: 0.30,           // 距离权重30%
+  hospitalFamiliarity: 0.25, // 医院熟悉度25%
+  rating: 0.20,             // 评分权重20%
+  levelWeight: 0.15,        // 等级权重15%
+  availability: 0.10,       // 空闲度权重10%
+};
 
 // 单个阶段的取消扣费配置
 export interface CancellationFeeStage {
@@ -65,6 +92,8 @@ export const ORDER_CONFIG_DEFAULTS: Record<string, any> = {
   [ORDER_CONFIG_KEYS.DISPATCH_MODE]: 'assign', // grab, assign, mixed
   [ORDER_CONFIG_KEYS.GRAB_TIMEOUT_MINUTES]: 30,
   [ORDER_CONFIG_KEYS.CANCELLATION_FEE_RULES]: DEFAULT_CANCELLATION_FEE_RULES,
+  [ORDER_CONFIG_KEYS.DISPATCH_WEIGHTS]: DEFAULT_DISPATCH_WEIGHTS,
+  [ORDER_CONFIG_KEYS.AUTO_DISPATCH_TIMEOUT]: 30, // 默认30分钟无人抢单后自动派单
 };
 
 // 订单设置类型
@@ -75,6 +104,10 @@ export interface OrderSettings {
   grabTimeoutMinutes: number;
   /** 分阶段取消扣费规则 */
   cancellationFeeRules: CancellationFeeRules;
+  /** 自动派单权重配置 */
+  dispatchWeights: DispatchWeights;
+  /** 自动派单超时时间（分钟），无人抢单后自动派单 */
+  autoDispatchTimeout: number;
 }
 
 // ============================================
@@ -398,6 +431,96 @@ export interface SmsSettings {
   codeLength: number;
   /** 验证码有效期（秒），默认300秒（5分钟） */
   codeTtl: number;
+}
+
+// ============================================
+// 支付配置（微信支付 + 支付宝）
+// ============================================
+
+// 支付配置键
+export const PAYMENT_CONFIG_KEYS = {
+  // 微信支付
+  WECHAT_ENABLED: 'payment.wechat.enabled',
+  WECHAT_APP_ID: 'payment.wechat.app_id',
+  WECHAT_MCH_ID: 'payment.wechat.mch_id',
+  WECHAT_API_KEY: 'payment.wechat.api_key',
+  WECHAT_API_V3_KEY: 'payment.wechat.api_v3_key',
+  WECHAT_CERT_SERIAL_NO: 'payment.wechat.cert_serial_no',
+  WECHAT_PRIVATE_KEY: 'payment.wechat.private_key',
+  WECHAT_NOTIFY_URL: 'payment.wechat.notify_url',
+  // 支付宝
+  ALIPAY_ENABLED: 'payment.alipay.enabled',
+  ALIPAY_APP_ID: 'payment.alipay.app_id',
+  ALIPAY_PRIVATE_KEY: 'payment.alipay.private_key',
+  ALIPAY_PUBLIC_KEY: 'payment.alipay.public_key',
+  ALIPAY_SIGN_TYPE: 'payment.alipay.sign_type',
+  ALIPAY_NOTIFY_URL: 'payment.alipay.notify_url',
+  ALIPAY_SANDBOX: 'payment.alipay.sandbox',
+} as const;
+
+// 支付配置默认值
+export const PAYMENT_CONFIG_DEFAULTS: Record<string, any> = {
+  // 微信支付默认值
+  [PAYMENT_CONFIG_KEYS.WECHAT_ENABLED]: false,
+  [PAYMENT_CONFIG_KEYS.WECHAT_APP_ID]: '',
+  [PAYMENT_CONFIG_KEYS.WECHAT_MCH_ID]: '',
+  [PAYMENT_CONFIG_KEYS.WECHAT_API_KEY]: '',
+  [PAYMENT_CONFIG_KEYS.WECHAT_API_V3_KEY]: '',
+  [PAYMENT_CONFIG_KEYS.WECHAT_CERT_SERIAL_NO]: '',
+  [PAYMENT_CONFIG_KEYS.WECHAT_PRIVATE_KEY]: '',
+  [PAYMENT_CONFIG_KEYS.WECHAT_NOTIFY_URL]: '',
+  // 支付宝默认值
+  [PAYMENT_CONFIG_KEYS.ALIPAY_ENABLED]: false,
+  [PAYMENT_CONFIG_KEYS.ALIPAY_APP_ID]: '',
+  [PAYMENT_CONFIG_KEYS.ALIPAY_PRIVATE_KEY]: '',
+  [PAYMENT_CONFIG_KEYS.ALIPAY_PUBLIC_KEY]: '',
+  [PAYMENT_CONFIG_KEYS.ALIPAY_SIGN_TYPE]: 'RSA2',
+  [PAYMENT_CONFIG_KEYS.ALIPAY_NOTIFY_URL]: '',
+  [PAYMENT_CONFIG_KEYS.ALIPAY_SANDBOX]: false,
+};
+
+// 微信支付配置类型
+export interface WechatPaySettings {
+  /** 是否启用微信支付 */
+  enabled: boolean;
+  /** 小程序 AppID */
+  appId: string;
+  /** 商户号 */
+  mchId: string;
+  /** API 密钥 (V2) */
+  apiKey: string;
+  /** API V3 密钥 */
+  apiV3Key: string;
+  /** 证书序列号 */
+  certSerialNo: string;
+  /** 商户私钥 */
+  privateKey: string;
+  /** 支付回调地址 */
+  notifyUrl: string;
+}
+
+// 支付宝配置类型
+export interface AlipaySettings {
+  /** 是否启用支付宝 */
+  enabled: boolean;
+  /** 应用 ID */
+  appId: string;
+  /** 应用私钥 */
+  privateKey: string;
+  /** 支付宝公钥 */
+  alipayPublicKey: string;
+  /** 签名类型 */
+  signType: 'RSA' | 'RSA2';
+  /** 异步通知地址 */
+  notifyUrl: string;
+  /** 沙箱模式 */
+  sandbox: boolean;
+}
+
+// 完整支付配置类型
+export interface PaymentSettings {
+  wechat: WechatPaySettings;
+  alipay: AlipaySettings;
 }
 
 // ============================================

@@ -76,7 +76,7 @@ export function EscortReviewDialog({
             {/* 基本信息 */}
             <div className='flex items-center gap-4'>
               <Avatar className='h-16 w-16'>
-                <AvatarImage src={escort.avatar || undefined} />
+                <AvatarImage src={escort.avatar || escort.user?.avatar || undefined} />
                 <AvatarFallback className='bg-primary text-primary-foreground text-lg'>
                   {escort.name.slice(0, 1)}
                 </AvatarFallback>

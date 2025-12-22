@@ -3,7 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { Eye, EyeOff, ExternalLink, Copy, Check } from 'lucide-react'
+import { Eye, EyeOff, ExternalLink, Copy, Check, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -24,17 +24,18 @@ import {
 } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
+import { configApi } from '@/lib/api/config'
 
 const paymentFormSchema = z.object({
-  appId: z.string().min(1, '请输入小程序 AppID'),
-  mchId: z.string().min(1, '请输入商户号'),
-  apiKey: z.string().min(1, '请输入 API 密钥'),
-  notifyUrl: z.string().url('请输入有效的回调地址').or(z.string().length(0)),
+  appId: z.coerce.string().min(1, '请输入小程序 AppID'),
+  mchId: z.coerce.string().min(1, '请输入商户号'),
+  apiKey: z.coerce.string().optional(),
+  notifyUrl: z.coerce.string().url('请输入有效的回调地址').or(z.coerce.string().length(0)),
 })
 
 type PaymentFormValues = z.infer<typeof paymentFormSchema>
 
-// 默认值（从环境变量读取，实际项目中应该从后端 API 获取）
+// 默认值
 const defaultValues: Partial<PaymentFormValues> = {
   appId: '',
   mchId: '',
@@ -46,6 +47,8 @@ export function WechatPayForm() {
   const [showApiKey, setShowApiKey] = useState(false)
   const [copied, setCopied] = useState(false)
   const [isConfigured, setIsConfigured] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
 
   const form = useForm<PaymentFormValues>({
     resolver: zodResolver(paymentFormSchema),
@@ -53,34 +56,54 @@ export function WechatPayForm() {
     mode: 'onChange',
   })
 
-  // 模拟从后端获取配置
+  // 从后端获取配置
   useEffect(() => {
-    // TODO: 实际项目中应该从后端 API 获取配置
     const fetchConfig = async () => {
       try {
-        // 这里模拟获取配置，实际应该调用 API
-        const mockConfig = {
-          appId: 'wx6e10ab2c3b2c8c73',
-          mchId: '',
-          apiKey: '',
-          notifyUrl: 'https://your-domain.com/api/payment/notify',
-        }
-        form.reset(mockConfig)
-        setIsConfigured(!!mockConfig.mchId && !!mockConfig.apiKey)
+        setIsLoading(true)
+        const config = await configApi.getWechatPaySettings()
+        form.reset({
+          appId: config.appId || '',
+          mchId: config.mchId || '',
+          apiKey: '', // API 密钥从后端返回时是脱敏的，不回填
+          notifyUrl: config.notifyUrl || '',
+        })
+        // 根据商户号和 API 密钥是否已配置来判断配置状态
+        setIsConfigured(!!config.mchId && config.apiKey?.includes('****'))
       } catch (error) {
         console.error('获取支付配置失败:', error)
+        toast.error('获取支付配置失败')
+      } finally {
+        setIsLoading(false)
       }
     }
     fetchConfig()
   }, [form])
 
-  function onSubmit(data: PaymentFormValues) {
-    // TODO: 调用后端 API 保存配置
-    console.log('保存支付配置:', data)
-    toast.success('支付配置已保存', {
-      description: '配置将在服务重启后生效',
-    })
-    setIsConfigured(true)
+  async function onSubmit(data: PaymentFormValues) {
+    try {
+      setIsSaving(true)
+      // 构建更新数据，如果 apiKey 为空则不更新（保留原值）
+      const updateData: Record<string, string> = {
+        appId: data.appId,
+        mchId: data.mchId,
+        notifyUrl: data.notifyUrl || '',
+      }
+      if (data.apiKey) {
+        updateData.apiKey = data.apiKey
+      }
+      
+      await configApi.updateWechatPaySettings(updateData)
+      toast.success('支付配置已保存')
+      setIsConfigured(true)
+      // 清空密钥输入框（已保存）
+      form.setValue('apiKey', '')
+    } catch (error) {
+      console.error('保存支付配置失败:', error)
+      toast.error('保存失败，请重试')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const copyNotifyUrl = () => {
@@ -218,7 +241,10 @@ export function WechatPayForm() {
             )}
           />
 
-          <Button type='submit'>保存配置</Button>
+          <Button type='submit' disabled={isSaving || isLoading}>
+            {isSaving && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
+            保存配置
+          </Button>
         </form>
       </Form>
 

@@ -325,7 +325,7 @@ export function Escorts() {
                             <div className='flex items-start justify-between'>
                                 <div className='flex items-center gap-3'>
                                     <Avatar className='h-12 w-12'>
-                                        <AvatarImage src={escort.avatar || undefined} />
+                                        <AvatarImage src={escort.avatar || escort.user?.avatar || undefined} />
                                         <AvatarFallback className={getLevelConfig(escort).color + ' text-white'}>
                                             {escort.name.slice(0, 1)}
                                         </AvatarFallback>
