@@ -42,15 +42,18 @@ const queryClient = new QueryClient({
  * WorkbenchPage 内部路由 -> 小程序分包路径
  */
 const PAGE_ROUTE_MAP: Record<string, string> = {
-  // 工作台相关
+  // 工作台快捷入口（QuickEntries 组件使用的路由名）
   'workbench-orders-pool': '/packageC/pages/orders-pool/index',
-  'workbench-my-orders': '/packageC/pages/my-orders/index',
+  'my-orders': '/packageC/pages/my-orders/index',  // 注意：组件内部用的是 my-orders 而非 workbench-my-orders
   'workbench-earnings': '/packageC/pages/earnings/index',
   'workbench-withdraw': '/packageC/pages/withdraw/index',
+  'workbench-settings': '/packageC/pages/workbench-settings/index',
+  // 订单详情页
   'workbench-order-detail': '/packageC/pages/order-detail/index',
   'workbench-pool-order-detail': '/packageC/pages/pool-order-detail/index',
   'workbench-my-order-detail': '/packageC/pages/my-order-detail/index',
-  'workbench-settings': '/packageC/pages/workbench-settings/index',
+  'order-detail': '/packageC/pages/order-detail/index',  // 别名
+  // 其他工作台页面
   'workbench-service-types': '/packageC/pages/service-types/index',
   'escort-profile-edit': '/packageC/pages/escort-profile-edit/index',
   // 分销中心
