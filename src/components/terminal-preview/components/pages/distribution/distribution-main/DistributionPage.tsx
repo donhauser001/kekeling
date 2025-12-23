@@ -33,6 +33,7 @@ export function DistributionPage({
   isDarkMode,
   effectiveViewerRole,
   onNavigate,
+  onBack,
   onLogin,
 }: DistributionPageProps) {
   const isEscort = effectiveViewerRole === 'escort'
@@ -114,8 +115,22 @@ export function DistributionPage({
               alignItems: 'center',
               justifyContent: 'center',
               height: 44 * wxScale,
+              position: 'relative',
             }}
           >
+            {/* 返回按钮 */}
+            <Box
+              onClick={onBack}
+              style={{
+                position: 'absolute',
+                left: 12 * wxScale,
+                display: 'flex',
+                alignItems: 'center',
+                padding: 8 * wxScale,
+              }}
+            >
+              <Icon name="left" size={20 * wxScale} color="#fff" />
+            </Box>
             <Text style={{ fontSize: 17 * wxScale, fontWeight: 600, color: '#fff' }}>
               分销中心
             </Text>
@@ -161,8 +176,22 @@ export function DistributionPage({
               alignItems: 'center',
               justifyContent: 'center',
               height: 44 * wxScale,
+              position: 'relative',
             }}
           >
+            {/* 返回按钮 */}
+            <Box
+              onClick={onBack}
+              style={{
+                position: 'absolute',
+                left: 12 * wxScale,
+                display: 'flex',
+                alignItems: 'center',
+                padding: 8 * wxScale,
+              }}
+            >
+              <Icon name="left" size={20 * wxScale} color="#fff" />
+            </Box>
             <Text style={{ fontSize: 17 * wxScale, fontWeight: 600, color: '#fff' }}>
               分销中心
             </Text>
@@ -232,8 +261,22 @@ export function DistributionPage({
             alignItems: 'center',
             justifyContent: 'center',
             height: 44 * wxScale,
+            position: 'relative',
           }}
         >
+          {/* 返回按钮 */}
+          <Box
+            onClick={onBack}
+            style={{
+              position: 'absolute',
+              left: 12 * wxScale,
+              display: 'flex',
+              alignItems: 'center',
+              padding: 8 * wxScale,
+            }}
+          >
+            <Icon name="left" size={20 * wxScale} color="#fff" />
+          </Box>
           <Text style={{ fontSize: 17 * wxScale, fontWeight: 600, color: '#fff' }}>
             分销中心
           </Text>

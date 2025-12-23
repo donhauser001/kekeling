@@ -10,6 +10,8 @@ export interface DistributionPageProps {
   /** 当前有效视角（必须为 escort 才能预览） */
   effectiveViewerRole: PreviewViewerRole
   onNavigate?: (page: string, params?: Record<string, string>) => void
+  /** 返回上一页 */
+  onBack?: () => void
   /** 打开登录对话框 */
   onLogin?: () => void
 }

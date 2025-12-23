@@ -233,6 +233,11 @@ export const sidebarData: SidebarData = {
           icon: TrendingUp,
           items: [
             {
+              title: '关系树',
+              url: '/distribution/tree',
+              icon: GitFork,
+            },
+            {
               title: '分润记录',
               url: '/distribution/records',
               icon: Receipt,

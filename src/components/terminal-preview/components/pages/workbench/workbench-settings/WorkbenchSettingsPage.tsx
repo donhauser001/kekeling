@@ -320,7 +320,7 @@ export function WorkbenchSettingsPage({
                         }}
                     >
                         <SwitchItem
-                            icon="zap"
+                            icon="lightning"
                             iconColor="#8b5cf6"
                             label="自动接单"
                             description="系统将自动接受符合条件的订单"

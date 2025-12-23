@@ -91,7 +91,9 @@ function ServiceTypesPageContent() {
       <ServiceTypesPageComponent
         themeSettings={themeSettings}
         isDarkMode={false}
+        effectiveViewerRole={effectiveViewerRole}
         onBack={handleBack}
+        onLogin={() => setShowLoginDialog(true)}
       />
       
       <EscortLoginDialog

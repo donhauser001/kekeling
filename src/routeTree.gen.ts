@@ -74,6 +74,7 @@ import { Route as AuthenticatedEscortsWithdrawRecordsRouteImport } from './route
 import { Route as AuthenticatedEscortsApplicationsRouteImport } from './routes/_authenticated/escorts/applications'
 import { Route as AuthenticatedEscortsEscortIdRouteImport } from './routes/_authenticated/escorts/$escortId'
 import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
+import { Route as AuthenticatedDistributionTreeRouteImport } from './routes/_authenticated/distribution/tree'
 import { Route as AuthenticatedDistributionSettingsRouteImport } from './routes/_authenticated/distribution/settings'
 import { Route as AuthenticatedDistributionRecordsRouteImport } from './routes/_authenticated/distribution/records'
 import { Route as AuthenticatedDistributionApplicationsRouteImport } from './routes/_authenticated/distribution/applications'
@@ -456,6 +457,12 @@ const AuthenticatedErrorsErrorRoute =
     path: '/errors/$error',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedDistributionTreeRoute =
+  AuthenticatedDistributionTreeRouteImport.update({
+    id: '/distribution/tree',
+    path: '/distribution/tree',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedDistributionSettingsRoute =
   AuthenticatedDistributionSettingsRouteImport.update({
     id: '/distribution/settings',
@@ -575,6 +582,7 @@ export interface FileRoutesByFullPath {
   '/distribution/applications': typeof AuthenticatedDistributionApplicationsRoute
   '/distribution/records': typeof AuthenticatedDistributionRecordsRoute
   '/distribution/settings': typeof AuthenticatedDistributionSettingsRoute
+  '/distribution/tree': typeof AuthenticatedDistributionTreeRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/escorts/$escortId': typeof AuthenticatedEscortsEscortIdRoute
   '/escorts/applications': typeof AuthenticatedEscortsApplicationsRoute
@@ -655,6 +663,7 @@ export interface FileRoutesByTo {
   '/distribution/applications': typeof AuthenticatedDistributionApplicationsRoute
   '/distribution/records': typeof AuthenticatedDistributionRecordsRoute
   '/distribution/settings': typeof AuthenticatedDistributionSettingsRoute
+  '/distribution/tree': typeof AuthenticatedDistributionTreeRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/escorts/$escortId': typeof AuthenticatedEscortsEscortIdRoute
   '/escorts/applications': typeof AuthenticatedEscortsApplicationsRoute
@@ -740,6 +749,7 @@ export interface FileRoutesById {
   '/_authenticated/distribution/applications': typeof AuthenticatedDistributionApplicationsRoute
   '/_authenticated/distribution/records': typeof AuthenticatedDistributionRecordsRoute
   '/_authenticated/distribution/settings': typeof AuthenticatedDistributionSettingsRoute
+  '/_authenticated/distribution/tree': typeof AuthenticatedDistributionTreeRoute
   '/_authenticated/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/_authenticated/escorts/$escortId': typeof AuthenticatedEscortsEscortIdRoute
   '/_authenticated/escorts/applications': typeof AuthenticatedEscortsApplicationsRoute
@@ -823,6 +833,7 @@ export interface FileRouteTypes {
     | '/distribution/applications'
     | '/distribution/records'
     | '/distribution/settings'
+    | '/distribution/tree'
     | '/errors/$error'
     | '/escorts/$escortId'
     | '/escorts/applications'
@@ -903,6 +914,7 @@ export interface FileRouteTypes {
     | '/distribution/applications'
     | '/distribution/records'
     | '/distribution/settings'
+    | '/distribution/tree'
     | '/errors/$error'
     | '/escorts/$escortId'
     | '/escorts/applications'
@@ -987,6 +999,7 @@ export interface FileRouteTypes {
     | '/_authenticated/distribution/applications'
     | '/_authenticated/distribution/records'
     | '/_authenticated/distribution/settings'
+    | '/_authenticated/distribution/tree'
     | '/_authenticated/errors/$error'
     | '/_authenticated/escorts/$escortId'
     | '/_authenticated/escorts/applications'
@@ -1523,6 +1536,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedErrorsErrorRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/distribution/tree': {
+      id: '/_authenticated/distribution/tree'
+      path: '/distribution/tree'
+      fullPath: '/distribution/tree'
+      preLoaderRoute: typeof AuthenticatedDistributionTreeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/distribution/settings': {
       id: '/_authenticated/distribution/settings'
       path: '/distribution/settings'
@@ -1681,6 +1701,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDistributionApplicationsRoute: typeof AuthenticatedDistributionApplicationsRoute
   AuthenticatedDistributionRecordsRoute: typeof AuthenticatedDistributionRecordsRoute
   AuthenticatedDistributionSettingsRoute: typeof AuthenticatedDistributionSettingsRoute
+  AuthenticatedDistributionTreeRoute: typeof AuthenticatedDistributionTreeRoute
   AuthenticatedErrorsErrorRoute: typeof AuthenticatedErrorsErrorRoute
   AuthenticatedEscortsEscortIdRoute: typeof AuthenticatedEscortsEscortIdRoute
   AuthenticatedEscortsApplicationsRoute: typeof AuthenticatedEscortsApplicationsRoute
@@ -1743,6 +1764,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDistributionRecordsRoute: AuthenticatedDistributionRecordsRoute,
   AuthenticatedDistributionSettingsRoute:
     AuthenticatedDistributionSettingsRoute,
+  AuthenticatedDistributionTreeRoute: AuthenticatedDistributionTreeRoute,
   AuthenticatedErrorsErrorRoute: AuthenticatedErrorsErrorRoute,
   AuthenticatedEscortsEscortIdRoute: AuthenticatedEscortsEscortIdRoute,
   AuthenticatedEscortsApplicationsRoute: AuthenticatedEscortsApplicationsRoute,

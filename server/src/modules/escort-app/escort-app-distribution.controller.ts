@@ -6,23 +6,54 @@
  */
 
 import { Controller, Get, Query, UseGuards, Request, Logger, NotFoundException } from '@nestjs/common';
+import { IsOptional, IsIn, IsInt, Min, Max } from 'class-validator';
+import { Type } from 'class-transformer';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PrismaService } from '../../prisma/prisma.service';
 import { TeamService } from '../distribution/team.service';
 import { DistributionService } from '../distribution/distribution.service';
 import { PromotionService } from '../distribution/promotion.service';
 
-// DTO 定义
+// DTO 定义（添加参数校验）
 class QueryMembersDto {
+  @IsOptional()
+  @IsIn(['direct', 'indirect'])
   relation?: 'direct' | 'indirect';
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
   page?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100) // 限制单页最大条数
   pageSize?: number;
 }
 
 class QueryRecordsDto {
+  @IsOptional()
+  @IsIn(['7d', '30d', 'all'])
   range?: '7d' | '30d' | 'all';
+
+  @IsOptional()
+  @IsIn(['pending', 'settled'])
   status?: 'pending' | 'settled';
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
   page?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
   pageSize?: number;
 }
 
@@ -44,7 +75,7 @@ export class EscortAppDistributionController {
    */
   @Get('stats')
   async getDistributionStats(@Request() req) {
-    const escort = await this.getEscortByUserId(req.user.sub);
+    const escort = await this.getEscort(req);
     this.logger.log(`[getDistributionStats] escort=${escort.id}`);
 
     // 获取团队统计
@@ -105,7 +136,7 @@ export class EscortAppDistributionController {
    */
   @Get('members')
   async getDistributionMembers(@Request() req, @Query() query: QueryMembersDto) {
-    const escort = await this.getEscortByUserId(req.user.sub);
+    const escort = await this.getEscort(req);
     const { relation = 'direct', page = 1, pageSize = 20 } = query;
     
     this.logger.log(`[getDistributionMembers] escort=${escort.id}, relation=${relation}`);
@@ -183,7 +214,7 @@ export class EscortAppDistributionController {
    */
   @Get('records')
   async getDistributionRecords(@Request() req, @Query() query: QueryRecordsDto) {
-    const escort = await this.getEscortByUserId(req.user.sub);
+    const escort = await this.getEscort(req);
     const { range = 'all', status, page = 1, pageSize = 20 } = query;
     
     this.logger.log(`[getDistributionRecords] escort=${escort.id}, range=${range}, status=${status}`);
@@ -254,7 +285,7 @@ export class EscortAppDistributionController {
    */
   @Get('invite-code')
   async getInviteCode(@Request() req) {
-    const escort = await this.getEscortByUserId(req.user.sub);
+    const escort = await this.getEscort(req);
     this.logger.log(`[getInviteCode] escort=${escort.id}`);
 
     // 获取或生成邀请码
@@ -292,7 +323,7 @@ export class EscortAppDistributionController {
    */
   @Get('promotion')
   async getPromotionInfo(@Request() req) {
-    const escort = await this.getEscortByUserId(req.user.sub);
+    const escort = await this.getEscort(req);
     this.logger.log(`[getPromotionInfo] escort=${escort.id}`);
 
     // 获取分润配置
@@ -326,7 +357,32 @@ export class EscortAppDistributionController {
   // 私有辅助方法
   // ============================================
 
-  private async getEscortByUserId(userId: string) {
+  /**
+   * 从请求中获取陪诊员信息
+   * 支持两种 token：
+   * 1. escortToken: req.user.isEscort = true, req.user.escortId 直接可用
+   * 2. userToken: req.user.sub 是用户ID，需查表找对应陪诊员
+   */
+  private async getEscort(req: any) {
+    // 优先使用 escortToken 中的 escortId
+    if (req.user?.isEscort && req.user?.escortId) {
+      this.logger.debug(`[getEscort] 使用 escortToken, escortId=${req.user.escortId}`);
+      const escort = await this.prisma.escort.findUnique({
+        where: { id: req.user.escortId },
+      });
+      if (!escort) {
+        throw new NotFoundException('陪诊员不存在');
+      }
+      return escort;
+    }
+
+    // 降级：用 userId 查找陪诊员
+    const userId = req.user?.sub;
+    if (!userId) {
+      throw new NotFoundException('无效的认证信息');
+    }
+    
+    this.logger.debug(`[getEscort] 使用 userToken, userId=${userId}`);
     const escort = await this.prisma.escort.findFirst({
       where: { userId },
     });

@@ -91,10 +91,6 @@ function DistributionPageContent() {
     }
   }, [])
 
-  const handleBack = useCallback(() => {
-    Taro.navigateBack()
-  }, [])
-
   const handleLoginSuccess = useCallback((escortToken: string) => {
     setPreviewEscortToken(escortToken)
     setLocalEscortToken(escortToken)
@@ -115,8 +111,10 @@ function DistributionPageContent() {
       <DistributionPageComponent
         themeSettings={themeSettings}
         isDarkMode={false}
+        effectiveViewerRole={effectiveViewerRole}
         onNavigate={handleNavigate}
-        onBack={handleBack}
+        onBack={() => Taro.navigateBack()}
+        onLogin={() => setShowLoginDialog(true)}
       />
       
       <EscortLoginDialog

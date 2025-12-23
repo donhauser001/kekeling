@@ -91,6 +91,7 @@ function WithdrawPageContent() {
       <WithdrawPageComponent
         themeSettings={themeSettings}
         isDarkMode={false}
+        effectiveViewerRole={effectiveViewerRole}
         onBack={handleBack}
       />
       

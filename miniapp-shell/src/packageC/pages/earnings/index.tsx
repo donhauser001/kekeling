@@ -116,6 +116,7 @@ function EarningsPageContent() {
       <EarningsPageComponent
         themeSettings={themeSettings}
         isDarkMode={false}
+        effectiveViewerRole={effectiveViewerRole}
         onNavigate={handleNavigate}
         onBack={handleBack}
       />

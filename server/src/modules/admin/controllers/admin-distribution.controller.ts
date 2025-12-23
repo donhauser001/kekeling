@@ -4,6 +4,23 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { PromotionService } from '../../distribution/promotion.service';
 import { DistributionService } from '../../distribution/distribution.service';
+import { TreeQueryService } from '../../distribution/tree';
+
+// 关系树节点类型
+interface TreeNode {
+  id: string;
+  name: string;
+  phone: string;
+  avatar: string | null;
+  distributionLevel: number;
+  teamSize: number;
+  totalTeamSize: number;
+  orderCount: number;
+  rating: number;
+  totalEarned: number;
+  children?: TreeNode[];
+  _hasChildren?: boolean;
+}
 
 @ApiTags('管理端-分销管理')
 @Controller('admin/distribution')
@@ -14,6 +31,7 @@ export class AdminDistributionController {
     private prisma: PrismaService,
     private promotionService: PromotionService,
     private distributionService: DistributionService,
+    private treeQueryService: TreeQueryService,
   ) { }
 
   @Get('stats')
@@ -431,6 +449,168 @@ export class AdminDistributionController {
         },
       });
     }
+  }
+
+  @Get('tree')
+  @ApiOperation({ summary: '获取分销关系树' })
+  async getRelationTree(@Query() query: {
+    rootId?: string;
+    depth?: number;
+  }) {
+    const { rootId, depth = 3 } = query;
+    const maxDepth = Math.min(Number(depth), 5); // 最大深度限制为5
+
+    // 构建树形结构的递归函数
+    const buildTree = async (parentId: string | null, currentDepth: number): Promise<TreeNode[]> => {
+      if (currentDepth > maxDepth) {
+        return [];
+      }
+
+      const where: any = {
+        deletedAt: null,
+        distributionActive: true,
+      };
+
+      if (parentId) {
+        where.parentId = parentId;
+      } else {
+        // 获取顶级节点（无上级的成员）
+        where.parentId = null;
+      }
+
+      const members = await this.prisma.escort.findMany({
+        where,
+        include: {
+          wallet: {
+            select: {
+              totalEarned: true,
+            },
+          },
+          _count: {
+            select: {
+              children: true,
+            },
+          },
+        },
+        orderBy: [
+          { distributionLevel: 'asc' },
+          { totalTeamSize: 'desc' },
+        ],
+        take: 100, // 限制每层最多100个节点
+      });
+
+      const nodes: TreeNode[] = [];
+
+      for (const member of members) {
+        const node: TreeNode = {
+          id: member.id,
+          name: member.name,
+          phone: member.phone,
+          avatar: member.avatar,
+          distributionLevel: member.distributionLevel,
+          teamSize: member.teamSize,
+          totalTeamSize: member.totalTeamSize,
+          orderCount: member.orderCount,
+          rating: Number(member.rating),
+          totalEarned: member.wallet ? Number(member.wallet.totalEarned) : 0,
+          _hasChildren: member._count.children > 0,
+        };
+
+        // 递归获取子节点
+        if (currentDepth < maxDepth && member._count.children > 0) {
+          node.children = await buildTree(member.id, currentDepth + 1);
+        }
+
+        nodes.push(node);
+      }
+
+      return nodes;
+    };
+
+    // 如果指定了根节点ID，从该节点开始构建
+    if (rootId) {
+      const root = await this.prisma.escort.findUnique({
+        where: { id: rootId },
+        include: {
+          wallet: {
+            select: {
+              totalEarned: true,
+            },
+          },
+          _count: {
+            select: {
+              children: true,
+            },
+          },
+        },
+      });
+
+      if (!root) {
+        throw new NotFoundException('成员不存在');
+      }
+
+      const rootNode: TreeNode = {
+        id: root.id,
+        name: root.name,
+        phone: root.phone,
+        avatar: root.avatar,
+        distributionLevel: root.distributionLevel,
+        teamSize: root.teamSize,
+        totalTeamSize: root.totalTeamSize,
+        orderCount: root.orderCount,
+        rating: Number(root.rating),
+        totalEarned: root.wallet ? Number(root.wallet.totalEarned) : 0,
+        _hasChildren: root._count.children > 0,
+        children: await buildTree(root.id, 1),
+      };
+
+      return [rootNode];
+    }
+
+    // 获取所有顶级节点
+    return buildTree(null, 0);
+  }
+
+  @Get('tree/:id/children')
+  @ApiOperation({ summary: '获取指定节点的子节点（懒加载）' })
+  async getTreeChildren(@Param('id') id: string) {
+    const children = await this.prisma.escort.findMany({
+      where: {
+        parentId: id,
+        deletedAt: null,
+        distributionActive: true,
+      },
+      include: {
+        wallet: {
+          select: {
+            totalEarned: true,
+          },
+        },
+        _count: {
+          select: {
+            children: true,
+          },
+        },
+      },
+      orderBy: [
+        { distributionLevel: 'asc' },
+        { totalTeamSize: 'desc' },
+      ],
+    });
+
+    return children.map((member) => ({
+      id: member.id,
+      name: member.name,
+      phone: member.phone,
+      avatar: member.avatar,
+      distributionLevel: member.distributionLevel,
+      teamSize: member.teamSize,
+      totalTeamSize: member.totalTeamSize,
+      orderCount: member.orderCount,
+      rating: Number(member.rating),
+      totalEarned: member.wallet ? Number(member.wallet.totalEarned) : 0,
+      _hasChildren: member._count.children > 0,
+    }));
   }
 
   @Get('records')

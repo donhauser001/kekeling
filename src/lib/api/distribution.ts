@@ -243,6 +243,30 @@ export interface PromotionApplicationQuery {
 }
 
 // ============================================================================
+// 关系树
+// ============================================================================
+
+export interface TreeNode {
+  id: string
+  name: string
+  phone: string
+  avatar: string | null
+  distributionLevel: number
+  teamSize: number
+  totalTeamSize: number
+  orderCount: number
+  rating: number
+  totalEarned: number
+  children?: TreeNode[]
+  _hasChildren?: boolean
+}
+
+export interface TreeQuery {
+  rootId?: string
+  depth?: number
+}
+
+// ============================================================================
 // 分销统计
 // ============================================================================
 
@@ -304,6 +328,15 @@ export const distributionApi = {
     request<PaginatedData<DistributionMember>>(`/admin/distribution/members/${id}/team`, {
       params: query,
     }),
+
+  // 关系树
+  getTree: (query: TreeQuery = {}) =>
+    request<TreeNode[]>('/admin/distribution/tree', {
+      params: query as Record<string, string | number | undefined>,
+    }),
+
+  getTreeChildren: (id: string) =>
+    request<TreeNode[]>(`/admin/distribution/tree/${id}/children`),
 
   // 分润记录
   getRecords: (query: DistributionRecordQuery = {}) =>

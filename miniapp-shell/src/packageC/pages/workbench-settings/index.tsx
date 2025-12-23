@@ -113,8 +113,10 @@ function WorkbenchSettingsPageContent() {
       <WorkbenchSettingsPageComponent
         themeSettings={themeSettings}
         isDarkMode={false}
+        effectiveViewerRole={effectiveViewerRole}
         onNavigate={handleNavigate}
         onBack={handleBack}
+        onLogin={() => setShowLoginDialog(true)}
       />
       
       <EscortLoginDialog

@@ -6,9 +6,12 @@ import { View } from '@tarojs/components'
 import Taro, { useShareAppMessage, useShareTimeline } from '@tarojs/taro'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { DistributionInvitePage as DistributionInvitePageComponent } from '@terminal-preview/components/pages/distribution'
+import { EscortLoginDialog } from '@terminal-preview/components'
 import { previewApi } from '@terminal-preview/api'
 import type { ThemeSettings } from '@terminal-preview/types'
 import { defaultThemeSettings } from '@terminal-preview/types'
+import { getPreviewEscortToken, setPreviewEscortToken } from '@terminal-preview/session'
+import { useViewerRole } from '@terminal-preview/hooks/useViewerRole'
 import './index.scss'
 
 const queryClient = new QueryClient({
@@ -24,6 +27,21 @@ const queryClient = new QueryClient({
 function DistributionInvitePageContent() {
   const [themeSettings, setThemeSettings] = useState<ThemeSettings>(defaultThemeSettings)
   const [isLoading, setIsLoading] = useState(true)
+  const [showLoginDialog, setShowLoginDialog] = useState(false)
+
+  const [localEscortToken, setLocalEscortToken] = useState<string | null>(() => {
+    return getPreviewEscortToken()
+  })
+
+  const { effectiveViewerRole, isCheckingEscortToken } = useViewerRole({
+    escortSession: localEscortToken ? { token: localEscortToken } : undefined,
+    onEscortTokenChange: (token) => {
+      if (token === null) {
+        setLocalEscortToken(null)
+      }
+    },
+    isPreviewMode: true,
+  })
 
   useEffect(() => {
     previewApi.getThemeSettings()
@@ -34,7 +52,11 @@ function DistributionInvitePageContent() {
       })
       .catch(console.error)
       .finally(() => setIsLoading(false))
-  }, [])
+
+    if (!localEscortToken) {
+      setShowLoginDialog(true)
+    }
+  }, [localEscortToken])
 
   useShareAppMessage(() => ({
     title: '邀请好友',
@@ -49,7 +71,23 @@ function DistributionInvitePageContent() {
     Taro.navigateBack()
   }, [])
 
-  if (isLoading) {
+  const handleNavigate = useCallback((page: string, params?: Record<string, string>) => {
+    // 返回分销中心首页
+    if (page === 'distribution') {
+      Taro.navigateBack()
+      return
+    }
+    Taro.showToast({ title: '页面开发中', icon: 'none' })
+  }, [])
+
+  const handleLoginSuccess = useCallback((escortToken: string) => {
+    setPreviewEscortToken(escortToken)
+    setLocalEscortToken(escortToken)
+    setShowLoginDialog(false)
+    queryClient.invalidateQueries({ queryKey: ['distribution'] })
+  }, [])
+
+  if (isLoading || isCheckingEscortToken) {
     return (
       <View className="page-loading">
         <View className="loading-spinner" />
@@ -62,7 +100,23 @@ function DistributionInvitePageContent() {
       <DistributionInvitePageComponent
         themeSettings={themeSettings}
         isDarkMode={false}
+        effectiveViewerRole={effectiveViewerRole}
         onBack={handleBack}
+        onNavigate={handleNavigate}
+        onLogin={() => setShowLoginDialog(true)}
+      />
+      
+      <EscortLoginDialog
+        open={showLoginDialog}
+        onClose={() => {
+          setShowLoginDialog(false)
+          if (!localEscortToken) {
+            Taro.navigateBack()
+          }
+        }}
+        onLoginSuccess={handleLoginSuccess}
+        themeSettings={themeSettings}
+        isDarkMode={false}
       />
     </View>
   )
@@ -75,4 +129,3 @@ export default function DistributionInvitePage() {
     </QueryClientProvider>
   )
 }
-

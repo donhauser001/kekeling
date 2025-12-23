@@ -74,7 +74,7 @@ export function SwitchItem({
       {/* Switch 开关 */}
       <Box style={{ marginLeft: 12 * wxScale }}>
         {loading ? (
-          <Icon name="loading" size={20 * wxScale} color={primaryColor} />
+          <Icon name="loading-four" size={20 * wxScale} color={primaryColor} />
         ) : (
           <Box
             style={{
