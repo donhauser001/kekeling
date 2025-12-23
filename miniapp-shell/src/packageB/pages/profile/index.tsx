@@ -26,28 +26,31 @@ const queryClient = new QueryClient({
 /**
  * 页面路由映射
  * ProfilePage 内部路由 -> 小程序分包路径
+ * 
+ * 注意：部分页面尚未创建，点击会提示"开发中"
  */
 const PAGE_ROUTE_MAP: Record<string, string> = {
-  // 用户相关
+  // 用户相关（已实现）
   'user-orders': '/packageB/pages/user-orders/index',
   'user-order-detail': '/packageB/pages/user-order-detail/index',
   'patients': '/packageB/pages/patients/index',
   'patient-edit': '/packageB/pages/patient-edit/index',
-  'address-list': '/packageB/pages/address-list/index',
-  'address-edit': '/packageB/pages/address-edit/index',
   'user-profile-edit': '/packageB/pages/user-settings/index',
-  'feedback': '/packageB/pages/feedback/index',
-  // 营销相关
-  'membership': '/packageD/pages/membership/index',
-  'coupons': '/packageD/pages/coupons/index',
-  'points': '/packageD/pages/points/index',
-  'referrals': '/packageD/pages/referrals/index',
-  // 工作台入口
-  'workbench': '/packageC/pages/workbench/index',
-  'escort-apply': '/packageC/pages/escort-apply/index',
-  // CMS
-  'cms-page': '/packageB/pages/cms-page/index',
-  'help-center': '/packageB/pages/help-center/index',
+  // 用户相关（待实现）
+  // 'address-list': '/packageB/pages/address-list/index',
+  // 'address-edit': '/packageB/pages/address-edit/index',
+  // 'feedback': '/packageB/pages/feedback/index',
+  // 营销相关（待实现）
+  // 'membership': '/packageD/pages/membership/index',
+  // 'coupons': '/packageD/pages/coupons/index',
+  // 'points': '/packageD/pages/points/index',
+  // 'referrals': '/packageD/pages/referrals/index',
+  // 工作台入口（待实现）
+  // 'workbench': '/packageC/pages/workbench/index',
+  // 'escort-apply': '/packageC/pages/escort-apply/index',
+  // CMS（待实现）
+  // 'cms-page': '/packageB/pages/cms-page/index',
+  // 'help-center': '/packageB/pages/help-center/index',
 }
 
 function ProfilePageContent() {

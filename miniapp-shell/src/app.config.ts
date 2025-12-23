@@ -33,8 +33,12 @@ export default defineAppConfig({
       root: 'packageB',
       name: 'user',
       pages: [
-        'pages/profile/index',        // 我的页面
-        'pages/user-settings/index',  // 用户设置
+        'pages/profile/index',          // 我的页面
+        'pages/user-orders/index',      // 我的订单
+        'pages/user-order-detail/index', // 订单详情
+        'pages/patients/index',         // 就诊人管理
+        'pages/patient-edit/index',     // 就诊人编辑
+        'pages/user-settings/index',    // 用户设置
       ],
     },
   ],
