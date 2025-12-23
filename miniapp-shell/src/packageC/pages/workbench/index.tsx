@@ -5,10 +5,12 @@
  * 
  * 登录流程：
  * 1. 页面加载时检查是否有有效的 escortToken
- * 2. 无 token 时自动弹出陪诊员登录对话框
- * 3. 登录成功后保存 token 并刷新数据
+ * 2. 无 token 时检查后台开发模式设置
+ * 3. 开发模式开启 skipWorkbenchLogin 时自动登录
+ * 4. 否则弹出陪诊员登录对话框
+ * 5. 登录成功后保存 token 并刷新数据
  */
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { View } from '@tarojs/components'
 import Taro, { useShareAppMessage, useShareTimeline } from '@tarojs/taro'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -65,6 +67,7 @@ function WorkbenchPageContent() {
   const [themeSettings, setThemeSettings] = useState<ThemeSettings>(defaultThemeSettings)
   const [isLoading, setIsLoading] = useState(true)
   const [showLoginDialog, setShowLoginDialog] = useState(false)
+  const autoLoginAttempted = useRef(false)
 
   // 本地 escortToken 状态
   const [localEscortToken, setLocalEscortToken] = useState<string | null>(() => {
@@ -85,6 +88,7 @@ function WorkbenchPageContent() {
   useEffect(() => {
     console.log('[WorkbenchPage] 页面加载, escortToken:', localEscortToken ? '有' : '无')
 
+    // 加载主题设置
     previewApi.getThemeSettings()
       .then((settings) => {
         if (settings) {
@@ -94,13 +98,59 @@ function WorkbenchPageContent() {
       .catch((err) => {
         console.error('[WorkbenchPage] 主题设置加载失败:', err)
       })
-      .finally(() => setIsLoading(false))
 
-    // 如果没有 escortToken，自动弹出登录框
-    if (!localEscortToken) {
-      console.log('[WorkbenchPage] 未检测到陪诊员登录，显示登录弹窗')
+    // 检查登录状态
+    const checkLoginStatus = async () => {
+      // 已有 token，无需登录
+      if (localEscortToken) {
+        console.log('[WorkbenchPage] 已有 escortToken，跳过登录检查')
+        setIsLoading(false)
+        return
+      }
+
+      // 防止重复尝试自动登录
+      if (autoLoginAttempted.current) {
+        setIsLoading(false)
+        setShowLoginDialog(true)
+        return
+      }
+      autoLoginAttempted.current = true
+
+      try {
+        // 获取小程序设置
+        console.log('[WorkbenchPage] 获取小程序设置...')
+        const settings = await previewApi.getMiniappSettings()
+        console.log('[WorkbenchPage] 小程序设置:', settings)
+
+        // 检查是否开启跳过工作台登录
+        if (settings.devMode && settings.skipWorkbenchLogin) {
+          console.log('[WorkbenchPage] 开发模式已开启，尝试自动登录...')
+          
+          // 尝试开发模式自动登录
+          const result = await previewApi.devModeAutoLogin()
+          
+          if (result && result.escortToken) {
+            console.log('[WorkbenchPage] 开发模式自动登录成功')
+            setPreviewEscortToken(result.escortToken)
+            setLocalEscortToken(result.escortToken)
+            setIsLoading(false)
+            return
+          } else {
+            console.warn('[WorkbenchPage] 开发模式自动登录失败')
+          }
+        } else {
+          console.log('[WorkbenchPage] 开发模式未开启或未启用跳过登录')
+        }
+      } catch (error) {
+        console.error('[WorkbenchPage] 检查登录状态失败:', error)
+      }
+
+      // 需要手动登录
+      setIsLoading(false)
       setShowLoginDialog(true)
     }
+
+    checkLoginStatus()
   }, [localEscortToken])
 
   useShareAppMessage(() => ({
@@ -216,4 +266,3 @@ export default function WorkbenchPage() {
     </QueryClientProvider>
   )
 }
-
