@@ -40,7 +40,7 @@ function OrdersPoolPageContent() {
   })
 
   // 使用 useViewerRole 进行身份验证
-  const { effectiveViewerRole } = useViewerRole({
+  const { effectiveViewerRole, isCheckingEscortToken } = useViewerRole({
     escortSession: localEscortToken ? { token: localEscortToken } : undefined,
     onEscortTokenChange: (token) => {
       if (token === null) {
@@ -106,7 +106,7 @@ function OrdersPoolPageContent() {
     queryClient.invalidateQueries({ queryKey: ['orders-pool'] })
   }, [])
 
-  if (isLoading) {
+  if (isLoading || isCheckingEscortToken) {
     return (
       <View className="page-loading">
         <View className="loading-spinner" />

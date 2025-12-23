@@ -36,18 +36,26 @@ function MyOrdersPageContent() {
   const [showLoginDialog, setShowLoginDialog] = useState(false)
 
   const [localEscortToken, setLocalEscortToken] = useState<string | null>(() => {
-    return getPreviewEscortToken()
+    const token = getPreviewEscortToken()
+    console.log('[MyOrdersPage] 初始化读取 escortToken:', token ? `${token.slice(0, 10)}...` : '无')
+    return token
   })
 
-  const { effectiveViewerRole } = useViewerRole({
+  const { effectiveViewerRole, isCheckingEscortToken } = useViewerRole({
     escortSession: localEscortToken ? { token: localEscortToken } : undefined,
     onEscortTokenChange: (token) => {
+      console.log('[MyOrdersPage] escortToken 变更:', token ? '有' : '无')
       if (token === null) {
         setLocalEscortToken(null)
       }
     },
     isPreviewMode: true,
   })
+
+  // 调试日志
+  useEffect(() => {
+    console.log('[MyOrdersPage] 身份状态:', { effectiveViewerRole, isCheckingEscortToken, hasToken: !!localEscortToken })
+  }, [effectiveViewerRole, isCheckingEscortToken, localEscortToken])
 
   useEffect(() => {
     previewApi.getThemeSettings()
@@ -104,7 +112,8 @@ function MyOrdersPageContent() {
     queryClient.invalidateQueries({ queryKey: ['my-orders'] })
   }, [])
 
-  if (isLoading) {
+  // 加载中或正在验证身份时显示加载状态
+  if (isLoading || isCheckingEscortToken) {
     return (
       <View className="page-loading">
         <View className="loading-spinner" />

@@ -38,7 +38,7 @@ function EarningsPageContent() {
     return getPreviewEscortToken()
   })
 
-  const { effectiveViewerRole } = useViewerRole({
+  const { effectiveViewerRole, isCheckingEscortToken } = useViewerRole({
     escortSession: localEscortToken ? { token: localEscortToken } : undefined,
     onEscortTokenChange: (token) => {
       if (token === null) {
@@ -103,7 +103,7 @@ function EarningsPageContent() {
     queryClient.invalidateQueries({ queryKey: ['earnings'] })
   }, [])
 
-  if (isLoading) {
+  if (isLoading || isCheckingEscortToken) {
     return (
       <View className="page-loading">
         <View className="loading-spinner" />
