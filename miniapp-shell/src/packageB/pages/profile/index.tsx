@@ -110,11 +110,13 @@ function ProfilePageContent() {
   }, [])
 
   /**
-   * 陪诊员入口点击
+   * 陪诊员入口点击（申请成为陪诊员）
    */
   const handleEscortEntryClick = useCallback(() => {
-    Taro.navigateTo({
-      url: '/packageC/pages/escort-apply/index',
+    // TODO: escort-apply 页面待实现
+    Taro.showToast({
+      title: '陪诊员申请开发中',
+      icon: 'none',
     })
   }, [])
 

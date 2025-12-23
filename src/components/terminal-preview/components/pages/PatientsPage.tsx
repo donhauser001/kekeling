@@ -200,7 +200,7 @@ function PatientCard({
                   gap: 2 * wxScale,
                 }}
               >
-                <Icon name="star" size={12 * wxScale} color="#fff" />
+                <Icon name="like" size={12 * wxScale} color="#fff" />
                 <Text style={{ fontSize: 10 * wxScale, color: '#fff' }}>默认</Text>
               </Box>
             )}
@@ -226,7 +226,7 @@ function PatientCard({
         {/* 详细信息 */}
         <Box style={{ marginLeft: 48 * wxScale }}>
           <Box style={{ display: 'flex', alignItems: 'center', gap: 8 * wxScale, marginBottom: 8 * wxScale }}>
-            <Icon name="phone" size={14 * wxScale} color={textMuted} />
+            <Icon name="phone-telephone" size={14 * wxScale} color={textMuted} />
             <Text style={{ fontSize: 12 * wxScale, color: textSecondary }}>{patient.phone}</Text>
           </Box>
           {patient.idCard && (

@@ -41,12 +41,30 @@ export default defineAppConfig({
         'pages/user-settings/index',    // 用户设置
       ],
     },
+    {
+      root: 'packageC',
+      name: 'escort',
+      pages: [
+        'pages/workbench/index',        // 陪诊员工作台
+        // 以下页面待实现
+        // 'pages/orders-pool/index',   // 订单池
+        // 'pages/my-orders/index',     // 我的订单
+        // 'pages/order-detail/index',  // 订单详情
+        // 'pages/earnings/index',      // 收入
+        // 'pages/withdraw/index',      // 提现
+        // 'pages/escort-apply/index',  // 陪诊员申请
+      ],
+    },
   ],
   // 分包预下载规则
   preloadRule: {
     'pages/main/index': {
       network: 'all',
       packages: ['packageA', 'packageB'],
+    },
+    'packageB/pages/profile/index': {
+      network: 'all',
+      packages: ['packageC'],
     },
   },
   window: {
