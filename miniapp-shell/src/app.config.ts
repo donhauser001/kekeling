@@ -45,14 +45,17 @@ export default defineAppConfig({
       root: 'packageC',
       name: 'escort',
       pages: [
-        'pages/workbench/index',        // 陪诊员工作台
-        // 以下页面待实现
-        // 'pages/orders-pool/index',   // 订单池
-        // 'pages/my-orders/index',     // 我的订单
-        // 'pages/order-detail/index',  // 订单详情
-        // 'pages/earnings/index',      // 收入
-        // 'pages/withdraw/index',      // 提现
-        // 'pages/escort-apply/index',  // 陪诊员申请
+        'pages/workbench/index',           // 陪诊员工作台
+        'pages/orders-pool/index',         // 订单池
+        'pages/my-orders/index',           // 我的订单
+        'pages/order-detail/index',        // 订单详情
+        'pages/pool-order-detail/index',   // 订单池订单详情
+        'pages/my-order-detail/index',     // 我的订单详情
+        'pages/earnings/index',            // 收入统计
+        'pages/withdraw/index',            // 提现
+        'pages/workbench-settings/index',  // 工作台设置
+        'pages/service-types/index',       // 服务类型
+        'pages/escort-profile-edit/index', // 编辑陪诊员资料
       ],
     },
   ],
