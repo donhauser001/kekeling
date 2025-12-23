@@ -5,14 +5,16 @@
  * 禁止：业务逻辑
  *
  * 页面说明：
- * - pages/main/index: 主页面容器（主包入口）
+ * - pages/main/index: 主页面容器（主包入口，仅首页）
  *
  * 分包说明：
  * - packageA: 服务相关页面（服务列表、服务详情、下单）
- * - packageB: 用户相关页面（用户设置）
+ * - packageB: 用户相关页面（我的、设置、就诊人、订单等）
+ *
+ * @see docs/功能模块改造指南/miniapp-分包优化计划-2024-12-23.md
  */
 export default defineAppConfig({
-  // 主包页面
+  // 主包页面（仅首页入口）
   pages: [
     'pages/main/index',
   ],
@@ -31,7 +33,8 @@ export default defineAppConfig({
       root: 'packageB',
       name: 'user',
       pages: [
-        'pages/user-settings/index',
+        'pages/profile/index',        // 我的页面
+        'pages/user-settings/index',  // 用户设置
       ],
     },
   ],

@@ -75,8 +75,8 @@ export interface TerminalPreviewLiteProps {
  */
 const TAB_TO_SUBPACKAGE: Record<string, string> = {
   services: '/packageA/pages/services/index',
-  cases: '/packageB/pages/cases/index',  // TODO: 待创建
-  profile: '/packageB/pages/profile/index',  // TODO: 待创建
+  cases: '/packageA/pages/services/index',  // 案例页暂时复用服务列表
+  profile: '/packageB/pages/profile/index',
 }
 
 // ============================================================================
