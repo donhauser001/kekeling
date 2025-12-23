@@ -293,9 +293,8 @@ export function EscortLoginDialog({
               type="tel"
               placeholder="请输入手机号"
               value={phone}
-              onChange={(e: any) => {
-                // 兼容小程序和 Web 的事件对象结构
-                const value = e?.detail?.value ?? e?.target?.value ?? ''
+              onChange={(value) => {
+                // 规则 4.3：Input 原语回调参数直接是字符串，不是事件对象
                 setPhone(value.replace(/\D/g, '').slice(0, 11))
               }}
               style={{
@@ -330,9 +329,8 @@ export function EscortLoginDialog({
               type="text"
               placeholder="请输入验证码"
               value={code}
-              onChange={(e: any) => {
-                // 兼容小程序和 Web 的事件对象结构
-                const value = e?.detail?.value ?? e?.target?.value ?? ''
+              onChange={(value) => {
+                // 规则 4.3：Input 原语回调参数直接是字符串，不是事件对象
                 setCode(value.replace(/\D/g, '').slice(0, 6))
               }}
               style={{
