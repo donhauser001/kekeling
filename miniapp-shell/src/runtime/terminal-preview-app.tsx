@@ -6,15 +6,22 @@
  * - 提供 QueryClientProvider（自包含，不依赖外层 Context）
  * - 自动进行微信登录（小程序环境）
  * - 支持用户主动退出后显示登录按钮
- * - 渲染真实的 TerminalPreview 组件
+ * - 渲染精简版首页组件（TerminalPreviewLite）
  *
- * @see docs/终端预览器审计/全局终端预览器功能审计与迁移评估报告.md
+ * 重要变更（2024-12-23）：
+ * - 使用 TerminalPreviewLite 替代完整版 TerminalPreview
+ * - 目的：减少主包大小（从 4.85MB 降到 < 1.5MB）
+ * - 其他页面通过原生分包跳转实现
+ *
+ * @see docs/功能模块改造指南/miniapp-分包优化计划-2024-12-23.md
  */
 
 import { useState, useEffect } from 'react'
 import { View, Text } from '@tarojs/components'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { TerminalPreview } from '@terminal-preview'
+// 使用精简版首页组件，不导入完整版 TerminalPreview
+// 完整版会拉入 45+ 页面组件导致主包超限
+import { TerminalPreviewLite } from '@/components/TerminalPreviewLite'
 import { previewApi } from '@terminal-preview/api'
 import Icon from '@/components/Icon'
 import type { ThemeSettings } from '@terminal-preview/types'
@@ -328,15 +335,11 @@ export function TerminalPreviewApp() {
     )
   }
 
-  // 登录成功，渲染终端预览器
+  // 登录成功，渲染精简版首页
+  // 其他页面通过 TabBar 点击跳转到分包
   return (
     <QueryClientProvider client={queryClient}>
-      <TerminalPreview
-        showFrame={false}
-        height={undefined}
-        autoLoad={true}
-        page="home"
-      />
+      <TerminalPreviewLite autoLoad={true} />
     </QueryClientProvider>
   )
 }
