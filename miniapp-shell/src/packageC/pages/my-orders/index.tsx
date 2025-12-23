@@ -6,9 +6,12 @@ import { View } from '@tarojs/components'
 import Taro, { useShareAppMessage, useShareTimeline } from '@tarojs/taro'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MyOrdersPage as MyOrdersPageComponent } from '@terminal-preview/components/pages/workbench'
+import { EscortLoginDialog } from '@terminal-preview/components'
 import { previewApi } from '@terminal-preview/api'
 import type { ThemeSettings } from '@terminal-preview/types'
 import { defaultThemeSettings } from '@terminal-preview/types'
+import { getPreviewEscortToken, setPreviewEscortToken } from '@terminal-preview/session'
+import { useViewerRole } from '@terminal-preview/hooks/useViewerRole'
 import './index.scss'
 
 const queryClient = new QueryClient({
@@ -30,6 +33,21 @@ const PAGE_ROUTE_MAP: Record<string, string> = {
 function MyOrdersPageContent() {
   const [themeSettings, setThemeSettings] = useState<ThemeSettings>(defaultThemeSettings)
   const [isLoading, setIsLoading] = useState(true)
+  const [showLoginDialog, setShowLoginDialog] = useState(false)
+
+  const [localEscortToken, setLocalEscortToken] = useState<string | null>(() => {
+    return getPreviewEscortToken()
+  })
+
+  const { effectiveViewerRole } = useViewerRole({
+    escortSession: localEscortToken ? { token: localEscortToken } : undefined,
+    onEscortTokenChange: (token) => {
+      if (token === null) {
+        setLocalEscortToken(null)
+      }
+    },
+    isPreviewMode: true,
+  })
 
   useEffect(() => {
     previewApi.getThemeSettings()
@@ -40,7 +58,11 @@ function MyOrdersPageContent() {
       })
       .catch(console.error)
       .finally(() => setIsLoading(false))
-  }, [])
+
+    if (!localEscortToken) {
+      setShowLoginDialog(true)
+    }
+  }, [localEscortToken])
 
   useShareAppMessage(() => ({
     title: '我的订单',
@@ -71,6 +93,17 @@ function MyOrdersPageContent() {
     Taro.navigateBack()
   }, [])
 
+  const handleLogin = useCallback(() => {
+    setShowLoginDialog(true)
+  }, [])
+
+  const handleLoginSuccess = useCallback((escortToken: string) => {
+    setPreviewEscortToken(escortToken)
+    setLocalEscortToken(escortToken)
+    setShowLoginDialog(false)
+    queryClient.invalidateQueries({ queryKey: ['my-orders'] })
+  }, [])
+
   if (isLoading) {
     return (
       <View className="page-loading">
@@ -84,8 +117,23 @@ function MyOrdersPageContent() {
       <MyOrdersPageComponent
         themeSettings={themeSettings}
         isDarkMode={false}
+        effectiveViewerRole={effectiveViewerRole}
         onNavigate={handleNavigate}
         onBack={handleBack}
+        onLogin={handleLogin}
+      />
+      
+      <EscortLoginDialog
+        open={showLoginDialog}
+        onClose={() => {
+          setShowLoginDialog(false)
+          if (!localEscortToken) {
+            Taro.navigateBack()
+          }
+        }}
+        onLoginSuccess={handleLoginSuccess}
+        themeSettings={themeSettings}
+        isDarkMode={false}
       />
     </View>
   )
@@ -98,4 +146,3 @@ export default function MyOrdersPage() {
     </QueryClientProvider>
   )
 }
-

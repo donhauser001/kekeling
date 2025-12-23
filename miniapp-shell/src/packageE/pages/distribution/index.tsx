@@ -1,11 +1,11 @@
 /**
- * 提现页面
+ * 分销中心首页
  */
 import { useState, useEffect, useCallback } from 'react'
 import { View } from '@tarojs/components'
 import Taro, { useShareAppMessage, useShareTimeline } from '@tarojs/taro'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { WorkbenchWithdrawPage as WithdrawPageComponent } from '@terminal-preview/components/pages/workbench'
+import { DistributionPage as DistributionPageComponent } from '@terminal-preview/components/pages/distribution'
 import { EscortLoginDialog } from '@terminal-preview/components'
 import { previewApi } from '@terminal-preview/api'
 import type { ThemeSettings } from '@terminal-preview/types'
@@ -24,7 +24,15 @@ const queryClient = new QueryClient({
   },
 })
 
-function WithdrawPageContent() {
+const PAGE_ROUTE_MAP: Record<string, string> = {
+  'distribution-invite': '/packageE/pages/distribution-invite/index',
+  'distribution-members': '/packageE/pages/distribution-members/index',
+  'distribution-records': '/packageE/pages/distribution-records/index',
+  'distribution-promotion': '/packageE/pages/distribution-promotion/index',
+  'workbench': '/packageC/pages/workbench/index',
+}
+
+function DistributionPageContent() {
   const [themeSettings, setThemeSettings] = useState<ThemeSettings>(defaultThemeSettings)
   const [isLoading, setIsLoading] = useState(true)
   const [showLoginDialog, setShowLoginDialog] = useState(false)
@@ -59,13 +67,29 @@ function WithdrawPageContent() {
   }, [localEscortToken])
 
   useShareAppMessage(() => ({
-    title: '提现',
-    path: '/packageC/pages/withdraw/index',
+    title: '分销中心',
+    path: '/packageE/pages/distribution/index',
   }))
 
   useShareTimeline(() => ({
-    title: '提现',
+    title: '分销中心',
   }))
+
+  const handleNavigate = useCallback((page: string, params?: Record<string, string>) => {
+    const basePath = PAGE_ROUTE_MAP[page]
+    if (basePath) {
+      let url = basePath
+      if (params && Object.keys(params).length > 0) {
+        const queryString = Object.entries(params)
+          .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
+          .join('&')
+        url = `${basePath}?${queryString}`
+      }
+      Taro.navigateTo({ url })
+    } else {
+      Taro.showToast({ title: '页面开发中', icon: 'none' })
+    }
+  }, [])
 
   const handleBack = useCallback(() => {
     Taro.navigateBack()
@@ -75,7 +99,7 @@ function WithdrawPageContent() {
     setPreviewEscortToken(escortToken)
     setLocalEscortToken(escortToken)
     setShowLoginDialog(false)
-    queryClient.invalidateQueries({ queryKey: ['withdraw'] })
+    queryClient.invalidateQueries({ queryKey: ['distribution'] })
   }, [])
 
   if (isLoading) {
@@ -88,9 +112,10 @@ function WithdrawPageContent() {
 
   return (
     <View className="page-container">
-      <WithdrawPageComponent
+      <DistributionPageComponent
         themeSettings={themeSettings}
         isDarkMode={false}
+        onNavigate={handleNavigate}
         onBack={handleBack}
       />
       
@@ -110,10 +135,11 @@ function WithdrawPageContent() {
   )
 }
 
-export default function WithdrawPage() {
+export default function DistributionPage() {
   return (
     <QueryClientProvider client={queryClient}>
-      <WithdrawPageContent />
+      <DistributionPageContent />
     </QueryClientProvider>
   )
 }
+

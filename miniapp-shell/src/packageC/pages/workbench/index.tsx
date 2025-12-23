@@ -51,6 +51,12 @@ const PAGE_ROUTE_MAP: Record<string, string> = {
   'workbench-settings': '/packageC/pages/workbench-settings/index',
   'workbench-service-types': '/packageC/pages/service-types/index',
   'escort-profile-edit': '/packageC/pages/escort-profile-edit/index',
+  // 分销中心
+  'distribution': '/packageE/pages/distribution/index',
+  'distribution-invite': '/packageE/pages/distribution-invite/index',
+  'distribution-members': '/packageE/pages/distribution-members/index',
+  'distribution-records': '/packageE/pages/distribution-records/index',
+  'distribution-promotion': '/packageE/pages/distribution-promotion/index',
   // 用户相关
   'profile': '/packageB/pages/profile/index',
 }

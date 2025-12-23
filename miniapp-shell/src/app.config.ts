@@ -58,6 +58,17 @@ export default defineAppConfig({
         'pages/escort-profile-edit/index', // 编辑陪诊员资料
       ],
     },
+    {
+      root: 'packageE',
+      name: 'distribution',
+      pages: [
+        'pages/distribution/index',          // 分销中心
+        'pages/distribution-invite/index',   // 邀请好友
+        'pages/distribution-members/index',  // 团队成员
+        'pages/distribution-records/index',  // 分润记录
+        'pages/distribution-promotion/index', // 晋升进度
+      ],
+    },
   ],
   // 分包预下载规则
   preloadRule: {
@@ -68,6 +79,10 @@ export default defineAppConfig({
     'packageB/pages/profile/index': {
       network: 'all',
       packages: ['packageC'],
+    },
+    'packageC/pages/workbench/index': {
+      network: 'all',
+      packages: ['packageE'],
     },
   },
   window: {
