@@ -290,12 +290,14 @@ export function WorkbenchSettingsPage({
             {/* 内容区域 */}
             <Box style={{ flex: 1, overflowY: 'auto', paddingBottom: 16 * wxScale }}>
                 {/* 个人资料卡片 */}
-                <ProfileCard
-                    profile={settings.profile}
-                    isDarkMode={isDarkMode}
-                    primaryColor={primaryColor}
-                    onClick={() => onNavigate?.('escort-profile-edit')}
-                />
+                {settings.profile && (
+                    <ProfileCard
+                        profile={settings.profile}
+                        isDarkMode={isDarkMode}
+                        primaryColor={primaryColor}
+                        onClick={() => onNavigate?.('escort-profile-edit')}
+                    />
+                )}
 
                 {/* 接单设置 */}
                 <Box style={{ paddingLeft: 16 * wxScale, paddingRight: 16 * wxScale, marginTop: 16 * wxScale }}>
@@ -356,7 +358,7 @@ export function WorkbenchSettingsPage({
                             icon="setting"
                             iconColor="#3b82f6"
                             label="服务项目"
-                            value={`已选 ${settings.preferences.serviceTypes.length} 项`}
+                            value={`已选 ${settings.preferences?.serviceTypes?.length || 0} 项`}
                             isDarkMode={isDarkMode}
                             primaryColor={primaryColor}
                             onClick={() => onNavigate?.('workbench-service-types')}
@@ -365,7 +367,7 @@ export function WorkbenchSettingsPage({
                             icon="hospital"
                             iconColor="#f59e0b"
                             label="服务医院"
-                            value={`已选 ${settings.preferences.serviceAreas.length} 家`}
+                            value={`已选 ${settings.preferences?.serviceAreas?.length || 0} 家`}
                             isDarkMode={isDarkMode}
                             primaryColor={primaryColor}
                         />
@@ -373,11 +375,11 @@ export function WorkbenchSettingsPage({
                             icon="stethoscope"
                             iconColor="#ec4899"
                             label="擅长科室"
-                            value={`已选 ${settings.preferences.departments?.length || 0} 个`}
+                            value={`已选 ${settings.preferences?.departments?.length || 0} 个`}
                             isDarkMode={isDarkMode}
                             primaryColor={primaryColor}
                         />
-                        {settings.preferences.workingHours && (
+                        {settings.preferences?.workingHours && (
                             <SettingItem
                                 icon="time"
                                 iconColor="#14b8a6"
@@ -415,7 +417,7 @@ export function WorkbenchSettingsPage({
                             icon="remind"
                             iconColor="#10b981"
                             label="新订单通知"
-                            value={settings.notifications.newOrder ? '已开启' : '已关闭'}
+                            value={settings.notifications?.newOrder ? '已开启' : '已关闭'}
                             isDarkMode={isDarkMode}
                             primaryColor={primaryColor}
                         />
@@ -423,7 +425,7 @@ export function WorkbenchSettingsPage({
                             icon="remind"
                             iconColor="#3b82f6"
                             label="订单状态变更"
-                            value={settings.notifications.orderStatus ? '已开启' : '已关闭'}
+                            value={settings.notifications?.orderStatus ? '已开启' : '已关闭'}
                             isDarkMode={isDarkMode}
                             primaryColor={primaryColor}
                         />
@@ -431,7 +433,7 @@ export function WorkbenchSettingsPage({
                             icon="remind"
                             iconColor="#8b5cf6"
                             label="系统通知"
-                            value={settings.notifications.system ? '已开启' : '已关闭'}
+                            value={settings.notifications?.system ? '已开启' : '已关闭'}
                             isDarkMode={isDarkMode}
                             primaryColor={primaryColor}
                         />
@@ -439,7 +441,7 @@ export function WorkbenchSettingsPage({
                             icon="remind"
                             iconColor="#f59e0b"
                             label="营销通知"
-                            value={settings.notifications.marketing ? '已开启' : '已关闭'}
+                            value={settings.notifications?.marketing ? '已开启' : '已关闭'}
                             isDarkMode={isDarkMode}
                             primaryColor={primaryColor}
                             showBorder={false}

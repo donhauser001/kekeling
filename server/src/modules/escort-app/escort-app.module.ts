@@ -5,6 +5,7 @@ import { EscortAppOrdersController } from './escort-app-orders.controller';
 import { EscortAppMyOrdersController } from './escort-app-my-orders.controller';
 import { EscortAppEarningsController } from './escort-app-earnings.controller';
 import { EscortAppWithdrawController } from './escort-app-withdraw.controller';
+import { EscortAppDistributionController } from './escort-app-distribution.controller';
 import { EscortAppService } from './escort-app.service';
 import { CommissionService } from './commission.service';
 import { DispatchService } from './dispatch.service';
@@ -22,6 +23,7 @@ import { SystemConfigModule } from '../config/config.module';
     EscortAppMyOrdersController,
     EscortAppEarningsController,
     EscortAppWithdrawController,
+    EscortAppDistributionController,
   ],
   providers: [EscortAppService, CommissionService, DispatchService],
   exports: [EscortAppService, CommissionService, DispatchService],

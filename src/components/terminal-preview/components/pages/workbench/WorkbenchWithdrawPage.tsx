@@ -15,7 +15,7 @@
  */
 
 import { useState, useEffect } from 'react'
-import { Box, Text, Button } from '../../../ui/primitives'
+import { Box, Text, Button, Input } from '../../../ui/primitives'
 import {
   CreditCard,
   CheckCircle,
@@ -450,11 +450,11 @@ function WithdrawContent({
           >
             ¥
           </Text>
-          <input
+          <Input
             type="number"
             placeholder="0.00"
             value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            onChange={(value) => setAmount(value)}
             style={{
               flex: 1,
               fontSize: 28 * wxScale,

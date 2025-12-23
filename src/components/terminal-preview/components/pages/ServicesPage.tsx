@@ -15,7 +15,6 @@ import {
   Rocket,
   Percent,
 } from '../../ui/lucide-compat'
-import { cn } from '@/lib/utils'
 import { Box, Text, Button, Image, Icon } from '../../ui/primitives'
 import { isWxEnvironment } from '../../platform/env'
 import type { ThemeSettings, ServiceListItem, BannerAreaData, PreviewViewerRole } from '../../types'
@@ -166,7 +165,6 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
 
   return (
     <Box
-      className='min-h-full pb-14'
       style={{
         minHeight: '100%',
         paddingBottom: 56 * wxScale,
@@ -175,7 +173,6 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
     >
       {/* 搜索框（顶部留出小程序胶囊按钮空间） */}
       <Box
-        className='px-3 pt-3 pb-2'
         style={{
           paddingLeft: 12 * wxScale,
           paddingRight: 12 * wxScale,
@@ -185,7 +182,7 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
         }}
       >
         <Box
-          className='flex items-center gap-2 rounded-full px-4 py-2.5 cursor-pointer transition-all hover:shadow-md active:scale-[0.98]'
+          className='cursor-pointer transition-all hover:shadow-md active:scale-[0.98]'
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -200,7 +197,6 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
         >
           <Search size={16 * wxScale} color={textMuted} />
           <Text
-            className='text-sm'
             style={{ fontSize: 14 * wxScale, color: textMuted }}
           >
             搜索服务
@@ -222,7 +218,7 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
 
       {/* 分类 Tab（隐藏滚动条，增加上下边距） */}
       <Box
-        className='services-category-scroll sticky top-0 z-10 px-3'
+        className='services-category-scroll'
         style={{
           position: 'sticky',
           top: 0,
@@ -238,7 +234,6 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
         }}
       >
         <Box
-          className='flex gap-2'
           style={{
             display: 'flex',
             gap: 8 * wxScale,
@@ -247,10 +242,7 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
           {categoryList.map(cat => (
             <Box
               key={cat.id}
-              className={cn(
-                'flex-shrink-0 px-3.5 py-1.5 rounded-full text-sm cursor-pointer transition-all',
-                activeCategory === cat.id ? 'font-medium' : ''
-              )}
+              className='cursor-pointer transition-all'
               style={{
                 flexShrink: 0,
                 paddingLeft: 14 * wxScale,
@@ -277,7 +269,6 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
 
       {/* 工具栏：排序 + 布局切换 */}
       <Box
-        className='flex items-center justify-between px-3 py-2'
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -293,9 +284,9 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
         }}
       >
         {/* 排序选择（优化后的样式） */}
-        <Box className='relative' style={{ position: 'relative' }}>
+        <Box style={{ position: 'relative' }}>
           <Button
-            className='flex items-center gap-1.5 text-xs px-2 py-1 rounded transition-colors'
+            className='transition-colors'
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -320,7 +311,6 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
           </Button>
           {showSortMenu && (
             <Box
-              className='absolute top-full left-0 mt-1 py-1 rounded-lg shadow-lg z-20'
               style={{
                 position: 'absolute',
                 top: '100%',
@@ -341,7 +331,7 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
                 return (
                   <Button
                     key={option.value}
-                    className='flex items-center gap-2 w-full transition-colors'
+                    className='transition-colors'
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -371,7 +361,6 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
 
         {/* 布局切换（缩小尺寸，与首页保持一致） */}
         <Box
-          className='flex items-center gap-1'
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -421,10 +410,6 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
 
       {/* 服务列表 */}
       <Box
-        className={cn(
-          'px-3 pt-3',
-          layoutMode === 'grid' ? 'grid grid-cols-2 gap-2.5' : 'space-y-3'
-        )}
         style={{
           paddingLeft: 12 * wxScale,
           paddingRight: 12 * wxScale,
@@ -445,7 +430,7 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
             // 网格布局
             <Box
               key={service.id}
-              className='rounded-xl overflow-hidden cursor-pointer transition-all duration-200 hover:shadow-lg active:scale-[0.98]'
+              className='cursor-pointer transition-all duration-200 hover:shadow-lg active:scale-[0.98]'
               style={{
                 borderRadius: 12 * wxScale,
                 overflow: 'hidden',
@@ -455,7 +440,6 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
             >
               {/* 封面 */}
               <Box
-                className='h-28 relative flex items-center justify-center'
                 style={{
                   height: 112 * wxScale,
                   position: 'relative',
@@ -469,7 +453,6 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
                   <Image
                     src={getResourceUrl(service.coverImage)}
                     alt={service.name}
-                    className='w-full h-full object-cover'
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     mode="aspectFill"
                   />
@@ -479,7 +462,6 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
                 {/* 热门标签 */}
                 {service.orderCount > 5000 && (
                   <Box
-                    className='absolute top-2 left-2 flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-white text-[10px]'
                     style={{
                       position: 'absolute',
                       top: 8 * wxScale,
@@ -501,7 +483,6 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
                 )}
                 {/* 操作按钮（圆形收藏按钮） */}
                 <Box
-                  className='absolute top-2 right-2'
                   style={{
                     position: 'absolute',
                     top: 8 * wxScale,
@@ -530,13 +511,11 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
               </Box>
               {/* 信息 */}
               <Box
-                className='p-2.5'
                 style={{
                   padding: 10 * wxScale,
                 }}
               >
                 <Text
-                  className='text-xs font-semibold truncate'
                   style={{
                     fontSize: 12 * wxScale,
                     fontWeight: 600,
@@ -549,7 +528,6 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
                   {service.name}
                 </Text>
                 <Box
-                  className='mt-1.5 flex items-center gap-2 text-[10px]'
                   style={{
                     marginTop: 6 * wxScale,
                     display: 'flex',
@@ -559,7 +537,6 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
                   }}
                 >
                   <Box
-                    className='flex items-center gap-0.5'
                     style={{ display: 'flex', alignItems: 'center', gap: 2 * wxScale }}
                   >
                     <Icon name="good-one" size={10 * wxScale} color="#fbbf24" />
@@ -568,7 +545,6 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
                   <Text style={{ fontSize: 10 * wxScale, color: textMuted }}>{formatCount(service.orderCount)}人购</Text>
                 </Box>
                 <Box
-                  className='mt-1.5 flex items-center justify-between'
                   style={{
                     marginTop: 6 * wxScale,
                     display: 'flex',
@@ -577,7 +553,6 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
                   }}
                 >
                   <Box
-                    className='flex items-baseline gap-0.5'
                     style={{ display: 'flex', alignItems: 'baseline', gap: 2 * wxScale }}
                   >
                     <Text style={{ fontSize: 10 * wxScale, color: themeSettings.primaryColor }}>¥</Text>
@@ -586,7 +561,6 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
                     </Text>
                     {service.originalPrice && service.originalPrice > service.price && (
                       <Text
-                        className='line-through'
                         style={{ fontSize: 10 * wxScale, color: textMuted, textDecoration: 'line-through' }}
                       >
                         ¥{service.originalPrice}
@@ -596,7 +570,6 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
                   {/* 陪诊员视角：分成比例 */}
                   {isEscort && (
                     <Box
-                      className='flex items-center gap-0.5 px-1.5 py-0.5 rounded'
                       style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -622,7 +595,7 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
             // 列表布局
             <Box
               key={service.id}
-              className='rounded-xl overflow-hidden cursor-pointer transition-all duration-200 hover:shadow-lg active:scale-[0.98]'
+              className='cursor-pointer transition-all duration-200 hover:shadow-lg active:scale-[0.98]'
               style={{
                 borderRadius: 12 * wxScale,
                 overflow: 'hidden',
@@ -631,12 +604,10 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
               onClick={() => onServiceClick?.(service.id)}
             >
               <Box
-                className='flex'
                 style={{ display: 'flex' }}
               >
                 {/* 左侧封面 */}
                 <Box
-                  className='w-28 h-28 flex-shrink-0 relative flex items-center justify-center'
                   style={{
                     width: 112 * wxScale,
                     height: 112 * wxScale,
@@ -652,7 +623,6 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
                     <Image
                       src={getResourceUrl(service.coverImage)}
                       alt={service.name}
-                      className='w-full h-full object-cover'
                       style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                       mode="aspectFill"
                     />
@@ -662,7 +632,6 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
                   {/* 热门标签 */}
                   {service.orderCount > 5000 && (
                     <Box
-                      className='absolute top-2 left-2 flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-white text-[10px]'
                       style={{
                         position: 'absolute',
                         top: 8 * wxScale,
@@ -685,7 +654,6 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
                 </Box>
                 {/* 右侧信息 */}
                 <Box
-                  className='flex-1 p-3 flex flex-col justify-between'
                   style={{
                     flex: 1,
                     minWidth: 0,
@@ -698,7 +666,6 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
                 >
                   <Box>
                     <Box
-                      className='flex items-start justify-between'
                       style={{
                         display: 'flex',
                         alignItems: 'flex-start',
@@ -706,7 +673,6 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
                       }}
                     >
                       <Text
-                        className='text-sm font-semibold'
                         style={{
                           fontSize: 14 * wxScale,
                           fontWeight: 600,
@@ -720,7 +686,6 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
                       </Text>
                       {/* 操作按钮 */}
                       <Box
-                        className='flex gap-1 ml-2'
                         style={{
                           display: 'flex',
                           flexShrink: 0,
@@ -749,7 +714,6 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
                       </Box>
                     </Box>
                     <Text
-                      className='mt-1 text-xs'
                       style={{
                         marginTop: 4 * wxScale,
                         fontSize: 12 * wxScale,
@@ -765,7 +729,6 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
                   </Box>
                   <Box style={{ marginTop: 8 * wxScale }}>
                     <Box
-                      className='flex items-center text-xs'
                       style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -777,7 +740,6 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
                     >
                       {service.duration && (
                         <Box
-                          className='flex items-center gap-1'
                           style={{ display: 'flex', alignItems: 'center', flexShrink: 0, gap: 2 * wxScale }}
                         >
                           <Icon name="time" size={10 * wxScale} color={textMuted} />
@@ -785,7 +747,6 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
                         </Box>
                       )}
                       <Box
-                        className='flex items-center gap-1'
                         style={{ display: 'flex', alignItems: 'center', flexShrink: 0, gap: 2 * wxScale }}
                       >
                         <Icon name="good-one" size={10 * wxScale} color="#fbbf24" />
@@ -794,7 +755,6 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
                       <Text style={{ fontSize: 11 * wxScale, color: textMuted, whiteSpace: 'nowrap', flexShrink: 0 }}>{formatCount(service.orderCount)}人购</Text>
                     </Box>
                     <Box
-                      className='mt-1.5 flex items-center justify-between'
                       style={{
                         marginTop: 6 * wxScale,
                         display: 'flex',
@@ -803,7 +763,6 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
                       }}
                     >
                       <Box
-                        className='flex items-baseline gap-1'
                         style={{ display: 'flex', alignItems: 'baseline', gap: 4 * wxScale }}
                       >
                         <Text style={{ fontSize: 12 * wxScale, color: themeSettings.primaryColor }}>¥</Text>
@@ -812,7 +771,6 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
                         </Text>
                         {service.originalPrice && service.originalPrice > service.price && (
                           <Text
-                            className='line-through'
                             style={{ fontSize: 12 * wxScale, color: textMuted, textDecoration: 'line-through' }}
                           >
                             ¥{service.originalPrice}
@@ -822,7 +780,6 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
                       {/* 陪诊员视角：分成比例 */}
                       {isEscort && (
                         <Box
-                          className='flex items-center gap-1 px-2 py-1 rounded'
                           style={{
                             display: 'flex',
                             alignItems: 'center',
@@ -852,7 +809,6 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
         {/* 无数据状态 */}
         {sortedServices.length === 0 && (
           <Box
-            className={cn('py-12 text-center', layoutMode === 'grid' && 'col-span-2')}
             style={{
               paddingTop: 48 * wxScale,
               paddingBottom: 48 * wxScale,

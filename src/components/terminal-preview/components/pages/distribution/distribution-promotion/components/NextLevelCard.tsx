@@ -43,7 +43,7 @@ export function NextLevelCard({
                     marginBottom: 12 * wxScale,
                 }}
             >
-                <Icon name="up-two" size={20 * wxScale} color={primaryColor} />
+                <Icon name="trending-up" size={20 * wxScale} color={primaryColor} />
                 <Text style={{ fontSize: 14 * wxScale, color: textSecondary }}>
                     下一等级
                 </Text>

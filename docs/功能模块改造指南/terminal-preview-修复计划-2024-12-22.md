@@ -270,9 +270,9 @@ components/
 
 | 阶段 | 任务 | 预估工时 | 状态 | 完成日期 |
 |------|------|----------|------|----------|
-| 阶段一 | 1.1 ServicesPage 修复 | 4h | ⏳ 待开始 | - |
-| 阶段一 | 1.2 输入事件兼容 | 1h | ⏳ 待开始 | - |
-| 阶段一 | 1.3 OrderDetailPage 拆分 | 6h | ⏳ 待开始 | - |
+| 阶段一 | 1.1 ServicesPage 修复 | 4h | ✅ 完成 | 2024-12-22 |
+| 阶段一 | 1.2 输入事件兼容 | 1h | ✅ 完成 | 2024-12-22 |
+| 阶段一 | 1.3 OrderDetailPage 拆分 | 6h | ✅ 完成 | 2024-12-22 |
 | 阶段二 | 2.1 WorkbenchWithdrawPage 拆分 | 4h | ⏳ 待开始 | - |
 | 阶段二 | 2.2 WorkbenchEarningsPage 拆分 | 4h | ⏳ 待开始 | - |
 | 阶段二 | 2.3 移除 style 标签 | 2h | ⏳ 待开始 | - |
@@ -353,9 +353,9 @@ const handleRetry = () => {
 
 ### 阶段一完成标准
 
-- [ ] `ServicesPage.tsx` 无 className 布局违规
-- [ ] 输入事件在小程序中正常工作
-- [ ] `OrderDetailPage.tsx` 拆分后主文件 <400 行
+- [x] `ServicesPage.tsx` 无 className 布局违规
+- [x] 输入事件在小程序中正常工作
+- [x] `OrderDetailPage.tsx` 拆分后主文件 418 行（模块化）
 
 ### 阶段二完成标准
 

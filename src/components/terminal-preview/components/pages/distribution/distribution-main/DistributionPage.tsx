@@ -441,7 +441,7 @@ export function DistributionPage({
               onClick={() => onNavigate?.('distribution-invite')}
             />
             <QuickEntry
-              icon="up-two"
+              icon="trending-up"
               label="晋升进度"
               color="#8b5cf6"
               onClick={() => onNavigate?.('distribution-promotion')}
