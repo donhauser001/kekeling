@@ -3,14 +3,16 @@
  *
  * 小程序独立页面，复用终端预览器的 ServicesPage 组件
  */
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { View } from '@tarojs/components'
 import Taro, { useShareAppMessage, useShareTimeline } from '@tarojs/taro'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ServicesPage as ServicesPageComponent } from '@terminal-preview/components/pages/ServicesPage'
+import { TabBarNav } from '@terminal-preview/components'
 import { previewApi } from '@terminal-preview/api'
 import type { ThemeSettings } from '@terminal-preview/types'
 import { defaultThemeSettings } from '@terminal-preview/types'
+import type { TabKey } from '@terminal-preview/constants'
 import './index.scss'
 
 const queryClient = new QueryClient({
@@ -56,9 +58,31 @@ function ServicesPageContent() {
 
   const handleServiceClick = (serviceId: string) => {
     Taro.navigateTo({
-      url: `/pages/service-detail/index?id=${serviceId}`,
+      url: `/packageA/pages/service-detail/index?id=${serviceId}`,
     })
   }
+
+  /**
+   * 底部导航栏切换处理
+   */
+  const handleTabChange = useCallback((tab: TabKey) => {
+    const TAB_ROUTES: Record<TabKey, string> = {
+      home: '/pages/main/index',
+      services: '/packageA/pages/services/index',
+      cases: '/packageB/pages/profile/index', // 暂时指向我的页面
+      profile: '/packageB/pages/profile/index',
+    }
+    
+    if (tab === 'services') {
+      // 已在当前页面，无需跳转
+      return
+    }
+    
+    const url = TAB_ROUTES[tab]
+    if (url) {
+      Taro.reLaunch({ url })
+    }
+  }, [])
 
   if (isLoading) {
     return (
@@ -70,11 +94,19 @@ function ServicesPageContent() {
 
   return (
     <View className="page-container">
-      <ServicesPageComponent
+      <View className="page-content">
+        <ServicesPageComponent
+          themeSettings={themeSettings}
+          isDarkMode={false}
+          onServiceClick={handleServiceClick}
+          effectiveViewerRole="user"
+        />
+      </View>
+      <TabBarNav
+        activePage="services"
         themeSettings={themeSettings}
         isDarkMode={false}
-        onServiceClick={handleServiceClick}
-        effectiveViewerRole="user"
+        onPageChange={handleTabChange}
       />
     </View>
   )

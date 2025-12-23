@@ -8,9 +8,11 @@ import { View } from '@tarojs/components'
 import Taro, { useShareAppMessage, useShareTimeline } from '@tarojs/taro'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ProfilePage as ProfilePageComponent } from '@terminal-preview/components/pages/ProfilePage'
+import { TabBarNav } from '@terminal-preview/components'
 import { previewApi } from '@terminal-preview/api'
 import type { ThemeSettings } from '@terminal-preview/types'
 import { defaultThemeSettings } from '@terminal-preview/types'
+import type { TabKey } from '@terminal-preview/constants'
 import './index.scss'
 
 const queryClient = new QueryClient({
@@ -137,6 +139,30 @@ function ProfilePageContent() {
     console.log('[ProfilePage] 退出陪诊员模式')
   }, [])
 
+  /**
+   * 底部导航栏切换处理
+   * 使用 reLaunch 切换到对应页面，避免页面栈过深
+   */
+  const handleTabChange = useCallback((tab: TabKey) => {
+    const TAB_ROUTES: Record<TabKey, string> = {
+      home: '/pages/main/index',
+      services: '/packageA/pages/services/index',
+      cases: '/packageB/pages/profile/index', // 暂时指向我的页面
+      profile: '/packageB/pages/profile/index',
+    }
+    
+    if (tab === 'profile') {
+      // 已在当前页面，无需跳转
+      return
+    }
+    
+    const url = TAB_ROUTES[tab]
+    if (url) {
+      // 使用 reLaunch 清空页面栈，避免栈溢出
+      Taro.reLaunch({ url })
+    }
+  }, [])
+
   if (isLoading) {
     return (
       <View className="page-loading">
@@ -147,14 +173,22 @@ function ProfilePageContent() {
 
   return (
     <View className="page-container">
-      <ProfilePageComponent
+      <View className="page-content">
+        <ProfilePageComponent
+          themeSettings={themeSettings}
+          isDarkMode={false}
+          effectiveViewerRole="user"
+          onNavigate={handleNavigate}
+          onEscortEntryClick={handleEscortEntryClick}
+          onWorkbenchClick={handleWorkbenchClick}
+          onExitEscortMode={handleExitEscortMode}
+        />
+      </View>
+      <TabBarNav
+        activePage="profile"
         themeSettings={themeSettings}
         isDarkMode={false}
-        effectiveViewerRole="user"
-        onNavigate={handleNavigate}
-        onEscortEntryClick={handleEscortEntryClick}
-        onWorkbenchClick={handleWorkbenchClick}
-        onExitEscortMode={handleExitEscortMode}
+        onPageChange={handleTabChange}
       />
     </View>
   )
