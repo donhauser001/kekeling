@@ -49,6 +49,36 @@ export class ServicesController {
     return ApiResponse.success(data);
   }
 
+  @Get('hot-keywords')
+  @ApiOperation({ summary: '获取热门搜索关键词' })
+  @ApiQuery({ name: 'type', required: false, description: '关键词类型: hot=热门搜索, guess=猜你想找' })
+  @ApiQuery({ name: 'limit', required: false, description: '获取数量，默认10' })
+  async getHotKeywords(
+    @Query('type') type?: 'hot' | 'guess',
+    @Query('limit') limit?: number,
+  ) {
+    const data = await this.servicesService.getHotKeywords(
+      type,
+      limit ? Number(limit) : 10,
+    );
+    return ApiResponse.success(data);
+  }
+
+  @Get('search')
+  @ApiOperation({ summary: '综合搜索（服务、医院、医生）' })
+  @ApiQuery({ name: 'keyword', required: true, description: '搜索关键词' })
+  @ApiQuery({ name: 'limit', required: false, description: '每类返回数量，默认10' })
+  async search(
+    @Query('keyword') keyword: string,
+    @Query('limit') limit?: number,
+  ) {
+    const data = await this.servicesService.search(
+      keyword,
+      limit ? Number(limit) : 10,
+    );
+    return ApiResponse.success(data);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: '获取服务详情' })
   @ApiParam({ name: 'id', description: '服务ID' })

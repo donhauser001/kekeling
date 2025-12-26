@@ -6,27 +6,15 @@
 import { useState, useEffect, useCallback } from 'react'
 import { View } from '@tarojs/components'
 import Taro, { useRouter, useShareAppMessage, useShareTimeline } from '@tarojs/taro'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { UserOrdersPage as UserOrdersPageComponent } from '@terminal-preview/components/pages/UserOrdersPage'
 import { previewApi } from '@terminal-preview/api'
 import type { ThemeSettings } from '@terminal-preview/types'
 import { defaultThemeSettings } from '@terminal-preview/types'
 import './index.scss'
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 60 * 1000,
-      retry: 2,
-      refetchOnWindowFocus: false,
-    },
-  },
-})
-
-function UserOrdersPageContent() {
+export default function UserOrdersPage() {
   const router = useRouter()
   const [themeSettings, setThemeSettings] = useState<ThemeSettings>(defaultThemeSettings)
-  const [isLoading, setIsLoading] = useState(true)
 
   // 从路由参数获取初始 tab
   const initialTab = router.params?.tab || 'all'
@@ -41,9 +29,8 @@ function UserOrdersPageContent() {
         }
       })
       .catch((err) => {
-        console.error('[UserOrdersPage] 主题设置加载失败:', err)
+        console.warn('[UserOrdersPage] 主题设置加载失败:', err)
       })
-      .finally(() => setIsLoading(false))
   }, [initialTab])
 
   useShareAppMessage(() => ({
@@ -56,7 +43,12 @@ function UserOrdersPageContent() {
   }))
 
   const handleBack = useCallback(() => {
-    Taro.navigateBack()
+    const pages = Taro.getCurrentPages()
+    if (pages.length > 1) {
+      Taro.navigateBack()
+    } else {
+      Taro.switchTab({ url: '/pages/main/index' })
+    }
   }, [])
 
   const handleNavigate = useCallback((page: string, params?: Record<string, string>) => {
@@ -68,14 +60,6 @@ function UserOrdersPageContent() {
       console.warn('[UserOrdersPage] 未知页面:', page)
     }
   }, [])
-
-  if (isLoading) {
-    return (
-      <View className="page-loading">
-        <View className="loading-spinner" />
-      </View>
-    )
-  }
 
   return (
     <View className="page-container">
@@ -89,12 +73,3 @@ function UserOrdersPageContent() {
     </View>
   )
 }
-
-export default function UserOrdersPage() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <UserOrdersPageContent />
-    </QueryClientProvider>
-  )
-}
-

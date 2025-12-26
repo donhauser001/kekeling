@@ -46,10 +46,29 @@ export class ServicesService {
     }
 
     if (keyword) {
-      where.OR = [
-        { name: { contains: keyword, mode: 'insensitive' } },
-        { description: { contains: keyword, mode: 'insensitive' } },
-      ];
+      // 增强模糊搜索：支持多字段匹配和分词搜索
+      const searchTerms = keyword.trim().split(/\s+/).filter(Boolean);
+      
+      if (searchTerms.length === 1) {
+        // 单个关键词：搜索多个字段
+        const term = searchTerms[0];
+        where.OR = [
+          { name: { contains: term, mode: 'insensitive' } },
+          { description: { contains: term, mode: 'insensitive' } },
+          { content: { contains: term, mode: 'insensitive' } },
+          { category: { name: { contains: term, mode: 'insensitive' } } },
+        ];
+      } else {
+        // 多个关键词：AND 逻辑，每个词都要匹配
+        where.AND = searchTerms.map((term) => ({
+          OR: [
+            { name: { contains: term, mode: 'insensitive' } },
+            { description: { contains: term, mode: 'insensitive' } },
+            { content: { contains: term, mode: 'insensitive' } },
+            { category: { name: { contains: term, mode: 'insensitive' } } },
+          ],
+        }));
+      }
     }
 
     const [data, total] = await Promise.all([
@@ -381,6 +400,94 @@ export class ServicesService {
   }
 
   /**
+   * 获取热门搜索关键词
+   * @param type - 关键词类型: hot=热门搜索, guess=猜你想找, 不传则返回所有
+   * @param limit - 获取数量
+   */
+  async getHotKeywords(type?: 'hot' | 'guess', limit = 10) {
+    // 构建查询条件
+    const where: { status: string; type?: string } = { status: 'active' };
+    if (type) {
+      where.type = type;
+    }
+
+    // 从数据库获取配置的关键词
+    const configuredKeywords = await this.prisma.hotKeyword.findMany({
+      where,
+      orderBy: [{ isHot: 'desc' }, { sort: 'asc' }, { createdAt: 'desc' }],
+      take: limit,
+    });
+
+    // 如果有配置的关键词，直接返回
+    if (configuredKeywords.length > 0) {
+      return configuredKeywords.map((item) => ({
+        keyword: item.keyword,
+        hot: item.isHot,
+        type: item.type,
+      }));
+    }
+
+    // 没有配置，则自动生成
+    // 获取热门服务（按订单量排序）
+    const hotServices = await this.prisma.service.findMany({
+      where: { status: 'active' },
+      orderBy: { orderCount: 'desc' },
+      take: limit,
+      select: {
+        name: true,
+        orderCount: true,
+        category: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
+
+    // 获取所有活跃分类
+    const categories = await this.prisma.serviceCategory.findMany({
+      where: { status: 'active' },
+      orderBy: { sort: 'asc' },
+      select: {
+        name: true,
+        _count: {
+          select: { services: true },
+        },
+      },
+    });
+
+    // 构建关键词列表
+    const keywordsMap = new Map<string, { keyword: string; weight: number }>();
+
+    // 添加热门服务名称（权重更高）
+    hotServices.forEach((service, index) => {
+      const weight = (limit - index) * 10 + (service.orderCount || 0);
+      if (!keywordsMap.has(service.name)) {
+        keywordsMap.set(service.name, { keyword: service.name, weight });
+      }
+    });
+
+    // 添加分类名称
+    categories.forEach((cat, index) => {
+      const weight = (categories.length - index) * 5 + (cat._count.services || 0);
+      if (!keywordsMap.has(cat.name)) {
+        keywordsMap.set(cat.name, { keyword: cat.name, weight });
+      }
+    });
+
+    // 按权重排序并取前 limit 个
+    const sortedKeywords = Array.from(keywordsMap.values())
+      .sort((a, b) => b.weight - a.weight)
+      .slice(0, limit)
+      .map((item, index) => ({
+        keyword: item.keyword,
+        hot: index < 2, // 前两个标记为热门
+      }));
+
+    return sortedKeywords;
+  }
+
+  /**
    * 批量更新状态
    */
   async batchUpdateStatus(ids: string[], status: 'active' | 'inactive' | 'draft') {
@@ -404,5 +511,124 @@ export class ServicesService {
       where: { id },
       data,
     });
+  }
+
+  /**
+   * 综合搜索（搜索服务、医院、医生）
+   */
+  async search(keyword: string, limit = 10) {
+    if (!keyword || !keyword.trim()) {
+      return { services: [], hospitals: [], doctors: [] };
+    }
+
+    const searchTerm = keyword.trim();
+
+    // 并行搜索三种类型的数据
+    const [services, hospitals, doctors] = await Promise.all([
+      // 搜索服务
+      this.prisma.service.findMany({
+        where: {
+          status: 'active',
+          OR: [
+            { name: { contains: searchTerm, mode: 'insensitive' } },
+            { description: { contains: searchTerm, mode: 'insensitive' } },
+            { content: { contains: searchTerm, mode: 'insensitive' } },
+            { category: { name: { contains: searchTerm, mode: 'insensitive' } } },
+          ],
+        },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          price: true,
+          originalPrice: true,
+          coverImage: true,
+          category: {
+            select: {
+              id: true,
+              name: true,
+              icon: true,
+              color: true,
+            },
+          },
+        },
+        take: limit,
+        orderBy: [{ orderCount: 'desc' }, { sort: 'asc' }],
+      }),
+
+      // 搜索医院
+      this.prisma.hospital.findMany({
+        where: {
+          status: 'active',
+          OR: [
+            { name: { contains: searchTerm, mode: 'insensitive' } },
+            { shortName: { contains: searchTerm, mode: 'insensitive' } },
+            { address: { contains: searchTerm, mode: 'insensitive' } },
+          ],
+        },
+        select: {
+          id: true,
+          name: true,
+          shortName: true,
+          level: true,
+          levelDetail: true,
+          address: true,
+          coverImage: true,
+        },
+        take: limit,
+        orderBy: { name: 'asc' },
+      }),
+
+      // 搜索医生
+      this.prisma.doctor.findMany({
+        where: {
+          status: 'active',
+          OR: [
+            { name: { contains: searchTerm, mode: 'insensitive' } },
+            { specialties: { has: searchTerm } },
+            { hospital: { name: { contains: searchTerm, mode: 'insensitive' } } },
+            { department: { name: { contains: searchTerm, mode: 'insensitive' } } },
+          ],
+        },
+        select: {
+          id: true,
+          name: true,
+          title: true,
+          avatar: true,
+          specialties: true,
+          hospital: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          department: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+        take: limit,
+        orderBy: { name: 'asc' },
+      }),
+    ]);
+
+    return {
+      services: services.map((s) => ({
+        ...s,
+        type: 'service' as const,
+        price: Number(s.price),
+        originalPrice: s.originalPrice ? Number(s.originalPrice) : null,
+      })),
+      hospitals: hospitals.map((h) => ({
+        ...h,
+        type: 'hospital' as const,
+      })),
+      doctors: doctors.map((d) => ({
+        ...d,
+        type: 'doctor' as const,
+      })),
+    };
   }
 }

@@ -43,7 +43,7 @@ function CreateOrderPageContent() {
     if (pages.length > 1) {
       Taro.navigateBack()
     } else if (serviceId) {
-      Taro.redirectTo({ url: `/pages/service-detail/index?id=${serviceId}` })
+      Taro.redirectTo({ url: `/packageA/pages/service-detail/index?id=${serviceId}` })
     } else {
       Taro.switchTab({ url: '/pages/main/index' })
     }
@@ -51,9 +51,9 @@ function CreateOrderPageContent() {
 
   const handleNavigate = (page: string, params?: Record<string, string>) => {
     if (page === 'services') {
-      Taro.navigateTo({ url: '/pages/services/index' })
+      Taro.navigateTo({ url: '/packageA/pages/services/index' })
     } else if (page === 'user-orders') {
-      Taro.switchTab({ url: '/pages/main/index' })
+      Taro.reLaunch({ url: '/packageB/pages/user-orders/index' })
     } else {
       Taro.switchTab({ url: '/pages/main/index' })
     }
@@ -71,7 +71,7 @@ function CreateOrderPageContent() {
     return (
       <View className="page-error">
         <View className="error-text">请先选择服务</View>
-        <View className="error-btn" onClick={() => Taro.navigateTo({ url: '/pages/services/index' })}>
+        <View className="error-btn" onClick={() => Taro.navigateTo({ url: '/packageA/pages/services/index' })}>
           去选择
         </View>
       </View>

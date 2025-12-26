@@ -19,6 +19,7 @@ import { AdminEscortIdentityController } from './controllers/admin-escort-identi
 import { AdminPatientsController, AdminUserPatientsController } from './controllers/admin-patients.controller';
 import { AdminSettlementController } from './controllers/admin-settlement.controller';
 import { AdminFinanceController } from './controllers/admin-finance.controller';
+import { AdminHotKeywordsController } from './controllers/admin-hot-keywords.controller';
 import { AdminOrdersService } from './services/admin-orders.service';
 import { AdminEscortsService } from './services/admin-escorts.service';
 import { AdminEscortLevelsService } from './services/admin-escort-levels.service';
@@ -32,6 +33,7 @@ import { AdminBannersService } from './services/admin-banners.service';
 import { AdminEscortIdentityService } from './services/admin-escort-identity.service';
 import { AdminPatientsService } from './services/admin-patients.service';
 import { AdminSettlementService } from './services/admin-settlement.service';
+import { AdminHotKeywordsService } from './services/admin-hot-keywords.service';
 import { EscortAppModule } from '../escort-app/escort-app.module';
 import { MembershipModule } from '../membership/membership.module';
 import { CouponsModule } from '../coupons/coupons.module';
@@ -71,6 +73,7 @@ import { DistributionModule } from '../distribution/distribution.module';
     AdminUserPatientsController,
     AdminSettlementController,
     AdminFinanceController,
+    AdminHotKeywordsController,
   ],
   providers: [
     AdminOrdersService,
@@ -86,6 +89,7 @@ import { DistributionModule } from '../distribution/distribution.module';
     AdminEscortIdentityService,
     AdminPatientsService,
     AdminSettlementService,
+    AdminHotKeywordsService,
   ],
   exports: [AdminSettlementService],
 })

@@ -48,7 +48,7 @@ export interface OrderSettings {
 
 export type BrandLayout = 'logo-only' | 'logo-name' | 'logo-slogan' | 'logo-name-slogan' | 'name-only' | 'name-slogan'
 export type ThemeMode = 'light' | 'dark' | 'system'
-export type FooterVisiblePage = 'home' | 'services' | 'cases' | 'profile'
+export type FooterVisiblePage = 'home' | 'services' | 'orders' | 'profile'
 
 export interface ThemeSettings {
   primaryColor: string          // 主色调

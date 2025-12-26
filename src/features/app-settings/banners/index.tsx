@@ -72,7 +72,7 @@ const positionOptions = [
   { value: 'services', label: '服务页轮播图', desc: '显示在服务列表页顶部', defaultSize: { width: 750, height: 280 } },
   { value: 'profile', label: '个人中心轮播图', desc: '显示在个人中心页顶部', defaultSize: { width: 750, height: 200 } },
   { value: 'service-detail', label: '服务详情轮播图', desc: '显示在服务详情页', defaultSize: { width: 750, height: 400 } },
-  { value: 'cases', label: '病例页轮播图', desc: '显示在病例管理页顶部', defaultSize: { width: 750, height: 280 } },
+  { value: 'orders', label: '订单页轮播图', desc: '显示在订单列表页顶部', defaultSize: { width: 750, height: 280 } },
 ]
 
 // 链接类型选项
@@ -711,7 +711,7 @@ const AREA_TO_PAGE: Record<string, string> = {
   'services': 'services',
   'profile': 'profile',
   'service-detail': 'services', // 服务详情页通过服务列表进入
-  'cases': 'cases',
+  'orders': 'orders',
 }
 
 export default function BannersManagement() {
@@ -796,7 +796,7 @@ export default function BannersManagement() {
     { position: 'services', config: settings.services },
     { position: 'profile', config: settings.profile },
     { position: 'service-detail', config: settings.serviceDetail },
-    { position: 'cases', config: settings.cases },
+    { position: 'orders', config: settings.orders },
   ]
 
   return (

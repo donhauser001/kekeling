@@ -202,6 +202,20 @@ model Service {
   @@map("services")
 }
 
+// 热门搜索关键词
+model HotKeyword {
+  id        String   @id @default(uuid())
+  keyword   String   @unique              // 搜索关键词
+  type      String   @default("hot")      // hot=热门搜索, guess=猜你想找
+  isHot     Boolean  @default(false) @map("is_hot")  // 是否标记为热门（显示HOT标签）
+  sort      Int      @default(0)          // 排序权重（越小越靠前）
+  status    String   @default("active")   // active, inactive
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("hot_keywords")
+}
+
 // ========== 服务保障模块 ==========
 
 // 服务保障条目

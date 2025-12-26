@@ -25,7 +25,7 @@ export type BrandLayout =
 export type ThemeMode = 'light' | 'dark' | 'system'
 
 // 页脚可见页面类型
-export type FooterVisiblePage = 'home' | 'services' | 'cases' | 'profile'
+export type FooterVisiblePage = 'home' | 'services' | 'orders' | 'profile'
 
 // ============================================================================
 // 预览器页面路由与会话类型（Step 1 类型系统骨架）
@@ -33,7 +33,7 @@ export type FooterVisiblePage = 'home' | 'services' | 'cases' | 'profile'
 
 /**
  * 预览页面类型
- * - 现有页面：home, services, cases, profile
+ * - 现有页面：home, services, orders, profile
  * - 营销中心：membership, coupons, points, referrals, campaigns
  * - 陪诊员（用户视角）：escort-detail（入口：用户订单详情页）
  * - 工作台（陪诊员视角）：workbench, workbench-orders-pool, workbench-earnings, workbench-withdraw
@@ -43,7 +43,7 @@ export type PreviewPage =
   // 现有页面（TabBar）
   | 'home'
   | 'services'
-  | 'cases'
+  | 'orders'
   | 'profile'
   // 营销中心
   | 'membership'
@@ -103,7 +103,7 @@ export const VALID_PAGE_KEYS: readonly PreviewPage[] = [
   // 现有页面（TabBar）
   'home',
   'services',
-  'cases',
+  'orders',
   'profile',
   // 营销中心
   'membership',
@@ -185,7 +185,7 @@ export const PAGE_METADATA: Record<PreviewPage, PageMetadata> = {
   // TabBar 页面（允许作为入口）
   'home': { entryAllowed: true, description: '首页' },
   'services': { entryAllowed: true, description: '服务列表' },
-  'cases': { entryAllowed: true, description: '案例' },
+  'orders': { entryAllowed: true, description: '我的订单' },
   'profile': { entryAllowed: true, description: '我的' },
 
   // 营销中心（大部分允许作为入口）
@@ -272,7 +272,7 @@ export interface PreviewPageParamsMap {
   // TabBar 页面（不需要参数）
   'home': Record<string, never>
   'services': Record<string, never>
-  'cases': Record<string, never>
+  'orders': Record<string, never>
   'profile': Record<string, never>
 
   // 营销中心

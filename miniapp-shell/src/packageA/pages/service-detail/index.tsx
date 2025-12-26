@@ -43,7 +43,7 @@ function ServiceDetailPageContent() {
 
   useShareAppMessage(() => ({
     title: serviceInfo?.name || '服务详情',
-    path: `/pages/service-detail/index?id=${serviceId}`,
+    path: `/packageA/pages/service-detail/index?id=${serviceId}`,
     imageUrl: serviceInfo?.coverImage ? getResourceUrl(serviceInfo.coverImage) : undefined,
   }))
 
@@ -62,14 +62,14 @@ function ServiceDetailPageContent() {
   }
 
   const handleServiceClick = (id: string) => {
-    Taro.navigateTo({ url: `/pages/service-detail/index?id=${id}` })
+    Taro.navigateTo({ url: `/packageA/pages/service-detail/index?id=${id}` })
   }
 
   const handleNavigate = (page: string, params?: Record<string, string>) => {
     if (page === 'create-order') {
-      Taro.navigateTo({ url: `/pages/create-order/index?serviceId=${params?.serviceId || serviceId}` })
+      Taro.navigateTo({ url: `/packageA/pages/create-order/index?serviceId=${params?.serviceId || serviceId}` })
     } else if (page === 'services') {
-      Taro.navigateTo({ url: '/pages/services/index' })
+      Taro.navigateTo({ url: '/packageA/pages/services/index' })
     } else {
       Taro.switchTab({ url: '/pages/main/index' })
     }

@@ -89,6 +89,8 @@ export default defineConfig<'webpack5'>(async (merge) => {
     mini: {
       // 增加模板层级限制（默认 16），防止深层嵌套导致模板缺失
       baseLevel: 32,
+      // 禁用 source map，减少包体积
+      enableSourceMap: false,
       // 启用运行时配置
       runtime: {
         // 启用内部 HTML 支持，允许使用原生 HTML 标签
@@ -114,6 +116,9 @@ export default defineConfig<'webpack5'>(async (merge) => {
       },
       // webpack 配置链：确保 React 单实例
       webpackChain(chain) {
+        // 禁用 source map，减少包体积
+        chain.devtool(false)
+        
         // 优先从 miniapp-shell 的 node_modules 解析依赖
         // 防止主仓的 node_modules 中的 React 19 被引入
         chain.resolve.modules

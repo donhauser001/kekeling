@@ -62,6 +62,12 @@ function ServicesPageContent() {
     })
   }
 
+  const handleSearchClick = useCallback(() => {
+    Taro.navigateTo({
+      url: '/packageA/pages/search/index',
+    })
+  }, [])
+
   /**
    * 底部导航栏切换处理
    */
@@ -69,7 +75,7 @@ function ServicesPageContent() {
     const TAB_ROUTES: Record<TabKey, string> = {
       home: '/pages/main/index',
       services: '/packageA/pages/services/index',
-      cases: '/packageB/pages/profile/index', // 暂时指向我的页面
+      orders: '/packageB/pages/user-orders/index',
       profile: '/packageB/pages/profile/index',
     }
     
@@ -99,6 +105,7 @@ function ServicesPageContent() {
           themeSettings={themeSettings}
           isDarkMode={false}
           onServiceClick={handleServiceClick}
+          onSearchClick={handleSearchClick}
           effectiveViewerRole="user"
         />
       </View>

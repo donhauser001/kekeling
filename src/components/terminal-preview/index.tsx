@@ -66,7 +66,6 @@ import {
   // 所有页面组件现在是 lazy 导入
   ServicesPage,
   ServiceDetailPage,
-  CasesPage,
   ProfilePage,
   CouponsPage,
   MembershipPage,
@@ -683,8 +682,15 @@ export function TerminalPreview({
             effectiveViewerRole={effectiveViewerRole}
           />
         )
-      case 'cases':
-        return <CasesPage themeSettings={themeSettings} isDarkMode={isDarkMode} />
+      case 'orders':
+        return (
+          <UserOrdersPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            pageParams={pageParams}
+            onNavigate={(page, params) => navigateToPage(page, params)}
+          />
+        )
       case 'profile':
         return (
           <ProfilePage

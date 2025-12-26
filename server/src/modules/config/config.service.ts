@@ -418,6 +418,19 @@ export class ConfigService {
         title: BANNER_AREAS['service-detail'].title,
         description: BANNER_AREAS['service-detail'].description,
       },
+      orders: {
+        enabled:
+          configs[BANNER_CONFIG_KEYS.ORDERS_ENABLED] ??
+          BANNER_CONFIG_DEFAULTS[BANNER_CONFIG_KEYS.ORDERS_ENABLED],
+        width:
+          configs[BANNER_CONFIG_KEYS.ORDERS_WIDTH] ??
+          BANNER_CONFIG_DEFAULTS[BANNER_CONFIG_KEYS.ORDERS_WIDTH],
+        height:
+          configs[BANNER_CONFIG_KEYS.ORDERS_HEIGHT] ??
+          BANNER_CONFIG_DEFAULTS[BANNER_CONFIG_KEYS.ORDERS_HEIGHT],
+        title: BANNER_AREAS.orders.title,
+        description: BANNER_AREAS.orders.description,
+      },
       cases: {
         enabled:
           configs[BANNER_CONFIG_KEYS.CASES_ENABLED] ??
@@ -444,6 +457,7 @@ export class ConfigService {
       services: 'services',
       profile: 'profile',
       'service-detail': 'serviceDetail',
+      orders: 'orders',
       cases: 'cases',
     };
     return settings[keyMap[position]];
@@ -478,6 +492,11 @@ export class ConfigService {
         enabled: BANNER_CONFIG_KEYS.SERVICE_DETAIL_ENABLED,
         width: BANNER_CONFIG_KEYS.SERVICE_DETAIL_WIDTH,
         height: BANNER_CONFIG_KEYS.SERVICE_DETAIL_HEIGHT,
+      },
+      orders: {
+        enabled: BANNER_CONFIG_KEYS.ORDERS_ENABLED,
+        width: BANNER_CONFIG_KEYS.ORDERS_WIDTH,
+        height: BANNER_CONFIG_KEYS.ORDERS_HEIGHT,
       },
       cases: {
         enabled: BANNER_CONFIG_KEYS.CASES_ENABLED,

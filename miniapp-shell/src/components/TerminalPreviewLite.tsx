@@ -75,7 +75,7 @@ export interface TerminalPreviewLiteProps {
  */
 const TAB_TO_SUBPACKAGE: Record<string, string> = {
   services: '/packageA/pages/services/index',
-  cases: '/packageA/pages/services/index',  // 案例页暂时复用服务列表
+  orders: '/packageB/pages/user-orders/index',  // 订单页
   profile: '/packageB/pages/profile/index',
 }
 
@@ -194,8 +194,19 @@ export function TerminalPreviewLite({
   }, [])
 
   /**
+   * 搜索框点击 - 跳转到搜索页面
+   */
+  const handleSearchClick = useCallback(() => {
+    console.log('[TerminalPreviewLite] 跳转搜索页面')
+    Taro.navigateTo({
+      url: '/packageA/pages/search/index',
+    })
+  }, [])
+
+  /**
    * TabBar 页面切换 - 跳转到分包页面
    * home 页面不跳转（当前页），其他页面跳转到对应分包
+   * 使用 navigateTo 保留首页，避免 reLaunch 超时问题
    */
   const handlePageChange = useCallback((page: string) => {
     if (page === 'home') {
@@ -206,8 +217,22 @@ export function TerminalPreviewLite({
     const subpackagePath = TAB_TO_SUBPACKAGE[page]
     if (subpackagePath) {
       console.log('[TerminalPreviewLite] 跳转分包页面:', page, '->', subpackagePath)
+      // 直接跳转，不显示 loading（减少延迟）
       Taro.navigateTo({
         url: subpackagePath,
+        fail: (err) => {
+          console.error('[TerminalPreviewLite] 跳转失败:', err)
+          // 首次失败后使用 reLaunch 强制跳转
+          Taro.reLaunch({
+            url: subpackagePath,
+            fail: () => {
+              Taro.showToast({
+                title: '页面加载失败',
+                icon: 'none',
+              })
+            },
+          })
+        },
       })
     } else {
       console.warn('[TerminalPreviewLite] 未配置分包路径:', page)
@@ -278,7 +303,7 @@ export function TerminalPreviewLite({
         </Box>
 
         {/* 搜索框 */}
-        <SearchBar isDarkMode={isDarkMode} />
+        <SearchBar isDarkMode={isDarkMode} themeSettings={themeSettings} onSearchClick={handleSearchClick} />
 
         {/* 服务分类区域 */}
         <CategorySection

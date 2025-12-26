@@ -668,6 +668,83 @@ export const getServices = (params: ServiceQueryParams = {}) => {
 export const getServiceDetail = (id: string) =>
   userRequest<ServiceDetail>(`/services/${id}`)
 
+/** 热门搜索关键词 */
+export interface HotKeyword {
+  keyword: string
+  hot: boolean
+  type?: 'hot' | 'guess'  // hot=热门搜索, guess=猜你想找
+}
+
+/** 获取热门搜索关键词 */
+export const getHotKeywords = (type?: 'hot' | 'guess', limit = 10) => {
+  const params = new URLSearchParams()
+  if (type) params.set('type', type)
+  params.set('limit', limit.toString())
+  return userRequest<HotKeyword[]>(`/services/hot-keywords?${params.toString()}`)
+}
+
+/** 搜索结果中的服务项 */
+export interface SearchServiceItem {
+  id: string
+  name: string
+  description: string | null
+  price: number
+  originalPrice: number | null
+  coverImage: string | null
+  type: 'service'
+  category: {
+    id: string
+    name: string
+    icon: string | null
+    color: string | null
+  } | null
+}
+
+/** 搜索结果中的医院项 */
+export interface SearchHospitalItem {
+  id: string
+  name: string
+  shortName: string | null
+  level: string
+  levelDetail: string | null
+  address: string
+  coverImage: string | null
+  type: 'hospital'
+}
+
+/** 搜索结果中的医生项 */
+export interface SearchDoctorItem {
+  id: string
+  name: string
+  title: string
+  avatar: string | null
+  specialties: string[]
+  type: 'doctor'
+  hospital: {
+    id: string
+    name: string
+  } | null
+  department: {
+    id: string
+    name: string
+  } | null
+}
+
+/** 综合搜索结果 */
+export interface SearchResult {
+  services: SearchServiceItem[]
+  hospitals: SearchHospitalItem[]
+  doctors: SearchDoctorItem[]
+}
+
+/** 综合搜索（服务、医院、医生） */
+export const search = (keyword: string, limit = 10) => {
+  const params = new URLSearchParams()
+  params.set('keyword', keyword)
+  params.set('limit', limit.toString())
+  return userRequest<SearchResult>(`/services/search?${params.toString()}`)
+}
+
 // ============================================================================
 // 营销中心 API
 // ============================================================================

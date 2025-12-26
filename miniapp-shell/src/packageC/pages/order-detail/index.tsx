@@ -53,7 +53,15 @@ function OrderDetailPageContent() {
   }, [])
 
   const handleNavigate = useCallback((page: string, params?: Record<string, string>) => {
-    Taro.showToast({ title: '页面开发中', icon: 'none' })
+    if (page === 'workbench') {
+      Taro.navigateTo({ url: '/packageC/pages/workbench/index' })
+    } else if (page === 'my-orders') {
+      Taro.navigateTo({ url: '/packageC/pages/my-orders/index' })
+    } else if (page === 'orders-pool') {
+      Taro.navigateTo({ url: '/packageC/pages/orders-pool/index' })
+    } else {
+      console.warn('[OrderDetailPage] 未知页面:', page)
+    }
   }, [])
 
   if (isLoading) {

@@ -27,6 +27,7 @@ export default defineAppConfig({
         'pages/services/index',
         'pages/service-detail/index',
         'pages/create-order/index',
+        'pages/search/index',           // 搜索页面
       ],
     },
     {
@@ -39,6 +40,24 @@ export default defineAppConfig({
         'pages/patients/index',         // 就诊人管理
         'pages/patient-edit/index',     // 就诊人编辑
         'pages/user-settings/index',    // 用户设置
+        'pages/membership/index',       // 会员中心
+        'pages/membership-plans/index', // 会员套餐
+        'pages/coupons/index',          // 优惠券
+        'pages/points/index',           // 积分中心
+        'pages/points-records/index',   // 积分明细
+        'pages/address-list/index',     // 地址管理
+        'pages/address-edit/index',     // 地址编辑
+        'pages/feedback/index',         // 意见反馈
+        'pages/help-center/index',      // 帮助中心
+        'pages/article-detail/index',   // 文章详情
+        'pages/cms-page/index',         // CMS页面
+        'pages/referrals/index',        // 邀请有礼
+        'pages/escort-detail/index',    // 陪诊员详情
+        'pages/order-complaint/index',  // 订单投诉
+        'pages/coupons-available/index', // 领券中心
+        'pages/escort-apply/index',     // 陪诊员申请
+        'pages/campaigns/index',        // 活动中心
+        'pages/campaigns-detail/index', // 活动详情
       ],
     },
     {

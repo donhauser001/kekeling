@@ -388,44 +388,14 @@ export const sidebarData: SidebarData = {
           icon: Smartphone,
           items: [
             {
-              title: '广告管理',
-              url: '/app/ads',
-              icon: Megaphone,
+              title: '热门搜索',
+              url: '/app/hot-keywords',
+              icon: Search,
             },
             {
               title: '轮播图管理',
               url: '/app/banners',
               icon: Image,
-            },
-            {
-              title: '启动页管理',
-              url: '/app/splash',
-              icon: MonitorSmartphone,
-            },
-            {
-              title: '弹窗管理',
-              url: '/app/popups',
-              icon: MessageSquareText,
-            },
-            {
-              title: '消息推送',
-              url: '/app/push',
-              icon: Send,
-            },
-            {
-              title: '版本管理',
-              url: '/app/versions',
-              icon: Tag,
-            },
-            {
-              title: '热门搜索',
-              url: '/app/hot-search',
-              icon: Search,
-            },
-            {
-              title: '开关配置',
-              url: '/app/switches',
-              icon: ToggleLeft,
             },
             {
               title: '品牌设置',

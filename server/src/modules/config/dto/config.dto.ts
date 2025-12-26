@@ -173,7 +173,7 @@ export type BrandLayout = 'logo-only' | 'logo-name' | 'logo-slogan' | 'logo-name
 export type ThemeMode = 'light' | 'dark' | 'system';
 
 // 页脚可见页面类型
-export type FooterVisiblePage = 'home' | 'services' | 'cases' | 'profile';
+export type FooterVisiblePage = 'home' | 'services' | 'orders' | 'profile';
 
 // 主题设置类型
 export interface ThemeSettings {
@@ -203,7 +203,7 @@ export interface ThemeSettings {
 // ============================================
 
 // 轮播图位置类型
-export type BannerPosition = 'home' | 'services' | 'profile' | 'service-detail' | 'cases';
+export type BannerPosition = 'home' | 'services' | 'profile' | 'service-detail' | 'orders' | 'cases';
 
 // 轮播图区域配置
 export interface BannerAreaConfig {
@@ -228,6 +228,9 @@ export const BANNER_CONFIG_KEYS = {
   SERVICE_DETAIL_ENABLED: 'banner.service_detail.enabled',
   SERVICE_DETAIL_WIDTH: 'banner.service_detail.width',
   SERVICE_DETAIL_HEIGHT: 'banner.service_detail.height',
+  ORDERS_ENABLED: 'banner.orders.enabled',
+  ORDERS_WIDTH: 'banner.orders.width',
+  ORDERS_HEIGHT: 'banner.orders.height',
   CASES_ENABLED: 'banner.cases.enabled',
   CASES_WIDTH: 'banner.cases.width',
   CASES_HEIGHT: 'banner.cases.height',
@@ -247,6 +250,9 @@ export const BANNER_CONFIG_DEFAULTS: Record<string, any> = {
   [BANNER_CONFIG_KEYS.SERVICE_DETAIL_ENABLED]: false,
   [BANNER_CONFIG_KEYS.SERVICE_DETAIL_WIDTH]: 750,
   [BANNER_CONFIG_KEYS.SERVICE_DETAIL_HEIGHT]: 400,
+  [BANNER_CONFIG_KEYS.ORDERS_ENABLED]: false,
+  [BANNER_CONFIG_KEYS.ORDERS_WIDTH]: 750,
+  [BANNER_CONFIG_KEYS.ORDERS_HEIGHT]: 280,
   [BANNER_CONFIG_KEYS.CASES_ENABLED]: false,
   [BANNER_CONFIG_KEYS.CASES_WIDTH]: 750,
   [BANNER_CONFIG_KEYS.CASES_HEIGHT]: 280,
@@ -258,6 +264,7 @@ export const BANNER_AREAS: Record<BannerPosition, { title: string; description: 
   services: { title: '服务页轮播图', description: '显示在服务列表页顶部' },
   profile: { title: '个人中心轮播图', description: '显示在个人中心页顶部' },
   'service-detail': { title: '服务详情轮播图', description: '显示在服务详情页' },
+  orders: { title: '订单页轮播图', description: '显示在订单列表页顶部' },
   cases: { title: '病例页轮播图', description: '显示在病例管理页顶部' },
 };
 
@@ -267,6 +274,7 @@ export interface BannerSettings {
   services: BannerAreaConfig;
   profile: BannerAreaConfig;
   serviceDetail: BannerAreaConfig;
+  orders: BannerAreaConfig;
   cases: BannerAreaConfig;
 }
 

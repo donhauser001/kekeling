@@ -7,6 +7,7 @@ import {
   UseGuards,
   Req,
   RawBodyRequest,
+  BadRequestException,
 } from '@nestjs/common';
 import { PaymentService } from './payment.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -25,11 +26,32 @@ export class PaymentController {
   @UseGuards(JwtAuthGuard)
   async createPrepay(
     @Body() body: { orderId: string },
-    @CurrentUser() user: { id: string; openid: string },
+    @CurrentUser() currentUser: any,
   ) {
+    // 调试日志：检查 currentUser 结构
+    console.log('[Payment:prepay] currentUser 结构:', JSON.stringify({
+      hasOpenid: !!currentUser?.openid,
+      hasSub: !!currentUser?.sub,
+      hasUserObj: !!currentUser?.user,
+      userObjOpenid: currentUser?.user?.openid,
+      keys: Object.keys(currentUser || {}),
+    }));
+    
+    // openid 可能在顶层（payload spread）或 user 对象中
+    const openid = currentUser?.openid || currentUser?.user?.openid;
+    
+    if (!openid) {
+      console.error('[Payment:prepay] 用户 openid 缺失，无法发起支付', {
+        userId: currentUser?.sub || currentUser?.user?.id,
+      });
+      throw new BadRequestException('用户未绑定微信，无法发起支付');
+    }
+    
+    console.log('[Payment:prepay] 发起支付:', { orderId: body.orderId, openid: openid.substring(0, 10) + '...' });
+    
     const result = await this.paymentService.createPrepay({
       orderId: body.orderId,
-      openid: user.openid,
+      openid,
     });
     return ApiResponse.success(result);
   }

@@ -58,14 +58,18 @@ function UserOrderDetailPageContent() {
   }, [])
 
   const handleNavigate = useCallback((page: string, params?: Record<string, string>) => {
-    if (page === 'escort-detail' && params?.id) {
-      Taro.navigateTo({
-        url: `/packageB/pages/escort-detail/index?id=${params.id}`,
-      })
-    } else if (page === 'order-complaint' && params?.id) {
-      Taro.navigateTo({
-        url: `/packageB/pages/order-complaint/index?id=${params.id}`,
-      })
+    const PAGE_MAP: Record<string, string> = {
+      'escort-detail': '/packageB/pages/escort-detail/index',
+      'order-complaint': '/packageB/pages/order-complaint/index',
+      'user-orders': '/packageB/pages/user-orders/index',
+    }
+    const basePath = PAGE_MAP[page]
+    if (basePath) {
+      let url = basePath
+      if (params?.id) {
+        url += `?id=${params.id}`
+      }
+      Taro.navigateTo({ url })
     } else {
       console.warn('[UserOrderDetailPage] 未知页面:', page)
     }

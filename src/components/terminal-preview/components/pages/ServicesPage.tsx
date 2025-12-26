@@ -36,6 +36,8 @@ interface ServicesPageProps {
   bannerData?: BannerAreaData | null
   /** 服务点击回调 */
   onServiceClick?: (serviceId: string) => void
+  /** 搜索框点击回调 */
+  onSearchClick?: () => void
   /** 当前视角角色（用于显示陪诊员专属信息） */
   effectiveViewerRole?: PreviewViewerRole
 }
@@ -49,7 +51,7 @@ const sortOptionConfigs: { value: SortType; label: string }[] = [
   { value: 'price-desc', label: '价格↓' },
 ]
 
-export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: bannerDataOverride, onServiceClick, effectiveViewerRole = 'user' }: ServicesPageProps) {
+export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: bannerDataOverride, onServiceClick, onSearchClick, effectiveViewerRole = 'user' }: ServicesPageProps) {
   // 调试日志
   console.log('[ServicesPage] 组件渲染')
 
@@ -154,7 +156,8 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
     // 预览器中只做 UI 展示
   }
 
-  // 深色模式颜色
+  // 颜色配置
+  const primaryColor = themeSettings.primaryColor
   const bgColor = isDarkMode ? '#1a1a1a' : '#f5f7fa'
   const cardBg = isDarkMode ? '#2a2a2a' : '#ffffff'
   const headerBg = isDarkMode ? '#2a2a2a' : '#ffffff'
@@ -174,34 +177,37 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
       {/* 搜索框（顶部留出小程序胶囊按钮空间） */}
       <Box
         style={{
-          paddingLeft: 12 * wxScale,
-          paddingRight: 12 * wxScale,
-          paddingTop: 88 * wxScale, // 状态栏(44) + 胶囊按钮高度(32) + 间距(12)
-          paddingBottom: 8 * wxScale,
-          backgroundColor: headerBg,
+          marginLeft: 16 * wxScale,
+          marginRight: 16 * wxScale,
+          marginTop: 88 * wxScale, // 状态栏(44) + 胶囊按钮高度(32) + 间距(12)
+          marginBottom: 12 * wxScale,
         }}
       >
-        <Box
-          className='cursor-pointer transition-all hover:shadow-md active:scale-[0.98]'
+        <Button
+          onClick={onSearchClick}
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: 8 * wxScale,
-            borderRadius: 9999,
-            paddingLeft: 16 * wxScale,
+            borderRadius: 22 * wxScale,
+            paddingLeft: 12 * wxScale,
             paddingRight: 16 * wxScale,
             paddingTop: 10 * wxScale,
             paddingBottom: 10 * wxScale,
-            backgroundColor: isDarkMode ? '#3a3a3a' : '#f3f4f6',
+            backgroundColor: isDarkMode ? '#2a2a2a' : '#f3f4f6',
           }}
         >
           <Search size={16 * wxScale} color={textMuted} />
           <Text
-            style={{ fontSize: 14 * wxScale, color: textMuted }}
+            style={{ 
+              flex: 1,
+              marginLeft: 8 * wxScale,
+              fontSize: 14 * wxScale, 
+              color: textMuted,
+            }}
           >
-            搜索服务
+            搜索服务、医院、医生
           </Text>
-        </Box>
+        </Button>
       </Box>
 
       {/* 轮播图区域 */}

@@ -78,6 +78,7 @@ import { Route as AuthenticatedDistributionTreeRouteImport } from './routes/_aut
 import { Route as AuthenticatedDistributionSettingsRouteImport } from './routes/_authenticated/distribution/settings'
 import { Route as AuthenticatedDistributionRecordsRouteImport } from './routes/_authenticated/distribution/records'
 import { Route as AuthenticatedDistributionApplicationsRouteImport } from './routes/_authenticated/distribution/applications'
+import { Route as AuthenticatedAppHotKeywordsRouteImport } from './routes/_authenticated/app/hot-keywords'
 import { Route as AuthenticatedAppBannersRouteImport } from './routes/_authenticated/app/banners'
 import { Route as AuthenticatedMarketingReferralsIndexRouteImport } from './routes/_authenticated/marketing/referrals/index'
 import { Route as AuthenticatedMarketingPricingIndexRouteImport } from './routes/_authenticated/marketing/pricing/index'
@@ -481,6 +482,12 @@ const AuthenticatedDistributionApplicationsRoute =
     path: '/distribution/applications',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAppHotKeywordsRoute =
+  AuthenticatedAppHotKeywordsRouteImport.update({
+    id: '/app/hot-keywords',
+    path: '/app/hot-keywords',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAppBannersRoute = AuthenticatedAppBannersRouteImport.update({
   id: '/app/banners',
   path: '/app/banners',
@@ -579,6 +586,7 @@ export interface FileRoutesByFullPath {
   '/503': typeof errors503Route
   '/': typeof AuthenticatedIndexRoute
   '/app/banners': typeof AuthenticatedAppBannersRoute
+  '/app/hot-keywords': typeof AuthenticatedAppHotKeywordsRoute
   '/distribution/applications': typeof AuthenticatedDistributionApplicationsRoute
   '/distribution/records': typeof AuthenticatedDistributionRecordsRoute
   '/distribution/settings': typeof AuthenticatedDistributionSettingsRoute
@@ -660,6 +668,7 @@ export interface FileRoutesByTo {
   '/503': typeof errors503Route
   '/': typeof AuthenticatedIndexRoute
   '/app/banners': typeof AuthenticatedAppBannersRoute
+  '/app/hot-keywords': typeof AuthenticatedAppHotKeywordsRoute
   '/distribution/applications': typeof AuthenticatedDistributionApplicationsRoute
   '/distribution/records': typeof AuthenticatedDistributionRecordsRoute
   '/distribution/settings': typeof AuthenticatedDistributionSettingsRoute
@@ -746,6 +755,7 @@ export interface FileRoutesById {
   '/(errors)/503': typeof errors503Route
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/app/banners': typeof AuthenticatedAppBannersRoute
+  '/_authenticated/app/hot-keywords': typeof AuthenticatedAppHotKeywordsRoute
   '/_authenticated/distribution/applications': typeof AuthenticatedDistributionApplicationsRoute
   '/_authenticated/distribution/records': typeof AuthenticatedDistributionRecordsRoute
   '/_authenticated/distribution/settings': typeof AuthenticatedDistributionSettingsRoute
@@ -830,6 +840,7 @@ export interface FileRouteTypes {
     | '/503'
     | '/'
     | '/app/banners'
+    | '/app/hot-keywords'
     | '/distribution/applications'
     | '/distribution/records'
     | '/distribution/settings'
@@ -911,6 +922,7 @@ export interface FileRouteTypes {
     | '/503'
     | '/'
     | '/app/banners'
+    | '/app/hot-keywords'
     | '/distribution/applications'
     | '/distribution/records'
     | '/distribution/settings'
@@ -996,6 +1008,7 @@ export interface FileRouteTypes {
     | '/(errors)/503'
     | '/_authenticated/'
     | '/_authenticated/app/banners'
+    | '/_authenticated/app/hot-keywords'
     | '/_authenticated/distribution/applications'
     | '/_authenticated/distribution/records'
     | '/_authenticated/distribution/settings'
@@ -1564,6 +1577,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDistributionApplicationsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/app/hot-keywords': {
+      id: '/_authenticated/app/hot-keywords'
+      path: '/app/hot-keywords'
+      fullPath: '/app/hot-keywords'
+      preLoaderRoute: typeof AuthenticatedAppHotKeywordsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/app/banners': {
       id: '/_authenticated/app/banners'
       path: '/app/banners'
@@ -1698,6 +1718,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedAppBannersRoute: typeof AuthenticatedAppBannersRoute
+  AuthenticatedAppHotKeywordsRoute: typeof AuthenticatedAppHotKeywordsRoute
   AuthenticatedDistributionApplicationsRoute: typeof AuthenticatedDistributionApplicationsRoute
   AuthenticatedDistributionRecordsRoute: typeof AuthenticatedDistributionRecordsRoute
   AuthenticatedDistributionSettingsRoute: typeof AuthenticatedDistributionSettingsRoute
@@ -1759,6 +1780,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRouteRoute: AuthenticatedSettingsRouteRouteWithChildren,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedAppBannersRoute: AuthenticatedAppBannersRoute,
+  AuthenticatedAppHotKeywordsRoute: AuthenticatedAppHotKeywordsRoute,
   AuthenticatedDistributionApplicationsRoute:
     AuthenticatedDistributionApplicationsRoute,
   AuthenticatedDistributionRecordsRoute: AuthenticatedDistributionRecordsRoute,

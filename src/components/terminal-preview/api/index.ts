@@ -112,6 +112,8 @@ export const previewApi = {
   getRecommendedServices: userApi.getRecommendedServices,
   getServices: userApi.getServices,
   getServiceDetail: userApi.getServiceDetail,
+  getHotKeywords: userApi.getHotKeywords,
+  search: userApi.search,
 
   // 营销中心
   getMyCoupons: userApi.getMyCoupons,

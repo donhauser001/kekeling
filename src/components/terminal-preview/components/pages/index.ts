@@ -19,10 +19,6 @@ export const ServiceDetailPage = lazy(() =>
   import('./ServiceDetailPage').then(m => ({ default: m.ServiceDetailPage }))
 )
 
-export const CasesPage = lazy(() =>
-  import('./CasesPage').then(m => ({ default: m.CasesPage }))
-)
-
 export const ProfilePage = lazy(() =>
   import('./ProfilePage').then(m => ({ default: m.ProfilePage }))
 )
@@ -77,6 +73,10 @@ export const UserProfileEditPage = lazy(() =>
 
 export const FeedbackPage = lazy(() =>
   import('./feedback').then(m => ({ default: m.FeedbackPage }))
+)
+
+export const SearchPage = lazy(() =>
+  import('./SearchPage').then(m => ({ default: m.SearchPage }))
 )
 
 // ============================================================================
