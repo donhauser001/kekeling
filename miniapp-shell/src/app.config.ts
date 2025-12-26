@@ -50,7 +50,7 @@ export default defineAppConfig({
         'pages/feedback/index',         // 意见反馈
         'pages/help-center/index',      // 帮助中心
         'pages/article-detail/index',   // 文章详情
-        'pages/cms-page/index',         // CMS页面
+        'pages/cms-page/index',         // CMS页面（使用 WebView）
         'pages/referrals/index',        // 邀请有礼
         'pages/escort-detail/index',    // 陪诊员详情
         'pages/order-complaint/index',  // 订单投诉

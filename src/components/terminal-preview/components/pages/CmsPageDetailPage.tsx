@@ -51,6 +51,50 @@ const slugTitles: Record<string, string> = {
 }
 
 // ============================================================================
+// 工具函数：处理 HTML 内容以适配小程序 RichText
+// ============================================================================
+
+/**
+ * 从完整 HTML 文档中提取 body 内容
+ * 小程序 RichText 不支持完整 HTML 文档（如 <!DOCTYPE>, <html>, <head>, <style>）
+ * 需要提取 <body> 标签内的内容，并清理不支持的标签
+ */
+function extractBodyContent(html: string): string {
+  if (!html) return ''
+
+  // 如果不是完整 HTML 文档，直接返回
+  if (!html.includes('<!DOCTYPE') && !html.includes('<html')) {
+    return html
+  }
+
+  let content = html
+
+  // 1. 提取 body 内容
+  const bodyMatch = content.match(/<body[^>]*>([\s\S]*?)<\/body>/i)
+  if (bodyMatch) {
+    content = bodyMatch[1]
+  } else {
+    // 没有 body 标签，尝试移除 head 部分
+    content = content.replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '')
+    content = content.replace(/<!DOCTYPE[^>]*>/gi, '')
+    content = content.replace(/<html[^>]*>/gi, '')
+    content = content.replace(/<\/html>/gi, '')
+  }
+
+  // 2. 移除 script 和 style 标签
+  content = content.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+  content = content.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+
+  // 3. 移除注释
+  content = content.replace(/<!--[\s\S]*?-->/g, '')
+
+  // 4. 清理多余空白
+  content = content.trim()
+
+  return content
+}
+
+// ============================================================================
 // 子组件：Web 端 iframe 内容渲染
 // ============================================================================
 
@@ -457,7 +501,7 @@ export function CmsPageDetailPage({
             )}
             <Box style={{ padding: 16 * wxScale }}>
               <RichText
-                nodes={page.content}
+                nodes={extractBodyContent(page.content)}
                 style={{ fontSize: 14 * wxScale, lineHeight: 1.6, color: textPrimary }}
               />
             </Box>

@@ -23,23 +23,25 @@ async function bootstrap() {
     httpsOptions,
   });
 
+  // ⚠️ 重要：CORS 必须在静态文件服务之前配置，否则字体文件无法跨域访问
+  // 启用 CORS（支持 Cookie）
+  app.enableCors({
+    origin: true,
+    credentials: true, // 允许携带 Cookie
+  });
+
   // Cookie 解析中间件（安全修复 P1-9：支持 httpOnly Cookie）
   // @see docs/终端预览器集成/安全审计报告-2024-12-13.md - P1-9
   app.use(cookieParser());
 
-  // 静态文件服务 - 上传的文件
+  // 静态文件服务 - 上传的文件（包括字体文件 /uploads/fonts/）
+  // 小程序通过 wx.loadFontFace 从这里加载 iconfont 字体
   app.useStaticAssets(join(process.cwd(), 'uploads'), {
     prefix: '/uploads/',
   });
 
   // 全局前缀
   app.setGlobalPrefix('api');
-
-  // 启用 CORS（支持 Cookie）
-  app.enableCors({
-    origin: true,
-    credentials: true, // 允许携带 Cookie
-  });
 
   // 全局响应拦截器 - 统一包装响应格式为 { code: 0, message: 'success', data: ... }
   app.useGlobalInterceptors(new TransformInterceptor());

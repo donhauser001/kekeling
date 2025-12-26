@@ -12,6 +12,14 @@ import type { ThemeSettings } from '@terminal-preview/types'
 import { defaultThemeSettings } from '@terminal-preview/types'
 import './index.scss'
 
+// TabBar 页面路径映射
+const TAB_TO_PATH: Record<string, string> = {
+  home: '/pages/main/index',
+  services: '/packageA/pages/services/index',
+  orders: '/packageB/pages/user-orders/index',
+  profile: '/packageB/pages/profile/index',
+}
+
 export default function UserOrdersPage() {
   const router = useRouter()
   const [themeSettings, setThemeSettings] = useState<ThemeSettings>(defaultThemeSettings)
@@ -47,7 +55,7 @@ export default function UserOrdersPage() {
     if (pages.length > 1) {
       Taro.navigateBack()
     } else {
-      Taro.switchTab({ url: '/pages/main/index' })
+      Taro.reLaunch({ url: '/pages/main/index' })
     }
   }, [])
 
@@ -61,6 +69,24 @@ export default function UserOrdersPage() {
     }
   }, [])
 
+  // 底部导航切换
+  const handlePageChange = useCallback((page: string) => {
+    if (page === 'orders') {
+      // 当前页面，不跳转
+      return
+    }
+    const targetPath = TAB_TO_PATH[page]
+    if (targetPath) {
+      if (page === 'home') {
+        // 首页使用 reLaunch 清空页面栈
+        Taro.reLaunch({ url: targetPath })
+      } else {
+        // 其他页面使用 redirectTo 替换当前页
+        Taro.redirectTo({ url: targetPath })
+      }
+    }
+  }, [])
+
   return (
     <View className="page-container">
       <UserOrdersPageComponent
@@ -69,6 +95,7 @@ export default function UserOrdersPage() {
         pageParams={{ tab: initialTab }}
         onBack={handleBack}
         onNavigate={handleNavigate}
+        onPageChange={handlePageChange}
       />
     </View>
   )

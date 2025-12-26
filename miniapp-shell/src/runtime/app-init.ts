@@ -15,3 +15,4 @@ export { injectWxBridgeRuntime, getInjectedBridge, isWxMiniProgramEnv } from './
 
 
 
+

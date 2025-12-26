@@ -7,7 +7,10 @@ import {
   Body,
   Param,
   Query,
+  Res,
+  NotFoundException,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { PagesService } from './pages.service';
 import { CreatePageDto, UpdatePageDto, QueryPageDto } from './dto/page.dto';
@@ -36,6 +39,76 @@ export class PagesController {
   async findBySlugPublic(@Param('slug') slug: string) {
     const data = await this.service.findBySlugPublic(slug);
     return ApiResponse.success(data);
+  }
+
+  /**
+   * 公开接口：渲染 HTML 页面（供小程序 WebView 使用）
+   */
+  @Get('view/:slug')
+  @ApiOperation({ summary: '渲染 HTML 页面（供小程序 WebView）' })
+  async renderPage(@Param('slug') slug: string, @Res() res: Response) {
+    try {
+      const page = await this.service.findBySlugPublic(slug);
+      
+      // 直接返回完整的 HTML 内容
+      // 如果内容已经是完整 HTML 文档，直接返回
+      // 否则包装成完整文档
+      let html = page.content;
+      
+      if (!html.includes('<!DOCTYPE') && !html.includes('<html')) {
+        // 不是完整 HTML，包装一下
+        html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>${page.title}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      color: #333;
+      padding: 16px;
+      background: #fff;
+    }
+    h1, h2, h3, h4, h5, h6 { margin: 1em 0 0.5em; font-weight: 600; }
+    p { margin-bottom: 1em; }
+    img { max-width: 100%; height: auto; }
+    ul, ol { margin: 1em 0; padding-left: 1.5em; }
+    a { color: #f97316; text-decoration: none; }
+  </style>
+</head>
+<body>
+${page.coverImage ? `<img src="${page.coverImage}" style="width:100%;margin-bottom:16px;border-radius:8px;">` : ''}
+${html}
+</body>
+</html>`;
+      }
+      
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.send(html);
+    } catch (error) {
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.status(404).send(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>页面不存在</title>
+  <style>
+    body { display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: sans-serif; color: #666; }
+  </style>
+</head>
+<body>
+  <div style="text-align: center;">
+    <h2>页面不存在</h2>
+    <p>请在后台配置此页面</p>
+  </div>
+</body>
+</html>`);
+    }
   }
 
   /**

@@ -15,6 +15,7 @@ import { isWxEnvironment } from '../../platform/env'
 import type { ThemeSettings } from '../../types'
 import { getWxBridge } from '../../bridge'
 import { UserOrdersPageSkeleton } from '../UserOrdersPageSkeleton'
+import { TabBarNav } from '../TabBarNav'
 import { previewApi } from '../../api'
 import type { UserOrderItem } from '../../api/user-api'
 
@@ -35,6 +36,7 @@ export interface UserOrdersPageProps {
   pageParams?: Record<string, string>
   onBack?: () => void
   onNavigate?: (page: string, params?: Record<string, string>) => void
+  onPageChange?: (page: string) => void
 }
 
 /** 订单状态 Tab */
@@ -98,6 +100,7 @@ export function UserOrdersPage({
   pageParams,
   onBack,
   onNavigate,
+  onPageChange,
 }: UserOrdersPageProps) {
   // 当前选中的状态 Tab
   const [activeTab, setActiveTab] = useState<OrderStatusTab>(
@@ -163,13 +166,15 @@ export function UserOrdersPage({
     )
   }
 
+  const tabBarHeight = 56
+
   return (
     <Box
       className='min-h-full'
       style={{
         minHeight: '100%',
         backgroundColor: bgColor,
-        paddingBottom: 16 * wxScale,
+        paddingBottom: (tabBarHeight + 16) * wxScale,
       }}
     >
       {/* 顶部导航栏 */}
@@ -184,39 +189,23 @@ export function UserOrdersPage({
         }}
       >
         <Box
-          className='flex items-center justify-between'
           style={{
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
-            paddingLeft: 12 * wxScale,
-            paddingRight: 12 * wxScale,
+            justifyContent: 'center',
             paddingTop: 12 * wxScale,
             paddingBottom: 12 * wxScale,
           }}
         >
-          <Box
-            onClick={onBack}
-            style={{
-              width: 32 * wxScale,
-              height: 32 * wxScale,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Icon name="left" size={20 * wxScale} color="#fff" />
-          </Box>
           <Text
             style={{
-              fontSize: 16 * wxScale,
+              fontSize: 17 * wxScale,
               fontWeight: 600,
               color: '#fff',
             }}
           >
             我的订单
           </Text>
-          <Box style={{ width: 32 * wxScale }} />
         </Box>
       </Box>
 
@@ -581,6 +570,24 @@ export function UserOrdersPage({
           ))
         )}
       </ScrollView>
+
+      {/* 底部 TabBar - 固定定位 */}
+      <Box
+        style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          zIndex: 100,
+        }}
+      >
+        <TabBarNav
+          activePage='orders'
+          themeSettings={themeSettings}
+          isDarkMode={isDarkMode}
+          onPageChange={onPageChange}
+        />
+      </Box>
     </Box>
   )
 }
