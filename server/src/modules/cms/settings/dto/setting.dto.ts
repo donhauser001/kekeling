@@ -1,5 +1,6 @@
-import { IsString, IsOptional, IsInt, IsEnum } from 'class-validator';
+import { IsString, IsOptional, IsInt, IsEnum, IsArray, ValidateNested } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 
 export class CreateSettingDto {
     @ApiProperty({ description: '设置键名' })
@@ -79,8 +80,22 @@ export class QuerySettingDto {
     keyword?: string;
 }
 
+// 批量更新的单个设置项
+export class BatchSettingItemDto {
+    @ApiProperty({ description: '设置键名' })
+    @IsString()
+    key: string;
+
+    @ApiProperty({ description: '设置值' })
+    @IsString()
+    value: string;
+}
+
 export class BatchUpdateSettingsDto {
-    @ApiProperty({ description: '设置列表' })
-    settings: { key: string; value: string }[];
+    @ApiProperty({ description: '设置列表', type: [BatchSettingItemDto] })
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => BatchSettingItemDto)
+    settings: BatchSettingItemDto[];
 }
 

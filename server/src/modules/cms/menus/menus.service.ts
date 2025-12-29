@@ -9,14 +9,25 @@ export class MenusService {
 
     /**
      * 获取菜单树结构（公开接口）
+     * @param position 可选的位置前缀筛选
+     * @param excludeHidden 是否排除在主菜单中隐藏的菜单（默认true）
      */
-    async getMenuTree(position?: string) {
+    async getMenuTree(position?: string, excludeHidden = true) {
         const menus = await this.prisma.cmsMenu.findMany({
             where: {
                 status: 'active',
                 ...(position ? { code: { startsWith: position } } : {}),
+                ...(excludeHidden ? { hideInMain: false } : {}),
             },
             orderBy: [{ sort: 'asc' }, { createdAt: 'asc' }],
+            include: {
+                category: {
+                    select: { id: true, name: true, slug: true },
+                },
+                page: {
+                    select: { id: true, title: true, slug: true },
+                },
+            },
         });
 
         // 构建树结构

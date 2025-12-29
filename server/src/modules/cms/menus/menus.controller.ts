@@ -20,8 +20,13 @@ export class MenusController {
 
     @Get('tree')
     @ApiOperation({ summary: '获取菜单树（公开）' })
-    async getTree(@Query('position') position?: string) {
-        const data = await this.service.getMenuTree(position);
+    async getTree(
+        @Query('position') position?: string,
+        @Query('excludeHidden') excludeHidden?: string,
+    ) {
+        // 默认排除隐藏菜单
+        const shouldExcludeHidden = excludeHidden !== 'false';
+        const data = await this.service.getMenuTree(position, shouldExcludeHidden);
         return ApiResponse.success(data);
     }
 

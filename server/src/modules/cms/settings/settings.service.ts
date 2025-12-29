@@ -7,12 +7,13 @@ import { CreateSettingDto, UpdateSettingDto, QuerySettingDto, BatchUpdateSetting
 const DEFAULT_SETTINGS = [
     // 基础设置
     { key: 'site_name', value: '科科灵陪诊', label: '网站名称', type: 'text', group: 'general', sort: 1 },
-    { key: 'site_description', value: '专业陪诊服务平台', label: '网站描述', type: 'textarea', group: 'general', sort: 2 },
-    { key: 'site_logo', value: '', label: '网站Logo', type: 'image', group: 'general', sort: 3 },
-    { key: 'site_favicon', value: '', label: '网站图标', type: 'image', group: 'general', sort: 4 },
-    { key: 'site_keywords', value: '陪诊,医疗,健康,服务', label: '网站关键词', type: 'text', group: 'general', sort: 5 },
-    { key: 'site_icp', value: '', label: 'ICP备案号', type: 'text', group: 'general', sort: 6 },
-    { key: 'site_copyright', value: '© 2024 科科灵陪诊. All rights reserved.', label: '版权信息', type: 'text', group: 'general', sort: 7 },
+    { key: 'site_slogan', value: '专业医院陪诊服务', label: '网站标语', type: 'text', group: 'general', sort: 2 },
+    { key: 'site_description', value: '科科灵陪诊是专业的医院陪诊服务平台，提供全程陪诊、代办跑腿、住院陪护等服务，让您的就医之路不再孤单。', label: '网站描述', type: 'textarea', group: 'general', sort: 3 },
+    { key: 'site_logo', value: '', label: '网站Logo', type: 'image', group: 'general', sort: 4 },
+    { key: 'site_favicon', value: '', label: '网站图标', type: 'image', group: 'general', sort: 5 },
+    { key: 'site_keywords', value: '陪诊,医疗,健康,服务', label: '网站关键词', type: 'text', group: 'general', sort: 6 },
+    { key: 'site_icp', value: '', label: 'ICP备案号', type: 'text', group: 'general', sort: 7 },
+    { key: 'site_copyright', value: '© 2024 科科灵陪诊. All rights reserved.', label: '版权信息', type: 'text', group: 'general', sort: 8 },
 
     // SEO 设置
     { key: 'seo_title', value: '科科灵陪诊 - 专业陪诊服务平台', label: 'SEO标题', type: 'text', group: 'seo', sort: 1 },
@@ -20,11 +21,12 @@ const DEFAULT_SETTINGS = [
     { key: 'seo_keywords', value: '陪诊服务,医院陪诊,就医陪护', label: 'SEO关键词', type: 'text', group: 'seo', sort: 3 },
 
     // 联系方式
-    { key: 'contact_phone', value: '', label: '联系电话', type: 'text', group: 'contact', sort: 1 },
-    { key: 'contact_email', value: '', label: '联系邮箱', type: 'text', group: 'contact', sort: 2 },
-    { key: 'contact_address', value: '', label: '联系地址', type: 'textarea', group: 'contact', sort: 3 },
-    { key: 'contact_wechat', value: '', label: '微信公众号', type: 'text', group: 'contact', sort: 4 },
-    { key: 'contact_qq', value: '', label: 'QQ客服', type: 'text', group: 'contact', sort: 5 },
+    { key: 'contact_phone', value: '400-123-4567', label: '联系电话', type: 'text', group: 'contact', sort: 1 },
+    { key: 'contact_email', value: 'service@kekeling.com', label: '联系邮箱', type: 'text', group: 'contact', sort: 2 },
+    { key: 'contact_address', value: '北京市朝阳区建国路XXX号', label: '联系地址', type: 'textarea', group: 'contact', sort: 3 },
+    { key: 'service_hours', value: '7:00 - 22:00', label: '服务时间', type: 'text', group: 'contact', sort: 4 },
+    { key: 'contact_wechat', value: '', label: '微信公众号', type: 'text', group: 'contact', sort: 5 },
+    { key: 'contact_qq', value: '', label: 'QQ客服', type: 'text', group: 'contact', sort: 6 },
 
     // 社交媒体
     { key: 'social_wechat_qr', value: '', label: '微信二维码', type: 'image', group: 'social', sort: 1 },
