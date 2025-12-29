@@ -39,6 +39,9 @@ import { RedisModule } from './modules/redis/redis.module';
 import { PagesModule } from './modules/cms/pages/pages.module';
 import { ArticleCategoriesModule } from './modules/cms/article-categories/article-categories.module';
 import { ArticlesModule } from './modules/cms/articles/articles.module';
+import { MenusModule } from './modules/cms/menus/menus.module';
+import { SettingsModule } from './modules/cms/settings/settings.module';
+import { SidebarsModule } from './modules/cms/sidebars/sidebars.module';
 import { UserAddressesModule } from './modules/user-addresses/user-addresses.module';
 
 @Module({
@@ -93,6 +96,9 @@ import { UserAddressesModule } from './modules/user-addresses/user-addresses.mod
     PagesModule,            // CMS 页面管理
     ArticleCategoriesModule, // CMS 文章分类管理
     ArticlesModule,         // CMS 文章管理
+    MenusModule,            // CMS 菜单管理
+    SettingsModule,         // CMS 网站设置
+    SidebarsModule,         // CMS 侧边栏管理
     UserAddressesModule,    // 用户地址管理
     TestModule, // ⚠️ 仅开发环境，生产环境请注释
   ],

@@ -7,13 +7,13 @@
  *
  * 模块化拆分：
  * - types.ts - 类型定义
- * - constants.ts - 常量和 mock 数据
+ * - constants.ts - 常量
  * - components/ - 子组件（FormRow、GenderButton、RelationPicker、PatientEditSkeleton）
  *
  * @see docs/小程序页面改造规范.md
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Box, Text, ScrollView, Icon, Input } from '../../../ui/primitives'
 import { isWxEnvironment } from '../../../platform/env'
 import {
@@ -26,8 +26,8 @@ import {
   wxScale,
   wxSafeAreaTop,
   defaultPatientForm,
-  mockPatientData,
 } from './constants'
+import { previewApi } from '../../../api'
 import type { PatientEditPageProps, PatientForm, ThemeColors } from './types'
 
 // ============================================================================
@@ -46,6 +46,29 @@ function getThemeColors(isDarkMode: boolean, primaryColor: string): ThemeColors 
     inputBg: isDarkMode ? '#1a1a1a' : '#f9fafb',
     primaryColor,
   }
+}
+
+/** 从生日计算年龄 */
+function calculateAgeFromBirthday(birthday: string | null | undefined): string {
+  if (!birthday) return ''
+  const birthDate = new Date(birthday)
+  const today = new Date()
+  let age = today.getFullYear() - birthDate.getFullYear()
+  const monthDiff = today.getMonth() - birthDate.getMonth()
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--
+  }
+  return age.toString()
+}
+
+/** 从年龄计算大概生日（用于提交，假设当年生日） */
+function calculateBirthdayFromAge(age: string): string | undefined {
+  const ageNum = parseInt(age, 10)
+  if (isNaN(ageNum) || ageNum < 0) return undefined
+  const today = new Date()
+  const birthYear = today.getFullYear() - ageNum
+  // 返回 YYYY-01-01 格式（假设1月1日）
+  return `${birthYear}-01-01`
 }
 
 // ============================================================================
@@ -77,20 +100,36 @@ export function PatientEditPage({
   const colors = getThemeColors(isDarkMode, themeSettings.primaryColor)
   const { bgColor, cardBg, textPrimary, textSecondary, textMuted, borderColor, inputBg, primaryColor } = colors
 
+  // 加载就诊人数据
+  const loadPatient = useCallback(async () => {
+    if (!patientId) return
+    setIsLoading(true)
+    try {
+      const patients = await previewApi.getPatients()
+      const patient = patients.find((p) => p.id === patientId)
+      if (patient) {
+        setForm({
+          name: patient.name,
+          gender: (patient.gender === 'male' || patient.gender === 'female' ? patient.gender : 'male') as 'male' | 'female',
+          age: calculateAgeFromBirthday((patient as { birthday?: string }).birthday),
+          phone: patient.phone,
+          idCard: patient.idCard || '',
+          relation: patient.relation,
+        })
+      }
+    } catch (error) {
+      console.error('[PatientEditPage] 加载就诊人失败:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [patientId])
+
   // 编辑时加载数据
   useEffect(() => {
     if (isEdit && patientId) {
-      setIsLoading(true)
-      // 模拟异步加载
-      const timer = setTimeout(() => {
-        if (mockPatientData[patientId]) {
-          setForm(mockPatientData[patientId])
-        }
-        setIsLoading(false)
-      }, 300)
-      return () => clearTimeout(timer)
+      loadPatient()
     }
-  }, [isEdit, patientId])
+  }, [isEdit, patientId, loadPatient])
 
   // 更新表单字段
   const updateField = <K extends keyof PatientForm>(key: K, value: PatientForm[K]) => {
@@ -110,12 +149,31 @@ export function PatientEditPage({
     if (!validateForm()) return
 
     setIsSubmitting(true)
-    // 模拟 API 调用
-    await new Promise(resolve => setTimeout(resolve, 500))
-    setIsSubmitting(false)
+    try {
+      // 构建提交数据
+      const submitData = {
+        name: form.name.trim(),
+        gender: form.gender,
+        birthday: calculateBirthdayFromAge(form.age),
+        phone: form.phone.trim(),
+        idCard: form.idCard.trim() || undefined,
+        relation: form.relation,
+      }
 
-    // 返回列表页
-    onBack?.()
+      if (isEdit && patientId) {
+        // 更新就诊人
+        await previewApi.updatePatient(patientId, submitData)
+      } else {
+        // 创建就诊人
+        await previewApi.createPatient(submitData as Parameters<typeof previewApi.createPatient>[0])
+      }
+      // 返回列表页
+      onBack?.()
+    } catch (error) {
+      console.error('[PatientEditPage] 保存就诊人失败:', error)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   // 加载中显示骨架屏

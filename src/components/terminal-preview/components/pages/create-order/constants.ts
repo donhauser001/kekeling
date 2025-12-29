@@ -2,41 +2,11 @@
  * 确认订单页常量和模拟数据
  */
 
-import type { Patient, Hospital, Department, Doctor, Coupon, MedicalRecord } from './types'
+import type { MedicalRecord } from './types'
 
 // ============================================================================
-// 模拟数据
+// 模拟数据（仅保留病历相关，病历功能暂时隐藏）
 // ============================================================================
-
-export const mockPatients: Patient[] = [
-  { id: '1', name: '张三', relation: 'self', phone: '138****8888', idCard: '110***********1234', gender: '男' },
-  { id: '2', name: '李四', relation: 'parent', phone: '139****9999', idCard: '110***********5678', gender: '女' },
-]
-
-export const mockHospitals: Hospital[] = [
-  { id: '1', name: '北京协和医院', address: '北京市东城区帅府园一号' },
-  { id: '2', name: '北京大学第一医院', address: '北京市西城区西什库大街8号' },
-  { id: '3', name: '中日友好医院', address: '北京市朝阳区樱花园东街' },
-]
-
-export const mockDepartments: Department[] = [
-  { id: '1', name: '内科' },
-  { id: '2', name: '外科' },
-  { id: '3', name: '妇产科' },
-  { id: '4', name: '儿科' },
-  { id: '5', name: '骨科' },
-]
-
-export const mockDoctors: Doctor[] = [
-  { id: '1', name: '王医生', title: '主任医师', department: '内科' },
-  { id: '2', name: '李医生', title: '副主任医师', department: '外科' },
-  { id: '3', name: '张医生', title: '主治医师', department: '妇产科' },
-]
-
-export const mockCoupons: Coupon[] = [
-  { id: '1', name: '新人专享券', amount: 20, minAmount: 100 },
-  { id: '2', name: '满减优惠券', amount: 10, minAmount: 50 },
-]
 
 export const mockMedicalRecords: MedicalRecord[] = [
   {

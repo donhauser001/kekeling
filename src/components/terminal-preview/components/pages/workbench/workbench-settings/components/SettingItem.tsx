@@ -26,20 +26,24 @@ export function SettingItem({
             style={{
                 display: 'flex',
                 alignItems: 'center',
-                padding: 12 * wxScale,
+                paddingTop: 14 * wxScale,
+                paddingBottom: 14 * wxScale,
+                paddingLeft: 12 * wxScale,
+                paddingRight: 12 * wxScale,
                 borderBottom: showBorder ? `1px solid ${borderColor}` : 'none',
             }}
         >
             <Box
                 style={{
-                    width: 32 * wxScale,
-                    height: 32 * wxScale,
-                    borderRadius: 8 * wxScale,
+                    width: 36 * wxScale,
+                    height: 36 * wxScale,
+                    borderRadius: 10 * wxScale,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     marginRight: 12 * wxScale,
-                    backgroundColor: `${iconColor}20`,
+                    backgroundColor: `${iconColor}15`,
+                    flexShrink: 0,
                 }}
             >
                 <Icon name={icon} size={20 * wxScale} color={iconColor} />
@@ -47,7 +51,7 @@ export function SettingItem({
             <Text
                 style={{
                     flex: 1,
-                    fontSize: 14 * wxScale,
+                    fontSize: 15 * wxScale,
                     color: textPrimary,
                 }}
             >
@@ -57,6 +61,7 @@ export function SettingItem({
                 style={{
                     fontSize: 14 * wxScale,
                     color: textSecondary,
+                    marginRight: 4 * wxScale,
                 }}
             >
                 {value}

@@ -136,7 +136,7 @@ function ProfileSkeleton() {
 
 function ProfilePageContent() {
   console.log('[ProfilePage] ProfilePageContent 渲染开始')
-  
+
   // 使用默认主题立即渲染，不阻塞页面显示
   const [themeSettings, setThemeSettings] = useState<ThemeSettings>(defaultThemeSettings)
   // 内容就绪标记 - 使用短延迟确保组件已渲染
@@ -178,7 +178,7 @@ function ProfilePageContent() {
    */
   const handleNavigate = useCallback((page: string, params?: Record<string, string>) => {
     const basePath = PAGE_ROUTE_MAP[page]
-    
+
     if (basePath) {
       // 构建查询参数
       let url = basePath
@@ -188,7 +188,7 @@ function ProfilePageContent() {
           .join('&')
         url = `${basePath}?${queryString}`
       }
-      
+
       console.log('[ProfilePage] 导航到:', url)
       Taro.navigateTo({ url })
     } else {
@@ -237,12 +237,12 @@ function ProfilePageContent() {
       orders: '/packageB/pages/user-orders/index',
       profile: '/packageB/pages/profile/index',
     }
-    
+
     if (tab === 'profile') {
       // 已在当前页面，无需跳转
       return
     }
-    
+
     const url = TAB_ROUTES[tab]
     if (url) {
       // 使用 reLaunch 清空页面栈，避免栈溢出

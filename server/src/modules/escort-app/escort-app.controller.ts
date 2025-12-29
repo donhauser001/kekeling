@@ -62,6 +62,20 @@ export class EscortAppController {
     return this.escortAppService.updateProfile(this.getUserId(req), data);
   }
 
+  // 从关联用户同步资料到陪诊员
+  // 将 User 表中的 nickname/avatar 复制到 Escort 表
+  @Post('profile/sync-from-user')
+  async syncProfileFromUser(@Request() req) {
+    const escortId = await this.getEscortIdFromRequest(req);
+    if (!escortId) {
+      // 如果没有 escortId，尝试通过 userId 获取
+      const userId = this.getUserId(req);
+      const escort = await this.escortAppService.getProfile(userId);
+      return this.escortAppService.syncProfileFromUser(escort.id);
+    }
+    return this.escortAppService.syncProfileFromUser(escortId);
+  }
+
   // 获取统计数据
   @Get('stats')
   async getStats(@Request() req) {

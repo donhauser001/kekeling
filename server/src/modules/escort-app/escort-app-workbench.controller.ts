@@ -14,8 +14,8 @@ import { ApiResponse as ApiRes } from '../../common/response/api-response';
 @UseGuards(JwtAuthGuard)
 export class EscortAppWorkbenchController {
   private readonly logger = new Logger(EscortAppWorkbenchController.name);
-  
-  constructor(private readonly escortAppService: EscortAppService) {}
+
+  constructor(private readonly escortAppService: EscortAppService) { }
 
   /**
    * 获取 escortId（从 escort token 中提取）
@@ -62,6 +62,57 @@ export class EscortAppWorkbenchController {
       throw new UnauthorizedException('需要陪诊员身份');
     }
     const result = await this.escortAppService.updateWorkbenchSettingsByEscortId(escortId, body);
+    return ApiRes.success(result);
+  }
+
+  /**
+   * 更新接单偏好设置
+   * PATCH /escort-app/workbench/preferences
+   */
+  @Patch('preferences')
+  async updatePreferences(
+    @Request() req,
+    @Body() body: {
+      serviceTypes?: string[];
+      serviceAreas?: string[];
+      departments?: string[];
+      workingHours?: {
+        start: string;
+        end: string;
+      };
+    },
+  ) {
+    this.logger.debug(`[updatePreferences] body: ${JSON.stringify(body)}`);
+    const escortId = this.getEscortId(req);
+    if (!escortId) {
+      this.logger.warn(`[updatePreferences] 无效的陪诊员身份: ${JSON.stringify(req.user)}`);
+      throw new UnauthorizedException('需要陪诊员身份');
+    }
+    const result = await this.escortAppService.updateWorkbenchPreferences(escortId, body);
+    return ApiRes.success(result);
+  }
+
+  /**
+   * 更新通知设置
+   * PATCH /escort-app/workbench/notifications
+   */
+  @Patch('notifications')
+  async updateNotifications(
+    @Request() req,
+    @Body() body: {
+      newOrder?: boolean;
+      orderStatus?: boolean;
+      system?: boolean;
+      marketing?: boolean;
+    },
+  ) {
+    this.logger.debug(`[updateNotifications] body: ${JSON.stringify(body)}`);
+    const escortId = this.getEscortId(req);
+    if (!escortId) {
+      this.logger.warn(`[updateNotifications] 无效的陪诊员身份: ${JSON.stringify(req.user)}`);
+      throw new UnauthorizedException('需要陪诊员身份');
+    }
+    const result = await this.escortAppService.updateWorkbenchNotifications(escortId, body);
     return ApiRes.success(result);
   }
 }

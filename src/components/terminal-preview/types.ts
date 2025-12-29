@@ -75,6 +75,9 @@ export type PreviewPage =
   | 'workbench-withdraw'
   | 'workbench-settings'
   | 'workbench-service-types'
+  | 'workbench-hospitals'
+  | 'workbench-departments'
+  | 'workbench-working-hours'
   | 'my-orders'
   // 分销中心（陪诊员视角）
   | 'distribution'
@@ -94,6 +97,8 @@ export type PreviewPage =
   | 'escort-profile-edit'
   // 意见反馈
   | 'feedback'
+  // 搜索
+  | 'search'
 
 /**
  * 有效的页面 key 列表（用于开发环境校验）
@@ -137,6 +142,9 @@ export const VALID_PAGE_KEYS: readonly PreviewPage[] = [
   'workbench-withdraw',
   'workbench-settings',
   'workbench-service-types',
+  'workbench-hospitals',
+  'workbench-departments',
+  'workbench-working-hours',
   'workbench-my-orders',
   'my-orders',
   // 分销中心（陪诊员视角）
@@ -157,6 +165,8 @@ export const VALID_PAGE_KEYS: readonly PreviewPage[] = [
   'escort-profile-edit',
   // 意见反馈
   'feedback',
+  // 搜索
+  'search',
 ] as const
 
 // ============================================================================
@@ -223,6 +233,9 @@ export const PAGE_METADATA: Record<PreviewPage, PageMetadata> = {
   'workbench-withdraw': { entryAllowed: false, description: '提现' },
   'workbench-settings': { entryAllowed: false, description: '工作台设置' },
   'workbench-service-types': { entryAllowed: false, description: '服务项目选择' },
+  'workbench-hospitals': { entryAllowed: false, description: '服务医院选择' },
+  'workbench-departments': { entryAllowed: false, description: '擅长科室选择' },
+  'workbench-working-hours': { entryAllowed: false, description: '工作时间设置' },
   'my-orders': { entryAllowed: false, description: '我的订单' },
 
   // 分销中心（主入口允许，子页面不允许）
@@ -247,6 +260,9 @@ export const PAGE_METADATA: Record<PreviewPage, PageMetadata> = {
 
   // 意见反馈
   'feedback': { entryAllowed: false, description: '意见反馈' },
+
+  // 搜索
+  'search': { entryAllowed: false, description: '搜索' },
 } as const
 
 /**
@@ -296,6 +312,7 @@ export interface PreviewPageParamsMap {
 
   // 陪诊员公开页（入口：用户订单详情页点击陪诊员信息）
   'escort-detail': { id: string }
+  'escort-apply': Record<string, never>
 
   // 工作台
   'workbench': Record<string, never>
@@ -305,6 +322,9 @@ export interface PreviewPageParamsMap {
   'workbench-withdraw': Record<string, never>
   'workbench-settings': Record<string, never>
   'workbench-service-types': Record<string, never>
+  'workbench-hospitals': Record<string, never>
+  'workbench-departments': Record<string, never>
+  'workbench-working-hours': Record<string, never>
   'my-orders': { status?: 'all' | 'pending' | 'ongoing' | 'completed' | 'cancelled' }
 
   // 就诊人管理
@@ -333,6 +353,9 @@ export interface PreviewPageParamsMap {
 
   // 意见反馈
   'feedback': Record<string, never>
+
+  // 搜索
+  'search': { keyword?: string }
 }
 
 /**

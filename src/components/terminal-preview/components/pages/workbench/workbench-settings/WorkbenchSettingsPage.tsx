@@ -56,6 +56,13 @@ export function WorkbenchSettingsPage({
     const [autoAccept, setAutoAccept] = useState(false)
     const [updating, setUpdating] = useState(false)
 
+    // 通知设置状态
+    const [notifyNewOrder, setNotifyNewOrder] = useState(true)
+    const [notifyOrderStatus, setNotifyOrderStatus] = useState(true)
+    const [notifySystem, setNotifySystem] = useState(true)
+    const [notifyMarketing, setNotifyMarketing] = useState(false)
+    const [updatingNotification, setUpdatingNotification] = useState<string | null>(null)
+
     // 获取设置数据
     useEffect(() => {
         if (!isEscort) {
@@ -68,6 +75,13 @@ export function WorkbenchSettingsPage({
             .then((data) => {
                 setSettings(data)
                 setAutoAccept(data.autoAcceptOrders)
+                // 设置通知状态
+                if (data.notifications) {
+                    setNotifyNewOrder(data.notifications.newOrder ?? true)
+                    setNotifyOrderStatus(data.notifications.orderStatus ?? true)
+                    setNotifySystem(data.notifications.system ?? true)
+                    setNotifyMarketing(data.notifications.marketing ?? false)
+                }
             })
             .catch(() => {
                 setError(true)
@@ -93,6 +107,26 @@ export function WorkbenchSettingsPage({
 
     const handleBack = () => {
         onNavigate?.('workbench')
+    }
+
+    // 切换通知设置
+    const handleToggleNotification = async (
+        key: 'newOrder' | 'orderStatus' | 'system' | 'marketing',
+        currentValue: boolean,
+        setter: (value: boolean) => void
+    ) => {
+        const newValue = !currentValue
+        setter(newValue)
+        setUpdatingNotification(key)
+        try {
+            await previewApi.updateWorkbenchNotifications({ [key]: newValue })
+        } catch (err) {
+            // 回滚
+            setter(currentValue)
+            console.error('更新通知设置失败:', err)
+        } finally {
+            setUpdatingNotification(null)
+        }
     }
 
     // 非 escort 视角：显示权限提示
@@ -370,6 +404,7 @@ export function WorkbenchSettingsPage({
                             value={`已选 ${settings.preferences?.serviceAreas?.length || 0} 家`}
                             isDarkMode={isDarkMode}
                             primaryColor={primaryColor}
+                            onClick={() => onNavigate?.('workbench-hospitals')}
                         />
                         <SettingItem
                             icon="stethoscope"
@@ -378,18 +413,20 @@ export function WorkbenchSettingsPage({
                             value={`已选 ${settings.preferences?.departments?.length || 0} 个`}
                             isDarkMode={isDarkMode}
                             primaryColor={primaryColor}
+                            onClick={() => onNavigate?.('workbench-departments')}
                         />
-                        {settings.preferences?.workingHours && (
-                            <SettingItem
-                                icon="time"
-                                iconColor="#14b8a6"
-                                label="工作时间"
-                                value={`${settings.preferences.workingHours.start} - ${settings.preferences.workingHours.end}`}
-                                isDarkMode={isDarkMode}
-                                primaryColor={primaryColor}
-                                showBorder={false}
-                            />
-                        )}
+                        <SettingItem
+                            icon="time"
+                            iconColor="#14b8a6"
+                            label="工作时间"
+                            value={settings.preferences?.workingHours
+                                ? `${settings.preferences.workingHours.start} - ${settings.preferences.workingHours.end}`
+                                : '未设置'}
+                            isDarkMode={isDarkMode}
+                            primaryColor={primaryColor}
+                            showBorder={false}
+                            onClick={() => onNavigate?.('workbench-working-hours')}
+                        />
                     </Box>
                 </Box>
 
@@ -413,35 +450,47 @@ export function WorkbenchSettingsPage({
                             overflow: 'hidden',
                         }}
                     >
-                        <SettingItem
+                        <SwitchItem
                             icon="remind"
                             iconColor="#10b981"
                             label="新订单通知"
-                            value={settings.notifications?.newOrder ? '已开启' : '已关闭'}
+                            description="有新订单时推送消息提醒"
+                            checked={notifyNewOrder}
+                            loading={updatingNotification === 'newOrder'}
+                            onChange={() => handleToggleNotification('newOrder', notifyNewOrder, setNotifyNewOrder)}
                             isDarkMode={isDarkMode}
                             primaryColor={primaryColor}
                         />
-                        <SettingItem
+                        <SwitchItem
                             icon="remind"
                             iconColor="#3b82f6"
                             label="订单状态变更"
-                            value={settings.notifications?.orderStatus ? '已开启' : '已关闭'}
+                            description="订单状态发生变化时通知"
+                            checked={notifyOrderStatus}
+                            loading={updatingNotification === 'orderStatus'}
+                            onChange={() => handleToggleNotification('orderStatus', notifyOrderStatus, setNotifyOrderStatus)}
                             isDarkMode={isDarkMode}
                             primaryColor={primaryColor}
                         />
-                        <SettingItem
+                        <SwitchItem
                             icon="remind"
                             iconColor="#8b5cf6"
                             label="系统通知"
-                            value={settings.notifications?.system ? '已开启' : '已关闭'}
+                            description="接收平台公告和重要通知"
+                            checked={notifySystem}
+                            loading={updatingNotification === 'system'}
+                            onChange={() => handleToggleNotification('system', notifySystem, setNotifySystem)}
                             isDarkMode={isDarkMode}
                             primaryColor={primaryColor}
                         />
-                        <SettingItem
+                        <SwitchItem
                             icon="remind"
                             iconColor="#f59e0b"
                             label="营销通知"
-                            value={settings.notifications?.marketing ? '已开启' : '已关闭'}
+                            description="接收优惠活动和促销信息"
+                            checked={notifyMarketing}
+                            loading={updatingNotification === 'marketing'}
+                            onChange={() => handleToggleNotification('marketing', notifyMarketing, setNotifyMarketing)}
                             isDarkMode={isDarkMode}
                             primaryColor={primaryColor}
                             showBorder={false}

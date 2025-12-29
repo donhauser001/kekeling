@@ -120,6 +120,7 @@ export class EscortAppService {
 
   // 获取陪诊员信息（通过用户ID）
   // 头像策略：优先使用陪诊员头像，为空时回退到用户头像
+  // 姓名策略：优先使用陪诊员姓名，为空时回退到用户昵称
   async getProfile(userId: string) {
     const escort = await this.prisma.escort.findFirst({
       where: { userId },
@@ -133,6 +134,7 @@ export class EscortAppService {
         user: {
           select: {
             avatar: true,
+            nickname: true,
           },
         },
       },
@@ -142,15 +144,31 @@ export class EscortAppService {
       throw new NotFoundException('您不是陪诊员');
     }
 
-    // 头像回退策略：陪诊员头像 > 用户头像
+    // 回退策略：陪诊员数据 > 用户数据
+    const userAvatar = escort.user?.avatar || null;
+    const userNickname = escort.user?.nickname || null;
+
     return {
       ...escort,
-      avatar: escort.avatar || escort.user?.avatar || null,
+      // 显示用数据（回退策略）
+      name: escort.name || userNickname || null,
+      avatar: escort.avatar || userAvatar || null,
+      // 关联用户数据（用于同步功能）
+      userProfile: {
+        avatar: userAvatar,
+        nickname: userNickname,
+      },
+      // 是否可以从用户同步（用户有数据但陪诊员没有）
+      canSyncFromUser: !!(
+        (userAvatar && !escort.avatar) ||
+        (userNickname && !escort.name)
+      ),
     };
   }
 
   // 获取陪诊员信息（通过 escortId，用于 escort token 验证）
   // 头像策略：优先使用陪诊员头像，为空时回退到用户头像
+  // 姓名策略：优先使用陪诊员姓名，为空时回退到用户昵称
   async getProfileByEscortId(escortId: string) {
     const escort = await this.prisma.escort.findUnique({
       where: { id: escortId },
@@ -164,6 +182,7 @@ export class EscortAppService {
         user: {
           select: {
             avatar: true,
+            nickname: true,
           },
         },
       },
@@ -173,11 +192,72 @@ export class EscortAppService {
       throw new NotFoundException('陪诊员不存在');
     }
 
-    // 头像回退策略：陪诊员头像 > 用户头像
+    // 回退策略：陪诊员数据 > 用户数据
+    const userAvatar = escort.user?.avatar || null;
+    const userNickname = escort.user?.nickname || null;
+
     return {
       ...escort,
-      avatar: escort.avatar || escort.user?.avatar || null,
+      // 显示用数据（回退策略）
+      name: escort.name || userNickname || null,
+      avatar: escort.avatar || userAvatar || null,
+      // 关联用户数据（用于同步功能）
+      userProfile: {
+        avatar: userAvatar,
+        nickname: userNickname,
+      },
+      // 是否可以从用户同步（用户有数据但陪诊员没有）
+      canSyncFromUser: !!(
+        (userAvatar && !escort.avatar) ||
+        (userNickname && !escort.name)
+      ),
     };
+  }
+
+  // 从关联用户同步资料到陪诊员
+  // 将 User 表的 nickname/avatar 覆盖到 Escort 表
+  async syncProfileFromUser(escortId: string) {
+    const escort = await this.prisma.escort.findUnique({
+      where: { id: escortId },
+      include: {
+        user: {
+          select: {
+            avatar: true,
+            nickname: true,
+          },
+        },
+      },
+    });
+
+    if (!escort) {
+      throw new NotFoundException('陪诊员不存在');
+    }
+
+    if (!escort.user) {
+      throw new NotFoundException('陪诊员未关联用户账号');
+    }
+
+    const updateData: { name?: string; avatar?: string } = {};
+
+    // 同步用户数据到陪诊员（覆盖模式）
+    if (escort.user.nickname) {
+      updateData.name = escort.user.nickname;
+    }
+    if (escort.user.avatar) {
+      updateData.avatar = escort.user.avatar;
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      // 用户没有数据可同步
+      throw new NotFoundException('用户账号暂无头像或昵称数据');
+    }
+
+    await this.prisma.escort.update({
+      where: { id: escortId },
+      data: updateData,
+    });
+
+    return this.getProfileByEscortId(escortId);
   }
 
   // 更新陪诊员资料
@@ -1499,11 +1579,20 @@ export class EscortAppService {
       where: { id: escortId },
       select: {
         id: true,
+        name: true,
+        avatar: true,
+        levelCode: true,
+        rating: true,
         workStatus: true,
         serviceRadius: true,
         serviceHours: true,
         maxDailyOrders: true,
         currentDailyOrders: true,
+        level: {
+          select: {
+            name: true,
+          },
+        },
       },
     });
 
@@ -1511,11 +1600,40 @@ export class EscortAppService {
       throw new NotFoundException('陪诊员不存在');
     }
 
+    // 解析 serviceHours JSON 字段，它存储了偏好设置和通知设置
+    const storedPreferences = escort.serviceHours
+      ? JSON.parse(escort.serviceHours)
+      : {};
+
+    // 构建完整的返回数据结构
     return {
+      // 个人资料
+      profile: {
+        name: escort.name || '陪诊员',
+        avatar: escort.avatar,
+        level: escort.level?.name || '普通陪诊员',
+        rating: escort.rating || 5.0,
+      },
+      // 在线状态
       onlineStatus: escort.workStatus as 'working' | 'resting' | 'busy',
-      autoAcceptOrders: false, // TODO: 添加自动接单字段
+      autoAcceptOrders: storedPreferences.autoAcceptOrders || false,
+      // 接单偏好
+      preferences: {
+        serviceTypes: storedPreferences.serviceTypes || [],
+        serviceAreas: storedPreferences.serviceAreas || [],
+        departments: storedPreferences.departments || [],
+        workingHours: storedPreferences.workingHours || null,
+        maxDistance: storedPreferences.maxDistance || escort.serviceRadius,
+      },
+      // 通知设置
+      notifications: storedPreferences.notifications || {
+        newOrder: true,
+        orderStatus: true,
+        system: true,
+        marketing: false,
+      },
+      // 其他
       serviceRadius: escort.serviceRadius,
-      serviceHours: escort.serviceHours ? JSON.parse(escort.serviceHours) : null,
       maxDailyOrders: escort.maxDailyOrders,
       currentDailyOrders: escort.currentDailyOrders,
     };
@@ -1553,12 +1671,12 @@ export class EscortAppService {
     const updateData: any = {};
     if (settings.onlineStatus !== undefined) {
       const mappedStatus = statusMap[settings.onlineStatus] || settings.onlineStatus;
-      
+
       // 如果正在服务中，不允许切换状态
       if (escort.workStatus === 'busy') {
         throw new BadRequestException('您正在服务中，无法切换状态');
       }
-      
+
       updateData.workStatus = mappedStatus;
     }
     // TODO: 添加 autoAcceptOrders 字段支持
@@ -1569,6 +1687,122 @@ export class EscortAppService {
         data: updateData,
       });
     }
+
+    return { success: true };
+  }
+
+  /**
+   * 更新接单偏好设置
+   * @param escortId 陪诊员ID
+   * @param preferences 偏好设置
+   */
+  async updateWorkbenchPreferences(
+    escortId: string,
+    preferences: {
+      serviceTypes?: string[];
+      serviceAreas?: string[];
+      departments?: string[];
+      workingHours?: {
+        start: string;
+        end: string;
+      };
+    },
+  ) {
+    const escort = await this.prisma.escort.findUnique({
+      where: { id: escortId },
+    });
+
+    if (!escort) {
+      throw new NotFoundException('陪诊员不存在');
+    }
+
+    const updateData: any = {};
+
+    // 将偏好设置序列化为 JSON 存储在 serviceHours 字段（临时方案）
+    // 后续可考虑扩展数据库模型
+    const currentPreferences = escort.serviceHours
+      ? JSON.parse(escort.serviceHours)
+      : {};
+
+    if (preferences.serviceTypes !== undefined) {
+      currentPreferences.serviceTypes = preferences.serviceTypes;
+    }
+    if (preferences.serviceAreas !== undefined) {
+      currentPreferences.serviceAreas = preferences.serviceAreas;
+    }
+    if (preferences.departments !== undefined) {
+      currentPreferences.departments = preferences.departments;
+    }
+    if (preferences.workingHours !== undefined) {
+      currentPreferences.workingHours = preferences.workingHours;
+    }
+
+    updateData.serviceHours = JSON.stringify(currentPreferences);
+
+    await this.prisma.escort.update({
+      where: { id: escortId },
+      data: updateData,
+    });
+
+    return { success: true };
+  }
+
+  /**
+   * 更新通知设置
+   * @param escortId 陪诊员ID
+   * @param notifications 通知设置
+   */
+  async updateWorkbenchNotifications(
+    escortId: string,
+    notifications: {
+      newOrder?: boolean;
+      orderStatus?: boolean;
+      system?: boolean;
+      marketing?: boolean;
+    },
+  ) {
+    const escort = await this.prisma.escort.findUnique({
+      where: { id: escortId },
+    });
+
+    if (!escort) {
+      throw new NotFoundException('陪诊员不存在');
+    }
+
+    // 将通知设置序列化为 JSON 存储在 serviceHours 字段（临时方案）
+    // 后续可考虑扩展数据库模型，添加独立的 notificationSettings 字段
+    const currentPreferences = escort.serviceHours
+      ? JSON.parse(escort.serviceHours)
+      : {};
+
+    if (!currentPreferences.notifications) {
+      currentPreferences.notifications = {
+        newOrder: true,
+        orderStatus: true,
+        system: true,
+        marketing: false,
+      };
+    }
+
+    if (notifications.newOrder !== undefined) {
+      currentPreferences.notifications.newOrder = notifications.newOrder;
+    }
+    if (notifications.orderStatus !== undefined) {
+      currentPreferences.notifications.orderStatus = notifications.orderStatus;
+    }
+    if (notifications.system !== undefined) {
+      currentPreferences.notifications.system = notifications.system;
+    }
+    if (notifications.marketing !== undefined) {
+      currentPreferences.notifications.marketing = notifications.marketing;
+    }
+
+    await this.prisma.escort.update({
+      where: { id: escortId },
+      data: {
+        serviceHours: JSON.stringify(currentPreferences),
+      },
+    });
 
     return { success: true };
   }
@@ -2066,20 +2300,20 @@ export class EscortAppService {
     const recentRecords = recentTransactions.map(t => {
       // 判断是否为冻结状态
       const isFrozen = t.type === 'frozen' && !t.unfrozen;
-      
+
       // 计算状态
       let status: 'completed' | 'pending' | 'failed' = 'completed';
       if (isFrozen) {
         status = 'pending';
       }
-      
+
       // 计算距离解冻的剩余时间（毫秒）
       let unfreezeCountdown: number | null = null;
       if (isFrozen && t.unfreezeAt) {
         const remaining = t.unfreezeAt.getTime() - now.getTime();
         unfreezeCountdown = remaining > 0 ? remaining : 0;
       }
-      
+
       return {
         id: t.id,
         type: this.mapTransactionType(t.type),
@@ -2226,8 +2460,8 @@ export class EscortAppService {
       accounts.push({
         id: 'default',
         type: wallet.withdrawMethod as 'bank' | 'alipay' | 'wechat',
-        name: wallet.withdrawMethod === 'bank' ? '储蓄卡' : 
-              wallet.withdrawMethod === 'alipay' ? '支付宝' : '微信',
+        name: wallet.withdrawMethod === 'bank' ? '储蓄卡' :
+          wallet.withdrawMethod === 'alipay' ? '支付宝' : '微信',
         accountNo: wallet.withdrawAccount,
         isDefault: true,
       });
@@ -2245,8 +2479,8 @@ export class EscortAppService {
       amount: Number(w.amount),
       fee: Number(w.fee),
       actualAmount: Number(w.actualAmount),
-      accountName: w.method === 'bank' ? '银行卡' : 
-                   w.method === 'alipay' ? '支付宝' : '微信',
+      accountName: w.method === 'bank' ? '银行卡' :
+        w.method === 'alipay' ? '支付宝' : '微信',
       createdAt: this.formatWithdrawDateTime(w.createdAt),
       completedAt: w.transferAt ? this.formatWithdrawDateTime(w.transferAt) : undefined,
       status: w.status as 'pending' | 'processing' | 'completed' | 'failed',

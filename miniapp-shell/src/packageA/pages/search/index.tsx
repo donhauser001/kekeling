@@ -14,13 +14,13 @@ import './index.scss'
 
 export default function SearchPage() {
   console.log('[SearchPage] 页面组件开始渲染')
-  
+
   const router = useRouter()
   const initialKeyword = decodeURIComponent(router.params.keyword || '')
-  
+
   // 使用默认主题立即渲染
   const [themeSettings, setThemeSettings] = useState<ThemeSettings>(defaultThemeSettings)
-  
+
   console.log('[SearchPage] themeSettings:', themeSettings)
 
   useEffect(() => {

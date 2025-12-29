@@ -67,8 +67,10 @@ function ServiceTypesPageContent() {
     title: '服务类型',
   }))
 
-  const handleBack = useCallback(() => {
-    Taro.navigateBack()
+  const handleNavigate = useCallback((page: string) => {
+    if (page === 'workbench-settings') {
+      Taro.navigateBack()
+    }
   }, [])
 
   const handleLoginSuccess = useCallback((escortToken: string) => {
@@ -92,10 +94,10 @@ function ServiceTypesPageContent() {
         themeSettings={themeSettings}
         isDarkMode={false}
         effectiveViewerRole={effectiveViewerRole}
-        onBack={handleBack}
+        onNavigate={handleNavigate}
         onLogin={() => setShowLoginDialog(true)}
       />
-      
+
       <EscortLoginDialog
         open={showLoginDialog}
         onClose={() => {

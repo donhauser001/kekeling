@@ -34,6 +34,7 @@ export function EscortProfileEditPage({
   effectiveViewerRole = 'escort',
   onBack,
   onLogin,
+  onSyncFromUser,
 }: EscortProfileEditPageProps) {
   const isEscort = effectiveViewerRole === 'escort'
   const primaryColor = themeSettings.primaryColor
@@ -59,6 +60,7 @@ export function EscortProfileEditPage({
   // UI 状态
   const [showGenderPicker, setShowGenderPicker] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [isSyncing, setIsSyncing] = useState(false)
 
   // 获取陪诊员资料
   useEffect(() => {
@@ -70,15 +72,41 @@ export function EscortProfileEditPage({
     previewApi
       .getEscortProfile()
       .then((data) => {
-        setProfile(data)
-        setName(data.name || '')
-        setGender(data.gender || '')
-        setIntroduction(data.introduction || '')
-        setAvatarPreview(data.avatar || null)
+        if (data) {
+          setProfile(data)
+          setName(data.name || '')
+          setGender(data.gender || '')
+          setIntroduction(data.introduction || '')
+          setAvatarPreview(data.avatar || null)
+        }
       })
       .catch(console.error)
       .finally(() => setLoading(false))
   }, [isEscort])
+
+  // 从关联用户同步资料
+  const handleSyncFromUser = async () => {
+    if (!onSyncFromUser) return
+
+    setIsSyncing(true)
+    try {
+      const syncedProfile = await onSyncFromUser()
+      if (syncedProfile) {
+        // 更新本地状态
+        setProfile(syncedProfile)
+        if (syncedProfile.name) {
+          setName(syncedProfile.name)
+        }
+        if (syncedProfile.avatar) {
+          setAvatarPreview(syncedProfile.avatar)
+        }
+      }
+    } catch (error) {
+      console.error('同步资料失败:', error)
+    } finally {
+      setIsSyncing(false)
+    }
+  }
 
   // 保存资料
   const handleSave = async () => {
@@ -333,15 +361,76 @@ export function EscortProfileEditPage({
               <Icon name="camera" size={14 * wxScale} color="#fff" />
             </Box>
           </Box>
-          <Text
+
+          {/* 头像操作按钮 */}
+          <Box
             style={{
-              marginTop: 8 * wxScale,
-              fontSize: 12 * wxScale,
-              color: textMuted,
+              display: 'flex',
+              alignItems: 'center',
+              marginTop: 12 * wxScale,
+              gap: 12 * wxScale,
             }}
           >
-            点击更换头像
-          </Text>
+            {/* 从账号同步按钮 - 只要有同步回调就显示 */}
+            {onSyncFromUser && (
+              <Box
+                onClick={isSyncing ? undefined : handleSyncFromUser}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  paddingTop: 6 * wxScale,
+                  paddingBottom: 6 * wxScale,
+                  paddingLeft: 12 * wxScale,
+                  paddingRight: 12 * wxScale,
+                  borderRadius: 16 * wxScale,
+                  backgroundColor: `${primaryColor}15`,
+                  opacity: isSyncing ? 0.6 : 1,
+                }}
+              >
+                <Icon
+                  name={isSyncing ? 'loading-four' : 'user-to-user-transmission'}
+                  size={16 * wxScale}
+                  color={primaryColor}
+                />
+                <Text
+                  style={{
+                    marginLeft: 4 * wxScale,
+                    fontSize: 12 * wxScale,
+                    color: primaryColor,
+                    fontWeight: 500,
+                  }}
+                >
+                  {isSyncing ? '同步中...' : '从账号同步'}
+                </Text>
+              </Box>
+            )}
+
+            {/* 手动选择按钮 */}
+            <Box
+              onClick={handleAvatarClick}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                paddingTop: 6 * wxScale,
+                paddingBottom: 6 * wxScale,
+                paddingLeft: 12 * wxScale,
+                paddingRight: 12 * wxScale,
+                borderRadius: 16 * wxScale,
+                backgroundColor: isDarkMode ? '#3a3a3a' : '#f0f0f0',
+              }}
+            >
+              <Icon name="picture" size={16 * wxScale} color={textSecondary} />
+              <Text
+                style={{
+                  marginLeft: 4 * wxScale,
+                  fontSize: 12 * wxScale,
+                  color: textSecondary,
+                }}
+              >
+                从相册选择
+              </Text>
+            </Box>
+          </Box>
         </Box>
 
         {/* 基本信息 */}

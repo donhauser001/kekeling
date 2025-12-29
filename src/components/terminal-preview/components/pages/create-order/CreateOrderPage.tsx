@@ -16,6 +16,7 @@ import type {
   ThemeColors,
   EmergencyContact,
   Patient,
+  Coupon,
 } from './types'
 import type {
   Hospital,
@@ -23,7 +24,6 @@ import type {
   Doctor,
 } from './types'
 import {
-  mockCoupons,
   mockMedicalRecords,
   generateDateOptions,
   TIME_OPTIONS,
@@ -71,14 +71,17 @@ export function CreateOrderPage({
   // 服务数据
   const [service, setService] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
-  
+
   // 就诊人数据（从 API 获取）
   const [patients, setPatients] = useState<Patient[]>([])
-  
+
   // 医院/科室/医生数据（从 API 获取）
   const [hospitals, setHospitals] = useState<Hospital[]>([])
   const [departments, setDepartments] = useState<Department[]>([])
   const [doctors, setDoctors] = useState<Doctor[]>([])
+
+  // 优惠券数据（从 API 获取）
+  const [coupons, setCoupons] = useState<Coupon[]>([])
 
   // "下单后填写"开关状态
   const [fillLater, setFillLater] = useState(false)
@@ -123,18 +126,30 @@ export function CreateOrderPage({
     if (!serviceId) return
 
     setIsLoading(true)
-    
-    // 并行获取服务详情、就诊人列表、医院列表
+
+    // 并行获取服务详情、就诊人列表、医院列表、优惠券列表
     Promise.all([
       previewApi.getServiceDetail(serviceId),
       previewApi.getPatients(),
       previewApi.getHospitals({ pageSize: 100 }),
+      previewApi.getMyCoupons(),
     ])
-      .then(([serviceData, patientsData, hospitalsRes]) => {
+      .then(([serviceData, patientsData, hospitalsRes, couponsRes]) => {
         setService(serviceData)
         setPatients(patientsData)
         setHospitals(hospitalsRes.data || [])
-        
+
+        // 转换优惠券数据格式
+        const availableCoupons: Coupon[] = (couponsRes.items || [])
+          .filter((c) => c.status === 'available')
+          .map((c) => ({
+            id: c.id,
+            name: c.name,
+            amount: c.amount,
+            minAmount: c.minAmount,
+          }))
+        setCoupons(availableCoupons)
+
         // 如果有默认就诊人，自动选中
         const defaultPatient = patientsData.find((p) => p.isDefault)
         if (defaultPatient) {
@@ -156,7 +171,7 @@ export function CreateOrderPage({
       setSelectedDepartmentId(null)
       return
     }
-    
+
     previewApi.getHospitalDepartments(selectedHospitalId)
       .then((depts) => {
         // 扁平化科室树
@@ -185,7 +200,7 @@ export function CreateOrderPage({
       setSelectedDoctorId(null)
       return
     }
-    
+
     previewApi.getHospitalDoctors(selectedHospitalId, {
       departmentId: selectedDepartmentId || undefined,
       pageSize: 100,
@@ -211,7 +226,7 @@ export function CreateOrderPage({
   const selectedHospital = hospitals.find((h) => h.id === selectedHospitalId)
   const selectedDepartment = departments.find((d) => d.id === selectedDepartmentId)
   const selectedDoctor = doctors.find((d) => d.id === selectedDoctorId)
-  const selectedCoupon = mockCoupons.find((c) => c.id === selectedCouponId)
+  const selectedCoupon = coupons.find((c) => c.id === selectedCouponId)
   const selectedMedicalRecord = mockMedicalRecords.find((r) => r.id === selectedMedicalRecordId)
 
   // 计算价格
@@ -234,7 +249,7 @@ export function CreateOrderPage({
 
     // 防止重复提交
     if (isSubmitting) return
-    
+
     // 表单校验
     if (service?.needPatient !== false && !selectedPatientId) {
       wxBridge.showToast({ title: '请选择就诊人', icon: 'none' })
@@ -277,7 +292,7 @@ export function CreateOrderPage({
 
       // Step 3: 调起微信支付
       wxBridge.showToast({ title: '正在调起支付...', icon: 'loading' })
-      
+
       const payResult = await wxBridge.requestPayment({
         timeStamp: paymentParams.timeStamp,
         nonceStr: paymentParams.nonceStr,
@@ -289,7 +304,7 @@ export function CreateOrderPage({
       if (payResult.success) {
         // 支付成功
         wxBridge.showToast({ title: '支付成功', icon: 'success' })
-        
+
         // 跳转到订单详情页
         setTimeout(() => {
           _onNavigate?.('user-order-detail', { id: orderResult.id })
@@ -442,7 +457,7 @@ export function CreateOrderPage({
 
       {/* 就诊信息表单 */}
       <FormSection
-        service={service}
+        service={{ ...service, needMedicalRecord: false }} // 病历选择暂时隐藏
         fillLater={fillLater}
         setFillLater={setFillLater}
         selectedPatient={selectedPatient}
@@ -476,7 +491,7 @@ export function CreateOrderPage({
       {/* 优惠券 */}
       <CouponSection
         selectedCoupon={selectedCoupon}
-        availableCouponCount={mockCoupons.length}
+        availableCouponCount={coupons.length}
         onOpenPicker={() => setShowCouponPicker(true)}
         colors={colors}
         primaryColor={primaryColor}
@@ -622,7 +637,7 @@ export function CreateOrderPage({
       {/* 优惠券选择弹窗 */}
       {showCouponPicker && (
         <CouponPicker
-          coupons={mockCoupons}
+          coupons={coupons}
           selectedCoupon={selectedCoupon}
           servicePrice={totalPrice}
           onSelect={(coupon) => setSelectedCouponId(coupon?.id || null)}

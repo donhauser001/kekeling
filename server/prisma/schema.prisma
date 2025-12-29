@@ -2020,6 +2020,8 @@ model Page {
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
 
+  menus       CmsMenu[]
+
   @@index([slug])
   @@index([status])
   @@map("cms_pages")
@@ -2040,6 +2042,7 @@ model ArticleCategory {
   updatedAt   DateTime  @updatedAt @map("updated_at")
 
   articles    Article[]
+  menus       CmsMenu[]
 
   @@index([slug])
   @@index([status])
@@ -2078,6 +2081,72 @@ model Article {
   @@index([isTop, sort])
   @@index([publishedAt])
   @@map("cms_articles")
+}
+
+// CMS 导航菜单
+model CmsMenu {
+  id          String    @id @default(uuid())
+  name        String                          // 菜单名称
+  code        String    @unique               // 菜单代码（如: main, footer, sidebar）
+  type        String    @default("link")      // 类型：link=自定义链接, category=文章分类, page=页面, user_login=用户登录, escort_register=陪诊员注册, escort_login=陪诊员登录, escort_forgot_password=陪诊员找回密码, escort_profile=陪诊员资料
+  url         String?                         // 链接地址（type=link时使用）
+  categoryId  String?   @map("category_id")   // 文章分类ID（type=category时使用）
+  pageId      String?   @map("page_id")       // 页面ID（type=page时使用）
+  target      String    @default("_self")     // 打开方式：_self/_blank
+  icon        String?                         // 图标
+  parentId    String?   @map("parent_id")     // 父级菜单ID
+  isHome      Boolean   @default(false) @map("is_home")  // 是否为首页（排他性，只能有一个）
+  hideInMain  Boolean   @default(false) @map("hide_in_main")  // 在主菜单中隐藏（用于仅在侧边栏等其他位置显示）
+  sort        Int       @default(0)           // 排序权重
+  status      String    @default("active")    // active=启用, inactive=禁用
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  parent      CmsMenu?  @relation("MenuHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children    CmsMenu[] @relation("MenuHierarchy")
+  category    ArticleCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  page        Page?     @relation(fields: [pageId], references: [id], onDelete: SetNull)
+
+  @@index([parentId])
+  @@index([categoryId])
+  @@index([pageId])
+  @@map("cms_menus")
+}
+
+// CMS 网站设置
+model CmsSetting {
+  id        String   @id @default(uuid())
+  key       String   @unique               // 设置键名（如: site_name, site_logo）
+  value     String   @db.Text              // 设置值（支持长文本）
+  label     String                         // 显示名称
+  type      String   @default("text")      // 类型：text, textarea, image, switch, select
+  group     String   @default("general")   // 分组：general(基础), seo(SEO), social(社交), contact(联系)
+  options   String?                        // 选项（select类型时使用，JSON格式）
+  sort      Int      @default(0)           // 排序权重
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([group])
+  @@map("cms_settings")
+}
+
+// CMS 侧边栏
+model CmsSidebar {
+  id          String   @id @default(uuid())
+  name        String                          // 侧边栏名称
+  code        String   @unique                // 唯一标识（如: blog-sidebar, page-sidebar）
+  description String?  @db.Text               // 描述
+  position    String   @default("right")      // 位置：left=左侧, right=右侧
+  width       String   @default("medium")     // 宽度：narrow=窄(240px), medium=中(300px), wide=宽(360px), custom=自定义
+  customWidth Int?     @map("custom_width")   // 自定义宽度（像素）
+  applyTo     Json     @default("[]") @map("apply_to") // 应用目标: [{type: 'page'|'category', id: string}]
+  widgets     Json     @default("[]")         // 组件配置JSON: [{type: 'menu'|'category'|'html', config: {...}}]
+  sort        Int      @default(0)            // 排序权重
+  status      String   @default("active")     // active=启用, inactive=禁用
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("cms_sidebars")
 }
 
 // ========== 意见反馈模块 ==========

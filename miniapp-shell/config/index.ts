@@ -118,7 +118,7 @@ export default defineConfig<'webpack5'>(async (merge) => {
       webpackChain(chain) {
         // 禁用 source map，减少包体积
         chain.devtool(false)
-        
+
         // 优先从 miniapp-shell 的 node_modules 解析依赖
         // 防止主仓的 node_modules 中的 React 19 被引入
         chain.resolve.modules

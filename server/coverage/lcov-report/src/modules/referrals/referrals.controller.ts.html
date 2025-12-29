@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/23</span>
+                <span class='fraction'>0/29</span>
             </div>
         
             
@@ -39,14 +39,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/5</span>
+                <span class='fraction'>0/7</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/21</span>
+                <span class='fraction'>0/27</span>
             </div>
         
             
@@ -121,7 +121,21 @@
 <a name='L56'></a><a href='#L56'>56</a>
 <a name='L57'></a><a href='#L57'>57</a>
 <a name='L58'></a><a href='#L58'>58</a>
-<a name='L59'></a><a href='#L59'>59</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L59'></a><a href='#L59'>59</a>
+<a name='L60'></a><a href='#L60'>60</a>
+<a name='L61'></a><a href='#L61'>61</a>
+<a name='L62'></a><a href='#L62'>62</a>
+<a name='L63'></a><a href='#L63'>63</a>
+<a name='L64'></a><a href='#L64'>64</a>
+<a name='L65'></a><a href='#L65'>65</a>
+<a name='L66'></a><a href='#L66'>66</a>
+<a name='L67'></a><a href='#L67'>67</a>
+<a name='L68'></a><a href='#L68'>68</a>
+<a name='L69'></a><a href='#L69'>69</a>
+<a name='L70'></a><a href='#L70'>70</a>
+<a name='L71'></a><a href='#L71'>71</a>
+<a name='L72'></a><a href='#L72'>72</a>
+<a name='L73'></a><a href='#L73'>73</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -174,6 +188,20 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -192,49 +220,63 @@
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 export <span class="cstat-no" title="statement not covered" >class <span class="cstat-no" title="statement not covered" ><span class="cstat-no" title="statement not covered" >ReferralsController </span>{</span></span>
-<span class="fstat-no" title="function not covered" >  constructor(private readonly <span class="cstat-no" title="statement not covered" >r</span>eferralsService: R</span>eferralsService) {}
+<span class="fstat-no" title="function not covered" >    constructor(private readonly <span class="cstat-no" title="statement not covered" >r</span>eferralsService: R</span>eferralsService) { }
 &nbsp;
-  @Get('invite-code')
-  @ApiOperation({ summary: '获取我的邀请码' })
-<span class="fstat-no" title="function not covered" >  async <span class="cstat-no" title="statement not covered" ></span>getInviteCode(@CurrentUser('sub') userId: string) {</span>
-    const data = <span class="cstat-no" title="statement not covered" >await this.referralsService.getOrCreateInviteCode(userId);</span>
-<span class="cstat-no" title="statement not covered" >    return ApiResponse.success(data);</span>
-  }
+    @Get('invite-code')
+    @ApiOperation({ summary: '获取我的邀请码' })
+<span class="fstat-no" title="function not covered" >    async <span class="cstat-no" title="statement not covered" ></span>getInviteCode(@CurrentUser('sub') userId: string) {</span>
+        const data = <span class="cstat-no" title="statement not covered" >await this.referralsService.getOrCreateInviteCode(userId);</span>
+<span class="cstat-no" title="statement not covered" >        return ApiResponse.success(data);</span>
+    }
 &nbsp;
-  @Get('stats')
-  @ApiOperation({ summary: '获取邀请统计' })
-<span class="fstat-no" title="function not covered" >  async <span class="cstat-no" title="statement not covered" ></span>getStats(@CurrentUser('sub') userId: string) {</span>
-    const data = <span class="cstat-no" title="statement not covered" >await this.referralsService.getReferralStats(userId);</span>
-<span class="cstat-no" title="statement not covered" >    return ApiResponse.success(data);</span>
-  }
+    @Get('stats')
+    @ApiOperation({ summary: '获取邀请统计' })
+<span class="fstat-no" title="function not covered" >    async <span class="cstat-no" title="statement not covered" ></span>getStats(@CurrentUser('sub') userId: string) {</span>
+        const data = <span class="cstat-no" title="statement not covered" >await this.referralsService.getReferralStats(userId);</span>
+<span class="cstat-no" title="statement not covered" >        return ApiResponse.success(data);</span>
+    }
 &nbsp;
-  @Get('records')
-  @ApiOperation({ summary: '获取邀请记录列表' })
-<span class="fstat-no" title="function not covered" >  async <span class="cstat-no" title="statement not covered" ></span>getRecords(</span>
-    @CurrentUser('sub') userId: string,
-    @Query('type') type?: string,
-    @Query('status') status?: string,
-    @Query('page') page?: number,
-    @Query('pageSize') pageSize?: number,
-  ) {
-    const data = <span class="cstat-no" title="statement not covered" >await this.referralsService.getReferralRecords(userId, {</span>
-      type,
-      status,
-      page: page ? Number(page) : undefined,
-      pageSize: pageSize ? Number(pageSize) : undefined,
-    });
-<span class="cstat-no" title="statement not covered" >    return ApiResponse.success(data);</span>
-  }
+    @Get('records')
+    @ApiOperation({ summary: '获取邀请记录列表' })
+<span class="fstat-no" title="function not covered" >    async <span class="cstat-no" title="statement not covered" ></span>getRecords(</span>
+        @CurrentUser('sub') userId: string,
+        @Query('type') type?: string,
+        @Query('status') status?: string,
+        @Query('page') page?: number,
+        @Query('pageSize') pageSize?: number,
+    ) {
+        const data = <span class="cstat-no" title="statement not covered" >await this.referralsService.getReferralRecords(userId, {</span>
+            type,
+            status,
+            page: page ? Number(page) : undefined,
+            pageSize: pageSize ? Number(pageSize) : undefined,
+        });
+<span class="cstat-no" title="statement not covered" >        return ApiResponse.success(data);</span>
+    }
 &nbsp;
-  @Post('invite-patient')
-  @ApiOperation({ summary: '邀请就诊人注册' })
-<span class="fstat-no" title="function not covered" >  async <span class="cstat-no" title="statement not covered" ></span>invitePatient(</span>
-    @CurrentUser('sub') userId: string,
-    @Body() dto: InvitePatientDto,
-  ) {
-    const data = <span class="cstat-no" title="statement not covered" >await this.referralsService.invitePatient(userId, dto);</span>
-<span class="cstat-no" title="statement not covered" >    return ApiResponse.success(data, '邀请已发送');</span>
-  }
+    @Post('invite-patient')
+    @ApiOperation({ summary: '邀请就诊人注册' })
+<span class="fstat-no" title="function not covered" >    async <span class="cstat-no" title="statement not covered" ></span>invitePatient(</span>
+        @CurrentUser('sub') userId: string,
+        @Body() dto: InvitePatientDto,
+    ) {
+        const data = <span class="cstat-no" title="statement not covered" >await this.referralsService.invitePatient(userId, dto);</span>
+<span class="cstat-no" title="statement not covered" >        return ApiResponse.success(data, '邀请已发送');</span>
+    }
+&nbsp;
+    @Get('link')
+    @ApiOperation({ summary: '获取邀请链接' })
+<span class="fstat-no" title="function not covered" >    async <span class="cstat-no" title="statement not covered" ></span>getInviteLink(@CurrentUser('sub') userId: string) {</span>
+        const data = <span class="cstat-no" title="statement not covered" >await this.referralsService.generateInviteLink(userId);</span>
+<span class="cstat-no" title="statement not covered" >        return ApiResponse.success(data);</span>
+    }
+&nbsp;
+    @Get('poster')
+    @ApiOperation({ summary: '生成邀请海报' })
+<span class="fstat-no" title="function not covered" >    async <span class="cstat-no" title="statement not covered" ></span>getInvitePoster(@CurrentUser('sub') userId: string) {</span>
+        const data = <span class="cstat-no" title="statement not covered" >await this.referralsService.generateInvitePoster(userId);</span>
+<span class="cstat-no" title="statement not covered" >        return ApiResponse.success(data);</span>
+    }
 }
 &nbsp;
 &nbsp;</pre></td></tr></table></pre>
@@ -244,7 +286,7 @@ export <span class="cstat-no" title="statement not covered" >class <span class="
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-12-11T13:49:25.434Z
+                at 2025-12-29T07:39:41.393Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

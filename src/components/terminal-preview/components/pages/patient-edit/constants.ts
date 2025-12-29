@@ -39,34 +39,3 @@ export const defaultPatientForm: PatientForm = {
   idCard: '',
   relation: '本人',
 }
-
-// ============================================================================
-// Mock 数据（用于编辑回填）
-// ============================================================================
-
-export const mockPatientData: Record<string, PatientForm> = {
-  '1': {
-    name: '张三',
-    gender: 'male',
-    age: '35',
-    phone: '13888888888',
-    idCard: '110101199001011234',
-    relation: '本人',
-  },
-  '2': {
-    name: '李小明',
-    gender: 'male',
-    age: '8',
-    phone: '13888888888',
-    idCard: '110101201601015678',
-    relation: '子女',
-  },
-  '3': {
-    name: '王阿姨',
-    gender: 'female',
-    age: '62',
-    phone: '13999999999',
-    idCard: '110101196301019012',
-    relation: '父母',
-  },
-}

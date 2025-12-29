@@ -86,9 +86,15 @@ import { Route as AuthenticatedMarketingPointsIndexRouteImport } from './routes/
 import { Route as AuthenticatedMarketingMembershipIndexRouteImport } from './routes/_authenticated/marketing/membership/index'
 import { Route as AuthenticatedMarketingCouponsIndexRouteImport } from './routes/_authenticated/marketing/coupons/index'
 import { Route as AuthenticatedMarketingCampaignsIndexRouteImport } from './routes/_authenticated/marketing/campaigns/index'
+import { Route as AuthenticatedCmsSidebarsIndexRouteImport } from './routes/_authenticated/cms/sidebars/index'
+import { Route as AuthenticatedCmsSettingsIndexRouteImport } from './routes/_authenticated/cms/settings/index'
 import { Route as AuthenticatedCmsPagesIndexRouteImport } from './routes/_authenticated/cms/pages/index'
+import { Route as AuthenticatedCmsMenusIndexRouteImport } from './routes/_authenticated/cms/menus/index'
 import { Route as AuthenticatedCmsArticlesIndexRouteImport } from './routes/_authenticated/cms/articles/index'
+import { Route as AuthenticatedCmsArticleTagsIndexRouteImport } from './routes/_authenticated/cms/article-tags/index'
 import { Route as AuthenticatedCmsArticleCategoriesIndexRouteImport } from './routes/_authenticated/cms/article-categories/index'
+import { Route as AuthenticatedCmsSidebarsNewRouteImport } from './routes/_authenticated/cms/sidebars/new'
+import { Route as AuthenticatedCmsSidebarsIdRouteImport } from './routes/_authenticated/cms/sidebars/$id'
 import { Route as AuthenticatedCmsPagesIdRouteImport } from './routes/_authenticated/cms/pages/$id'
 import { Route as AuthenticatedCmsArticlesIdRouteImport } from './routes/_authenticated/cms/articles/$id'
 import { Route as AuthenticatedAppSettingsHomepageRouteImport } from './routes/_authenticated/app/settings/homepage'
@@ -529,10 +535,28 @@ const AuthenticatedMarketingCampaignsIndexRoute =
     path: '/marketing/campaigns/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedCmsSidebarsIndexRoute =
+  AuthenticatedCmsSidebarsIndexRouteImport.update({
+    id: '/cms/sidebars/',
+    path: '/cms/sidebars/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCmsSettingsIndexRoute =
+  AuthenticatedCmsSettingsIndexRouteImport.update({
+    id: '/cms/settings/',
+    path: '/cms/settings/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCmsPagesIndexRoute =
   AuthenticatedCmsPagesIndexRouteImport.update({
     id: '/cms/pages/',
     path: '/cms/pages/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCmsMenusIndexRoute =
+  AuthenticatedCmsMenusIndexRouteImport.update({
+    id: '/cms/menus/',
+    path: '/cms/menus/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedCmsArticlesIndexRoute =
@@ -541,10 +565,28 @@ const AuthenticatedCmsArticlesIndexRoute =
     path: '/cms/articles/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedCmsArticleTagsIndexRoute =
+  AuthenticatedCmsArticleTagsIndexRouteImport.update({
+    id: '/cms/article-tags/',
+    path: '/cms/article-tags/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCmsArticleCategoriesIndexRoute =
   AuthenticatedCmsArticleCategoriesIndexRouteImport.update({
     id: '/cms/article-categories/',
     path: '/cms/article-categories/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCmsSidebarsNewRoute =
+  AuthenticatedCmsSidebarsNewRouteImport.update({
+    id: '/cms/sidebars/new',
+    path: '/cms/sidebars/new',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCmsSidebarsIdRoute =
+  AuthenticatedCmsSidebarsIdRouteImport.update({
+    id: '/cms/sidebars/$id',
+    path: '/cms/sidebars/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedCmsPagesIdRoute = AuthenticatedCmsPagesIdRouteImport.update({
@@ -644,9 +686,15 @@ export interface FileRoutesByFullPath {
   '/app/settings/homepage': typeof AuthenticatedAppSettingsHomepageRoute
   '/cms/articles/$id': typeof AuthenticatedCmsArticlesIdRoute
   '/cms/pages/$id': typeof AuthenticatedCmsPagesIdRoute
+  '/cms/sidebars/$id': typeof AuthenticatedCmsSidebarsIdRoute
+  '/cms/sidebars/new': typeof AuthenticatedCmsSidebarsNewRoute
   '/cms/article-categories': typeof AuthenticatedCmsArticleCategoriesIndexRoute
+  '/cms/article-tags': typeof AuthenticatedCmsArticleTagsIndexRoute
   '/cms/articles': typeof AuthenticatedCmsArticlesIndexRoute
+  '/cms/menus': typeof AuthenticatedCmsMenusIndexRoute
   '/cms/pages': typeof AuthenticatedCmsPagesIndexRoute
+  '/cms/settings': typeof AuthenticatedCmsSettingsIndexRoute
+  '/cms/sidebars': typeof AuthenticatedCmsSidebarsIndexRoute
   '/marketing/campaigns': typeof AuthenticatedMarketingCampaignsIndexRoute
   '/marketing/coupons': typeof AuthenticatedMarketingCouponsIndexRoute
   '/marketing/membership': typeof AuthenticatedMarketingMembershipIndexRoute
@@ -726,9 +774,15 @@ export interface FileRoutesByTo {
   '/app/settings/homepage': typeof AuthenticatedAppSettingsHomepageRoute
   '/cms/articles/$id': typeof AuthenticatedCmsArticlesIdRoute
   '/cms/pages/$id': typeof AuthenticatedCmsPagesIdRoute
+  '/cms/sidebars/$id': typeof AuthenticatedCmsSidebarsIdRoute
+  '/cms/sidebars/new': typeof AuthenticatedCmsSidebarsNewRoute
   '/cms/article-categories': typeof AuthenticatedCmsArticleCategoriesIndexRoute
+  '/cms/article-tags': typeof AuthenticatedCmsArticleTagsIndexRoute
   '/cms/articles': typeof AuthenticatedCmsArticlesIndexRoute
+  '/cms/menus': typeof AuthenticatedCmsMenusIndexRoute
   '/cms/pages': typeof AuthenticatedCmsPagesIndexRoute
+  '/cms/settings': typeof AuthenticatedCmsSettingsIndexRoute
+  '/cms/sidebars': typeof AuthenticatedCmsSidebarsIndexRoute
   '/marketing/campaigns': typeof AuthenticatedMarketingCampaignsIndexRoute
   '/marketing/coupons': typeof AuthenticatedMarketingCouponsIndexRoute
   '/marketing/membership': typeof AuthenticatedMarketingMembershipIndexRoute
@@ -813,9 +867,15 @@ export interface FileRoutesById {
   '/_authenticated/app/settings/homepage': typeof AuthenticatedAppSettingsHomepageRoute
   '/_authenticated/cms/articles/$id': typeof AuthenticatedCmsArticlesIdRoute
   '/_authenticated/cms/pages/$id': typeof AuthenticatedCmsPagesIdRoute
+  '/_authenticated/cms/sidebars/$id': typeof AuthenticatedCmsSidebarsIdRoute
+  '/_authenticated/cms/sidebars/new': typeof AuthenticatedCmsSidebarsNewRoute
   '/_authenticated/cms/article-categories/': typeof AuthenticatedCmsArticleCategoriesIndexRoute
+  '/_authenticated/cms/article-tags/': typeof AuthenticatedCmsArticleTagsIndexRoute
   '/_authenticated/cms/articles/': typeof AuthenticatedCmsArticlesIndexRoute
+  '/_authenticated/cms/menus/': typeof AuthenticatedCmsMenusIndexRoute
   '/_authenticated/cms/pages/': typeof AuthenticatedCmsPagesIndexRoute
+  '/_authenticated/cms/settings/': typeof AuthenticatedCmsSettingsIndexRoute
+  '/_authenticated/cms/sidebars/': typeof AuthenticatedCmsSidebarsIndexRoute
   '/_authenticated/marketing/campaigns/': typeof AuthenticatedMarketingCampaignsIndexRoute
   '/_authenticated/marketing/coupons/': typeof AuthenticatedMarketingCouponsIndexRoute
   '/_authenticated/marketing/membership/': typeof AuthenticatedMarketingMembershipIndexRoute
@@ -898,9 +958,15 @@ export interface FileRouteTypes {
     | '/app/settings/homepage'
     | '/cms/articles/$id'
     | '/cms/pages/$id'
+    | '/cms/sidebars/$id'
+    | '/cms/sidebars/new'
     | '/cms/article-categories'
+    | '/cms/article-tags'
     | '/cms/articles'
+    | '/cms/menus'
     | '/cms/pages'
+    | '/cms/settings'
+    | '/cms/sidebars'
     | '/marketing/campaigns'
     | '/marketing/coupons'
     | '/marketing/membership'
@@ -980,9 +1046,15 @@ export interface FileRouteTypes {
     | '/app/settings/homepage'
     | '/cms/articles/$id'
     | '/cms/pages/$id'
+    | '/cms/sidebars/$id'
+    | '/cms/sidebars/new'
     | '/cms/article-categories'
+    | '/cms/article-tags'
     | '/cms/articles'
+    | '/cms/menus'
     | '/cms/pages'
+    | '/cms/settings'
+    | '/cms/sidebars'
     | '/marketing/campaigns'
     | '/marketing/coupons'
     | '/marketing/membership'
@@ -1066,9 +1138,15 @@ export interface FileRouteTypes {
     | '/_authenticated/app/settings/homepage'
     | '/_authenticated/cms/articles/$id'
     | '/_authenticated/cms/pages/$id'
+    | '/_authenticated/cms/sidebars/$id'
+    | '/_authenticated/cms/sidebars/new'
     | '/_authenticated/cms/article-categories/'
+    | '/_authenticated/cms/article-tags/'
     | '/_authenticated/cms/articles/'
+    | '/_authenticated/cms/menus/'
     | '/_authenticated/cms/pages/'
+    | '/_authenticated/cms/settings/'
+    | '/_authenticated/cms/sidebars/'
     | '/_authenticated/marketing/campaigns/'
     | '/_authenticated/marketing/coupons/'
     | '/_authenticated/marketing/membership/'
@@ -1633,11 +1711,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMarketingCampaignsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/cms/sidebars/': {
+      id: '/_authenticated/cms/sidebars/'
+      path: '/cms/sidebars'
+      fullPath: '/cms/sidebars'
+      preLoaderRoute: typeof AuthenticatedCmsSidebarsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/cms/settings/': {
+      id: '/_authenticated/cms/settings/'
+      path: '/cms/settings'
+      fullPath: '/cms/settings'
+      preLoaderRoute: typeof AuthenticatedCmsSettingsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/cms/pages/': {
       id: '/_authenticated/cms/pages/'
       path: '/cms/pages'
       fullPath: '/cms/pages'
       preLoaderRoute: typeof AuthenticatedCmsPagesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/cms/menus/': {
+      id: '/_authenticated/cms/menus/'
+      path: '/cms/menus'
+      fullPath: '/cms/menus'
+      preLoaderRoute: typeof AuthenticatedCmsMenusIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/cms/articles/': {
@@ -1647,11 +1746,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCmsArticlesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/cms/article-tags/': {
+      id: '/_authenticated/cms/article-tags/'
+      path: '/cms/article-tags'
+      fullPath: '/cms/article-tags'
+      preLoaderRoute: typeof AuthenticatedCmsArticleTagsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/cms/article-categories/': {
       id: '/_authenticated/cms/article-categories/'
       path: '/cms/article-categories'
       fullPath: '/cms/article-categories'
       preLoaderRoute: typeof AuthenticatedCmsArticleCategoriesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/cms/sidebars/new': {
+      id: '/_authenticated/cms/sidebars/new'
+      path: '/cms/sidebars/new'
+      fullPath: '/cms/sidebars/new'
+      preLoaderRoute: typeof AuthenticatedCmsSidebarsNewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/cms/sidebars/$id': {
+      id: '/_authenticated/cms/sidebars/$id'
+      path: '/cms/sidebars/$id'
+      fullPath: '/cms/sidebars/$id'
+      preLoaderRoute: typeof AuthenticatedCmsSidebarsIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/cms/pages/$id': {
@@ -1765,9 +1885,15 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppSettingsHomepageRoute: typeof AuthenticatedAppSettingsHomepageRoute
   AuthenticatedCmsArticlesIdRoute: typeof AuthenticatedCmsArticlesIdRoute
   AuthenticatedCmsPagesIdRoute: typeof AuthenticatedCmsPagesIdRoute
+  AuthenticatedCmsSidebarsIdRoute: typeof AuthenticatedCmsSidebarsIdRoute
+  AuthenticatedCmsSidebarsNewRoute: typeof AuthenticatedCmsSidebarsNewRoute
   AuthenticatedCmsArticleCategoriesIndexRoute: typeof AuthenticatedCmsArticleCategoriesIndexRoute
+  AuthenticatedCmsArticleTagsIndexRoute: typeof AuthenticatedCmsArticleTagsIndexRoute
   AuthenticatedCmsArticlesIndexRoute: typeof AuthenticatedCmsArticlesIndexRoute
+  AuthenticatedCmsMenusIndexRoute: typeof AuthenticatedCmsMenusIndexRoute
   AuthenticatedCmsPagesIndexRoute: typeof AuthenticatedCmsPagesIndexRoute
+  AuthenticatedCmsSettingsIndexRoute: typeof AuthenticatedCmsSettingsIndexRoute
+  AuthenticatedCmsSidebarsIndexRoute: typeof AuthenticatedCmsSidebarsIndexRoute
   AuthenticatedMarketingCampaignsIndexRoute: typeof AuthenticatedMarketingCampaignsIndexRoute
   AuthenticatedMarketingCouponsIndexRoute: typeof AuthenticatedMarketingCouponsIndexRoute
   AuthenticatedMarketingMembershipIndexRoute: typeof AuthenticatedMarketingMembershipIndexRoute
@@ -1834,10 +1960,16 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppSettingsHomepageRoute: AuthenticatedAppSettingsHomepageRoute,
   AuthenticatedCmsArticlesIdRoute: AuthenticatedCmsArticlesIdRoute,
   AuthenticatedCmsPagesIdRoute: AuthenticatedCmsPagesIdRoute,
+  AuthenticatedCmsSidebarsIdRoute: AuthenticatedCmsSidebarsIdRoute,
+  AuthenticatedCmsSidebarsNewRoute: AuthenticatedCmsSidebarsNewRoute,
   AuthenticatedCmsArticleCategoriesIndexRoute:
     AuthenticatedCmsArticleCategoriesIndexRoute,
+  AuthenticatedCmsArticleTagsIndexRoute: AuthenticatedCmsArticleTagsIndexRoute,
   AuthenticatedCmsArticlesIndexRoute: AuthenticatedCmsArticlesIndexRoute,
+  AuthenticatedCmsMenusIndexRoute: AuthenticatedCmsMenusIndexRoute,
   AuthenticatedCmsPagesIndexRoute: AuthenticatedCmsPagesIndexRoute,
+  AuthenticatedCmsSettingsIndexRoute: AuthenticatedCmsSettingsIndexRoute,
+  AuthenticatedCmsSidebarsIndexRoute: AuthenticatedCmsSidebarsIndexRoute,
   AuthenticatedMarketingCampaignsIndexRoute:
     AuthenticatedMarketingCampaignsIndexRoute,
   AuthenticatedMarketingCouponsIndexRoute:

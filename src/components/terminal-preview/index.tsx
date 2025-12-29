@@ -87,6 +87,9 @@ import {
   EscortOrderDetailPage,
   WorkbenchSettingsPage,
   ServiceTypesPage,
+  HospitalsSelectPage,
+  DepartmentsSelectPage,
+  WorkingHoursPage,
   MyOrdersPage,
   UserOrdersPage,
   UserOrderDetailPage,
@@ -114,6 +117,8 @@ import {
   DistributionRecordsPage,
   DistributionInvitePage,
   DistributionPromotionPage,
+  // 搜索页面
+  SearchPage,
 } from './components/pages'
 
 export function TerminalPreview({
@@ -439,6 +444,13 @@ export function TerminalPreview({
     restoreScrollPosition(currentPage, { delay: 50, fallbackToTop: true })
   }, [currentPage, selectedServiceId, saveScrollPosition, restoreScrollPosition])
 
+  // 搜索框点击处理：导航到搜索页面
+  const handleSearchClick = useCallback(() => {
+    saveScrollPosition(currentPage)
+    previousPageRef.current = currentPage
+    navigateToPage('search')
+  }, [currentPage, saveScrollPosition, navigateToPage])
+
   // 切换页面（同时清除服务详情页状态和 pageParams）
   // Step 14.11: TabBar 切换时保持各 Tab 独立滚动位置
   const handlePageChange = useCallback((page: typeof currentPage) => {
@@ -592,7 +604,7 @@ export function TerminalPreview({
       </Box>
 
       {/* 搜索框 */}
-      <SearchBar isDarkMode={isDarkMode} />
+      <SearchBar isDarkMode={isDarkMode} onSearchClick={handleSearchClick} />
 
       {/* 服务分类区域 */}
       <CategorySection
@@ -939,6 +951,42 @@ export function TerminalPreview({
           />
         )
 
+      // 服务医院选择
+      case 'workbench-hospitals':
+        return (
+          <HospitalsSelectPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            effectiveViewerRole={effectiveViewerRole}
+            onNavigate={(page: string, params?: Record<string, string>) => navigateToPage(page, params)}
+            onLogin={() => setShowEscortLoginDialog(true)}
+          />
+        )
+
+      // 擅长科室选择
+      case 'workbench-departments':
+        return (
+          <DepartmentsSelectPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            effectiveViewerRole={effectiveViewerRole}
+            onNavigate={(page: string, params?: Record<string, string>) => navigateToPage(page, params)}
+            onLogin={() => setShowEscortLoginDialog(true)}
+          />
+        )
+
+      // 工作时间设置
+      case 'workbench-working-hours':
+        return (
+          <WorkingHoursPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            effectiveViewerRole={effectiveViewerRole}
+            onNavigate={(page: string, params?: Record<string, string>) => navigateToPage(page, params)}
+            onLogin={() => setShowEscortLoginDialog(true)}
+          />
+        )
+
       // Step 14.13 FIX-P3-01: 我的订单页面（陪诊员）
       case 'workbench-my-orders':
       case 'my-orders':
@@ -1118,6 +1166,18 @@ export function TerminalPreview({
             isDarkMode={isDarkMode}
             onBack={() => navigateToPage('profile')}
             onNavigate={(page, params) => navigateToPage(page, params)}
+          />
+        )
+
+      // 搜索页面
+      case 'search':
+        return (
+          <SearchPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            initialKeyword={pageParams?.keyword || ''}
+            onBack={() => navigateToPage(previousPageRef.current || 'home')}
+            onServiceClick={handleServiceClick}
           />
         )
 

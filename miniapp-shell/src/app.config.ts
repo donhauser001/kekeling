@@ -74,6 +74,9 @@ export default defineAppConfig({
         'pages/withdraw/index',            // 提现
         'pages/workbench-settings/index',  // 工作台设置
         'pages/service-types/index',       // 服务类型
+        'pages/hospitals-select/index',    // 服务医院选择
+        'pages/departments-select/index',  // 擅长科室选择
+        'pages/working-hours/index',       // 工作时间设置
         'pages/escort-profile-edit/index', // 编辑陪诊员资料
       ],
     },

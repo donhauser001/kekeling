@@ -1515,3 +1515,204 @@ export function useToggleArticleTop() {
   })
 }
 
+// ============================================
+// CMS 菜单管理
+// ============================================
+
+import { cmsMenuApi, cmsSettingApi, cmsSidebarApi, type MenuQuery, type SettingQuery, type SidebarQuery } from '@/lib/api/cms'
+
+export function useCmsMenuTree(position?: string) {
+  return useQuery({
+    queryKey: ['cmsMenus', 'tree', position],
+    queryFn: () => cmsMenuApi.getTree(position),
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useCmsMenus(query?: MenuQuery) {
+  return useQuery({
+    queryKey: ['cmsMenus', query],
+    queryFn: () => cmsMenuApi.getAll(query),
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useCmsMenu(id: string | undefined) {
+  return useQuery({
+    queryKey: ['cmsMenus', id],
+    queryFn: () => cmsMenuApi.getById(id!),
+    enabled: !!id,
+  })
+}
+
+export function useCreateCmsMenu() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: cmsMenuApi.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cmsMenus'] })
+    },
+  })
+}
+
+export function useUpdateCmsMenu() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Parameters<typeof cmsMenuApi.update>[1] }) =>
+      cmsMenuApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cmsMenus'] })
+    },
+  })
+}
+
+export function useDeleteCmsMenu() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: cmsMenuApi.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cmsMenus'] })
+    },
+  })
+}
+
+// ============================================
+// CMS 网站设置
+// ============================================
+
+export function useCmsSettingGroups() {
+  return useQuery({
+    queryKey: ['cmsSettings', 'groups'],
+    queryFn: () => cmsSettingApi.getGroups(),
+    staleTime: 30 * 60 * 1000,
+  })
+}
+
+export function useCmsSettings(query?: SettingQuery) {
+  return useQuery({
+    queryKey: ['cmsSettings', query],
+    queryFn: () => cmsSettingApi.getAll(query),
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useCmsSettingsByGroup(group: string) {
+  return useQuery({
+    queryKey: ['cmsSettings', 'group', group],
+    queryFn: () => cmsSettingApi.getByGroup(group),
+    staleTime: 5 * 60 * 1000,
+    enabled: !!group,
+  })
+}
+
+export function useCreateCmsSetting() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: cmsSettingApi.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cmsSettings'] })
+    },
+  })
+}
+
+export function useUpdateCmsSetting() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Parameters<typeof cmsSettingApi.update>[1] }) =>
+      cmsSettingApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cmsSettings'] })
+    },
+  })
+}
+
+export function useBatchUpdateCmsSettings() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: cmsSettingApi.batchUpdate,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cmsSettings'] })
+    },
+  })
+}
+
+export function useDeleteCmsSetting() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: cmsSettingApi.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cmsSettings'] })
+    },
+  })
+}
+
+// ============================================
+// CMS 侧边栏管理
+// ============================================
+
+export function useCmsSidebars(query?: SidebarQuery) {
+  return useQuery({
+    queryKey: ['cmsSidebars', query],
+    queryFn: () => cmsSidebarApi.getAll(query),
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useCmsSidebar(id: string | undefined) {
+  return useQuery({
+    queryKey: ['cmsSidebars', id],
+    queryFn: () => cmsSidebarApi.getById(id!),
+    enabled: !!id,
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useCmsSidebarWidgetTypes() {
+  return useQuery({
+    queryKey: ['cmsSidebarWidgetTypes'],
+    queryFn: () => cmsSidebarApi.getWidgetTypes(),
+    staleTime: 30 * 60 * 1000, // 30 minutes
+  })
+}
+
+export function useCreateCmsSidebar() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: cmsSidebarApi.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cmsSidebars'] })
+    },
+  })
+}
+
+export function useUpdateCmsSidebar() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Parameters<typeof cmsSidebarApi.update>[1] }) =>
+      cmsSidebarApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cmsSidebars'] })
+    },
+  })
+}
+
+export function useDeleteCmsSidebar() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: cmsSidebarApi.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cmsSidebars'] })
+    },
+  })
+}
+

@@ -40,6 +40,7 @@ import {
   FolderKanban,
   BookmarkIcon,
   Menu,
+  LayoutPanelLeft,
   Cog,
   Smartphone,
   Megaphone,
@@ -649,6 +650,11 @@ export const sidebarData: SidebarData = {
               title: '菜单',
               url: '/cms/menus',
               icon: Menu,
+            },
+            {
+              title: '侧边栏',
+              url: '/cms/sidebars',
+              icon: LayoutPanelLeft,
             },
             {
               title: '网站设置',

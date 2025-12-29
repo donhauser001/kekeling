@@ -78,6 +78,37 @@ function EscortProfileEditPageContent() {
     queryClient.invalidateQueries({ queryKey: ['escort-profile'] })
   }, [])
 
+  // 从关联用户同步资料
+  // 调用后端 API 将 User 表的 nickname/avatar 复制到 Escort 表
+  const handleSyncFromUser = useCallback(async () => {
+    try {
+      const result = await previewApi.syncEscortProfileFromUser()
+      if (result) {
+        Taro.showToast({
+          title: '同步成功',
+          icon: 'success',
+          duration: 1500,
+        })
+        return result
+      } else {
+        Taro.showToast({
+          title: '同步失败',
+          icon: 'none',
+          duration: 2000,
+        })
+        return null
+      }
+    } catch (error) {
+      console.error('同步用户资料失败:', error)
+      Taro.showToast({
+        title: '同步失败，请重试',
+        icon: 'none',
+        duration: 2000,
+      })
+      return null
+    }
+  }, [])
+
   if (isLoading || isCheckingEscortToken) {
     return (
       <View className="page-loading">
@@ -94,6 +125,7 @@ function EscortProfileEditPageContent() {
         effectiveViewerRole={effectiveViewerRole}
         onBack={handleBack}
         onLogin={() => setShowLoginDialog(true)}
+        onSyncFromUser={handleSyncFromUser}
       />
       
       <EscortLoginDialog

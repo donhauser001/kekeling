@@ -290,7 +290,7 @@ export type OrderActionType = 'arrive' | 'start' | 'complete'
  * @param action 操作类型: arrive(确认到达), start(开始服务), complete(完成服务)
  */
 export const updateOrderAction = async (
-  orderId: string, 
+  orderId: string,
   action: OrderActionType
 ): Promise<{ success: boolean; message: string }> => {
   const escortToken = getEscortToken()
@@ -634,6 +634,83 @@ export const updateWorkbenchSettings = async (
 }
 
 /**
+ * 更新接单偏好设置
+ * 接口: PATCH /escort-app/workbench/preferences
+ * 通道: escortRequest（⚠️ 必须 escortToken）
+ */
+export const updateWorkbenchPreferences = async (
+  preferences: {
+    serviceTypes?: string[]
+    serviceAreas?: string[]
+    departments?: string[]
+    workingHours?: {
+      start: string
+      end: string
+    }
+  }
+): Promise<{ success: boolean }> => {
+  const currentEscortToken = getEscortToken()
+
+  // 无 token 或 mock token 时，模拟成功
+  if (!currentEscortToken || currentEscortToken.startsWith('mock-')) {
+    console.log('[previewApi.updateWorkbenchPreferences] mock 模式，模拟更新成功')
+    return { success: true }
+  }
+
+  try {
+    return await escortRequest<{ success: boolean }>(
+      '/escort-app/workbench/preferences',
+      {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(preferences),
+      }
+    )
+  } catch (error) {
+    // 预览器模式，即使后端接口不存在也返回成功，保证 UI 可用
+    console.warn('[previewApi.updateWorkbenchPreferences] 请求失败，模拟成功:', error)
+    return { success: true }
+  }
+}
+
+/**
+ * 更新通知设置
+ * 接口: PATCH /escort-app/workbench/notifications
+ * 通道: escortRequest（⚠️ 必须 escortToken）
+ */
+export const updateWorkbenchNotifications = async (
+  notifications: {
+    newOrder?: boolean
+    orderStatus?: boolean
+    system?: boolean
+    marketing?: boolean
+  }
+): Promise<{ success: boolean }> => {
+  const currentEscortToken = getEscortToken()
+
+  // 无 token 或 mock token 时，模拟成功
+  if (!currentEscortToken || currentEscortToken.startsWith('mock-')) {
+    console.log('[previewApi.updateWorkbenchNotifications] mock 模式，模拟更新成功')
+    return { success: true }
+  }
+
+  try {
+    return await escortRequest<{ success: boolean }>(
+      '/escort-app/workbench/notifications',
+      {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(notifications),
+      }
+    )
+  } catch (error) {
+    // 预览器模式，即使后端接口不存在也返回成功，保证 UI 可用
+    console.warn('[previewApi.updateWorkbenchNotifications] 请求失败，模拟成功:', error)
+    return { success: true }
+  }
+}
+
+/**
  * 获取陪诊员资料
  * 接口: GET /escort/profile
  * 通道: escortRequest（⚠️ 必须 escortToken）
@@ -688,6 +765,36 @@ export const updateEscortProfile = async (data: {
     })
   } catch (error) {
     console.warn('[previewApi.updateEscortProfile] 请求失败:', error)
+    return null
+  }
+}
+
+/**
+ * 从关联用户同步资料到陪诊员
+ * 将 User 表中的 nickname/avatar 复制到 Escort 表
+ * 接口: POST /escort/profile/sync-from-user
+ * 通道: escortRequest（⚠️ 必须 escortToken）
+ */
+export const syncEscortProfileFromUser = async (): Promise<EscortProfile | null> => {
+  const currentEscortToken = getEscortToken()
+
+  // 无 token 或 mock token 时，模拟成功并返回带用户信息的 mock 数据
+  if (!currentEscortToken || currentEscortToken.startsWith('mock-')) {
+    console.log('[previewApi.syncEscortProfileFromUser] mock 模式，模拟同步成功')
+    // 模拟从用户同步后的数据
+    return {
+      ...getMockEscortProfile(),
+      name: '张小明（已同步）',
+      avatar: 'https://thirdwx.qlogo.cn/mmopen/vi_32/mock-avatar/132',
+    }
+  }
+
+  try {
+    return await escortRequest<EscortProfile>('/escort/profile/sync-from-user', {
+      method: 'POST',
+    })
+  } catch (error) {
+    console.warn('[previewApi.syncEscortProfileFromUser] 请求失败:', error)
     return null
   }
 }

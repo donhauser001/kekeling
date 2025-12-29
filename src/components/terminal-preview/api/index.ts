@@ -189,8 +189,11 @@ export const previewApi = {
   // 设置与资料
   getWorkbenchSettings: escortApi.getWorkbenchSettings,
   updateWorkbenchSettings: escortApi.updateWorkbenchSettings,
+  updateWorkbenchPreferences: escortApi.updateWorkbenchPreferences,
+  updateWorkbenchNotifications: escortApi.updateWorkbenchNotifications,
   getEscortProfile: escortApi.getEscortProfile,
   updateEscortProfile: escortApi.updateEscortProfile,
+  syncEscortProfileFromUser: escortApi.syncEscortProfileFromUser,
 
   // 分销中心
   getDistributionStats: escortApi.getDistributionStats,

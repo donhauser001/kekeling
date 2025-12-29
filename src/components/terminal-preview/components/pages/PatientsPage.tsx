@@ -9,11 +9,12 @@
  * @see docs/小程序页面改造规范.md
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Box, Text, ScrollView, Icon } from '../../ui/primitives'
 import { isWxEnvironment } from '../../platform/env'
 import type { ThemeSettings } from '../../types'
 import { PatientsPageSkeleton } from '../PatientsPageSkeleton'
+import { previewApi } from '../../api'
 
 // ============================================================================
 // 常量定义
@@ -33,51 +34,46 @@ export interface PatientsPageProps {
   onNavigate?: (page: string, params?: Record<string, string>) => void
 }
 
-/** 就诊人信息 */
+/** 就诊人信息（页面展示用） */
 interface Patient {
   id: string
   name: string
   gender: 'male' | 'female'
-  age: number
+  age: number | null
   phone: string
   idCard?: string
   relation: string
   isDefault: boolean
 }
 
-// Mock 就诊人数据
-const mockPatients: Patient[] = [
-  {
-    id: '1',
-    name: '张三',
-    gender: 'male',
-    age: 35,
-    phone: '138****8888',
-    idCard: '110***********1234',
-    relation: '本人',
-    isDefault: true,
-  },
-  {
-    id: '2',
-    name: '李小明',
-    gender: 'male',
-    age: 8,
-    phone: '138****8888',
-    idCard: '110***********5678',
-    relation: '子女',
-    isDefault: false,
-  },
-  {
-    id: '3',
-    name: '王阿姨',
-    gender: 'female',
-    age: 62,
-    phone: '139****9999',
-    idCard: '110***********9012',
-    relation: '父母',
-    isDefault: false,
-  },
-]
+// ============================================================================
+// 工具函数
+// ============================================================================
+
+/** 从生日计算年龄 */
+function calculateAge(birthday: string | null | undefined): number | null {
+  if (!birthday) return null
+  const birthDate = new Date(birthday)
+  const today = new Date()
+  let age = today.getFullYear() - birthDate.getFullYear()
+  const monthDiff = today.getMonth() - birthDate.getMonth()
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--
+  }
+  return age
+}
+
+/** 脱敏手机号 */
+function maskPhone(phone: string): string {
+  if (!phone || phone.length < 7) return phone
+  return phone.slice(0, 3) + '****' + phone.slice(-4)
+}
+
+/** 脱敏身份证号 */
+function maskIdCard(idCard: string | null | undefined): string | undefined {
+  if (!idCard || idCard.length < 10) return idCard || undefined
+  return idCard.slice(0, 3) + '***********' + idCard.slice(-4)
+}
 
 // ============================================================================
 // 子组件
@@ -174,9 +170,11 @@ function PatientCard({
                     {patient.gender === 'male' ? '男' : '女'}
                   </Text>
                 </Box>
-                <Text style={{ fontSize: 12 * wxScale, color: textSecondary }}>
-                  {patient.age}岁
-                </Text>
+                {patient.age !== null && (
+                  <Text style={{ fontSize: 12 * wxScale, color: textSecondary }}>
+                    {patient.age}岁
+                  </Text>
+                )}
               </Box>
               <Text style={{ fontSize: 12 * wxScale, color: textMuted, marginTop: 2 * wxScale }}>
                 {patient.relation}
@@ -354,22 +352,43 @@ export function PatientsPage({
   const [patients, setPatients] = useState<Patient[]>([])
   // 加载状态（用于骨架屏）
   const [isLoading, setIsLoading] = useState(true)
+  // 操作中状态
+  const [isOperating, setIsOperating] = useState(false)
 
   // 颜色定义
   const bgColor = isDarkMode ? '#1a1a1a' : '#f5f7fa'
   const textMuted = isDarkMode ? '#6b7280' : '#9ca3af'
   const primaryColor = themeSettings.primaryColor
 
-  // 模拟异步加载数据
-  useEffect(() => {
+  // 加载就诊人列表
+  const loadPatients = useCallback(async () => {
     setIsLoading(true)
-    // 模拟 API 请求延迟
-    const timer = setTimeout(() => {
-      setPatients(mockPatients)
+    try {
+      const data = await previewApi.getPatients()
+      // 转换 API 数据为页面展示格式
+      const formattedPatients: Patient[] = data.map((p) => ({
+        id: p.id,
+        name: p.name,
+        gender: (p.gender === 'male' || p.gender === 'female' ? p.gender : 'male') as 'male' | 'female',
+        age: calculateAge((p as { birthday?: string }).birthday),
+        phone: maskPhone(p.phone),
+        idCard: maskIdCard(p.idCard),
+        relation: p.relation,
+        isDefault: p.isDefault ?? false,
+      }))
+      setPatients(formattedPatients)
+    } catch (error) {
+      console.error('[PatientsPage] 加载就诊人失败:', error)
+      setPatients([])
+    } finally {
       setIsLoading(false)
-    }, 300)
-    return () => clearTimeout(timer)
+    }
   }, [])
+
+  // 初始加载
+  useEffect(() => {
+    loadPatients()
+  }, [loadPatients])
 
   // 加载中显示骨架屏
   if (isLoading) {
@@ -382,18 +401,38 @@ export function PatientsPage({
   }
 
   // 设为默认
-  const handleSetDefault = (id: string) => {
-    setPatients(prev => prev.map(p => ({
-      ...p,
-      isDefault: p.id === id,
-    })))
-    setActiveMenuId(null)
+  const handleSetDefault = async (id: string) => {
+    if (isOperating) return
+    setIsOperating(true)
+    try {
+      await previewApi.setDefaultPatient(id)
+      // 更新本地状态
+      setPatients(prev => prev.map(p => ({
+        ...p,
+        isDefault: p.id === id,
+      })))
+    } catch (error) {
+      console.error('[PatientsPage] 设为默认失败:', error)
+    } finally {
+      setIsOperating(false)
+      setActiveMenuId(null)
+    }
   }
 
   // 删除就诊人
-  const handleDelete = (id: string) => {
-    setPatients(prev => prev.filter(p => p.id !== id))
-    setActiveMenuId(null)
+  const handleDelete = async (id: string) => {
+    if (isOperating) return
+    setIsOperating(true)
+    try {
+      await previewApi.deletePatient(id)
+      // 更新本地状态
+      setPatients(prev => prev.filter(p => p.id !== id))
+    } catch (error) {
+      console.error('[PatientsPage] 删除就诊人失败:', error)
+    } finally {
+      setIsOperating(false)
+      setActiveMenuId(null)
+    }
   }
 
   // 编辑就诊人

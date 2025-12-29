@@ -4,6 +4,14 @@
 
 import type { ThemeSettings, PreviewViewerRole } from '../../../../types'
 
+/**
+ * 关联用户资料（用于同步功能）
+ */
+export interface UserProfileForSync {
+  avatar?: string | null
+  nickname?: string | null
+}
+
 export interface EscortProfileEditPageProps {
   themeSettings: ThemeSettings
   isDarkMode?: boolean
@@ -11,9 +19,12 @@ export interface EscortProfileEditPageProps {
   onBack?: () => void
   onNavigate?: (page: string, params?: Record<string, string>) => void
   onLogin?: () => void
+  /** 从关联用户同步资料回调 */
+  onSyncFromUser?: () => Promise<EscortProfile | null>
 }
 
 export interface EscortProfile {
+  id?: string
   name?: string
   phone?: string
   gender?: string
@@ -21,6 +32,10 @@ export interface EscortProfile {
   avatar?: string
   rating?: number
   orderCount?: number
+  /** 关联用户资料（用于同步功能） */
+  userProfile?: UserProfileForSync
+  /** 是否可以从用户同步 */
+  canSyncFromUser?: boolean
 }
 
 export interface GenderOption {

@@ -388,6 +388,12 @@ export interface UserProfile {
   birthday?: string | null
 }
 
+/** 关联用户资料（用于同步功能） */
+export interface UserProfileForSync {
+  avatar?: string | null
+  nickname?: string | null
+}
+
 /** 陪诊员资料 */
 export interface EscortProfile {
   id: string
@@ -399,6 +405,10 @@ export interface EscortProfile {
   levelCode?: string | null
   rating: number
   orderCount: number
+  /** 关联用户资料（用于同步功能） */
+  userProfile?: UserProfileForSync
+  /** 是否可以从用户同步（用户有数据但陪诊员没有） */
+  canSyncFromUser?: boolean
 }
 
 // ============================================================================

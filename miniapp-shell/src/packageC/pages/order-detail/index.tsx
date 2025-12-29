@@ -24,7 +24,7 @@ const queryClient = new QueryClient({
 function OrderDetailPageContent() {
   const router = useRouter()
   const orderId = router.params.id || router.params.orderId || ''
-  
+
   const [themeSettings, setThemeSettings] = useState<ThemeSettings>(defaultThemeSettings)
   const [isLoading, setIsLoading] = useState(true)
 

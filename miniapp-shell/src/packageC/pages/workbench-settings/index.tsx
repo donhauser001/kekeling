@@ -25,9 +25,16 @@ const queryClient = new QueryClient({
 })
 
 const PAGE_ROUTE_MAP: Record<string, string> = {
+  // 旧 key（兼容）
   'service-types': '/packageC/pages/service-types/index',
   'escort-profile-edit': '/packageC/pages/escort-profile-edit/index',
   'workbench': '/packageC/pages/workbench/index',
+  // 新 key（WorkbenchSettingsPage 组件使用）
+  'workbench-service-types': '/packageC/pages/service-types/index',
+  'workbench-hospitals': '/packageC/pages/hospitals-select/index',
+  'workbench-departments': '/packageC/pages/departments-select/index',
+  'workbench-working-hours': '/packageC/pages/working-hours/index',
+  'workbench-settings': '/packageC/pages/workbench-settings/index',
 }
 
 function WorkbenchSettingsPageContent() {
@@ -118,7 +125,7 @@ function WorkbenchSettingsPageContent() {
         onBack={handleBack}
         onLogin={() => setShowLoginDialog(true)}
       />
-      
+
       <EscortLoginDialog
         open={showLoginDialog}
         onClose={() => {

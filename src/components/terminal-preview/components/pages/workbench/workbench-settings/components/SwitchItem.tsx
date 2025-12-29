@@ -28,21 +28,25 @@ export function SwitchItem({
       style={{
         display: 'flex',
         alignItems: 'center',
-        padding: 12 * wxScale,
+        paddingTop: 14 * wxScale,
+        paddingBottom: 14 * wxScale,
+        paddingLeft: 12 * wxScale,
+        paddingRight: 12 * wxScale,
         borderBottom: showBorder ? `1px solid ${borderColor}` : 'none',
         opacity: loading ? 0.5 : 1,
       }}
     >
       <Box
         style={{
-          width: 32 * wxScale,
-          height: 32 * wxScale,
-          borderRadius: 8 * wxScale,
+          width: 36 * wxScale,
+          height: 36 * wxScale,
+          borderRadius: 10 * wxScale,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           marginRight: 12 * wxScale,
-          backgroundColor: `${iconColor}20`,
+          backgroundColor: `${iconColor}15`,
+          flexShrink: 0,
         }}
       >
         <Icon name={icon} size={20 * wxScale} color={iconColor} />
@@ -51,9 +55,10 @@ export function SwitchItem({
         <Text
           style={{
             display: 'block',
-            fontSize: 14 * wxScale,
+            fontSize: 15 * wxScale,
             fontWeight: 500,
             color: textPrimary,
+            lineHeight: 1.4,
           }}
         >
           {label}
@@ -63,8 +68,9 @@ export function SwitchItem({
             style={{
               display: 'block',
               fontSize: 12 * wxScale,
-              marginTop: 2 * wxScale,
+              marginTop: 4 * wxScale,
               color: textSecondary,
+              lineHeight: 1.3,
             }}
           >
             {description}
@@ -72,28 +78,29 @@ export function SwitchItem({
         )}
       </Box>
       {/* Switch 开关 */}
-      <Box style={{ marginLeft: 12 * wxScale }}>
+      <Box style={{ marginLeft: 12 * wxScale, flexShrink: 0 }}>
         {loading ? (
           <Icon name="loading-four" size={20 * wxScale} color={primaryColor} />
         ) : (
           <Box
             style={{
-              width: 44 * wxScale,
-              height: 24 * wxScale,
-              borderRadius: 12 * wxScale,
-              padding: 2 * wxScale,
+              position: 'relative',
+              width: 50 * wxScale,
+              height: 28 * wxScale,
+              borderRadius: 14 * wxScale,
               backgroundColor: checked ? primaryColor : isDarkMode ? '#4a4a4a' : '#d1d5db',
             }}
           >
             <Box
               style={{
-                width: 20 * wxScale,
-                height: 20 * wxScale,
-                borderRadius: 10 * wxScale,
+                position: 'absolute',
+                top: 2 * wxScale,
+                left: checked ? 24 * wxScale : 2 * wxScale,
+                width: 24 * wxScale,
+                height: 24 * wxScale,
+                borderRadius: 12 * wxScale,
                 backgroundColor: '#fff',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-                transform: checked ? `translateX(${20 * wxScale}px)` : 'translateX(0)',
-                transition: 'transform 0.2s',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
               }}
             />
           </Box>

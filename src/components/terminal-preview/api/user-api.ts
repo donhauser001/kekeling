@@ -953,12 +953,30 @@ export const checkIn = async (): Promise<{ success: boolean; data?: CheckInResul
 
 /**
  * 获取邀请信息
- * 接口: GET /marketing/referrals/info
+ * 接口: GET /referrals/stats + GET /referrals/invite-code
  * 通道: userRequest
  */
 export const getReferralInfo = async (): Promise<ReferralInfo> => {
   try {
-    return await userRequest<ReferralInfo>('/marketing/referrals/info')
+    // 合并两个 API 的数据
+    const [stats, inviteData] = await Promise.all([
+      userRequest<{
+        invitedCount: number
+        earnedPoints: number
+        pendingPoints: number
+        rewardPoints?: number
+      }>('/referrals/stats'),
+      userRequest<{
+        inviteCode: string
+      }>('/referrals/invite-code'),
+    ])
+    return {
+      inviteCode: inviteData.inviteCode,
+      invitedCount: stats.invitedCount,
+      earnedPoints: stats.earnedPoints,
+      pendingPoints: stats.pendingPoints,
+      rewardPoints: stats.rewardPoints ?? 100, // 默认奖励积分
+    }
   } catch (error) {
     if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
       console.warn('[previewApi.getReferralInfo] 接口错误，使用 mock 数据')
@@ -971,12 +989,12 @@ export const getReferralInfo = async (): Promise<ReferralInfo> => {
 
 /**
  * 获取活动列表
- * 接口: GET /marketing/campaigns
+ * 接口: GET /campaigns/active
  * 通道: userRequest
  */
 export const getCampaigns = async (): Promise<Campaign[]> => {
   try {
-    return await userRequest<Campaign[]>('/marketing/campaigns')
+    return await userRequest<Campaign[]>('/campaigns/active')
   } catch (error) {
     if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
       console.warn('[previewApi.getCampaigns] 接口错误，使用 mock 数据')
@@ -989,12 +1007,12 @@ export const getCampaigns = async (): Promise<Campaign[]> => {
 
 /**
  * 获取活动详情
- * 接口: GET /marketing/campaigns/:id
+ * 接口: GET /campaigns/:id
  * 通道: userRequest
  */
 export const getCampaignDetail = async (id: string): Promise<CampaignDetail> => {
   try {
-    return await userRequest<CampaignDetail>(`/marketing/campaigns/${id}`)
+    return await userRequest<CampaignDetail>(`/campaigns/${id}`)
   } catch (error) {
     if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
       console.warn('[previewApi.getCampaignDetail] 接口错误，使用 mock 数据, id:', id)

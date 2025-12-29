@@ -179,6 +179,18 @@ export const ServiceTypesPage = lazy(() =>
   import('./workbench').then(m => ({ default: m.ServiceTypesPage }))
 )
 
+export const HospitalsSelectPage = lazy(() =>
+  import('./workbench').then(m => ({ default: m.HospitalsSelectPage }))
+)
+
+export const DepartmentsSelectPage = lazy(() =>
+  import('./workbench').then(m => ({ default: m.DepartmentsSelectPage }))
+)
+
+export const WorkingHoursPage = lazy(() =>
+  import('./workbench').then(m => ({ default: m.WorkingHoursPage }))
+)
+
 export const MyOrdersPage = lazy(() =>
   import('./workbench').then(m => ({ default: m.MyOrdersPage }))
 )

@@ -61,10 +61,22 @@ export type { WorkbenchSettingsPageProps } from './WorkbenchSettingsPage'
 export { ServiceTypesPage } from './ServiceTypesPage'
 export type { ServiceTypesPageProps } from './ServiceTypesPage'
 
+// 服务医院选择
+export { HospitalsSelectPage } from './HospitalsSelectPage'
+export type { HospitalsSelectPageProps } from './HospitalsSelectPage'
+
+// 擅长科室选择
+export { DepartmentsSelectPage } from './DepartmentsSelectPage'
+export type { DepartmentsSelectPageProps } from './DepartmentsSelectPage'
+
+// 工作时间设置
+export { WorkingHoursPage } from './WorkingHoursPage'
+export type { WorkingHoursPageProps } from './WorkingHoursPage'
+
 // 我的订单（Step 14.13 FIX-P3-01）
 export { MyOrdersPage } from './MyOrdersPage'
 export type { MyOrdersPageProps } from './MyOrdersPage'
 
 // 陪诊员资料编辑页
 export { EscortProfileEditPage } from './EscortProfileEditPage'
-export type { EscortProfileEditPageProps } from './EscortProfileEditPage'
+export type { EscortProfileEditPageProps, UserProfileForSync } from './escort-profile-edit'

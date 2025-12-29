@@ -78,12 +78,12 @@ function ServicesPageContent() {
       orders: '/packageB/pages/user-orders/index',
       profile: '/packageB/pages/profile/index',
     }
-    
+
     if (tab === 'services') {
       // 已在当前页面，无需跳转
       return
     }
-    
+
     const url = TAB_ROUTES[tab]
     if (url) {
       Taro.reLaunch({ url })

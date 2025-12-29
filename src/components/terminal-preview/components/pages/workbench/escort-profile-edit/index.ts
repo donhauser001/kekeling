@@ -3,5 +3,5 @@
  */
 
 export { EscortProfileEditPage } from './EscortProfileEditPage'
-export type { EscortProfileEditPageProps, EscortProfile } from './types'
+export type { EscortProfileEditPageProps, EscortProfile, UserProfileForSync } from './types'
 
