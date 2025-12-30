@@ -70,7 +70,11 @@ export function UserAuthForm({
       toast.success(`欢迎回来，${result.admin.name}！`)
 
       // Redirect to the stored location or default to dashboard
-      const targetPath = redirectTo || '/'
+      // 移除 basepath 前缀，因为路由器会自动添加
+      let targetPath = redirectTo || '/'
+      if (targetPath.startsWith('/admin')) {
+        targetPath = targetPath.slice(6) || '/'
+      }
       navigate({ to: targetPath, replace: true })
     } catch (error) {
       toast.error(error instanceof Error ? error.message : '登录失败')
