@@ -5,8 +5,17 @@ import clsx from 'clsx'
 import { useSite } from '@/context/SiteContext'
 import { getMenuLink, type MenuItem } from '@/lib/api'
 
+// 导航项类型
+interface NavItem {
+  label: string
+  href: string
+  target?: string
+  icon?: string | null
+  children?: NavItem[]
+}
+
 // 静态备用菜单（后台未配置时使用）
-const fallbackNavItems = [
+const fallbackNavItems: NavItem[] = [
   { label: '首页', href: '/' },
   { 
     label: '服务项目', 
@@ -22,15 +31,6 @@ const fallbackNavItems = [
   { label: '关于我们', href: '/about' },
   { label: '新闻资讯', href: '/news' },
 ]
-
-// 导航项类型
-interface NavItem {
-  label: string
-  href: string
-  target?: string
-  icon?: string | null
-  children?: NavItem[]
-}
 
 // 将 CMS 菜单转换为导航项
 function menuToNavItem(menu: MenuItem): NavItem {
@@ -58,7 +58,7 @@ function MenuIcon({ name, className }: { name: string; className?: string }) {
 }
 
 export function Header() {
-  const { menus, getSetting, loading } = useSite()
+  const { menus, getSetting } = useSite()
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 

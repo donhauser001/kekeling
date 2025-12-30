@@ -6,6 +6,7 @@ import { tanstackRouter } from '@tanstack/router-plugin/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: '/admin/',
   server: {
     port: 9527, // 周星驰经典号码 🎬
     proxy: {

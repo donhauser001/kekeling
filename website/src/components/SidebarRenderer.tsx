@@ -10,22 +10,6 @@ interface SidebarRendererProps {
   sidebar: Sidebar
 }
 
-/** 获取侧边栏宽度 */
-function getSidebarWidth(width: string, customWidth: number | null): string {
-  switch (width) {
-    case 'narrow':
-      return 'w-56' // 224px
-    case 'medium':
-      return 'w-64' // 256px
-    case 'wide':
-      return 'w-80' // 320px
-    case 'custom':
-      return customWidth ? `w-[${customWidth}px]` : 'w-64'
-    default:
-      return 'w-64'
-  }
-}
-
 /** 渲染单个组件 */
 function WidgetRenderer({ widget }: { widget: SidebarWidget }) {
   return (

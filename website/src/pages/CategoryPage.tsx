@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, Link, useSearchParams } from 'react-router-dom'
-import { categoryApi, articleApi, type ArticleCategory, type Article, type PaginatedResponse } from '@/lib/api'
+import { categoryApi, articleApi, type ArticleCategory, type Article } from '@/lib/api'
 
 // 图标组件
 function Icon({ name, className = '' }: { name: string; className?: string }) {
@@ -155,10 +155,10 @@ export function CategoryPage() {
         categoryId: category.id,
       })
       .then((res) => {
-        // 兼容不同响应格式: { list, total } 或 { data, total } 或直接数组
+        // 兼容不同响应格式: { data, total } 或直接数组
         const data = Array.isArray(res) 
           ? res 
-          : (res?.list || res?.data || [])
+          : (res?.data || [])
         const totalCount = typeof res === 'object' && 'total' in res 
           ? res.total 
           : data.length

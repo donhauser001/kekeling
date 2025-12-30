@@ -36,7 +36,7 @@ export function EscortRegisterPage() {
   const [sendingCode, setSendingCode] = useState(false)
   const [countdown, setCountdown] = useState(0)
   const [error, setError] = useState('')
-  const [phoneVerified, setPhoneVerified] = useState(false)
+  const [, setPhoneVerified] = useState(false)
 
   // 表单数据
   const [formData, setFormData] = useState({

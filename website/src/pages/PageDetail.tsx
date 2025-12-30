@@ -43,7 +43,6 @@ export function PageDetail() {
   const isFullwidth = page.layout === 'fullwidth'
   const leftSidebar = sidebars?.find(s => s.position === 'left')
   const rightSidebar = sidebars?.find(s => s.position === 'right')
-  const hasSidebar = !isFullwidth && (leftSidebar || rightSidebar)
 
   // 全宽布局
   if (isFullwidth) {
