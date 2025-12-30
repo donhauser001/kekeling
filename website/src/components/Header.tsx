@@ -69,9 +69,19 @@ export function Header() {
   const contactPhone = getSetting('contact_phone', '400-123-4567')
 
   // 使用后台菜单或备用菜单
-  const navItems = Array.isArray(menus) && menus.length > 0
+  const cmsNavItems = Array.isArray(menus) && menus.length > 0
     ? menus.map(menuToNavItem)
     : fallbackNavItems
+
+  // 检查是否有首页菜单项（href 为 "/" 或标签包含"首页"）
+  const hasHomeItem = cmsNavItems.some(
+    item => item.href === '/' || item.label.includes('首页')
+  )
+
+  // 如果没有首页菜单项，则在最前面添加默认首页
+  const navItems = hasHomeItem
+    ? cmsNavItems
+    : [{ label: '首页', href: '/' }, ...cmsNavItems]
 
   useEffect(() => {
     const handleScroll = () => {

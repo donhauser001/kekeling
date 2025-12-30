@@ -2,7 +2,7 @@ import { IsString, IsOptional, IsInt, IsEnum, IsBoolean } from 'class-validator'
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 // 菜单类型枚举
-const MENU_TYPES = ['link', 'category', 'page', 'user_login', 'escort_register', 'escort_login', 'escort_forgot_password', 'escort_profile'] as const;
+const MENU_TYPES = ['link', 'category', 'page', 'service_list', 'user_login', 'escort_register', 'escort_login', 'escort_forgot_password', 'escort_profile'] as const;
 
 export class CreateMenuDto {
     @ApiProperty({ description: '菜单名称' })
@@ -14,7 +14,7 @@ export class CreateMenuDto {
     code: string;
 
     @ApiPropertyOptional({
-        description: '类型：link=自定义链接, category=文章分类, page=页面, user_login=用户登录, escort_register=陪诊员注册, escort_login=陪诊员登录, escort_forgot_password=陪诊员找回密码, escort_profile=陪诊员资料',
+        description: '类型：link=自定义链接, category=文章分类, page=页面, service_list=服务列表, user_login=用户登录, escort_register=陪诊员注册, escort_login=陪诊员登录, escort_forgot_password=陪诊员找回密码, escort_profile=陪诊员资料',
         enum: MENU_TYPES
     })
     @IsOptional()

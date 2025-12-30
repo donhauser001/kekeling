@@ -2011,6 +2011,8 @@ model Page {
   content     String    @db.Text              // 富文本内容
   excerpt     String?   @db.Text              // 摘要/描述
   coverImage  String?   @map("cover_image")   // 封面图
+  layout      String    @default("boxed")     // boxed=盒式居中, fullwidth=全宽
+  showTitle   Boolean   @default(true) @map("show_title") // 是否显示标题栏
   seoTitle    String?   @map("seo_title")     // SEO 标题
   seoDesc     String?   @map("seo_desc")      // SEO 描述
   seoKeywords String?   @map("seo_keywords")  // SEO 关键词

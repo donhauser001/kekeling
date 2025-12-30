@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsNumber, IsIn, MinLength, MaxLength, Matches } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsIn, IsBoolean, MinLength, MaxLength, Matches } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 /**
@@ -32,6 +32,16 @@ export class CreatePageDto {
   @IsOptional()
   @IsString()
   coverImage?: string;
+
+  @ApiPropertyOptional({ description: '布局模式', enum: ['boxed', 'fullwidth'], default: 'boxed' })
+  @IsOptional()
+  @IsIn(['boxed', 'fullwidth'])
+  layout?: string;
+
+  @ApiPropertyOptional({ description: '是否显示标题栏', default: true })
+  @IsOptional()
+  @IsBoolean()
+  showTitle?: boolean;
 
   @ApiPropertyOptional({ description: 'SEO 标题' })
   @IsOptional()
@@ -96,6 +106,16 @@ export class UpdatePageDto {
   @IsOptional()
   @IsString()
   coverImage?: string;
+
+  @ApiPropertyOptional({ description: '布局模式', enum: ['boxed', 'fullwidth'] })
+  @IsOptional()
+  @IsIn(['boxed', 'fullwidth'])
+  layout?: string;
+
+  @ApiPropertyOptional({ description: '是否显示标题栏' })
+  @IsOptional()
+  @IsBoolean()
+  showTitle?: boolean;
 
   @ApiPropertyOptional({ description: 'SEO 标题' })
   @IsOptional()

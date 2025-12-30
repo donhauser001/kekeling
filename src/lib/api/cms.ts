@@ -15,6 +15,8 @@ export interface CmsPage {
   content: string
   excerpt: string | null
   coverImage: string | null
+  layout: 'boxed' | 'fullwidth'
+  showTitle: boolean
   seoTitle: string | null
   seoDesc: string | null
   seoKeywords: string | null
@@ -31,6 +33,8 @@ export interface CreateCmsPageData {
   content: string
   excerpt?: string
   coverImage?: string
+  layout?: 'boxed' | 'fullwidth'
+  showTitle?: boolean
   seoTitle?: string
   seoDesc?: string
   seoKeywords?: string

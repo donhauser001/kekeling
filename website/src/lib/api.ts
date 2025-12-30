@@ -43,6 +43,7 @@ export type MenuType =
   | 'link' 
   | 'category' 
   | 'page' 
+  | 'service_list'
   | 'user_login' 
   | 'escort_register' 
   | 'escort_login' 
@@ -120,6 +121,8 @@ export interface Page {
   content: string
   excerpt: string | null
   coverImage: string | null
+  layout: 'boxed' | 'fullwidth'
+  showTitle: boolean
   template: string
   status: 'draft' | 'published' | 'archived'
   publishedAt: string | null
@@ -190,10 +193,22 @@ export const menuApi = {
 /** 网站设置（键值对格式） */
 export type SiteSettings = Record<string, string>
 
+/** 主题设置 */
+export interface ThemeSettings {
+  primaryColor: string
+  brandName: string
+  brandSlogan: string
+  headerLogo: string
+  footerLogo: string
+}
+
 /** 网站设置 API */
 export const settingApi = {
   /** 获取所有设置（公开接口，返回键值对格式） */
   getPublic: () => request<SiteSettings>('/cms/settings/public'),
+  
+  /** 获取主题设置 */
+  getThemeSettings: () => request<ThemeSettings>('/config/theme/settings'),
   
   /** 获取所有设置（管理后台用，返回数组格式） */
   getAll: () => request<SiteSetting[]>('/cms/settings'),
@@ -250,9 +265,9 @@ export const articleApi = {
   getById: (id: string) => 
     request<Article>(`/cms/articles/${id}`),
   
-  /** 根据 slug 获取文章 */
+  /** 根据 slug 获取文章（公开接口） */
   getBySlug: (slug: string) => 
-    request<Article>(`/cms/articles/slug/${slug}`),
+    request<Article>(`/cms/articles/public/${slug}`),
   
   /** 获取最新文章 */
   getLatest: (limit = 5) => 
@@ -319,6 +334,8 @@ export function getMenuLink(menu: MenuItem): string {
       return menu.category ? `/category/${menu.category.slug}` : '#'
     case 'page':
       return menu.page ? `/page/${menu.page.slug}` : '#'
+    case 'service_list':
+      return '/services'
     case 'user_login':
       return '/login'
     case 'escort_register':
@@ -368,5 +385,150 @@ export function buildMenuTree(menus: MenuItem[]): MenuItem[] {
   sortMenus(roots)
 
   return roots
+}
+
+// ==================== 服务相关类型 ====================
+
+/** 服务分类 */
+export interface ServiceCategory {
+  id: string
+  name: string
+  description: string | null
+  icon: string | null
+  color: string | null
+  sort: number
+  status: 'active' | 'inactive'
+}
+
+/** 服务包含项 */
+export interface ServiceIncludeItem {
+  text: string
+  icon?: string
+}
+
+/** 服务注意事项 */
+export interface ServiceNoteItem {
+  title: string
+  content: string
+}
+
+/** 服务保障 */
+export interface ServiceGuarantee {
+  id: string
+  name: string
+  icon: string
+  description: string | null
+}
+
+/** 服务 */
+export interface Service {
+  id: string
+  name: string
+  description: string | null
+  content: string | null  // 富文本内容（HTML）
+  contentType: 'richtext' | 'html'
+  categoryId: string | null
+  category?: ServiceCategory | null
+  
+  // 价格相关
+  price: number
+  originalPrice: number | null
+  unit: string
+  duration: string | null  // 服务时长描述
+  
+  // 会员政策
+  membershipPolicy: 'normal' | 'exclusive' | 'fixed'
+  membershipDiscount: number | null
+  
+  // 图片
+  coverImage: string | null
+  detailImages: string[]
+  
+  // 服务内容
+  serviceIncludes: ServiceIncludeItem[] | null  // 服务包含
+  serviceNotes: ServiceNoteItem[] | null  // 注意事项
+  
+  // 统计与标签
+  tags: string[]
+  rating: number
+  orderCount: number
+  isHot: boolean
+  
+  // 服务保障
+  guarantees?: ServiceGuarantee[]
+  
+  // 其他
+  sort: number
+  status: 'active' | 'inactive' | 'draft'
+  createdAt: string
+  updatedAt: string
+}
+
+/** 服务 API */
+export const serviceApi = {
+  /** 获取服务列表 */
+  getList: (params?: {
+    page?: number
+    pageSize?: number
+    categoryId?: string
+    keyword?: string
+    status?: string
+  }) => {
+    const query = new URLSearchParams()
+    query.set('status', params?.status || 'active')
+    if (params?.page) query.set('page', String(params.page))
+    if (params?.pageSize) query.set('pageSize', String(params.pageSize))
+    if (params?.categoryId) query.set('categoryId', params.categoryId)
+    if (params?.keyword) query.set('keyword', params.keyword)
+    return request<PaginatedResponse<Service>>(`/services?${query}`)
+  },
+  
+  /** 获取服务详情 */
+  getById: (id: string) => 
+    request<Service>(`/services/${id}`),
+  
+  /** 获取热门服务 */
+  getHot: (limit = 6) => 
+    request<Service[]>(`/services/hot?limit=${limit}`),
+  
+  /** 获取服务分类 */
+  getCategories: () => 
+    request<ServiceCategory[]>('/services/categories'),
+}
+
+// ==================== 陪诊员申请 API ====================
+
+/** 发送验证码响应 */
+export interface SendCodeResponse {
+  message: string
+  code?: string  // 开发模式下返回验证码
+}
+
+/** 验证码验证响应 */
+export interface VerifyCodeResponse {
+  success: boolean
+  message: string
+  verifyToken?: string  // 验证成功后的令牌
+}
+
+/** 陪诊员申请 API */
+export const escortApplyApi = {
+  /** 发送短信验证码 */
+  sendSmsCode: (phone: string) =>
+    request<SendCodeResponse>('/escort-apply/sms/send', {
+      method: 'POST',
+      body: JSON.stringify({ phone }),
+    }),
+
+  /** 验证短信验证码 */
+  verifySmsCode: (phone: string, code: string) =>
+    request<VerifyCodeResponse>('/escort-apply/sms/verify', {
+      method: 'POST',
+      body: JSON.stringify({ phone, code }),
+    }),
+
+  /** 验证邀请码 */
+  validateInviteCode: (code: string) =>
+    request<{ valid: boolean; inviterName?: string }>(`/escort-apply/validate-invite/${code}`),
 }
 

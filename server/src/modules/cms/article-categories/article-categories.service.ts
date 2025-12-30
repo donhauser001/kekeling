@@ -87,6 +87,29 @@ export class ArticleCategoriesService {
   }
 
   /**
+   * 根据 slug 获取分类详情（公开接口）
+   */
+  async findBySlug(slug: string) {
+    const category = await this.prisma.articleCategory.findUnique({
+      where: { slug, status: 'active' },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        icon: true,
+        coverImage: true,
+      },
+    });
+
+    if (!category) {
+      throw new NotFoundException('分类不存在');
+    }
+
+    return category;
+  }
+
+  /**
    * 创建分类
    */
   async create(dto: CreateArticleCategoryDto) {

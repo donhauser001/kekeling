@@ -18,6 +18,7 @@ import {
   type Page,
   type Sidebar,
   type PaginatedResponse,
+  type ThemeSettings,
 } from '@/lib/api'
 
 // ==================== 通用 Hook ====================
@@ -173,13 +174,21 @@ export function useSidebarsForTarget(targetType: string, targetId?: string) {
   )
 }
 
+// ==================== 主题设置 Hooks ====================
+
+/** 获取主题设置 */
+export function useThemeSettings() {
+  return useAsync(() => settingApi.getThemeSettings(), [])
+}
+
 // ==================== 组合 Hooks ====================
 
-/** 获取网站全局数据（菜单、设置等） */
+/** 获取网站全局数据（菜单、设置、主题等） */
 export function useSiteData() {
   const menus = useMenuTree()
   const settings = useSiteSettings()
   const categories = useCategories()
+  const theme = useThemeSettings()
 
   return {
     // 菜单和分类确保返回数组
@@ -187,8 +196,10 @@ export function useSiteData() {
     // 设置返回键值对格式
     settings: settings.data && typeof settings.data === 'object' ? settings.data : {},
     categories: Array.isArray(categories.data) ? categories.data : [],
-    loading: menus.loading || settings.loading || categories.loading,
-    error: menus.error || settings.error || categories.error,
+    // 主题设置
+    themeSettings: theme.data || null,
+    loading: menus.loading || settings.loading || categories.loading || theme.loading,
+    error: menus.error || settings.error || categories.error || theme.error,
   }
 }
 
@@ -203,5 +214,6 @@ export type {
   Page,
   Sidebar,
   PaginatedResponse,
+  ThemeSettings,
 }
 

@@ -32,6 +32,13 @@ export class ArticleCategoriesController {
     return ApiResponse.success(data);
   }
 
+  @Get('slug/:slug')
+  @ApiOperation({ summary: '根据 slug 获取分类详情（公开）' })
+  async findBySlug(@Param('slug') slug: string) {
+    const data = await this.service.findBySlug(slug);
+    return ApiResponse.success(data);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: '获取分类详情' })
   async findById(@Param('id') id: string) {

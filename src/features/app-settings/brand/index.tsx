@@ -289,7 +289,7 @@ const defaultSettings: ThemeSettings = {
   primaryColor: '#f97316',
   defaultThemeMode: 'light',
   brandName: '科科灵',
-  brandSlogan: '让就医不再孤单',
+  brandSlogan: '全家一站式就医助手',
   headerLogo: '',
   headerLogoDark: '',
   footerLogo: '',

@@ -6,12 +6,30 @@ import { ArticleListPage } from './pages/ArticleListPage'
 import { ArticleDetailPage } from './pages/ArticleDetailPage'
 import { CategoryPage } from './pages/CategoryPage'
 import { PageDetail } from './pages/PageDetail'
+import { AboutPage } from './pages/AboutPage'
+import { ServicesPage } from './pages/ServicesPage'
+import { ServiceDetailPage } from './pages/ServiceDetailPage'
 import { NotFoundPage } from './pages/NotFoundPage'
+// 用户认证页面
+import { LoginPage } from './pages/LoginPage'
+// 陪诊员页面
+import { EscortLoginPage } from './pages/EscortLoginPage'
+import { EscortRegisterPage } from './pages/EscortRegisterPage'
+import { EscortForgotPasswordPage } from './pages/EscortForgotPasswordPage'
+import { EscortProfilePage } from './pages/EscortProfilePage'
 
 function App() {
   return (
     <SiteProvider>
       <Routes>
+        {/* 独立页面（不使用 Layout） */}
+        <Route path="login" element={<LoginPage />} />
+        <Route path="escort/login" element={<EscortLoginPage />} />
+        <Route path="escort/register" element={<EscortRegisterPage />} />
+        <Route path="escort/forgot-password" element={<EscortForgotPasswordPage />} />
+        <Route path="escort/profile" element={<EscortProfilePage />} />
+        
+        {/* 带 Layout 的页面 */}
         <Route path="/" element={<Layout />}>
           {/* 首页 */}
           <Route index element={<HomePage />} />
@@ -26,20 +44,19 @@ function App() {
           {/* 静态页面 */}
           <Route path="page/:slug" element={<PageDetail />} />
           
+          {/* 服务项目 */}
+          <Route path="services" element={<ServicesPage />} />
+          <Route path="services/:id" element={<ServiceDetailPage />} />
+          
           {/* 其他路由占位 */}
-          <Route path="services/*" element={<NotFoundPage message="服务页面开发中..." />} />
           <Route path="escorts" element={<NotFoundPage message="陪诊员页面开发中..." />} />
-          <Route path="about" element={<NotFoundPage message="关于我们页面开发中..." />} />
+          <Route path="about" element={<AboutPage />} />
           <Route path="booking" element={<NotFoundPage message="预约页面开发中..." />} />
           <Route path="help" element={<NotFoundPage message="帮助中心开发中..." />} />
           <Route path="faq" element={<NotFoundPage message="常见问题开发中..." />} />
           <Route path="terms" element={<NotFoundPage message="服务条款开发中..." />} />
           <Route path="privacy" element={<NotFoundPage message="隐私政策开发中..." />} />
           <Route path="join" element={<NotFoundPage message="加入我们开发中..." />} />
-          
-          {/* 陪诊员相关 */}
-          <Route path="escort/*" element={<NotFoundPage message="陪诊员页面开发中..." />} />
-          <Route path="login" element={<NotFoundPage message="登录页面开发中..." />} />
           
           {/* 404 */}
           <Route path="*" element={<NotFoundPage />} />

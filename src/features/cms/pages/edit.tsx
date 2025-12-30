@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Switch } from '@/components/ui/switch'
 import {
   Select,
   SelectContent,
@@ -56,6 +57,8 @@ interface PageFormData {
   content: string
   excerpt: string
   coverImage: string
+  layout: string
+  showTitle: boolean
   seoTitle: string
   seoDesc: string
   seoKeywords: string
@@ -69,6 +72,8 @@ const defaultFormData: PageFormData = {
   content: '',
   excerpt: '',
   coverImage: '',
+  layout: 'boxed',
+  showTitle: true,
   seoTitle: '',
   seoDesc: '',
   seoKeywords: '',
@@ -99,6 +104,8 @@ export function PageEdit() {
         content: page.content,
         excerpt: page.excerpt || '',
         coverImage: page.coverImage || '',
+        layout: page.layout || 'boxed',
+        showTitle: page.showTitle ?? true,
         seoTitle: page.seoTitle || '',
         seoDesc: page.seoDesc || '',
         seoKeywords: page.seoKeywords || '',
@@ -139,6 +146,8 @@ export function PageEdit() {
       content: formData.content,
       excerpt: formData.excerpt.trim() || undefined,
       coverImage: formData.coverImage.trim() || undefined,
+      layout: formData.layout as 'boxed' | 'fullwidth',
+      showTitle: formData.showTitle,
       seoTitle: formData.seoTitle.trim() || undefined,
       seoDesc: formData.seoDesc.trim() || undefined,
       seoKeywords: formData.seoKeywords.trim() || undefined,
@@ -292,6 +301,38 @@ export function PageEdit() {
                     rows={2}
                   />
                 </div>
+
+                <div className='flex items-center justify-between rounded-lg border p-4'>
+                  <div className='space-y-0.5'>
+                    <Label className='text-base'>全宽布局</Label>
+                    <p className='text-sm text-muted-foreground'>
+                      开启后页面内容将占满整个宽度，适合Landing页面
+                    </p>
+                  </div>
+                  <Switch
+                    checked={formData.layout === 'fullwidth'}
+                    onCheckedChange={(checked) =>
+                      setFormData({ ...formData, layout: checked ? 'fullwidth' : 'boxed' })
+                    }
+                  />
+                </div>
+
+                {formData.layout === 'boxed' && (
+                  <div className='flex items-center justify-between rounded-lg border p-4'>
+                    <div className='space-y-0.5'>
+                      <Label className='text-base'>显示标题栏</Label>
+                      <p className='text-sm text-muted-foreground'>
+                        盒式布局下是否显示页面标题和摘要
+                      </p>
+                    </div>
+                    <Switch
+                      checked={formData.showTitle}
+                      onCheckedChange={(checked) =>
+                        setFormData({ ...formData, showTitle: checked })
+                      }
+                    />
+                  </div>
+                )}
               </CardContent>
             </Card>
 

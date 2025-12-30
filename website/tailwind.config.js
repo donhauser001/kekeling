@@ -7,18 +7,20 @@ export default {
   theme: {
     extend: {
       colors: {
+        // 使用 CSS 变量实现动态主色调（响应后台主题设置）
+        // 使用 rgb() 格式支持透明度修饰符
         primary: {
-          50: '#fef7ee',
-          100: '#fdecd6',
-          200: '#fad5ad',
-          300: '#f6b779',
-          400: '#f19043',
-          500: '#ed731e',
-          600: '#de5814',
-          700: '#b84213',
-          800: '#933517',
-          900: '#772e16',
-          950: '#401409',
+          50: 'rgb(var(--primary-50) / <alpha-value>)',
+          100: 'rgb(var(--primary-100) / <alpha-value>)',
+          200: 'rgb(var(--primary-200) / <alpha-value>)',
+          300: 'rgb(var(--primary-300) / <alpha-value>)',
+          400: 'rgb(var(--primary-400) / <alpha-value>)',
+          500: 'rgb(var(--primary-500) / <alpha-value>)',
+          600: 'rgb(var(--primary-600) / <alpha-value>)',
+          700: 'rgb(var(--primary-700) / <alpha-value>)',
+          800: 'rgb(var(--primary-800) / <alpha-value>)',
+          900: 'rgb(var(--primary-900) / <alpha-value>)',
+          950: 'rgb(var(--primary-950) / <alpha-value>)',
         },
         accent: {
           50: '#f0fdf5',
@@ -73,4 +75,3 @@ export default {
     require('@tailwindcss/typography'),
   ],
 }
-

@@ -78,6 +78,7 @@ const typeOptions = [
     { value: 'link', label: '自定义链接', group: '基础' },
     { value: 'category', label: '文章分类', group: '基础' },
     { value: 'page', label: '页面', group: '基础' },
+    { value: 'service_list', label: '服务列表', group: '业务页面' },
     { value: 'user_login', label: '用户登录页', group: '系统页面' },
     { value: 'escort_register', label: '陪诊员注册页', group: '系统页面' },
     { value: 'escort_login', label: '陪诊员登录页', group: '系统页面' },
@@ -92,6 +93,7 @@ const systemPageRoutes: Record<string, string> = {
     escort_login: '/escort/login',
     escort_forgot_password: '/escort/forgot-password',
     escort_profile: '/escort/profile',
+    service_list: '/services',
 }
 
 // 打开方式选项
@@ -611,6 +613,14 @@ export function CmsMenus() {
                                     <SelectGroup>
                                         <SelectLabel>基础类型</SelectLabel>
                                         {typeOptions.filter(opt => opt.group === '基础').map((opt) => (
+                                            <SelectItem key={opt.value} value={opt.value}>
+                                                {opt.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectGroup>
+                                    <SelectGroup>
+                                        <SelectLabel>业务页面</SelectLabel>
+                                        {typeOptions.filter(opt => opt.group === '业务页面').map((opt) => (
                                             <SelectItem key={opt.value} value={opt.value}>
                                                 {opt.label}
                                             </SelectItem>

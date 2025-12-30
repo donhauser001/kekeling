@@ -40,9 +40,54 @@ export function PageDetail() {
     )
   }
 
+  const isFullwidth = page.layout === 'fullwidth'
   const leftSidebar = sidebars?.find(s => s.position === 'left')
   const rightSidebar = sidebars?.find(s => s.position === 'right')
+  const hasSidebar = !isFullwidth && (leftSidebar || rightSidebar)
 
+  // 全宽布局
+  if (isFullwidth) {
+    return (
+      <div className="min-h-screen pt-20">
+        {/* 如果页面有封面图，全宽显示 */}
+        {page.coverImage && (
+          <section className="relative h-[50vh] min-h-[400px] overflow-hidden">
+            <img
+              src={page.coverImage}
+              alt={page.title}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 p-8">
+              <div className="max-w-7xl mx-auto">
+                <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+                  {page.title}
+                </h1>
+                {page.excerpt && (
+                  <p className="text-xl text-white/90 max-w-2xl">{page.excerpt}</p>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* 全宽内容区域 - 直接渲染HTML，无外层容器限制 */}
+        <div 
+          className="prose prose-lg max-w-none 
+                   prose-headings:text-gray-900 prose-headings:font-bold
+                   prose-p:text-gray-700 prose-p:leading-relaxed
+                   prose-a:text-primary-600 prose-a:no-underline hover:prose-a:underline
+                   prose-img:rounded-xl prose-img:shadow-lg
+                   prose-ul:text-gray-700 prose-ol:text-gray-700
+                   prose-blockquote:border-primary-500 prose-blockquote:text-gray-600
+                   prose-code:text-primary-600 prose-code:bg-primary-50 prose-code:px-1 prose-code:rounded"
+          dangerouslySetInnerHTML={{ __html: page.content }}
+        />
+      </div>
+    )
+  }
+
+  // 盒式布局
   return (
     <div className="min-h-screen pt-32 pb-20 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -76,15 +121,17 @@ export function PageDetail() {
               )}
 
               <div className="p-8 lg:p-12">
-                {/* Header */}
-                <header className="mb-8">
-                  <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-                    {page.title}
-                  </h1>
-                  {page.excerpt && (
-                    <p className="text-lg text-gray-600">{page.excerpt}</p>
-                  )}
-                </header>
+                {/* Header - 根据 showTitle 设置显示 */}
+                {page.showTitle !== false && (
+                  <header className="mb-8">
+                    <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
+                      {page.title}
+                    </h1>
+                    {page.excerpt && (
+                      <p className="text-lg text-gray-600">{page.excerpt}</p>
+                    )}
+                  </header>
+                )}
 
                 {/* Content */}
                 <div 
@@ -108,4 +155,3 @@ export function PageDetail() {
     </div>
   )
 }
-
