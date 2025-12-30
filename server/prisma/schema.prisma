@@ -636,8 +636,8 @@ model Escort {
 model EscortApplication {
   id              String    @id @default(uuid())
   
-  // 申请人信息（关联已登录用户）
-  userId          String    @map("user_id")
+  // 申请人信息（关联已登录用户，公开申请时可为空）
+  userId          String?   @map("user_id")
   
   // 基础信息
   name            String                           // 真实姓名
@@ -668,7 +668,7 @@ model EscortApplication {
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
   
-  user            User      @relation(fields: [userId], references: [id])
+  user            User?     @relation(fields: [userId], references: [id])
   inviter         Escort?   @relation("InviterApplications", fields: [inviterId], references: [id])
   escort          Escort?   @relation("ApplicationEscort", fields: [escortId], references: [id])
   

@@ -150,7 +150,7 @@ export class EscortApplyService {
   // ============================================================================
 
   /**
-   * 提交陪诊员申请
+   * 提交陪诊员申请（需要登录）
    */
   async createApplication(userId: string, dto: CreateEscortApplicationDto) {
     // 1. 检查用户是否已是陪诊员
@@ -229,6 +229,84 @@ export class EscortApplyService {
   }
 
   /**
+   * 公开提交陪诊员申请（无需登录，需要手机号验证）
+   */
+  async createPublicApplication(dto: CreateEscortApplicationDto) {
+    // 1. 检查手机号是否已验证
+    const isVerified = await this.checkPhoneVerified(dto.phone);
+    if (!isVerified) {
+      throw new BadRequestException('请先验证手机号');
+    }
+
+    // 2. 检查手机号是否已被陪诊员使用
+    const existingEscort = await this.prisma.escort.findUnique({
+      where: { phone: dto.phone },
+    });
+
+    if (existingEscort) {
+      throw new ConflictException('该手机号已注册为陪诊员');
+    }
+
+    // 3. 检查是否有待审核的申请
+    const pendingApplication = await this.prisma.escortApplication.findFirst({
+      where: {
+        phone: dto.phone,
+        status: 'pending',
+      },
+    });
+
+    if (pendingApplication) {
+      throw new ConflictException('该手机号已有待审核的申请，请耐心等待');
+    }
+
+    // 4. 如果有邀请码，验证并关联邀请人
+    let inviterId: string | null = null;
+    if (dto.inviteCode) {
+      const inviter = await this.prisma.escort.findUnique({
+        where: { inviteCode: dto.inviteCode },
+        select: { id: true, name: true, status: true },
+      });
+
+      if (!inviter) {
+        throw new BadRequestException('邀请码无效');
+      }
+
+      if (inviter.status !== 'active') {
+        throw new BadRequestException('邀请人账号状态异常，无法使用此邀请码');
+      }
+
+      inviterId = inviter.id;
+    }
+
+    // 5. 创建申请记录（无 userId）
+    const application = await this.prisma.escortApplication.create({
+      data: {
+        name: dto.name,
+        phone: dto.phone,
+        idCard: dto.idCard,
+        avatar: dto.avatar,
+        gender: dto.gender,
+        emergencyContact: dto.emergencyContact,
+        emergencyPhone: dto.emergencyPhone,
+        inviteCode: dto.inviteCode,
+        inviterId,
+        status: 'pending',
+      },
+    });
+
+    // 6. 清除验证标记（一次性使用）
+    await this.redis.del(REDIS_KEYS.VERIFIED(dto.phone));
+
+    this.logger.log(`新陪诊员公开申请: ${application.id} (${dto.name}, ${dto.phone})`);
+
+    return {
+      id: application.id,
+      status: application.status,
+      message: '申请已提交，请等待审核',
+    };
+  }
+
+  /**
    * 查询用户的申请状态
    */
   async getMyApplication(userId: string) {
@@ -261,6 +339,66 @@ export class EscortApplyService {
       createdAt: application.createdAt,
       reviewedAt: application.reviewedAt,
     };
+  }
+
+  /**
+   * 检查手机号是否可用（未被注册）
+   */
+  async checkPhoneAvailable(phone: string) {
+    // 1. 检查是否已有陪诊员使用此手机号
+    const existingEscort = await this.prisma.escort.findUnique({
+      where: { phone },
+      select: { id: true },
+    });
+
+    if (existingEscort) {
+      return { available: false, message: '该手机号已注册为陪诊员' };
+    }
+
+    // 2. 检查是否有待审核的申请使用此手机号
+    const pendingApplication = await this.prisma.escortApplication.findFirst({
+      where: {
+        phone,
+        status: 'pending',
+      },
+      select: { id: true },
+    });
+
+    if (pendingApplication) {
+      return { available: false, message: '该手机号已有待审核的申请' };
+    }
+
+    return { available: true, message: '手机号可用' };
+  }
+
+  /**
+   * 检查身份证号是否可用（未被注册）
+   */
+  async checkIdCardAvailable(idCard: string) {
+    // 1. 检查是否已有陪诊员使用此身份证号
+    const existingEscort = await this.prisma.escort.findFirst({
+      where: { idCard },
+      select: { id: true },
+    });
+
+    if (existingEscort) {
+      return { available: false, message: '该身份证号已注册为陪诊员' };
+    }
+
+    // 2. 检查是否有待审核的申请使用此身份证号
+    const pendingApplication = await this.prisma.escortApplication.findFirst({
+      where: {
+        idCard,
+        status: 'pending',
+      },
+      select: { id: true },
+    });
+
+    if (pendingApplication) {
+      return { available: false, message: '该身份证号已有待审核的申请' };
+    }
+
+    return { available: true, message: '身份证号可用' };
   }
 
   /**

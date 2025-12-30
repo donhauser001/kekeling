@@ -34,7 +34,11 @@ const smsFormSchema = z.object({
   signName: z.string().min(1, '请输入短信签名'),
   templateCode: z.string().min(1, '请输入模板编码'),
   devMode: z.boolean(),
-  devCode: z.string().default('123456'),
+  // devCode 允许空字符串或 undefined，自动使用默认值
+  devCode: z.preprocess(
+    (val) => (typeof val === 'string' && val.trim() !== '' ? val : '123456'),
+    z.string()
+  ),
   // 频控配置
   rateLimitPhone60s: z.number().min(10, '最小10秒').max(300, '最大300秒'),
   rateLimitIpHour: z.number().min(1, '最小1次').max(100, '最大100次'),

@@ -100,6 +100,33 @@ export class EscortApplyController {
     const result = await this.escortApplyService.validateInviteCode(code);
     return ApiRes.success(result);
   }
+
+  @Get('check-phone/:phone')
+  @ApiOperation({ summary: '检查手机号是否可用' })
+  @ApiResponse({ status: 200, description: '返回手机号可用性' })
+  async checkPhoneAvailable(@Param('phone') phone: string) {
+    const result = await this.escortApplyService.checkPhoneAvailable(phone);
+    return ApiRes.success(result);
+  }
+
+  @Get('check-idcard/:idCard')
+  @ApiOperation({ summary: '检查身份证号是否可用' })
+  @ApiResponse({ status: 200, description: '返回身份证号可用性' })
+  async checkIdCardAvailable(@Param('idCard') idCard: string) {
+    const result = await this.escortApplyService.checkIdCardAvailable(idCard);
+    return ApiRes.success(result);
+  }
+
+  @Post('public')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '公开提交陪诊员申请（无需登录）' })
+  @ApiResponse({ status: 200, description: '申请提交成功' })
+  @ApiResponse({ status: 400, description: '参数错误或手机号未验证' })
+  @ApiResponse({ status: 409, description: '重复申请' })
+  async createPublicApplication(@Body() dto: CreateEscortApplicationDto) {
+    const result = await this.escortApplyService.createPublicApplication(dto);
+    return ApiRes.success(result);
+  }
 }
 
 @ApiTags('陪诊员申请管理')

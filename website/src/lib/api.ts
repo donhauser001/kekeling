@@ -511,8 +511,28 @@ export interface VerifyCodeResponse {
   verifyToken?: string  // 验证成功后的令牌
 }
 
+/** 陪诊员申请数据 */
+export interface EscortApplicationData {
+  name: string
+  phone: string
+  idCard: string
+  gender: 'male' | 'female' | 'unknown'
+  avatar?: string
+  emergencyContact?: string
+  emergencyPhone?: string
+  inviteCode?: string
+}
+
 /** 陪诊员申请 API */
 export const escortApplyApi = {
+  /** 检查手机号是否可用 */
+  checkPhone: (phone: string) =>
+    request<{ available: boolean; message: string }>(`/escort-apply/check-phone/${phone}`),
+
+  /** 检查身份证号是否可用 */
+  checkIdCard: (idCard: string) =>
+    request<{ available: boolean; message: string }>(`/escort-apply/check-idcard/${idCard}`),
+
   /** 发送短信验证码 */
   sendSmsCode: (phone: string) =>
     request<SendCodeResponse>('/escort-apply/sms/send', {
@@ -530,5 +550,12 @@ export const escortApplyApi = {
   /** 验证邀请码 */
   validateInviteCode: (code: string) =>
     request<{ valid: boolean; inviterName?: string }>(`/escort-apply/validate-invite/${code}`),
+
+  /** 提交陪诊员申请（公开接口，无需登录） */
+  submitApplication: (data: EscortApplicationData) =>
+    request<{ id: string; status: string; message: string }>('/escort-apply/public', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
 }
 

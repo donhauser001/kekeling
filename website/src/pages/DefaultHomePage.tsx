@@ -15,39 +15,33 @@ function Icon({ name, className = '' }: { name: string; className?: string }) {
 const services = [
   {
     icon: 'peoples',
-    title: '全程陪诊',
+    title: '门诊陪诊',
     description: '陪诊员全程陪同就医，协助挂号、排队、缴费、取药，让您省心省力',
     color: 'primary',
   },
   {
-    icon: 'stethoscope',
-    title: '专业导诊',
-    description: '根据您的症状，推荐合适的科室和专家，避免挂错号、走弯路',
+    icon: 'file-text',
+    title: '四大代办',
+    description: '代跑腿、代办复杂手续，让患者宝贵的精力只用于最关键的治疗和休息上，保持体面',
     color: 'emerald',
   },
   {
-    icon: 'file-text',
-    title: '报告代取',
-    description: '无需再跑一趟医院，陪诊员帮您代取检查报告并送达',
-    color: 'amber',
-  },
-  {
-    icon: 'appointment',
-    title: '预约挂号',
-    description: '协助您预约专家号源，不再为挂号难而烦恼',
-    color: 'violet',
-  },
-  {
-    icon: 'ambulance',
-    title: '就医接送',
-    description: '提供上门接送服务，行动不便的患者也能轻松就医',
+    icon: 'stethoscope',
+    title: '肿瘤全程就诊管理',
+    description: '针对肿瘤疾病患者，提供单家医院单次住院全程就诊管理服务',
     color: 'rose',
   },
   {
-    icon: 'translate',
-    title: '病情翻译',
-    description: '将医学术语转化为通俗语言，帮助您更好地理解病情',
-    color: 'cyan',
+    icon: 'appointment',
+    title: '非肿瘤全程就诊管理',
+    description: '针对非肿瘤疾病患者，提供单家医院单次住院全程就诊管理服务',
+    color: 'violet',
+  },
+  {
+    icon: 'send',
+    title: '全球来华医疗服务',
+    description: '为海外患者提供端到端全流程就诊管理的一站式服务',
+    color: 'amber',
   },
 ]
 
@@ -180,7 +174,7 @@ export function DefaultHomePage() {
   // 从后台获取设置
   const contactPhone = getSetting('contact_phone', '400-123-4567')
   const statHospitals = getSetting('stat_hospitals', '500+')
-  const statEscorts = getSetting('stat_escorts', '200+')
+  const statEscorts = getSetting('stat_escorts', '2000+')
   const statServices = getSetting('stat_services', '10万+')
   const statRating = getSetting('stat_rating', '99.8%')
 
@@ -216,10 +210,10 @@ export function DefaultHomePage() {
 
               {/* 主标题 */}
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
-                专业医院
+                专业院内
                 <span className="text-primary-600">陪诊服务</span>
               </h1>
-              
+
               {/* 副标题 */}
               <p className="mt-6 text-lg sm:text-xl text-gray-600 leading-relaxed max-w-xl mx-auto lg:mx-0">
                 科科灵为您提供全程陪护、专业导诊、报告代取等一站式陪诊服务，让就医不再困难
@@ -247,15 +241,21 @@ export function DefaultHomePage() {
               <div className="mt-10 flex flex-wrap justify-center lg:justify-start gap-6">
                 <div className="flex items-center gap-2 text-gray-600">
                   <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
-                    <Icon name="shield" className="text-green-600 text-sm" />
+                    <Icon name="peoples" className="text-green-600 text-sm" />
                   </div>
-                  <span className="text-sm font-medium">实名认证</span>
+                  <span className="text-sm font-medium">专业陪诊</span>
+                </div>
+                <div className="flex items-center gap-2 text-gray-600">
+                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                    <Icon name="connect" className="text-blue-600 text-sm" />
+                  </div>
+                  <span className="text-sm font-medium">智能匹配</span>
                 </div>
                 <div className="flex items-center gap-2 text-gray-600">
                   <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">
                     <Icon name="time" className="text-amber-600 text-sm" />
                   </div>
-                  <span className="text-sm font-medium">准时服务</span>
+                  <span className="text-sm font-medium">实时接单</span>
                 </div>
                 <div className="flex items-center gap-2 text-gray-600">
                   <div className="w-8 h-8 rounded-full bg-rose-100 flex items-center justify-center">
@@ -272,7 +272,7 @@ export function DefaultHomePage() {
               <div className="relative w-full max-w-md">
                 {/* 装饰背景圆 */}
                 <div className="absolute inset-0 bg-gradient-to-br from-primary-100 to-primary-50 rounded-[3rem] transform rotate-3" />
-                
+
                 {/* 主内容卡片 */}
                 <div className="relative bg-white rounded-[2.5rem] shadow-xl shadow-gray-200/50 p-8 transform -rotate-1 hover:rotate-0 transition-transform duration-500">
                   {/* 顶部图标 */}
@@ -281,7 +281,7 @@ export function DefaultHomePage() {
                       <Icon name="peoples" className="text-4xl text-white" />
                     </div>
                   </div>
-                  
+
                   {/* 服务亮点 */}
                   <div className="space-y-4">
                     <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-2xl">
@@ -289,7 +289,7 @@ export function DefaultHomePage() {
                         <Icon name="check-correct" className="text-emerald-600" />
                       </div>
                       <div>
-                        <p className="font-semibold text-gray-900">全程陪护</p>
+                        <p className="font-semibold text-gray-900">门诊陪诊</p>
                         <p className="text-sm text-gray-500">从挂号到取药全程陪同</p>
                       </div>
                     </div>
@@ -298,7 +298,7 @@ export function DefaultHomePage() {
                         <Icon name="stethoscope" className="text-blue-600" />
                       </div>
                       <div>
-                        <p className="font-semibold text-gray-900">专业导诊</p>
+                        <p className="font-semibold text-gray-900">四大代办</p>
                         <p className="text-sm text-gray-500">精准推荐科室和专家</p>
                       </div>
                     </div>
@@ -307,7 +307,7 @@ export function DefaultHomePage() {
                         <Icon name="Heart" className="text-amber-600" />
                       </div>
                       <div>
-                        <p className="font-semibold text-gray-900">贴心服务</p>
+                        <p className="font-semibold text-gray-900">全程就诊管理</p>
                         <p className="text-sm text-gray-500">像家人一样关心您</p>
                       </div>
                     </div>
@@ -315,7 +315,7 @@ export function DefaultHomePage() {
                 </div>
 
                 {/* 浮动小卡片 - 医院数量 */}
-                <div 
+                <div
                   className="absolute -left-4 top-[8%] bg-white rounded-2xl shadow-lg shadow-gray-200/50 px-4 py-3"
                   style={{ animation: 'floatSlow 5s ease-in-out infinite' }}
                 >
@@ -331,7 +331,7 @@ export function DefaultHomePage() {
                 </div>
 
                 {/* 浮动小卡片 - 好评率 */}
-                <div 
+                <div
                   className="absolute -right-4 bottom-1/4 bg-white rounded-2xl shadow-lg shadow-gray-200/50 px-4 py-3"
                   style={{ animation: 'floatSlowRight 6s ease-in-out infinite', animationDelay: '1s' }}
                 >
@@ -356,8 +356,8 @@ export function DefaultHomePage() {
               {stats.map((stat, index) => {
                 const colors = colorMap[stat.color as keyof typeof colorMap]
                 return (
-                  <div 
-                    key={index} 
+                  <div
+                    key={index}
                     className="group text-center p-6 bg-white rounded-2xl shadow-lg shadow-gray-200/60 hover:shadow-xl hover:shadow-gray-300/50 hover:-translate-y-1 transition-all duration-300"
                   >
                     <div
@@ -381,7 +381,7 @@ export function DefaultHomePage() {
           <div className="text-center mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold text-gray-900">我们的服务</h2>
             <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
-              科科灵提供全方位的医院陪诊服务，满足您各种就医需求
+              科科灵专注于为您和您的家庭提供线下就医全流程管理与服务
             </p>
           </div>
 
@@ -424,9 +424,9 @@ export function DefaultHomePage() {
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
               {steps.map((item, index) => (
                 <div key={index} className="relative text-center group">
-                  <div 
+                  <div
                     className="inline-flex items-center justify-center w-20 h-20 bg-primary-600 text-white rounded-full text-2xl font-bold mb-6 shadow-lg shadow-primary-200 relative z-10"
-                    style={{ 
+                    style={{
                       animation: 'floatCircle 4s ease-in-out infinite',
                       animationDelay: `${index * 0.3}s`
                     }}

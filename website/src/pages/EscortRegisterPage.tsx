@@ -37,6 +37,11 @@ export function EscortRegisterPage() {
   const [countdown, setCountdown] = useState(0)
   const [error, setError] = useState('')
   const [, setPhoneVerified] = useState(false)
+  const [phoneCheckStatus, setPhoneCheckStatus] = useState<'idle' | 'checking' | 'available' | 'unavailable'>('idle')
+  const [phoneCheckMessage, setPhoneCheckMessage] = useState('')
+  const [idCardCheckStatus, setIdCardCheckStatus] = useState<'idle' | 'checking' | 'available' | 'unavailable'>('idle')
+  const [idCardCheckMessage, setIdCardCheckMessage] = useState('')
+  const [passwordStrength, setPasswordStrength] = useState<{ level: number; text: string; color: string }>({ level: 0, text: '', color: '' })
 
   // 表单数据
   const [formData, setFormData] = useState({
@@ -58,11 +63,133 @@ export function EscortRegisterPage() {
     }
   }, [countdown])
 
+  // 检查手机号是否可用
+  const checkPhoneAvailable = async (phone: string) => {
+    if (!/^1\d{10}$/.test(phone)) {
+      setPhoneCheckStatus('idle')
+      setPhoneCheckMessage('')
+      return
+    }
+    
+    setPhoneCheckStatus('checking')
+    setPhoneCheckMessage('')
+    
+    try {
+      const result = await escortApplyApi.checkPhone(phone)
+      if (result.available) {
+        setPhoneCheckStatus('available')
+        setPhoneCheckMessage('手机号可用')
+      } else {
+        setPhoneCheckStatus('unavailable')
+        setPhoneCheckMessage(result.message)
+      }
+    } catch {
+      setPhoneCheckStatus('idle')
+      setPhoneCheckMessage('')
+    }
+  }
+
+  // 检查身份证号是否可用
+  const checkIdCardAvailable = async (idCard: string) => {
+    if (!/^\d{17}[\dXx]$/.test(idCard)) {
+      setIdCardCheckStatus('idle')
+      setIdCardCheckMessage('')
+      return
+    }
+    
+    setIdCardCheckStatus('checking')
+    setIdCardCheckMessage('')
+    
+    try {
+      const result = await escortApplyApi.checkIdCard(idCard)
+      if (result.available) {
+        setIdCardCheckStatus('available')
+        setIdCardCheckMessage('身份证号可用')
+      } else {
+        setIdCardCheckStatus('unavailable')
+        setIdCardCheckMessage(result.message)
+      }
+    } catch {
+      setIdCardCheckStatus('idle')
+      setIdCardCheckMessage('')
+    }
+  }
+
+  // 检测密码强度
+  const checkPasswordStrength = (password: string) => {
+    if (!password) {
+      setPasswordStrength({ level: 0, text: '', color: '' })
+      return
+    }
+
+    let score = 0
+    
+    // 长度检查
+    if (password.length >= 6) score += 1
+    if (password.length >= 8) score += 1
+    if (password.length >= 12) score += 1
+    
+    // 包含数字
+    if (/\d/.test(password)) score += 1
+    
+    // 包含小写字母
+    if (/[a-z]/.test(password)) score += 1
+    
+    // 包含大写字母
+    if (/[A-Z]/.test(password)) score += 1
+    
+    // 包含特殊字符
+    if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) score += 1
+
+    // 映射为强度等级
+    let level: number
+    let text: string
+    let color: string
+
+    if (score <= 2) {
+      level = 1
+      text = '弱'
+      color = 'bg-red-500'
+    } else if (score <= 4) {
+      level = 2
+      text = '中'
+      color = 'bg-yellow-500'
+    } else {
+      level = 3
+      text = '强'
+      color = 'bg-emerald-500'
+    }
+
+    setPasswordStrength({ level, text, color })
+  }
+
   // 发送验证码
   const handleSendCode = async () => {
     if (!formData.phone || !/^1\d{10}$/.test(formData.phone)) {
       setError('请输入正确的手机号码')
       return
+    }
+    
+    // 先检查手机号是否可用
+    if (phoneCheckStatus !== 'available') {
+      // 如果还没检查，先检查
+      if (phoneCheckStatus === 'idle' || phoneCheckStatus === 'checking') {
+        try {
+          const result = await escortApplyApi.checkPhone(formData.phone)
+          if (!result.available) {
+            setPhoneCheckStatus('unavailable')
+            setPhoneCheckMessage(result.message)
+            setError(result.message)
+            return
+          }
+          setPhoneCheckStatus('available')
+        } catch {
+          // 检查失败，继续发送
+        }
+      } else if (phoneCheckStatus === 'unavailable') {
+        setError(phoneCheckMessage || '该手机号已被注册')
+        return
+      }
     }
     
     setSendingCode(true)
@@ -120,8 +247,18 @@ export function EscortRegisterPage() {
       setError('请输入正确的身份证号码')
       return
     }
+    // 身份证号验证
+    if (idCardCheckStatus === 'unavailable') {
+      setError(idCardCheckMessage || '该身份证号已被注册')
+      return
+    }
     if (!formData.password || formData.password.length < 6) {
       setError('密码长度不能少于6位')
+      return
+    }
+    // 密码强度验证
+    if (passwordStrength.level < 2) {
+      setError('密码强度太弱，请使用包含数字和字母的组合')
       return
     }
     if (formData.password !== formData.confirmPassword) {
@@ -132,13 +269,35 @@ export function EscortRegisterPage() {
       setError('请阅读并同意服务协议')
       return
     }
+
+    // 如果身份证还没检查，先检查
+    if (idCardCheckStatus !== 'available') {
+      try {
+        const result = await escortApplyApi.checkIdCard(formData.idCard)
+        if (!result.available) {
+          setIdCardCheckStatus('unavailable')
+          setIdCardCheckMessage(result.message)
+          setError(result.message)
+          return
+        }
+        setIdCardCheckStatus('available')
+      } catch {
+        // 检查失败，继续提交
+      }
+    }
     
     setLoading(true)
     setError('')
     
     try {
-      // TODO: 调用申请 API
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      // 调用申请 API
+      await escortApplyApi.submitApplication({
+        name: formData.name,
+        phone: formData.phone,
+        idCard: formData.idCard,
+        gender: 'unknown', // 可以后续在表单中添加性别选择
+        inviteCode: formData.inviteCode || undefined,
+      })
       setCurrentStep(2)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '提交申请失败'
@@ -203,15 +362,46 @@ export function EscortRegisterPage() {
             placeholder="请输入手机号码"
             value={formData.phone}
             onChange={(e) => {
-              setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 11) })
+              const newPhone = e.target.value.replace(/\D/g, '').slice(0, 11)
+              setFormData({ ...formData, phone: newPhone })
               setError('')
+              // 当输入完整手机号时自动检查
+              if (newPhone.length === 11) {
+                checkPhoneAvailable(newPhone)
+              } else {
+                setPhoneCheckStatus('idle')
+                setPhoneCheckMessage('')
+              }
             }}
-            className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl
-                     focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20
-                     transition-all outline-none text-base"
+            className={`w-full pl-12 pr-12 py-4 bg-gray-50 border rounded-2xl
+                     focus:bg-white focus:ring-2 transition-all outline-none text-base
+                     ${phoneCheckStatus === 'unavailable' 
+                       ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20' 
+                       : phoneCheckStatus === 'available'
+                         ? 'border-emerald-300 focus:border-emerald-500 focus:ring-emerald-500/20'
+                         : 'border-gray-200 focus:border-emerald-500 focus:ring-emerald-500/20'
+                     }`}
             maxLength={11}
           />
+          {/* 检查状态图标 */}
+          <div className="absolute right-4 top-1/2 -translate-y-1/2">
+            {phoneCheckStatus === 'checking' && (
+              <span className="w-5 h-5 border-2 border-gray-300 border-t-emerald-500 rounded-full animate-spin block" />
+            )}
+            {phoneCheckStatus === 'available' && (
+              <Check className="w-5 h-5 text-emerald-500" />
+            )}
+            {phoneCheckStatus === 'unavailable' && (
+              <Icon name="close" className="text-xl text-red-500" />
+            )}
+          </div>
         </div>
+        {/* 检查结果提示 */}
+        {phoneCheckMessage && (
+          <p className={`mt-2 text-sm ${phoneCheckStatus === 'available' ? 'text-emerald-600' : 'text-red-600'}`}>
+            {phoneCheckMessage}
+          </p>
+        )}
       </div>
 
       {/* 验证码输入 */}
@@ -331,15 +521,46 @@ export function EscortRegisterPage() {
             placeholder="请输入18位身份证号码"
             value={formData.idCard}
             onChange={(e) => {
-              setFormData({ ...formData, idCard: e.target.value.toUpperCase().slice(0, 18) })
+              const newIdCard = e.target.value.toUpperCase().slice(0, 18)
+              setFormData({ ...formData, idCard: newIdCard })
               setError('')
+              // 当输入完整身份证号时自动检查
+              if (newIdCard.length === 18 && /^\d{17}[\dXx]$/.test(newIdCard)) {
+                checkIdCardAvailable(newIdCard)
+              } else {
+                setIdCardCheckStatus('idle')
+                setIdCardCheckMessage('')
+              }
             }}
-            className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl
-                     focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20
-                     transition-all outline-none text-base"
+            className={`w-full pl-12 pr-12 py-4 bg-gray-50 border rounded-2xl
+                     focus:bg-white focus:ring-2 transition-all outline-none text-base
+                     ${idCardCheckStatus === 'unavailable' 
+                       ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20' 
+                       : idCardCheckStatus === 'available'
+                         ? 'border-emerald-300 focus:border-emerald-500 focus:ring-emerald-500/20'
+                         : 'border-gray-200 focus:border-emerald-500 focus:ring-emerald-500/20'
+                     }`}
             maxLength={18}
           />
+          {/* 检查状态图标 */}
+          <div className="absolute right-4 top-1/2 -translate-y-1/2">
+            {idCardCheckStatus === 'checking' && (
+              <span className="w-5 h-5 border-2 border-gray-300 border-t-emerald-500 rounded-full animate-spin block" />
+            )}
+            {idCardCheckStatus === 'available' && (
+              <Check className="w-5 h-5 text-emerald-500" />
+            )}
+            {idCardCheckStatus === 'unavailable' && (
+              <Icon name="close" className="text-xl text-red-500" />
+            )}
+          </div>
         </div>
+        {/* 检查结果提示 */}
+        {idCardCheckMessage && (
+          <p className={`mt-2 text-sm ${idCardCheckStatus === 'available' ? 'text-emerald-600' : 'text-red-600'}`}>
+            {idCardCheckMessage}
+          </p>
+        )}
       </div>
 
       {/* 设置密码 */}
@@ -356,8 +577,10 @@ export function EscortRegisterPage() {
             placeholder="请设置6-20位登录密码"
             value={formData.password}
             onChange={(e) => {
-              setFormData({ ...formData, password: e.target.value })
+              const newPassword = e.target.value
+              setFormData({ ...formData, password: newPassword })
               setError('')
+              checkPasswordStrength(newPassword)
             }}
             className="w-full pl-12 pr-12 py-4 bg-gray-50 border border-gray-200 rounded-2xl
                      focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20
@@ -371,6 +594,28 @@ export function EscortRegisterPage() {
             {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
           </button>
         </div>
+        {/* 密码强度指示器 */}
+        {formData.password && (
+          <div className="mt-2">
+            <div className="flex items-center gap-2">
+              <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden flex gap-1">
+                <div className={`h-full transition-all duration-300 rounded-full ${passwordStrength.level >= 1 ? passwordStrength.color : 'bg-gray-200'}`} style={{ width: '33.33%' }} />
+                <div className={`h-full transition-all duration-300 rounded-full ${passwordStrength.level >= 2 ? passwordStrength.color : 'bg-gray-200'}`} style={{ width: '33.33%' }} />
+                <div className={`h-full transition-all duration-300 rounded-full ${passwordStrength.level >= 3 ? passwordStrength.color : 'bg-gray-200'}`} style={{ width: '33.33%' }} />
+              </div>
+              <span className={`text-xs font-medium ${
+                passwordStrength.level === 1 ? 'text-red-600' : 
+                passwordStrength.level === 2 ? 'text-yellow-600' : 
+                passwordStrength.level === 3 ? 'text-emerald-600' : 'text-gray-400'
+              }`}>
+                {passwordStrength.text}
+              </span>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              建议使用8位以上，包含数字、字母和特殊字符的组合
+            </p>
+          </div>
+        )}
       </div>
 
       {/* 确认密码 */}
