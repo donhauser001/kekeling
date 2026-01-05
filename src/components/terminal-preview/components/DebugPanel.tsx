@@ -217,10 +217,17 @@ export function DebugPanel({
 
 /**
  * 判断是否显示 DebugPanel
- * 仅在 Web 开发环境显示，小程序中不显示
+ *
+ * 显示规则：
+ * - 管理后台（Web 浏览器环境）：始终显示（不管是开发还是生产环境）
+ * - 小程序环境：不显示
+ * - 真实 H5 终端：不显示
+ *
+ * 理由：DebugPanel 是管理后台的调试工具，应该在后台预览器中可用，
+ * 只需要确保不在真实终端（小程序/H5）中显示即可。
  */
 export function shouldShowDebugPanel(): boolean {
-  // 小程序环境不显示（检测 TARO_ENV 或 wx 全局对象）
+  // 小程序环境不显示（检测 TARO_ENV）
   if (
     typeof process !== 'undefined' &&
     process.env &&
@@ -228,15 +235,28 @@ export function shouldShowDebugPanel(): boolean {
   ) {
     return false
   }
-  // 检测微信小程序环境
-  if (typeof wx !== 'undefined' && wx) {
+
+  // 检测微信小程序环境（wx 全局对象存在且有小程序特有方法）
+  if (
+    typeof wx !== 'undefined' &&
+    wx &&
+    typeof wx.getSystemInfoSync === 'function'
+  ) {
     return false
   }
-  // Web 开发环境显示
-  if (process.env.NODE_ENV === 'development') {
-    return true
+
+  // 检测是否是真实 H5 终端（通过 URL 判断）
+  // 真实 H5 终端通常不会有 /admin/ 路径
+  if (typeof window !== 'undefined' && window.location) {
+    const pathname = window.location.pathname
+    // 如果不是管理后台路径，则不显示
+    if (!pathname.startsWith('/admin')) {
+      return false
+    }
   }
-  // 生产环境不显示
-  return false
+
+  // 管理后台环境：显示 DebugPanel
+  return true
 }
+
 
