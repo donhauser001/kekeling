@@ -10,6 +10,7 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import type { PreviewViewerRole } from '../types'
+import { Icon } from '../ui/primitives'
 
 // ============================================================================
 // 类型定义
@@ -122,27 +123,38 @@ export function DebugPanel({
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-center gap-2">
-          <span className="text-lg">👁️</span>
+          <Icon name="preview-open" size={18} className="text-gray-300" />
           <span className="font-medium">预览视角</span>
           {/* 当前视角徽章 */}
           <span
-            className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+            className={`px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1 ${
               isEscort
                 ? 'bg-orange-500/30 text-orange-300 border border-orange-500/50'
                 : 'bg-blue-500/30 text-blue-300 border border-blue-500/50'
             }`}
           >
+            <Icon
+              name={isEscort ? 'stethoscope' : 'user'}
+              size={12}
+              className={isEscort ? 'text-orange-300' : 'text-blue-300'}
+            />
             {isEscort ? '陪诊员' : '用户'}
           </span>
           {isValidating && (
-            <span className="text-gray-400 text-xs animate-pulse">
+            <span className="text-gray-400 text-xs flex items-center gap-1">
+              <Icon
+                name="loading-one"
+                size={12}
+                className="animate-spin text-gray-400"
+              />
               加载中...
             </span>
           )}
         </div>
-        <span className="text-gray-400 text-xs">
-          {isExpanded ? '收起 ▲' : '展开 ▼'}
-        </span>
+        <div className="flex items-center gap-1 text-gray-400 text-xs">
+          <span>{isExpanded ? '收起' : '展开'}</span>
+          <Icon name={isExpanded ? 'up' : 'down'} size={12} />
+        </div>
       </div>
 
       {/* 展开内容 */}
@@ -157,7 +169,17 @@ export function DebugPanel({
             }`}
           >
             <div className="flex items-center gap-3">
-              <div className="text-3xl">{isEscort ? '👨‍⚕️' : '👤'}</div>
+              <div
+                className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                  isEscort ? 'bg-orange-500/20' : 'bg-blue-500/20'
+                }`}
+              >
+                <Icon
+                  name={isEscort ? 'stethoscope' : 'user'}
+                  size={24}
+                  className={isEscort ? 'text-orange-400' : 'text-blue-400'}
+                />
+              </div>
               <div>
                 <div
                   className={`font-medium ${isEscort ? 'text-orange-300' : 'text-blue-300'}`}
@@ -179,6 +201,7 @@ export function DebugPanel({
               <span
                 className={`w-2 h-2 rounded-full ${userToken ? 'bg-green-400' : 'bg-gray-500'}`}
               />
+              <Icon name="user" size={12} className="text-gray-400" />
               <span className="text-gray-400">
                 用户{userToken ? '已登录' : '未登录'}
               </span>
@@ -187,6 +210,7 @@ export function DebugPanel({
               <span
                 className={`w-2 h-2 rounded-full ${escortToken ? 'bg-green-400' : 'bg-gray-500'}`}
               />
+              <Icon name="stethoscope" size={12} className="text-gray-400" />
               <span className="text-gray-400">
                 陪诊员{escortToken ? '已登录' : '未登录'}
               </span>
@@ -200,7 +224,7 @@ export function DebugPanel({
                 onClick={handleSwitchToEscort}
                 className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-orange-500 hover:bg-orange-400 rounded-lg text-white font-medium transition-colors"
               >
-                <span>👨‍⚕️</span>
+                <Icon name="stethoscope" size={16} />
                 <span>切换到陪诊员视角</span>
               </button>
             ) : (
@@ -208,7 +232,7 @@ export function DebugPanel({
                 onClick={handleSwitchToUser}
                 className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-500 hover:bg-blue-400 rounded-lg text-white font-medium transition-colors"
               >
-                <span>👤</span>
+                <Icon name="user" size={16} />
                 <span>返回用户视角</span>
               </button>
             )}
@@ -218,13 +242,17 @@ export function DebugPanel({
               className="px-3 py-2 bg-white/10 hover:bg-white/20 disabled:opacity-50 rounded-lg text-white transition-colors"
               title="刷新登录状态"
             >
-              🔄
+              <Icon
+                name="refresh"
+                size={16}
+                className={isValidating ? 'animate-spin' : ''}
+              />
             </button>
           </div>
 
           {/* 使用提示 */}
           <div className="text-[11px] text-gray-500 flex items-start gap-1.5 pt-1 border-t border-white/10">
-            <span>💡</span>
+            <Icon name="tips" size={14} className="text-gray-500 mt-0.5" />
             <span>
               切换视角可以预览不同角色看到的界面效果，方便测试和演示功能。
             </span>
