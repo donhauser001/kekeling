@@ -44,6 +44,7 @@ export function SearchBar({ isDarkMode = false, themeSettings, onSearchClick }: 
         style={{
           display: 'flex',
           alignItems: 'center',
+          width: '100%',
           borderRadius: 24 * wxScale,
           paddingLeft: 6 * wxScale,
           paddingRight: 12 * wxScale,
