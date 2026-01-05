@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
@@ -16,6 +17,8 @@ import {
 
 @Injectable()
 export class MembershipService {
+  private readonly logger = new Logger(MembershipService.name);
+
   constructor(private prisma: PrismaService) { }
 
   // ========== 用户端方法 ==========
@@ -717,6 +720,125 @@ export class MembershipService {
         });
       }
     }
+  }
+
+  /**
+   * 发放会员每月优惠券
+   * 每月1号自动执行，给有效会员发放专属优惠券
+   */
+  async grantMemberMonthlyCoupons() {
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+    this.logger.log(`开始发放 ${currentMonth} 会员月度优惠券...`);
+
+    // 获取所有有效会员
+    const activeMembers = await this.prisma.userMembership.findMany({
+      where: {
+        status: 'active',
+        expireAt: { gt: now },
+      },
+      include: {
+        level: true,
+        user: {
+          select: { id: true, nickname: true },
+        },
+      },
+    });
+
+    this.logger.log(`找到 ${activeMembers.length} 位有效会员`);
+
+    let grantedCount = 0;
+    let skippedCount = 0;
+
+    for (const membership of activeMembers) {
+      try {
+        // 检查该会员本月是否已发放过
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+
+        const alreadyGranted = await this.prisma.userCoupon.findFirst({
+          where: {
+            userId: membership.userId,
+            source: 'member_monthly',
+            createdAt: {
+              gte: monthStart,
+              lte: monthEnd,
+            },
+          },
+        });
+
+        if (alreadyGranted) {
+          skippedCount++;
+          continue; // 本月已发放，跳过
+        }
+
+        // 从会员等级 benefits 中获取优惠券配置
+        const benefits = membership.level.benefits as any;
+        const monthlyCoupons = benefits?.monthlyCoupons || [];
+
+        if (monthlyCoupons.length === 0) {
+          // 如果没有配置月度优惠券，跳过
+          skippedCount++;
+          continue;
+        }
+
+        // 发放优惠券
+        for (const couponConfig of monthlyCoupons) {
+          const template = await this.prisma.couponTemplate.findUnique({
+            where: { id: couponConfig.templateId },
+          });
+
+          if (!template || template.status !== 'active') {
+            continue;
+          }
+
+          // 计算有效期
+          let startAt: Date;
+          let expireAt: Date;
+
+          if (template.validityType === 'fixed') {
+            startAt = template.startAt || now;
+            expireAt = template.endAt!;
+          } else {
+            startAt = now;
+            expireAt = new Date();
+            expireAt.setDate(expireAt.getDate() + (template.validDays || 30));
+          }
+
+          // 发放指定数量
+          const quantity = couponConfig.quantity || 1;
+          for (let i = 0; i < quantity; i++) {
+            await this.prisma.userCoupon.create({
+              data: {
+                userId: membership.userId,
+                templateId: template.id,
+                name: template.name,
+                type: template.type,
+                value: template.value,
+                maxDiscount: template.maxDiscount,
+                minAmount: template.minAmount,
+                applicableScope: template.applicableScope,
+                applicableIds: template.applicableIds,
+                stackWithMember: template.stackWithMember,
+                stackWithCampaign: template.stackWithCampaign,
+                startAt,
+                expireAt,
+                source: 'member_monthly',
+                sourceId: membership.levelId,
+                status: 'unused',
+              },
+            });
+          }
+        }
+
+        grantedCount++;
+      } catch (error) {
+        this.logger.error(`发放优惠券给用户 ${membership.userId} 失败:`, error);
+      }
+    }
+
+    this.logger.log(`会员月度优惠券发放完成: 成功 ${grantedCount} 人, 跳过 ${skippedCount} 人`);
   }
 
   /**

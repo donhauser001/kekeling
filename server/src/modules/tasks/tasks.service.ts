@@ -1062,27 +1062,44 @@ export class TasksService implements OnModuleInit, OnModuleDestroy {
   /**
    * 调度会员每月优惠券发放任务
    * 每月1号凌晨0点执行
+   *
+   * 注意：不使用超过 24 天的 setTimeout/setInterval，
+   * 因为 JavaScript 使用 32 位整数存储延迟，最大约 24.8 天
    */
   private scheduleMemberMonthlyCoupons() {
-    // 计算距离下一个1号凌晨0点的毫秒数
+    // 每天凌晨检查是否是月初
+    const scheduleNextCheck = () => {
+      const now = new Date();
+      const tomorrow = new Date(now);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(0, 1, 0, 0); // 凌晨 0:01
+      const msUntilTomorrow = Math.min(
+        tomorrow.getTime() - now.getTime(),
+        24 * 60 * 60 * 1000, // 最多等 24 小时
+      );
+
+      setTimeout(() => {
+        const today = new Date();
+        // 每月 1 号执行
+        if (today.getDate() === 1) {
+          this.logger.log('检测到月初，执行会员每月优惠券发放...');
+          this.grantMemberMonthlyCoupons();
+        }
+        // 递归调度下一次检查
+        scheduleNextCheck();
+      }, msUntilTomorrow);
+    };
+
+    // 启动时检查：如果今天是 1 号且刚启动，立即执行一次
     const now = new Date();
-    const nextMonth = new Date(now);
-    nextMonth.setMonth(nextMonth.getMonth() + 1);
-    nextMonth.setDate(1);
-    nextMonth.setHours(0, 0, 0, 0);
-    const msUntilNext = nextMonth.getTime() - now.getTime();
-
-    this.logger.log(`会员每月优惠券发放任务将在 ${Math.round(msUntilNext / 1000 / 60 / 60)} 小时后执行`);
-
-    setTimeout(() => {
-      // 执行一次发放
+    if (now.getDate() === 1 && now.getHours() < 1) {
+      this.logger.log('服务启动时检测到月初，执行会员每月优惠券发放...');
       this.grantMemberMonthlyCoupons();
+    }
 
-      // 然后每30天执行一次（简化处理，实际应该按月份）
-      setInterval(() => {
-        this.grantMemberMonthlyCoupons();
-      }, 30 * 24 * 60 * 60 * 1000);
-    }, msUntilNext);
+    // 开始每日检查调度
+    this.logger.log('会员每月优惠券发放任务已启动，将在每月1号凌晨执行');
+    scheduleNextCheck();
   }
 
   /**
