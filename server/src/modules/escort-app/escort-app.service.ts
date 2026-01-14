@@ -2541,5 +2541,154 @@ export class EscortAppService {
     const minutes = String(d.getMinutes()).padStart(2, '0');
     return `${month}-${day} ${hours}:${minutes}`;
   }
+
+  // ============================================
+  // 评价相关 API
+  // ============================================
+
+  /**
+   * 获取我收到的评价列表
+   */
+  async getMyReviews(userId: string, params: { page?: number; pageSize?: number }) {
+    const escortId = await this.getEscortId(userId);
+    const { page = 1, pageSize = 10 } = params;
+    const skip = (page - 1) * pageSize;
+
+    const [items, total] = await Promise.all([
+      this.prisma.escortReview.findMany({
+        where: { escortId, status: 'visible' },
+        include: {
+          user: {
+            select: {
+              id: true,
+              nickname: true,
+              avatar: true,
+            },
+          },
+          order: {
+            select: {
+              id: true,
+              orderNo: true,
+              service: {
+                select: { id: true, name: true },
+              },
+              hospital: {
+                select: { id: true, name: true },
+              },
+              appointmentDate: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: pageSize,
+      }),
+      this.prisma.escortReview.count({ where: { escortId, status: 'visible' } }),
+    ]);
+
+    // 格式化数据，处理匿名用户
+    const formattedItems = items.map((item) => ({
+      ...item,
+      user: item.isAnonymous
+        ? { id: '', nickname: '匿名用户', avatar: null }
+        : item.user,
+    }));
+
+    return {
+      items: formattedItems,
+      total,
+      page,
+      pageSize,
+      totalPages: Math.ceil(total / pageSize),
+    };
+  }
+
+  /**
+   * 回复评价
+   */
+  async replyReview(userId: string, reviewId: string, content: string) {
+    const escortId = await this.getEscortId(userId);
+
+    const review = await this.prisma.escortReview.findUnique({
+      where: { id: reviewId },
+    });
+
+    if (!review) {
+      throw new NotFoundException('评价不存在');
+    }
+
+    if (review.escortId !== escortId) {
+      throw new ForbiddenException('无权回复此评价');
+    }
+
+    if (review.replyContent) {
+      throw new BadRequestException('该评价已回复');
+    }
+
+    const updated = await this.prisma.escortReview.update({
+      where: { id: reviewId },
+      data: {
+        replyContent: content,
+        replyAt: new Date(),
+      },
+    });
+
+    return updated;
+  }
+
+  /**
+   * 获取我的评价统计
+   */
+  async getMyReviewStats(userId: string) {
+    const escortId = await this.getEscortId(userId);
+
+    const reviews = await this.prisma.escortReview.findMany({
+      where: { escortId, status: 'visible' },
+      select: { rating: true, tags: true, replyContent: true },
+    });
+
+    const total = reviews.length;
+
+    // 平均分
+    const averageRating =
+      total > 0
+        ? Math.round((reviews.reduce((sum, r) => sum + r.rating, 0) / total) * 10) / 10
+        : 5.0;
+
+    // 好评率（4-5星）
+    const goodCount = reviews.filter((r) => r.rating >= 4).length;
+    const goodRate = total > 0 ? Math.round((goodCount / total) * 1000) / 10 : 100;
+
+    // 回复率
+    const repliedCount = reviews.filter((r) => r.replyContent).length;
+    const replyRate = total > 0 ? Math.round((repliedCount / total) * 1000) / 10 : 0;
+
+    // 评分分布
+    const distribution = [5, 4, 3, 2, 1].map((rating) => ({
+      rating,
+      count: reviews.filter((r) => r.rating === rating).length,
+    }));
+
+    // 标签统计
+    const tagCounts: Record<string, number> = {};
+    reviews.forEach((r) => {
+      r.tags.forEach((tag) => {
+        tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+      });
+    });
+    const tagStats = Object.entries(tagCounts)
+      .map(([tag, count]) => ({ tag, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+
+    return {
+      total,
+      averageRating,
+      goodRate,
+      replyRate,
+      distribution,
+      tagStats,
+    };
+  }
 }
 

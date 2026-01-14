@@ -28,6 +28,7 @@ export const ORDER_ENTRY_CONFIG: OrderEntryConfig[] = [
 export const MENU_ITEMS: MenuItem[] = [
   { key: 'patients', title: '就诊人管理', icon: 'peoples' },
   { key: 'address', title: '地址管理', icon: 'map-draw' },
+  { key: 'my-reviews', title: '我的评价', icon: 'comment' },
   { key: 'membership', title: '会员中心', icon: 'vip-one' },
   { key: 'coupons', title: '我的优惠券', icon: 'coupon' },  // badge 动态设置
   { key: 'points', title: '我的积分', icon: 'gift' },

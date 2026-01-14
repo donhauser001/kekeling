@@ -12,18 +12,17 @@ import {
     ShoppingBag,
     Check,
     CheckCheck,
+    Star,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import {
@@ -40,13 +39,15 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from '@/components/ui/tooltip'
-import type { ChatSession, ChatMessage, QuickReply, MessageType } from '../types'
+import { useAuthStore } from '@/stores/auth-store'
+import type { ChatSession, ChatMessage, QuickReply, MessageType, ChatUser, ChatAdmin } from '../types'
 
 interface ChatWindowProps {
     session: ChatSession | null
     messages: ChatMessage[]
     quickReplies: QuickReply[]
     isTyping?: boolean
+    csAvatarUrl?: string  // 客服头像（从品牌设置获取）
     onSendMessage: (content: string, type?: MessageType) => void
     onAcceptSession: () => void
     onCloseSession: (reason?: string) => void
@@ -62,6 +63,7 @@ export function ChatWindow({
     messages,
     quickReplies,
     isTyping,
+    csAvatarUrl,
     onSendMessage,
     onAcceptSession,
     onCloseSession,
@@ -71,21 +73,46 @@ export function ChatWindow({
     onUseQuickReply,
     className,
 }: ChatWindowProps) {
+    const accessToken = useAuthStore((state) => state.auth.accessToken)
     const [inputValue, setInputValue] = useState('')
     const [showQuickReplies, setShowQuickReplies] = useState(false)
     const [closeDialogOpen, setCloseDialogOpen] = useState(false)
+    const [isUploading, setIsUploading] = useState(false)
     const messagesEndRef = useRef<HTMLDivElement>(null)
+    const scrollAreaRef = useRef<HTMLDivElement>(null)
     const inputRef = useRef<HTMLInputElement>(null)
+    const fileInputRef = useRef<HTMLInputElement>(null)
 
     // 滚动到底部
-    const scrollToBottom = useCallback(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const scrollToBottom = useCallback((smooth = true) => {
+        if (scrollAreaRef.current) {
+            scrollAreaRef.current.scrollTo({
+                top: scrollAreaRef.current.scrollHeight,
+                behavior: smooth ? 'smooth' : 'instant',
+            })
+        }
+        // 备用方案
+        messagesEndRef.current?.scrollIntoView({ behavior: smooth ? 'smooth' : 'instant' })
     }, [])
 
     // 新消息时滚动到底部
     useEffect(() => {
-        scrollToBottom()
+        // 使用 setTimeout 确保 DOM 更新完成后再滚动
+        const timer = setTimeout(() => {
+            scrollToBottom(false)
+        }, 50)
+        return () => clearTimeout(timer)
     }, [messages, scrollToBottom])
+
+    // 会话切换时滚动到底部
+    useEffect(() => {
+        if (session) {
+            const timer = setTimeout(() => {
+                scrollToBottom(false)
+            }, 100)
+            return () => clearTimeout(timer)
+        }
+    }, [session?.id, scrollToBottom])
 
     // 发送消息
     const handleSend = () => {
@@ -93,6 +120,63 @@ export function ChatWindow({
         onSendMessage(inputValue.trim())
         setInputValue('')
         inputRef.current?.focus()
+    }
+
+    // 处理图片上传
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file || !session || session.status !== 'chatting') return
+
+        // 检查文件类型
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+        if (!allowedTypes.includes(file.type)) {
+            alert('只支持 JPG、PNG、GIF、WebP 格式的图片')
+            return
+        }
+
+        // 检查文件大小（5MB）
+        if (file.size > 5 * 1024 * 1024) {
+            alert('图片大小不能超过 5MB')
+            return
+        }
+
+        setIsUploading(true)
+        try {
+            const formData = new FormData()
+            formData.append('file', file)
+            formData.append('folder', 'common')
+
+            // 使用相对路径，让 Nginx 代理处理
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+                body: formData,
+            })
+
+            const result = await response.json()
+
+            // 后端返回格式: {code: 0, message: 'success', data: {...}}
+            if ((result.code === 0 || result.success) && result.data?.url) {
+                // 发送图片消息
+                const imageUrl = result.data.url.startsWith('http')
+                    ? result.data.url
+                    : `${window.location.origin}${result.data.url}`
+                onSendMessage(imageUrl, 'image' as any)
+            } else {
+                alert(result.message || '图片上传失败')
+            }
+        } catch (error) {
+            console.error('[Upload] Error:', error)
+            alert('图片上传失败，请重试')
+        } finally {
+            setIsUploading(false)
+            // 清空文件输入
+            if (fileInputRef.current) {
+                fileInputRef.current.value = ''
+            }
+        }
     }
 
     // 键盘事件
@@ -137,17 +221,17 @@ export function ChatWindow({
     const isClosed = session.status === 'closed'
 
     return (
-        <div className={cn('flex flex-col h-full', className)}>
+        <div className={cn('flex flex-col', className)} style={{ height: '100%', overflow: 'hidden' }}>
             {/* 头部 */}
-            <div className="flex items-center justify-between px-4 py-3 border-b bg-card">
+            <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/30 shrink-0">
                 <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10">
+                    <Avatar className="h-9 w-9">
                         <AvatarImage src={session.user?.avatar} />
-                        <AvatarFallback>
+                        <AvatarFallback className="text-sm">
                             {session.user?.nickname?.slice(0, 1) || 'U'}
                         </AvatarFallback>
                     </Avatar>
-                    <div>
+                    <div className="space-y-0.5">
                         <div className="flex items-center gap-2">
                             <span className="font-medium">
                                 {session.user?.nickname || session.user?.phone || '未知用户'}
@@ -160,6 +244,7 @@ export function ChatWindow({
                                             ? 'default'
                                             : 'secondary'
                                 }
+                                className="h-5 text-xs"
                             >
                                 {session.status === 'waiting'
                                     ? '排队中'
@@ -184,26 +269,25 @@ export function ChatWindow({
                 <div className="flex items-center gap-2">
                     {/* 接入按钮 */}
                     {isWaiting && (
-                        <Button onClick={onAcceptSession}>接入会话</Button>
+                        <Button size="sm" onClick={onAcceptSession}>接入会话</Button>
                     )}
 
                     {/* 操作菜单 */}
                     {!isClosed && (
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon">
-                                    <MoreVertical className="h-5 w-5" />
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                    <MoreVertical className="h-4 w-4" />
                                 </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
+                            <DropdownMenuContent align="end" className="min-w-[120px]">
                                 {onTransferSession && (
                                     <DropdownMenuItem>
                                         转接会话
                                     </DropdownMenuItem>
                                 )}
-                                <DropdownMenuSeparator />
                                 <DropdownMenuItem
-                                    className="text-destructive"
+                                    className="text-destructive focus:text-destructive"
                                     onClick={() => setCloseDialogOpen(true)}
                                 >
                                     结束会话
@@ -216,21 +300,21 @@ export function ChatWindow({
 
             {/* 上下文信息 */}
             {(session.order || session.service) && (
-                <div className="px-4 py-2 border-b bg-muted/30">
+                <div className="px-4 py-2 border-b bg-blue-50/50 dark:bg-blue-950/20 shrink-0">
                     {session.order && (
                         <div className="flex items-center gap-2 text-sm">
-                            <ShoppingBag className="h-4 w-4 text-muted-foreground" />
-                            <span>咨询订单:</span>
+                            <ShoppingBag className="h-4 w-4 text-blue-500" />
+                            <span className="text-muted-foreground">咨询订单:</span>
                             <Badge variant="outline">{session.order.orderNo}</Badge>
-                            <span className="text-muted-foreground">
+                            <span className="text-muted-foreground truncate">
                                 {session.order.service?.name}
                             </span>
                         </div>
                     )}
                     {session.service && !session.order && (
                         <div className="flex items-center gap-2 text-sm">
-                            <ShoppingBag className="h-4 w-4 text-muted-foreground" />
-                            <span>咨询服务:</span>
+                            <ShoppingBag className="h-4 w-4 text-blue-500" />
+                            <span className="text-muted-foreground">咨询服务:</span>
                             <span className="font-medium">{session.service.name}</span>
                             <span className="text-muted-foreground">
                                 ¥{session.service.price}
@@ -240,8 +324,13 @@ export function ChatWindow({
                 </div>
             )}
 
-            {/* 消息区域 */}
-            <ScrollArea className="flex-1 p-4" onScroll={onMarkRead}>
+            {/* 消息区域 - 使用原生滚动条 */}
+            <div
+                ref={scrollAreaRef}
+                className="p-4"
+                style={{ flex: '1 1 0', minHeight: 0, overflowY: 'auto' }}
+                onScroll={onMarkRead}
+            >
                 <div className="space-y-4">
                     {messages.map((message, index) => {
                         // 日期分隔
@@ -261,7 +350,12 @@ export function ChatWindow({
                                         </span>
                                     </div>
                                 )}
-                                <MessageBubble message={message} />
+                                <MessageBubble
+                                    message={message}
+                                    user={session?.user}
+                                    admin={session?.admin}
+                                    csAvatarUrl={csAvatarUrl}
+                                />
                             </div>
                         )
                     })}
@@ -280,13 +374,13 @@ export function ChatWindow({
 
                     <div ref={messagesEndRef} />
                 </div>
-            </ScrollArea>
+            </div>
 
             {/* 输入区域 */}
-            <div className="border-t bg-card">
+            <div className="border-t bg-card shrink-0">
                 {/* 快捷回复面板 */}
                 {showQuickReplies && (
-                    <div className="border-b p-3 max-h-48 overflow-y-auto">
+                    <div className="border-b px-4 py-3 max-h-40 overflow-y-auto">
                         <div className="flex items-center justify-between mb-2">
                             <span className="text-sm font-medium">快捷回复</span>
                             <Button
@@ -304,7 +398,6 @@ export function ChatWindow({
                                     key={reply.id}
                                     variant="outline"
                                     size="sm"
-                                    className="h-auto py-1.5 px-3"
                                     onClick={() => handleQuickReply(reply)}
                                 >
                                     {reply.title}
@@ -318,10 +411,37 @@ export function ChatWindow({
                 )}
 
                 {/* 输入框 */}
-                <div className="p-3">
+                <div className="px-4 py-3">
                     {isClosed ? (
-                        <div className="text-center text-sm text-muted-foreground py-2">
-                            会话已结束
+                        <div className="py-2">
+                            <div className="text-center text-sm text-muted-foreground mb-2">
+                                会话已结束
+                            </div>
+                            {/* 显示用户评价 */}
+                            {session.rating && (
+                                <div className="flex flex-col items-center gap-1.5 p-3 bg-muted/30 rounded-lg">
+                                    <div className="flex items-center gap-1">
+                                        <span className="text-sm text-muted-foreground mr-1">用户评价:</span>
+                                        {[1, 2, 3, 4, 5].map((star) => (
+                                            <Star
+                                                key={star}
+                                                className={cn(
+                                                    'h-4 w-4',
+                                                    star <= session.rating! ? 'fill-amber-400 text-amber-400' : 'text-gray-300'
+                                                )}
+                                            />
+                                        ))}
+                                        <span className="text-sm text-muted-foreground ml-1">
+                                            ({session.rating}分)
+                                        </span>
+                                    </div>
+                                    {session.ratingContent && (
+                                        <p className="text-sm text-muted-foreground text-center">
+                                            "{session.ratingContent}"
+                                        </p>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     ) : isWaiting ? (
                         <div className="text-center text-sm text-muted-foreground py-2">
@@ -329,6 +449,15 @@ export function ChatWindow({
                         </div>
                     ) : (
                         <div className="flex items-center gap-2">
+                            {/* 隐藏的文件输入 */}
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept="image/jpeg,image/png,image/gif,image/webp"
+                                className="hidden"
+                                onChange={handleImageUpload}
+                            />
+
                             {/* 工具按钮 */}
                             <TooltipProvider>
                                 <Tooltip>
@@ -348,11 +477,16 @@ export function ChatWindow({
                             <TooltipProvider>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
-                                        <Button variant="ghost" size="icon" disabled>
-                                            <ImageIcon className="h-5 w-5" />
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            disabled={isUploading}
+                                            onClick={() => fileInputRef.current?.click()}
+                                        >
+                                            <ImageIcon className={cn("h-5 w-5", isUploading && "animate-pulse")} />
                                         </Button>
                                     </TooltipTrigger>
-                                    <TooltipContent>发送图片</TooltipContent>
+                                    <TooltipContent>{isUploading ? '上传中...' : '发送图片'}</TooltipContent>
                                 </Tooltip>
                             </TooltipProvider>
 
@@ -368,7 +502,7 @@ export function ChatWindow({
 
                             {/* 发送按钮 */}
                             <Button onClick={handleSend} disabled={!inputValue.trim()}>
-                                <Send className="h-4 w-4 mr-1" />
+                                <Send className="h-4 w-4 mr-1.5" />
                                 发送
                             </Button>
                         </div>
@@ -406,7 +540,17 @@ export function ChatWindow({
 }
 
 // 消息气泡组件
-function MessageBubble({ message }: { message: ChatMessage }) {
+function MessageBubble({
+    message,
+    user,
+    admin,
+    csAvatarUrl,
+}: {
+    message: ChatMessage
+    user?: ChatUser
+    admin?: ChatAdmin
+    csAvatarUrl?: string
+}) {
     const isAdmin = message.senderType === 'admin'
     const isSystem = message.senderType === 'system'
 
@@ -421,13 +565,20 @@ function MessageBubble({ message }: { message: ChatMessage }) {
         )
     }
 
+    // 获取头像和名称
+    // 客服头像优先使用品牌 logo（与小程序保持一致），其次使用管理员头像
+    const avatarUrl = isAdmin ? (csAvatarUrl || admin?.avatar) : user?.avatar
+    const avatarName = isAdmin ? (admin?.name || '客服') : (user?.nickname || '用户')
+    const fallbackText = isAdmin ? '客' : avatarName?.slice(0, 1) || 'U'
+
     return (
         <div
             className={cn('flex gap-2', isAdmin ? 'flex-row-reverse' : 'flex-row')}
         >
             <Avatar className="h-8 w-8 shrink-0">
+                <AvatarImage src={avatarUrl} alt={avatarName} />
                 <AvatarFallback className={isAdmin ? 'bg-primary text-primary-foreground' : ''}>
-                    {isAdmin ? '客' : 'U'}
+                    {fallbackText}
                 </AvatarFallback>
             </Avatar>
 

@@ -7,6 +7,7 @@ import { ChatGateway } from './chat.gateway';
 import { ChatSessionService } from './chat-session.service';
 import { ChatMessageService } from './chat-message.service';
 import { QuickReplyService } from './quick-reply.service';
+import { ChatController } from './chat.controller';
 
 @Module({
     imports: [
@@ -21,6 +22,7 @@ import { QuickReplyService } from './quick-reply.service';
             inject: [ConfigService],
         }),
     ],
+    controllers: [ChatController],
     providers: [
         ChatGateway,
         ChatSessionService,

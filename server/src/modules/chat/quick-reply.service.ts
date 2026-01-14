@@ -10,7 +10,7 @@ import {
 export class QuickReplyService {
   private readonly logger = new Logger(QuickReplyService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   /**
    * 创建快捷回复
@@ -102,6 +102,14 @@ export class QuickReplyService {
   async update(id: string, dto: UpdateQuickReplyDto) {
     await this.findById(id);
 
+    // 如果设置为自动问候语，先取消其他的
+    if (dto.isAutoGreeting === true) {
+      await this.prisma.quickReply.updateMany({
+        where: { isAutoGreeting: true },
+        data: { isAutoGreeting: false },
+      });
+    }
+
     const updated = await this.prisma.quickReply.update({
       where: { id },
       data: {
@@ -110,6 +118,7 @@ export class QuickReplyService {
         ...(dto.content && { content: dto.content }),
         ...(dto.sort !== undefined && { sort: dto.sort }),
         ...(dto.status && { status: dto.status }),
+        ...(dto.isAutoGreeting !== undefined && { isAutoGreeting: dto.isAutoGreeting }),
       },
     });
 
@@ -152,5 +161,54 @@ export class QuickReplyService {
       orderBy: { useCount: 'desc' },
       take: limit,
     });
+  }
+
+  /**
+   * 获取自动问候语
+   */
+  async getAutoGreeting() {
+    return this.prisma.quickReply.findFirst({
+      where: {
+        isAutoGreeting: true,
+        status: 'active',
+      },
+    });
+  }
+
+  /**
+   * 设置自动问候语
+   */
+  async setAutoGreeting(id: string) {
+    await this.findById(id);
+
+    // 先取消所有自动问候语
+    await this.prisma.quickReply.updateMany({
+      where: { isAutoGreeting: true },
+      data: { isAutoGreeting: false },
+    });
+
+    // 设置新的自动问候语
+    const updated = await this.prisma.quickReply.update({
+      where: { id },
+      data: { isAutoGreeting: true },
+    });
+
+    this.logger.log(`设置自动问候语: ${id}`);
+    return updated;
+  }
+
+  /**
+   * 取消自动问候语
+   */
+  async cancelAutoGreeting(id: string) {
+    await this.findById(id);
+
+    const updated = await this.prisma.quickReply.update({
+      where: { id },
+      data: { isAutoGreeting: false },
+    });
+
+    this.logger.log(`取消自动问候语: ${id}`);
+    return updated;
   }
 }

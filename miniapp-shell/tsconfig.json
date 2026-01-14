@@ -26,6 +26,9 @@
     "paths": {
       "@/*": [
         "src/*"
+      ],
+      "@terminal-preview/*": [
+        "../src/components/terminal-preview/*"
       ]
     }
   },

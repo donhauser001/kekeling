@@ -13,70 +13,71 @@ datasource db {
 // ========== 用户模块 ==========
 
 model User {
-  id          String   @id @default(uuid())
-  openid      String   @unique
-  unionid     String?
-  nickname    String?
-  avatar      String?
-  phone       String?  @unique
-  gender      String?  // male, female, unknown
-  birthday    DateTime?
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id        String    @id @default(uuid())
+  openid    String    @unique
+  unionid   String?
+  nickname  String?
+  avatar    String?
+  phone     String?   @unique
+  gender    String? // male, female, unknown
+  birthday  DateTime?
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
 
   // 关联
-  patients    Patient[]
-  registeredPatients Patient[] @relation("RegisteredPatient")
-  orders      Order[]
-  escort      Escort?   // 陪诊员身份 (1:1, 可空)
-  memberships UserMembership[]
-  membershipOrders MembershipOrder[]
-  userCoupons UserCoupon[]
-  userPoints  UserPoint?
-  pointRecords PointRecord[]
-  inviteCode  UserInviteCode?
-  inviterRecords ReferralRecord[] @relation("Inviter")
-  inviteeRecords ReferralRecord[] @relation("Invitee")
+  patients               Patient[]
+  registeredPatients     Patient[]               @relation("RegisteredPatient")
+  orders                 Order[]
+  escort                 Escort? // 陪诊员身份 (1:1, 可空)
+  memberships            UserMembership[]
+  membershipOrders       MembershipOrder[]
+  userCoupons            UserCoupon[]
+  userPoints             UserPoint?
+  pointRecords           PointRecord[]
+  inviteCode             UserInviteCode?
+  inviterRecords         ReferralRecord[]        @relation("Inviter")
+  inviteeRecords         ReferralRecord[]        @relation("Invitee")
   campaignParticipations CampaignParticipation[]
-  complaints     Complaint[]
-  messages       Message[]
-  addresses      UserAddress[]
-  escortApplications EscortApplication[]
-  feedbacks     Feedback[]
-  chatSessions  ChatSession[] @relation("UserChatSessions")
+  complaints             Complaint[]
+  messages               Message[]
+  addresses              UserAddress[]
+  escortApplications     EscortApplication[]
+  feedbacks              Feedback[]
+  chatSessions           ChatSession[]           @relation("UserChatSessions")
+  escortReviews          EscortReview[]
 
   @@map("users")
 }
 
 // 用户地址
 model UserAddress {
-  id          String    @id @default(uuid())
-  userId      String    @map("user_id")
-  
-  // 联系信息
-  name        String                           // 收货人姓名
-  phone       String                           // 联系电话
-  
-  // 地址信息
-  province    String                           // 省
-  city        String                           // 市
-  district    String                           // 区/县
-  address     String                           // 详细地址
-  
-  // 位置信息（可选，用于定位）
-  latitude    Float?                           // 纬度
-  longitude   Float?                           // 经度
-  
-  // 标签
-  tag         String?                          // 家、公司、学校 等
-  
-  // 状态
-  isDefault   Boolean   @default(false) @map("is_default")  // 是否默认地址
-  
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  id     String @id @default(uuid())
+  userId String @map("user_id")
 
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // 联系信息
+  name  String // 收货人姓名
+  phone String // 联系电话
+
+  // 地址信息
+  province String // 省
+  city     String // 市
+  district String // 区/县
+  address  String // 详细地址
+
+  // 位置信息（可选，用于定位）
+  latitude  Float? // 纬度
+  longitude Float? // 经度
+
+  // 标签
+  tag String? // 家、公司、学校 等
+
+  // 状态
+  isDefault Boolean @default(false) @map("is_default") // 是否默认地址
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([userId, isDefault])
@@ -85,121 +86,121 @@ model UserAddress {
 
 // 就诊人
 model Patient {
-  id          String    @id @default(uuid())
-  userId      String    @map("user_id")
-  name        String
-  gender      String    // male, female
-  birthday    DateTime? // ✅ 修正：存生日而非年龄，前端动态计算年龄
-  phone       String
-  idCard      String?   @map("id_card")
-  relation    String    // 本人、父亲、母亲、子女、其他
-  isDefault   Boolean   @default(false) @map("is_default")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  name      String
+  gender    String // male, female
+  birthday  DateTime? // ✅ 修正：存生日而非年龄，前端动态计算年龄
+  phone     String
+  idCard    String?   @map("id_card")
+  relation  String // 本人、父亲、母亲、子女、其他
+  isDefault Boolean   @default(false) @map("is_default")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
 
-  user        User     @relation(fields: [userId], references: [id])
-  orders      Order[]
-  registeredUser   User?     @relation("RegisteredPatient", fields: [registeredUserId], references: [id])
-  
+  user           User    @relation(fields: [userId], references: [id])
+  orders         Order[]
+  registeredUser User?   @relation("RegisteredPatient", fields: [registeredUserId], references: [id])
+
   // 邀请注册相关
-  invitedAt        DateTime? @map("invited_at")
-  inviteStatus     String    @default("none") @map("invite_status")
+  invitedAt    DateTime? @map("invited_at")
+  inviteStatus String    @default("none") @map("invite_status")
   // none: 未邀请
   // invited: 已邀请待注册
   // registered: 已注册
-  
-  registeredUserId String?   @map("registered_user_id")
-  
+
+  registeredUserId String? @map("registered_user_id")
+
   @@map("patients")
 }
 
 // ========== 服务模块 ==========
 
 model ServiceCategory {
-  id          String    @id @default(uuid())
+  id          String   @id @default(uuid())
   name        String
-  icon        String?                       // 图标名称 (Lucide icon name)
-  color       String?                       // 主题颜色 (如: #667eea 或 gradient)
-  description String?                       // 分类描述
-  isPinned    Boolean   @default(false) @map("is_pinned") // 是否置顶（最多2个）
-  sort        Int       @default(0)         // 排序权重
-  status      String    @default("active")  // active, inactive
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  icon        String? // 图标名称 (Lucide icon name)
+  color       String? // 主题颜色 (如: #667eea 或 gradient)
+  description String? // 分类描述
+  isPinned    Boolean  @default(false) @map("is_pinned") // 是否置顶（最多2个）
+  sort        Int      @default(0) // 排序权重
+  status      String   @default("active") // active, inactive
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
-  services    Service[]
+  services Service[]
 
   @@map("service_categories")
 }
 
 model Service {
-  id               String    @id @default(uuid())
-  categoryId       String    @map("category_id")
+  id               String  @id @default(uuid())
+  categoryId       String  @map("category_id")
   name             String
-  description      String?   @db.Text          // 支持长文本
-  content          String?   @db.Text          // 富文本内容（HTML）
-  contentType      String    @default("richtext") @map("content_type")  // 内容类型：richtext 或 html
+  description      String? @db.Text // 支持长文本
+  content          String? @db.Text // 富文本内容（HTML）
+  contentType      String  @default("richtext") @map("content_type") // 内容类型：richtext 或 html
   // 会员政策
-  membershipPolicy          String  @default("normal") @map("membership_policy")
+  membershipPolicy String  @default("normal") @map("membership_policy")
   // normal: 响应会员折扣
   // exclusive: 会员专属（普通用户不可购买）
   // fixed: 固定价格（不响应会员折扣）
-  
+
   // 服务专属设置（覆盖等级默认值）
-  membershipDiscount        Int?    @map("membership_discount")        // 专属折扣 0-100
-  membershipOvertimeWaiver  Int?    @map("membership_overtime_waiver") // 专属超时减免 0-100
-  
+  membershipDiscount       Int? @map("membership_discount") // 专属折扣 0-100
+  membershipOvertimeWaiver Int? @map("membership_overtime_waiver") // 专属超时减免 0-100
+
   // ✅ 修正：使用 Decimal 处理金额，避免浮点精度问题
-  price            Decimal   @db.Decimal(10, 2)
-  originalPrice    Decimal?  @map("original_price") @db.Decimal(10, 2)
-  unit             String    @default("次")    // 单位：次、天、小时
-  duration         String?                     // 服务时长描述
-  
-  coverImage       String?   @map("cover_image")
-  detailImages     String[]  @default([])      // ✅ 修正：使用 Postgres 数组存多图URL
-  
+  price         Decimal  @db.Decimal(10, 2)
+  originalPrice Decimal? @map("original_price") @db.Decimal(10, 2)
+  unit          String   @default("次") // 单位：次、天、小时
+  duration      String? // 服务时长描述
+
+  coverImage   String?  @map("cover_image")
+  detailImages String[] @default([]) // ✅ 修正：使用 Postgres 数组存多图URL
+
   // ✅ 修正：使用 Json 类型，支持深层查询
-  serviceIncludes    Json?     @map("service_includes")    // [{ text, icon }]
-  serviceNotes       Json?     @map("service_notes")       // [{ title, content }]
-  
+  serviceIncludes Json? @map("service_includes") // [{ text, icon }]
+  serviceNotes    Json? @map("service_notes") // [{ title, content }]
+
   // 业务配置
-  minQuantity      Int       @default(1) @map("min_quantity")
-  maxQuantity      Int       @default(99) @map("max_quantity")
-  needPatient      Boolean   @default(true) @map("need_patient")
-  needHospital     Boolean   @default(true) @map("need_hospital")
-  needDepartment   Boolean   @default(false) @map("need_department")
-  needDoctor       Boolean   @default(false) @map("need_doctor")
-  needAppointment  Boolean   @default(true) @map("need_appointment")
-  needIdCard       Boolean   @default(false) @map("need_id_card")       // 需要身份证
-  needGender       Boolean   @default(false) @map("need_gender")        // 需要性别
-  needEmergencyContact Boolean @default(false) @map("need_emergency_contact") // 需要紧急联系人
-  needMedicalRecord Boolean  @default(false) @map("need_medical_record") // 需要选择病历
-  allowPostOrder   Boolean   @default(false) @map("allow_post_order")  // 允许先下单后填写信息
-  builtinFieldsRequired Json? @map("builtin_fields_required") // 内置字段必填配置 { fieldKey: boolean }
-  customFields     Json?     @map("custom_fields")   // 自定义字段配置 [{ id, type, label, placeholder, required, options }]
-  fieldOrder       Json?     @map("field_order")     // 字段排序 ['needPatient', 'custom_xxx', ...]
-  
-  orderCount       Int       @default(0) @map("order_count")
-  rating           Float     @default(5.0)    // ✅ 修正：统一5分制评分
-  tags             String[]  @default([])     // ✅ 标签数组
-  sort             Int       @default(0)
-  status           String    @default("active") // active, inactive, draft
-  createdAt        DateTime  @default(now()) @map("created_at")
-  updatedAt        DateTime  @updatedAt @map("updated_at")
+  minQuantity           Int     @default(1) @map("min_quantity")
+  maxQuantity           Int     @default(99) @map("max_quantity")
+  needPatient           Boolean @default(true) @map("need_patient")
+  needHospital          Boolean @default(true) @map("need_hospital")
+  needDepartment        Boolean @default(false) @map("need_department")
+  needDoctor            Boolean @default(false) @map("need_doctor")
+  needAppointment       Boolean @default(true) @map("need_appointment")
+  needIdCard            Boolean @default(false) @map("need_id_card") // 需要身份证
+  needGender            Boolean @default(false) @map("need_gender") // 需要性别
+  needEmergencyContact  Boolean @default(false) @map("need_emergency_contact") // 需要紧急联系人
+  needMedicalRecord     Boolean @default(false) @map("need_medical_record") // 需要选择病历
+  allowPostOrder        Boolean @default(false) @map("allow_post_order") // 允许先下单后填写信息
+  builtinFieldsRequired Json?   @map("builtin_fields_required") // 内置字段必填配置 { fieldKey: boolean }
+  customFields          Json?   @map("custom_fields") // 自定义字段配置 [{ id, type, label, placeholder, required, options }]
+  fieldOrder            Json?   @map("field_order") // 字段排序 ['needPatient', 'custom_xxx', ...]
+
+  orderCount Int      @default(0) @map("order_count")
+  rating     Float    @default(5.0) // ✅ 修正：统一5分制评分
+  tags       String[] @default([]) // ✅ 标签数组
+  sort       Int      @default(0)
+  status     String   @default("active") // active, inactive, draft
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
 
   // 陪诊员配置
-  commissionRate   Int?      @default(70) @map("commission_rate")   // 分成比例 0-100，默认70%
-  commissionNote   String?   @map("commission_note")                // 分成说明
+  commissionRate Int?    @default(70) @map("commission_rate") // 分成比例 0-100，默认70%
+  commissionNote String? @map("commission_note") // 分成说明
 
   // 关联
-  category         ServiceCategory @relation(fields: [categoryId], references: [id])
-  workflowId       String?   @map("workflow_id")
-  workflow         Workflow? @relation(fields: [workflowId], references: [id])
-  orders           Order[]
-  guarantees       ServiceGuaranteeOnService[]  // 服务保障关联
-  operationGuides  OperationGuideOnService[]    // 操作规范关联
-  seckillItems     SeckillItem[]
-  chatSessions     ChatSession[]
+  category        ServiceCategory             @relation(fields: [categoryId], references: [id])
+  workflowId      String?                     @map("workflow_id")
+  workflow        Workflow?                   @relation(fields: [workflowId], references: [id])
+  orders          Order[]
+  guarantees      ServiceGuaranteeOnService[] // 服务保障关联
+  operationGuides OperationGuideOnService[] // 操作规范关联
+  seckillItems    SeckillItem[]
+  chatSessions    ChatSession[]
 
   @@map("services")
 }
@@ -207,11 +208,11 @@ model Service {
 // 热门搜索关键词
 model HotKeyword {
   id        String   @id @default(uuid())
-  keyword   String   @unique              // 搜索关键词
-  type      String   @default("hot")      // hot=热门搜索, guess=猜你想找
-  isHot     Boolean  @default(false) @map("is_hot")  // 是否标记为热门（显示HOT标签）
-  sort      Int      @default(0)          // 排序权重（越小越靠前）
-  status    String   @default("active")   // active, inactive
+  keyword   String   @unique // 搜索关键词
+  type      String   @default("hot") // hot=热门搜索, guess=猜你想找
+  isHot     Boolean  @default(false) @map("is_hot") // 是否标记为热门（显示HOT标签）
+  sort      Int      @default(0) // 排序权重（越小越靠前）
+  status    String   @default("active") // active, inactive
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -222,28 +223,28 @@ model HotKeyword {
 
 // 服务保障条目
 model ServiceGuarantee {
-  id          String    @id @default(uuid())
-  name        String                          // 保障名称，如"平台担保"
-  icon        String    @default("shield")    // 图标名称
-  description String?   @db.Text              // 详细说明（支持长文本）
-  sort        Int       @default(0)           // 排序
-  status      String    @default("active")    // active, inactive
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  id          String   @id @default(uuid())
+  name        String // 保障名称，如"平台担保"
+  icon        String   @default("shield") // 图标名称
+  description String?  @db.Text // 详细说明（支持长文本）
+  sort        Int      @default(0) // 排序
+  status      String   @default("active") // active, inactive
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
-  services    ServiceGuaranteeOnService[]
+  services ServiceGuaranteeOnService[]
 
   @@map("service_guarantees")
 }
 
 // 服务与保障的多对多关联表
 model ServiceGuaranteeOnService {
-  serviceId     String   @map("service_id")
-  guaranteeId   String   @map("guarantee_id")
-  sort          Int      @default(0)  // 在该服务中的排序
+  serviceId   String @map("service_id")
+  guaranteeId String @map("guarantee_id")
+  sort        Int    @default(0) // 在该服务中的排序
 
-  service       Service          @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-  guarantee     ServiceGuarantee @relation(fields: [guaranteeId], references: [id], onDelete: Cascade)
+  service   Service          @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  guarantee ServiceGuarantee @relation(fields: [guaranteeId], references: [id], onDelete: Cascade)
 
   @@id([serviceId, guaranteeId])
   @@map("service_guarantee_relations")
@@ -253,50 +254,50 @@ model ServiceGuaranteeOnService {
 
 // 操作规范分类
 model OperationGuideCategory {
-  id          String           @id @default(uuid())
+  id          String   @id @default(uuid())
   name        String
   description String?
-  icon        String?                            // lucide 图标名
-  sort        Int              @default(0)
-  status      String           @default("active")  // active, inactive
-  createdAt   DateTime         @default(now()) @map("created_at")
-  updatedAt   DateTime         @updatedAt @map("updated_at")
+  icon        String? // lucide 图标名
+  sort        Int      @default(0)
+  status      String   @default("active") // active, inactive
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
-  guides      OperationGuide[]
+  guides OperationGuide[]
 
   @@map("operation_guide_categories")
 }
 
 // 操作规范
 model OperationGuide {
-  id          String                    @id @default(uuid())
-  categoryId  String                    @map("category_id")
-  title       String
-  summary     String?                              // 摘要
-  content     String                    @db.Text   // 富文本内容
-  coverImage  String?                   @map("cover_image")
-  tags        String[]
-  sort        Int                       @default(0)
-  status      String                    @default("draft")  // active, inactive, draft
-  createdAt   DateTime                  @default(now()) @map("created_at")
-  updatedAt   DateTime                  @updatedAt @map("updated_at")
+  id         String   @id @default(uuid())
+  categoryId String   @map("category_id")
+  title      String
+  summary    String? // 摘要
+  content    String   @db.Text // 富文本内容
+  coverImage String?  @map("cover_image")
+  tags       String[]
+  sort       Int      @default(0)
+  status     String   @default("draft") // active, inactive, draft
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
 
-  category    OperationGuideCategory    @relation(fields: [categoryId], references: [id])
-  services    OperationGuideOnService[]
+  category OperationGuideCategory    @relation(fields: [categoryId], references: [id])
+  services OperationGuideOnService[]
 
   @@map("operation_guides")
 }
 
 // 操作规范-服务关联表
 model OperationGuideOnService {
-  id        String         @id @default(uuid())
-  guideId   String         @map("guide_id")
-  serviceId String         @map("service_id")
-  sort      Int            @default(0)  // 在该服务中的排序
-  createdAt DateTime       @default(now()) @map("created_at")
+  id        String   @id @default(uuid())
+  guideId   String   @map("guide_id")
+  serviceId String   @map("service_id")
+  sort      Int      @default(0) // 在该服务中的排序
+  createdAt DateTime @default(now()) @map("created_at")
 
-  guide     OperationGuide @relation(fields: [guideId], references: [id], onDelete: Cascade)
-  service   Service        @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  guide   OperationGuide @relation(fields: [guideId], references: [id], onDelete: Cascade)
+  service Service        @relation(fields: [serviceId], references: [id], onDelete: Cascade)
 
   @@unique([guideId, serviceId])
   @@map("operation_guide_on_service")
@@ -306,31 +307,31 @@ model OperationGuideOnService {
 
 // 流程模板
 model Workflow {
-  id          String         @id @default(uuid())
+  id          String  @id @default(uuid())
   name        String
   description String?
-  category    String         // 流程分类：陪诊流程、诊断流程、跑腿流程、售后流程
-  status      String         @default("active")  // active, inactive, draft
-  usageCount  Int            @default(0) @map("usage_count")
-  
-  // 时长配置
-  baseDuration      Int       @default(240) @map("base_duration")       // 基础服务时长（分钟），默认4小时
-  
-  // 超时策略
-  overtimeEnabled   Boolean   @default(true) @map("overtime_enabled")   // 是否允许超时加时
-  overtimePrice     Decimal?  @map("overtime_price") @db.Decimal(10, 2) // 超时单价
-  overtimeUnit      String    @default("小时") @map("overtime_unit")    // 超时计价单位
-  overtimeMax       Int?      @map("overtime_max")                      // 最大加时时长（分钟）
-  overtimeGrace     Int       @default(15) @map("overtime_grace")       // 宽限时间（分钟）
-  
-  // 会员超时费减免（服务可覆盖）
-  membershipOvertimeWaiver  Int  @default(0) @map("membership_overtime_waiver") // 0-100
-  
-  createdAt   DateTime       @default(now()) @map("created_at")
-  updatedAt   DateTime       @updatedAt @map("updated_at")
+  category    String // 流程分类：陪诊流程、诊断流程、跑腿流程、售后流程
+  status      String  @default("active") // active, inactive, draft
+  usageCount  Int     @default(0) @map("usage_count")
 
-  steps       WorkflowStep[]
-  services    Service[]
+  // 时长配置
+  baseDuration Int @default(240) @map("base_duration") // 基础服务时长（分钟），默认4小时
+
+  // 超时策略
+  overtimeEnabled Boolean  @default(true) @map("overtime_enabled") // 是否允许超时加时
+  overtimePrice   Decimal? @map("overtime_price") @db.Decimal(10, 2) // 超时单价
+  overtimeUnit    String   @default("小时") @map("overtime_unit") // 超时计价单位
+  overtimeMax     Int?     @map("overtime_max") // 最大加时时长（分钟）
+  overtimeGrace   Int      @default(15) @map("overtime_grace") // 宽限时间（分钟）
+
+  // 会员超时费减免（服务可覆盖）
+  membershipOvertimeWaiver Int @default(0) @map("membership_overtime_waiver") // 0-100
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  steps    WorkflowStep[]
+  services Service[]
 
   @@map("workflows")
 }
@@ -341,11 +342,11 @@ model WorkflowStep {
   workflowId  String   @map("workflow_id")
   name        String
   description String?
-  type        String   // start, action, end
+  type        String // start, action, end
   sort        Int      @default(0)
   createdAt   DateTime @default(now()) @map("created_at")
 
-  workflow    Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  workflow Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
 
   @@map("workflow_steps")
 }
@@ -356,9 +357,9 @@ model Hospital {
   id           String   @id @default(uuid())
   name         String
   shortName    String?  @map("short_name") // 医院简称，如"协和"、"301"
-  level        String   // 三甲、三乙、二甲等
+  level        String // 三甲、三乙、二甲等
   levelDetail  String?  @map("level_detail") // 详细级别描述，如"综合类国家医学中心"
-  type         String   // 综合、专科
+  type         String // 综合、专科
   address      String
   phone        String?
   latitude     Float?
@@ -368,16 +369,16 @@ model Hospital {
   trafficGuide String?  @map("traffic_guide")
   parkingInfo  String?  @map("parking_info")
   coverImage   String?  @map("cover_image")
-  images       String?  // 更多图片 JSON
+  images       String? // 更多图片 JSON
   status       String   @default("active") // active, inactive
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   // 关联 - 移除 departments JSON，改为关系
-  departments  Department[]
-  doctors      Doctor[]
-  orders       Order[]
-  escorts      EscortHospital[]
+  departments Department[]
+  doctors     Doctor[]
+  orders      Order[]
+  escorts     EscortHospital[]
 
   @@map("hospitals")
 }
@@ -386,57 +387,57 @@ model Hospital {
 
 // 科室库/类目字典 (不属于任何医院，是通用的科室定义)
 model DepartmentTemplate {
-  id           String   @id @default(uuid())
-  name         String   @unique                 // 科室名称 (唯一)
-  code         String?                          // 科室编码
-  category     String                           // 大类: 内科、外科、妇儿、五官、医技、其他
-  parentId     String?  @map("parent_id")       // 父科室ID (支持层级)
-  
-  description  String?                          // 科室描述
-  diseases     String?                          // 常见疾病 JSON
-  color        String?                          // 显示颜色
-  icon         String?                          // 图标
-  
-  sort         Int      @default(0)
-  status       String   @default("active")      // active, inactive
-  
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id       String  @id @default(uuid())
+  name     String  @unique // 科室名称 (唯一)
+  code     String? // 科室编码
+  category String // 大类: 内科、外科、妇儿、五官、医技、其他
+  parentId String? @map("parent_id") // 父科室ID (支持层级)
+
+  description String? // 科室描述
+  diseases    String? // 常见疾病 JSON
+  color       String? // 显示颜色
+  icon        String? // 图标
+
+  sort   Int    @default(0)
+  status String @default("active") // active, inactive
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // 关联
-  parent       DepartmentTemplate?  @relation("SubTemplates", fields: [parentId], references: [id])
-  children     DepartmentTemplate[] @relation("SubTemplates")
-  departments  Department[]                     // 被哪些医院科室使用
+  parent      DepartmentTemplate?  @relation("SubTemplates", fields: [parentId], references: [id])
+  children    DepartmentTemplate[] @relation("SubTemplates")
+  departments Department[] // 被哪些医院科室使用
 
   @@map("department_templates")
 }
 
 // 医院科室 (属于某个医院，引用科室库)
 model Department {
-  id           String   @id @default(uuid())
-  hospitalId   String   @map("hospital_id")
-  templateId   String?  @map("template_id")     // 关联科室库模板
-  
-  name         String                            // 科室名称 (可自定义，默认取模板名)
-  parentId     String?  @map("parent_id")       // 父科室ID (支持层级)
-  
-  introduction String?                          // 科室简介
-  location     String?                          // 位置 (如 门诊楼3层)
-  phone        String?                          // 科室电话
-  
-  sort         Int      @default(0)
-  status       String   @default("active")      // active, inactive
-  
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id         String  @id @default(uuid())
+  hospitalId String  @map("hospital_id")
+  templateId String? @map("template_id") // 关联科室库模板
+
+  name     String // 科室名称 (可自定义，默认取模板名)
+  parentId String? @map("parent_id") // 父科室ID (支持层级)
+
+  introduction String? // 科室简介
+  location     String? // 位置 (如 门诊楼3层)
+  phone        String? // 科室电话
+
+  sort   Int    @default(0)
+  status String @default("active") // active, inactive
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // 关联
-  hospital     Hospital             @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
-  template     DepartmentTemplate?  @relation(fields: [templateId], references: [id])
-  parent       Department?          @relation("SubDepartments", fields: [parentId], references: [id])
-  children     Department[]         @relation("SubDepartments")
-  doctors      Doctor[]
-  orders       Order[]
+  hospital Hospital            @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  template DepartmentTemplate? @relation(fields: [templateId], references: [id])
+  parent   Department?         @relation("SubDepartments", fields: [parentId], references: [id])
+  children Department[]        @relation("SubDepartments")
+  doctors  Doctor[]
+  orders   Order[]
 
   @@map("departments")
 }
@@ -444,36 +445,36 @@ model Department {
 // ========== 医生模块 ==========
 
 model Doctor {
-  id             String   @id @default(uuid())
-  name           String
-  avatar         String?
-  gender         String?                          // male, female
-  
-  hospitalId     String   @map("hospital_id")
-  departmentId   String   @map("department_id")
-  
-  title          String                           // chief, associate_chief, attending, resident
-  level          String?                          // expert, senior, normal
-  
-  introduction   String?                          // 个人简介
-  specialties    String[]                         // 擅长领域 (PostgreSQL 数组)
-  education      String?                          // 学历背景
-  experience     String?                          // 从医年限
-  
-  consultCount   Int      @default(0) @map("consult_count")
-  rating         Float    @default(5.0)
-  reviewCount    Int      @default(0) @map("review_count")
-  
-  phone          String?                          // 联系电话 (内部使用)
-  status         String   @default("active")      // active, inactive
-  
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
+  id     String  @id @default(uuid())
+  name   String
+  avatar String?
+  gender String? // male, female
+
+  hospitalId   String @map("hospital_id")
+  departmentId String @map("department_id")
+
+  title String // chief, associate_chief, attending, resident
+  level String? // expert, senior, normal
+
+  introduction String? // 个人简介
+  specialties  String[] // 擅长领域 (PostgreSQL 数组)
+  education    String? // 学历背景
+  experience   String? // 从医年限
+
+  consultCount Int   @default(0) @map("consult_count")
+  rating       Float @default(5.0)
+  reviewCount  Int   @default(0) @map("review_count")
+
+  phone  String? // 联系电话 (内部使用)
+  status String  @default("active") // active, inactive
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // 关联
-  hospital       Hospital   @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
-  department     Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
-  orders         Order[]
+  hospital   Hospital   @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  department Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  orders     Order[]
 
   @@map("doctors")
 }
@@ -482,152 +483,152 @@ model Doctor {
 
 // 陪诊员等级配置
 model EscortLevel {
-  id              String    @id @default(uuid())
-  code            String    @unique                // senior, intermediate, junior, trainee
-  name            String                           // 资深陪诊员、中级陪诊员等
-  commissionRate  Int       @default(70)           // 默认分成比例 0-100
-  dispatchWeight  Int       @default(10)           // 派单权重
-  minExperience   Int?      @map("min_experience") // 最低从业年限
-  minOrderCount   Int?      @map("min_order_count")// 最低订单数
-  minRating       Float?    @map("min_rating")     // 最低评分
-  badge           String?                          // 徽章图标/颜色
-  description     String?                          // 等级说明
-  sort            Int       @default(0)
-  status          String    @default("active")     // active, inactive
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
+  id             String   @id @default(uuid())
+  code           String   @unique // senior, intermediate, junior, trainee
+  name           String // 资深陪诊员、中级陪诊员等
+  commissionRate Int      @default(70) // 默认分成比例 0-100
+  dispatchWeight Int      @default(10) // 派单权重
+  minExperience  Int?     @map("min_experience") // 最低从业年限
+  minOrderCount  Int?     @map("min_order_count") // 最低订单数
+  minRating      Float?   @map("min_rating") // 最低评分
+  badge          String? // 徽章图标/颜色
+  description    String? // 等级说明
+  sort           Int      @default(0)
+  status         String   @default("active") // active, inactive
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 
-  escorts         Escort[]
+  escorts Escort[]
 
   @@map("escort_levels")
 }
 
 // 陪诊员标签
 model EscortTag {
-  id          String    @id @default(uuid())
-  name        String    @unique                   // 标签名称
-  category    String    @default("feature")       // feature(特点), skill(技能), cert(资质)
-  icon        String?                             // 图标
-  color       String?                             // 颜色
-  sort        Int       @default(0)
-  status      String    @default("active")        // active, inactive
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  id        String   @id @default(uuid())
+  name      String   @unique // 标签名称
+  category  String   @default("feature") // feature(特点), skill(技能), cert(资质)
+  icon      String? // 图标
+  color     String? // 颜色
+  sort      Int      @default(0)
+  status    String   @default("active") // active, inactive
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("escort_tags")
 }
 
 model Escort {
-  id             String    @id @default(uuid())
-  userId         String?   @unique @map("user_id") // 关联小程序账号 (手机号匹配后自动关联)
-  name           String
-  gender         String    // male, female
-  phone          String    @unique
-  idCard         String?   @map("id_card")
-  avatar         String?
+  id     String  @id @default(uuid())
+  userId String? @unique @map("user_id") // 关联小程序账号 (手机号匹配后自动关联)
+  name   String
+  gender String // male, female
+  phone  String  @unique
+  idCard String? @map("id_card")
+  avatar String?
 
   // 业务属性
-  cityCode       String    @default("110100") @map("city_code") // 城市代码 (默认北京)
-  levelCode      String?   @map("level_code") // 等级代码，关联 EscortLevel（可选，迁移后关联）
-  experience     String?   // 从业年限
-  introduction   String?   // 个人简介
-  tags           String[]  @default([])  // 标签数组
-  certificates   String?   // JSON: [{name, url, expireDate, verified, verifiedAt}]
+  cityCode     String   @default("110100") @map("city_code") // 城市代码 (默认北京)
+  levelCode    String?  @map("level_code") // 等级代码，关联 EscortLevel（可选，迁移后关联）
+  experience   String? // 从业年限
+  introduction String? // 个人简介
+  tags         String[] @default([]) // 标签数组
+  certificates String? // JSON: [{name, url, expireDate, verified, verifiedAt}]
 
   // 服务配置 (Phase1 新增)
-  serviceRadius     Int       @default(20) @map("service_radius")   // 服务半径(公里)
-  serviceHours      String?   @map("service_hours")                 // 服务时段 JSON: {mon:[{start,end}], ...}
-  maxDailyOrders    Int       @default(5) @map("max_daily_orders")  // 每日最大接单数
-  currentDailyOrders Int      @default(0) @map("current_daily_orders") // 当日已接单数
+  serviceRadius      Int     @default(20) @map("service_radius") // 服务半径(公里)
+  serviceHours       String? @map("service_hours") // 服务时段 JSON: {mon:[{start,end}], ...}
+  maxDailyOrders     Int     @default(5) @map("max_daily_orders") // 每日最大接单数
+  currentDailyOrders Int     @default(0) @map("current_daily_orders") // 当日已接单数
 
   // 紧急联系人 (Phase1 新增)
-  emergencyContact  String?   @map("emergency_contact")   // 紧急联系人姓名
-  emergencyPhone    String?   @map("emergency_phone")     // 紧急联系人电话
+  emergencyContact String? @map("emergency_contact") // 紧急联系人姓名
+  emergencyPhone   String? @map("emergency_phone") // 紧急联系人电话
 
   // 健康状态 (Phase1 新增)
-  healthCertExpiry  DateTime? @map("health_cert_expiry")  // 健康证有效期
-  lastHealthCheck   DateTime? @map("last_health_check")   // 最近健康检查时间
+  healthCertExpiry DateTime? @map("health_cert_expiry") // 健康证有效期
+  lastHealthCheck  DateTime? @map("last_health_check") // 最近健康检查时间
 
   // 位置信息 (Phase1 新增)
-  lastLatitude      Float?    @map("last_latitude")       // 最近纬度
-  lastLongitude     Float?    @map("last_longitude")      // 最近经度
-  lastLocationAt    DateTime? @map("last_location_at")    // 位置更新时间
+  lastLatitude   Float?    @map("last_latitude") // 最近纬度
+  lastLongitude  Float?    @map("last_longitude") // 最近经度
+  lastLocationAt DateTime? @map("last_location_at") // 位置更新时间
 
   // 统计数据
-  rating         Float     @default(5.0)  // 评分 (5分制)
-  ratingCount    Int       @default(0) @map("rating_count") // 评价数量 (Phase1 新增)
-  orderCount     Int       @default(0) @map("order_count")
+  rating      Float @default(5.0) // 评分 (5分制)
+  ratingCount Int   @default(0) @map("rating_count") // 评价数量 (Phase1 新增)
+  orderCount  Int   @default(0) @map("order_count")
 
   // 活跃度 (Phase1 新增)
-  lastActiveAt      DateTime? @map("last_active_at")      // 最近活跃时间
-  inactiveReason    String?   @map("inactive_reason")     // 停用原因
+  lastActiveAt   DateTime? @map("last_active_at") // 最近活跃时间
+  inactiveReason String?   @map("inactive_reason") // 停用原因
 
   // 状态管理
-  status         String    @default("pending") // pending(待审核), active(已激活), inactive(已停用), suspended(已封禁)
-  workStatus     String    @default("resting") @map("work_status") // resting(休息), working(接单中), busy(服务中)
+  status     String @default("pending") // pending(待审核), active(已激活), inactive(已停用), suspended(已封禁)
+  workStatus String @default("resting") @map("work_status") // resting(休息), working(接单中), busy(服务中)
 
   // 审核信息 (Phase1 新增)
-  reviewedAt        DateTime? @map("reviewed_at")         // 审核时间
-  reviewedBy        String?   @map("reviewed_by")         // 审核人ID
-  reviewNote        String?   @map("review_note")         // 审核备注
+  reviewedAt DateTime? @map("reviewed_at") // 审核时间
+  reviewedBy String?   @map("reviewed_by") // 审核人ID
+  reviewNote String?   @map("review_note") // 审核备注
 
-  createdAt      DateTime  @default(now()) @map("created_at")
-  updatedAt      DateTime  @updatedAt @map("updated_at")
-  deletedAt      DateTime? @map("deleted_at")  // 软删除支持
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at") // 软删除支持
 
   // 分销层级 (Phase2 新增)
-  distributionLevel    Int      @default(3) @map("distribution_level")
+  distributionLevel Int @default(3) @map("distribution_level")
   // 1: 城市合伙人, 2: 团队长, 3: 普通陪诊员
-  
+
   // 邀请码（唯一）
-  inviteCode           String?  @unique @map("invite_code")
-  
+  inviteCode String? @unique @map("invite_code")
+
   // 上级邀请人 ID（直接上级）
-  parentId             String?  @map("parent_id")
-  
+  parentId String? @map("parent_id")
+
   // 上级链路（JSON 数组，方便查询多层关系）
   // 例：["L1的id", "L2的id"] 表示 L1 -> L2 -> 当前
-  ancestorPath         String?  @map("ancestor_path")  // JSON
-  
+  ancestorPath String? @map("ancestor_path") // JSON
+
   // 团队统计（定期更新）
-  teamSize             Int      @default(0) @map("team_size")       // 直属下级数
-  totalTeamSize        Int      @default(0) @map("total_team_size") // 所有下级数
-  
+  teamSize      Int @default(0) @map("team_size") // 直属下级数
+  totalTeamSize Int @default(0) @map("total_team_size") // 所有下级数
+
   // 晋升相关
-  promotedAt           DateTime? @map("promoted_at")   // 上次晋升时间
-  promotionAppliedAt   DateTime? @map("promotion_applied_at")  // 申请晋升时间
-  
+  promotedAt         DateTime? @map("promoted_at") // 上次晋升时间
+  promotionAppliedAt DateTime? @map("promotion_applied_at") // 申请晋升时间
+
   // 上级关系追踪（用于处理链路断裂）
-  originalParentId    String?   @map("original_parent_id")   // 原始上级（记录历史）
-  parentChangedAt     DateTime? @map("parent_changed_at")    // 上级变更时间
-  parentChangeReason  String?   @map("parent_change_reason") // 变更原因
-  
+  originalParentId   String?   @map("original_parent_id") // 原始上级（记录历史）
+  parentChangedAt    DateTime? @map("parent_changed_at") // 上级变更时间
+  parentChangeReason String?   @map("parent_change_reason") // 变更原因
+
   // 分润链路状态
-  distributionActive  Boolean   @default(true) @map("distribution_active") // 分润是否激活
+  distributionActive Boolean @default(true) @map("distribution_active") // 分润是否激活
 
   // 冗余统计字段
-  totalOrders              Int       @default(0) @map("total_orders")                // 累计团队/个人订单数 (冗余字段)
-  totalDistributionAmount  Decimal   @default(0) @db.Decimal(12, 2) @map("total_distribution_amount") // 累计获得分润总额 (冗余字段)
+  totalOrders             Int     @default(0) @map("total_orders") // 累计团队/个人订单数 (冗余字段)
+  totalDistributionAmount Decimal @default(0) @map("total_distribution_amount") @db.Decimal(12, 2) // 累计获得分润总额 (冗余字段)
 
   // 关联
-  user           User?        @relation(fields: [userId], references: [id])
-  level          EscortLevel? @relation(fields: [levelCode], references: [code])
-  hospitals      EscortHospital[]
-  orders         Order[]
-  wallet         EscortWallet?
-  reviews        EscortReview[]
-  parent         Escort?      @relation("ParentChild", fields: [parentId], references: [id])
-  children       Escort[]     @relation("ParentChild")
-  invitationsSent      EscortInvitation[] @relation("InviterRelation")
-  invitationReceived   EscortInvitation?  @relation("InviteeRelation")
-  distributionRecordsAsBeneficiary DistributionRecord[] @relation("BeneficiaryRelation")
-  distributionRecordsAsSource      DistributionRecord[] @relation("SourceRelation")
-  parentChangeLogs     ParentChangeLog[]
-  promotionApplications PromotionApplication[]
-  identityAuditLogs    IdentityAuditLog[]
-  complaints           Complaint[]
-  invitedApplications  EscortApplication[] @relation("InviterApplications")
-  application          EscortApplication?  @relation("ApplicationEscort")
+  user                             User?                  @relation(fields: [userId], references: [id])
+  level                            EscortLevel?           @relation(fields: [levelCode], references: [code])
+  hospitals                        EscortHospital[]
+  orders                           Order[]
+  wallet                           EscortWallet?
+  reviews                          EscortReview[]
+  parent                           Escort?                @relation("ParentChild", fields: [parentId], references: [id])
+  children                         Escort[]               @relation("ParentChild")
+  invitationsSent                  EscortInvitation[]     @relation("InviterRelation")
+  invitationReceived               EscortInvitation?      @relation("InviteeRelation")
+  distributionRecordsAsBeneficiary DistributionRecord[]   @relation("BeneficiaryRelation")
+  distributionRecordsAsSource      DistributionRecord[]   @relation("SourceRelation")
+  parentChangeLogs                 ParentChangeLog[]
+  promotionApplications            PromotionApplication[]
+  identityAuditLogs                IdentityAuditLog[]
+  complaints                       Complaint[]
+  invitedApplications              EscortApplication[]    @relation("InviterApplications")
+  application                      EscortApplication?     @relation("ApplicationEscort")
 
   @@index([parentId])
   @@index([inviteCode])
@@ -636,44 +637,44 @@ model Escort {
 
 // 陪诊员申请表
 model EscortApplication {
-  id              String    @id @default(uuid())
-  
+  id String @id @default(uuid())
+
   // 申请人信息（关联已登录用户，公开申请时可为空）
-  userId          String?   @map("user_id")
-  
+  userId String? @map("user_id")
+
   // 基础信息
-  name            String                           // 真实姓名
-  phone           String                           // 手机号
-  idCard          String    @map("id_card")        // 身份证号
-  
+  name   String // 真实姓名
+  phone  String // 手机号
+  idCard String @map("id_card") // 身份证号
+
   // 扩展信息
-  avatar          String?                          // 头像
-  gender          String    @default("unknown")    // male, female, unknown
-  emergencyContact String?  @map("emergency_contact") // 紧急联系人
-  emergencyPhone  String?   @map("emergency_phone")   // 紧急联系人电话
-  
+  avatar           String? // 头像
+  gender           String  @default("unknown") // male, female, unknown
+  emergencyContact String? @map("emergency_contact") // 紧急联系人
+  emergencyPhone   String? @map("emergency_phone") // 紧急联系人电话
+
   // 邀请关系
-  inviteCode      String?   @map("invite_code")    // 使用的邀请码
-  inviterId       String?   @map("inviter_id")     // 邀请人ID（陪诊员）
-  
+  inviteCode String? @map("invite_code") // 使用的邀请码
+  inviterId  String? @map("inviter_id") // 邀请人ID（陪诊员）
+
   // 申请状态
-  status          String    @default("pending")    // pending, approved, rejected
-  rejectReason    String?   @map("reject_reason")  // 驳回原因
-  
+  status       String  @default("pending") // pending, approved, rejected
+  rejectReason String? @map("reject_reason") // 驳回原因
+
   // 审核信息
-  reviewedBy      String?   @map("reviewed_by")    // 审核人
-  reviewedAt      DateTime? @map("reviewed_at")    // 审核时间
-  
+  reviewedBy String?   @map("reviewed_by") // 审核人
+  reviewedAt DateTime? @map("reviewed_at") // 审核时间
+
   // 结果
-  escortId        String?   @unique @map("escort_id") // 审核通过后创建的陪诊员ID
-  
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
-  
-  user            User?     @relation(fields: [userId], references: [id])
-  inviter         Escort?   @relation("InviterApplications", fields: [inviterId], references: [id])
-  escort          Escort?   @relation("ApplicationEscort", fields: [escortId], references: [id])
-  
+  escortId String? @unique @map("escort_id") // 审核通过后创建的陪诊员ID
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user    User?   @relation(fields: [userId], references: [id])
+  inviter Escort? @relation("InviterApplications", fields: [inviterId], references: [id])
+  escort  Escort? @relation("ApplicationEscort", fields: [escortId], references: [id])
+
   @@index([userId])
   @@index([phone])
   @@index([status])
@@ -683,31 +684,31 @@ model EscortApplication {
 
 // 身份变更审计日志
 model IdentityAuditLog {
-  id              String   @id @default(uuid())
-  
+  id String @id @default(uuid())
+
   // 关联信息
-  escortId        String   @map("escort_id")
-  userId          String?  @map("user_id")
-  
+  escortId String  @map("escort_id")
+  userId   String? @map("user_id")
+
   // 变更类型
-  type            String   // escort_bound, escort_unbound, phone_changed
+  type String // escort_bound, escort_unbound, phone_changed
   // escort_bound: 绑定陪诊员身份
   // escort_unbound: 解除绑定
   // phone_changed: 手机号变更
-  
+
   // 变更信息
-  oldPhone        String?  @map("old_phone")
-  newPhone        String?  @map("new_phone")
-  reason          String?  // 变更原因
-  
+  oldPhone String? @map("old_phone")
+  newPhone String? @map("new_phone")
+  reason   String? // 变更原因
+
   // 操作人
-  operatorType    String   @map("operator_type")  // system, admin, user
-  operatorId      String?  @map("operator_id")    // 操作人ID（管理员操作时）
-  
-  createdAt       DateTime @default(now()) @map("created_at")
-  
-  escort          Escort   @relation(fields: [escortId], references: [id])
-  
+  operatorType String  @map("operator_type") // system, admin, user
+  operatorId   String? @map("operator_id") // 操作人ID（管理员操作时）
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  escort Escort @relation(fields: [escortId], references: [id])
+
   @@index([escortId])
   @@index([userId])
   @@index([createdAt])
@@ -716,33 +717,33 @@ model IdentityAuditLog {
 
 // 陪诊员邀请关系
 model EscortInvitation {
-  id           String    @id @default(uuid())
-  
+  id String @id @default(uuid())
+
   // 邀请人（上级）
-  inviterId    String    @map("inviter_id")
-  inviterLevel Int       @map("inviter_level")     // 邀请时的层级
-  
+  inviterId    String @map("inviter_id")
+  inviterLevel Int    @map("inviter_level") // 邀请时的层级
+
   // 被邀请人（下级）
-  inviteeId    String    @unique @map("invitee_id")
-  
+  inviteeId String @unique @map("invitee_id")
+
   // 邀请码
-  inviteCode   String    @map("invite_code")
-  
+  inviteCode String @map("invite_code")
+
   // 状态
-  status       String    @default("pending")
+  status String @default("pending")
   // pending: 已邀请，待审核
   // active: 已生效
   // expired: 已过期
   // cancelled: 已取消
-  
+
   // 生效时间
-  activatedAt  DateTime? @map("activated_at")
-  
-  createdAt    DateTime  @default(now()) @map("created_at")
-  
-  inviter      Escort    @relation("InviterRelation", fields: [inviterId], references: [id])
-  invitee      Escort    @relation("InviteeRelation", fields: [inviteeId], references: [id])
-  
+  activatedAt DateTime? @map("activated_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  inviter Escort @relation("InviterRelation", fields: [inviterId], references: [id])
+  invitee Escort @relation("InviteeRelation", fields: [inviteeId], references: [id])
+
   @@index([inviterId])
   @@index([inviteCode])
   @@map("escort_invitations")
@@ -750,23 +751,23 @@ model EscortInvitation {
 
 // 分销等级（可自定义）
 model DistributionLevel {
-  id                String   @id @default(uuid())
-  
-  level             Int      @unique                      // 等级数值（1最高，数字越大等级越低）
-  name              String                                // 等级名称（如：城市合伙人、团队长）
-  code              String   @unique                      // 等级代码（如：partner, leader, member）
-  
+  id String @id @default(uuid())
+
+  level Int    @unique // 等级数值（1最高，数字越大等级越低）
+  name  String // 等级名称（如：城市合伙人、团队长）
+  code  String @unique // 等级代码（如：partner, leader, member）
+
   // 显示配置
-  icon              String?                               // 图标名称（Lucide 图标）
-  color             String   @default("#6b7280")          // 颜色（十六进制）
-  bgColor           String?  @map("bg_color")             // 背景色
-  description       String?                               // 等级描述
-  
+  icon        String? // 图标名称（Lucide 图标）
+  color       String  @default("#6b7280") // 颜色（十六进制）
+  bgColor     String? @map("bg_color") // 背景色
+  description String? // 等级描述
+
   // 分润配置
-  commissionRate    Int      @default(0) @map("commission_rate")  // 分润比例（百分比）
-  
+  commissionRate Int @default(0) @map("commission_rate") // 分润比例（百分比）
+
   // 晋升条件配置（JSON）
-  promotionConfig   Json?    @map("promotion_config")
+  promotionConfig Json? @map("promotion_config")
   // {
   //   minOrders: 50,              // 最低完成订单
   //   minRating: 4.5,             // 最低评分
@@ -778,80 +779,80 @@ model DistributionLevel {
   //   minTeamMonthlyOrders: 100,  // 团队月订单
   //   requireReview: false,       // 需要平台审核
   // }
-  
+
   // 是否为初始等级（新成员默认等级）
-  isDefault         Boolean  @default(false) @map("is_default")
-  
-  sort              Int      @default(0)                  // 排序
-  status            String   @default("active")          // active/inactive
-  
-  createdAt         DateTime @default(now()) @map("created_at")
-  updatedAt         DateTime @updatedAt @map("updated_at")
-  
+  isDefault Boolean @default(false) @map("is_default")
+
+  sort   Int    @default(0) // 排序
+  status String @default("active") // active/inactive
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
   @@map("distribution_levels")
 }
 
 // 分润配置
 model DistributionConfig {
-  id                    String   @id @default(uuid())
-  
+  id String @id @default(uuid())
+
   // 各层级分润比例（基于订单实付金额）- 保留兼容旧数据
-  l1CommissionRate      Int      @default(2) @map("l1_commission_rate")   // 城市合伙人 2%
-  l2CommissionRate      Int      @default(3) @map("l2_commission_rate")   // 团队长 3%
-  l3CommissionRate      Int      @default(1) @map("l3_commission_rate")   // 陪诊员推荐奖励 1%
-  
+  l1CommissionRate Int @default(2) @map("l1_commission_rate") // 城市合伙人 2%
+  l2CommissionRate Int @default(3) @map("l2_commission_rate") // 团队长 3%
+  l3CommissionRate Int @default(1) @map("l3_commission_rate") // 陪诊员推荐奖励 1%
+
   // 直推奖励（新陪诊员首单）
-  directInviteBonus     Decimal  @default(50) @db.Decimal(10, 2) @map("direct_invite_bonus")
-  
+  directInviteBonus Decimal @default(50) @map("direct_invite_bonus") @db.Decimal(10, 2)
+
   // 晋升条件配置 - 保留兼容旧数据
-  l2PromotionConfig     Json?    @map("l2_promotion_config")
-  l1PromotionConfig     Json?    @map("l1_promotion_config")
-  
+  l2PromotionConfig Json? @map("l2_promotion_config")
+  l1PromotionConfig Json? @map("l1_promotion_config")
+
   // 分润上限
-  maxMonthlyDistribution Decimal? @db.Decimal(10, 2) @map("max_monthly_distribution")
-  
-  status                String   @default("active")
-  createdAt             DateTime @default(now()) @map("created_at")
-  updatedAt             DateTime @updatedAt @map("updated_at")
-  
+  maxMonthlyDistribution Decimal? @map("max_monthly_distribution") @db.Decimal(10, 2)
+
+  status    String   @default("active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
   @@map("distribution_config")
 }
 
 // 分润记录
 model DistributionRecord {
-  id              String   @id @default(uuid())
-  
+  id String @id @default(uuid())
+
   // 关联订单
-  orderId         String   @map("order_id")
-  orderAmount     Decimal  @db.Decimal(10, 2) @map("order_amount")
-  
+  orderId     String  @map("order_id")
+  orderAmount Decimal @map("order_amount") @db.Decimal(10, 2)
+
   // 受益人
-  beneficiaryId   String   @map("beneficiary_id")
-  beneficiaryLevel Int     @map("beneficiary_level")  // 受益时的层级
-  
+  beneficiaryId    String @map("beneficiary_id")
+  beneficiaryLevel Int    @map("beneficiary_level") // 受益时的层级
+
   // 分润来源（哪个陪诊员的订单）
-  sourceEscortId  String   @map("source_escort_id")
-  relationLevel   Int      @map("relation_level")     // 与来源的关系层级 (1=直接, 2=二级, 3=三级)
-  
+  sourceEscortId String @map("source_escort_id")
+  relationLevel  Int    @map("relation_level") // 与来源的关系层级 (1=直接, 2=二级, 3=三级)
+
   // 分润信息
-  rate            Int                                 // 分润比例
-  amount          Decimal  @db.Decimal(10, 2)         // 分润金额
-  type            String                              // order: 订单分润, bonus: 直推奖励
-  
+  rate   Int // 分润比例
+  amount Decimal @db.Decimal(10, 2) // 分润金额
+  type   String // order: 订单分润, bonus: 直推奖励
+
   // 状态
-  status          String   @default("pending")
+  status String @default("pending")
   // pending: 待结算（订单完成后7天）
   // settled: 已结算
   // cancelled: 已取消（订单退款）
-  
-  settledAt       DateTime? @map("settled_at")
-  
-  createdAt       DateTime @default(now()) @map("created_at")
-  
-  order           Order    @relation(fields: [orderId], references: [id])
-  beneficiary     Escort   @relation("BeneficiaryRelation", fields: [beneficiaryId], references: [id])
-  sourceEscort    Escort   @relation("SourceRelation", fields: [sourceEscortId], references: [id])
-  
+
+  settledAt DateTime? @map("settled_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  order        Order  @relation(fields: [orderId], references: [id])
+  beneficiary  Escort @relation("BeneficiaryRelation", fields: [beneficiaryId], references: [id])
+  sourceEscort Escort @relation("SourceRelation", fields: [sourceEscortId], references: [id])
+
   @@index([beneficiaryId])
   @@index([orderId])
   @@index([status])
@@ -860,53 +861,53 @@ model DistributionRecord {
 
 // 上级变更历史记录
 model ParentChangeLog {
-  id              String   @id @default(uuid())
-  escortId        String   @map("escort_id")
-  
+  id       String @id @default(uuid())
+  escortId String @map("escort_id")
+
   // 变更前
-  oldParentId     String?  @map("old_parent_id")
-  oldAncestorPath String?  @map("old_ancestor_path")
-  
+  oldParentId     String? @map("old_parent_id")
+  oldAncestorPath String? @map("old_ancestor_path")
+
   // 变更后
-  newParentId     String?  @map("new_parent_id")
-  newAncestorPath String?  @map("new_ancestor_path")
-  
+  newParentId     String? @map("new_parent_id")
+  newAncestorPath String? @map("new_ancestor_path")
+
   // 变更信息
-  reason          String                              // 变更原因
-  operatorType    String   @map("operator_type")      // system, admin
-  operatorId      String?  @map("operator_id")
-  
-  createdAt       DateTime @default(now()) @map("created_at")
-  
-  escort          Escort   @relation(fields: [escortId], references: [id])
-  
+  reason       String // 变更原因
+  operatorType String  @map("operator_type") // system, admin
+  operatorId   String? @map("operator_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  escort Escort @relation(fields: [escortId], references: [id])
+
   @@index([escortId])
   @@map("parent_change_logs")
 }
 
 // 晋升申请
 model PromotionApplication {
-  id              String   @id @default(uuid())
-  escortId        String   @map("escort_id")
-  
+  id       String @id @default(uuid())
+  escortId String @map("escort_id")
+
   // 申请信息
-  fromLevel       Int      @map("from_level")        // 当前层级
-  toLevel         Int      @map("to_level")          // 目标层级
-  
+  fromLevel Int @map("from_level") // 当前层级
+  toLevel   Int @map("to_level") // 目标层级
+
   // 申请条件数据
-  applicationData Json     @map("application_data")   // 申请时的各项数据快照
-  
+  applicationData Json @map("application_data") // 申请时的各项数据快照
+
   // 状态
-  status          String   @default("pending")       // pending, approved, rejected
-  reviewedAt      DateTime? @map("reviewed_at")
-  reviewedBy      String?   @map("reviewed_by")
-  reviewNote      String?   @map("review_note")
-  
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
-  
-  escort          Escort   @relation(fields: [escortId], references: [id])
-  
+  status     String    @default("pending") // pending, approved, rejected
+  reviewedAt DateTime? @map("reviewed_at")
+  reviewedBy String?   @map("reviewed_by")
+  reviewNote String?   @map("review_note")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  escort Escort @relation(fields: [escortId], references: [id])
+
   @@index([escortId])
   @@index([status])
   @@map("promotion_applications")
@@ -914,85 +915,85 @@ model PromotionApplication {
 
 // 陪诊员钱包
 model EscortWallet {
-  id              String    @id @default(uuid())
-  escortId        String    @unique @map("escort_id")
-  balance         Decimal   @default(0) @db.Decimal(10, 2)  // 可用余额
-  frozenBalance   Decimal   @default(0) @db.Decimal(10, 2) @map("frozen_balance") // 冻结余额
-  totalEarned     Decimal   @default(0) @db.Decimal(10, 2) @map("total_earned")   // 累计收入
-  totalWithdrawn  Decimal   @default(0) @db.Decimal(10, 2) @map("total_withdrawn") // 累计提现
-  
+  id             String  @id @default(uuid())
+  escortId       String  @unique @map("escort_id")
+  balance        Decimal @default(0) @db.Decimal(10, 2) // 可用余额
+  frozenBalance  Decimal @default(0) @map("frozen_balance") @db.Decimal(10, 2) // 冻结余额
+  totalEarned    Decimal @default(0) @map("total_earned") @db.Decimal(10, 2) // 累计收入
+  totalWithdrawn Decimal @default(0) @map("total_withdrawn") @db.Decimal(10, 2) // 累计提现
+
   // 提现配置
-  withdrawMethod  String?   @map("withdraw_method")  // wechat, alipay, bank
-  withdrawAccount String?   @map("withdraw_account") // 提现账户信息 (加密存储)
+  withdrawMethod  String? @map("withdraw_method") // wechat, alipay, bank
+  withdrawAccount String? @map("withdraw_account") // 提现账户信息 (加密存储)
 
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  escort          Escort    @relation(fields: [escortId], references: [id])
-  transactions    WalletTransaction[]
-  withdrawals     Withdrawal[]
-  debts           WalletDebt[]
+  escort       Escort              @relation(fields: [escortId], references: [id])
+  transactions WalletTransaction[]
+  withdrawals  Withdrawal[]
+  debts        WalletDebt[]
 
   @@map("escort_wallets")
 }
 
 // 钱包流水
 model WalletTransaction {
-  id          String    @id @default(uuid())
-  walletId    String    @map("wallet_id")
-  type        String    // income(收入), withdraw(提现), refund(退款扣回), frozen(冻结), unfrozen(解冻)
-  amount      Decimal   @db.Decimal(10, 2)
-  balanceAfter Decimal  @db.Decimal(10, 2) @map("balance_after") // 交易后余额
-  
-  // 关联信息
-  orderId     String?   @map("order_id")           // 关联订单
-  withdrawId  String?   @map("withdraw_id")        // 关联提现
-  debtId      String?   @map("debt_id")            // 关联负债
-  
-  title       String                               // 交易标题
-  remark      String?                              // 备注
-  
-  // 冻结相关
-  unfreezeAt  DateTime? @map("unfreeze_at")        // 解冻时间 (仅 frozen 类型有效)
-  unfrozen    Boolean   @default(false)            // 是否已解冻
-  
-  createdAt   DateTime  @default(now()) @map("created_at")
+  id           String  @id @default(uuid())
+  walletId     String  @map("wallet_id")
+  type         String // income(收入), withdraw(提现), refund(退款扣回), frozen(冻结), unfrozen(解冻)
+  amount       Decimal @db.Decimal(10, 2)
+  balanceAfter Decimal @map("balance_after") @db.Decimal(10, 2) // 交易后余额
 
-  wallet      EscortWallet @relation(fields: [walletId], references: [id])
+  // 关联信息
+  orderId    String? @map("order_id") // 关联订单
+  withdrawId String? @map("withdraw_id") // 关联提现
+  debtId     String? @map("debt_id") // 关联负债
+
+  title  String // 交易标题
+  remark String? // 备注
+
+  // 冻结相关
+  unfreezeAt DateTime? @map("unfreeze_at") // 解冻时间 (仅 frozen 类型有效)
+  unfrozen   Boolean   @default(false) // 是否已解冻
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  wallet EscortWallet @relation(fields: [walletId], references: [id])
 
   @@index([walletId, createdAt])
-  @@index([type, unfrozen, unfreezeAt])            // 用于查询待解冻的记录
+  @@index([type, unfrozen, unfreezeAt]) // 用于查询待解冻的记录
   @@map("wallet_transactions")
 }
 
 // 提现记录
 model Withdrawal {
-  id           String    @id @default(uuid())
-  walletId     String    @map("wallet_id")
-  amount       Decimal   @db.Decimal(10, 2)       // 申请金额
-  fee          Decimal   @default(0) @db.Decimal(10, 2) // 手续费
-  actualAmount Decimal   @db.Decimal(10, 2) @map("actual_amount") // 实际到账
-  
-  method       String    // wechat, alipay, bank
-  account      String    // 提现账户
-  
-  status       String    @default("pending") // pending(待审核), approved(已批准), rejected(已拒绝), processing(处理中), completed(已完成), failed(失败)
-  
+  id           String  @id @default(uuid())
+  walletId     String  @map("wallet_id")
+  amount       Decimal @db.Decimal(10, 2) // 申请金额
+  fee          Decimal @default(0) @db.Decimal(10, 2) // 手续费
+  actualAmount Decimal @map("actual_amount") @db.Decimal(10, 2) // 实际到账
+
+  method  String // wechat, alipay, bank
+  account String // 提现账户
+
+  status String @default("pending") // pending(待审核), approved(已批准), rejected(已拒绝), processing(处理中), completed(已完成), failed(失败)
+
   // 审核信息
-  reviewedAt   DateTime? @map("reviewed_at")
-  reviewedBy   String?   @map("reviewed_by")
-  reviewNote   String?   @map("review_note")
-  
+  reviewedAt DateTime? @map("reviewed_at")
+  reviewedBy String?   @map("reviewed_by")
+  reviewNote String?   @map("review_note")
+
   // 打款信息
-  transferNo   String?   @map("transfer_no")       // 转账流水号
-  transferAt   DateTime? @map("transfer_at")       // 转账时间
-  failReason   String?   @map("fail_reason")       // 失败原因
+  transferNo String?   @map("transfer_no") // 转账流水号
+  transferAt DateTime? @map("transfer_at") // 转账时间
+  failReason String?   @map("fail_reason") // 失败原因
 
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  wallet       EscortWallet @relation(fields: [walletId], references: [id])
-  logs         WithdrawLog[]
+  wallet EscortWallet  @relation(fields: [walletId], references: [id])
+  logs   WithdrawLog[]
 
   @@index([walletId, status])
   @@map("withdrawals")
@@ -1001,23 +1002,23 @@ model Withdrawal {
 // 提现操作日志
 // @see docs/资金安全提现体系/02-API接口契约.md
 model WithdrawLog {
-  id           String    @id @default(uuid())
-  withdrawId   String    @map("withdraw_id")
-  
-  // 操作信息
-  action       String    // create(提交申请), approve(审核通过), reject(驳回), payout(发起打款), complete(打款成功), fail(打款失败)
-  operator     String    // system, admin
-  operatorId   String?   @map("operator_id")   // 操作人ID
-  operatorName String?   @map("operator_name") // 操作人名称（脱敏）
-  
-  // 操作详情
-  message      String?   // 操作备注/失败原因
-  oldStatus    String?   @map("old_status")    // 变更前状态
-  newStatus    String?   @map("new_status")    // 变更后状态
-  
-  createdAt    DateTime  @default(now()) @map("created_at")
+  id         String @id @default(uuid())
+  withdrawId String @map("withdraw_id")
 
-  withdrawal   Withdrawal @relation(fields: [withdrawId], references: [id], onDelete: Cascade)
+  // 操作信息
+  action       String // create(提交申请), approve(审核通过), reject(驳回), payout(发起打款), complete(打款成功), fail(打款失败)
+  operator     String // system, admin
+  operatorId   String? @map("operator_id") // 操作人ID
+  operatorName String? @map("operator_name") // 操作人名称（脱敏）
+
+  // 操作详情
+  message   String? // 操作备注/失败原因
+  oldStatus String? @map("old_status") // 变更前状态
+  newStatus String? @map("new_status") // 变更后状态
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  withdrawal Withdrawal @relation(fields: [withdrawId], references: [id], onDelete: Cascade)
 
   @@index([withdrawId, createdAt])
   @@map("withdraw_logs")
@@ -1026,29 +1027,29 @@ model WithdrawLog {
 // 管理员审计日志（资金域专用）
 // @see docs/资金安全提现体系/02-API接口契约.md
 model AdminAuditLog {
-  id           String    @id @default(uuid())
-  
+  id String @id @default(uuid())
+
   // 操作人
-  adminId      String?   @map("admin_id")
-  adminName    String?   @map("admin_name")
-  
+  adminId   String? @map("admin_id")
+  adminName String? @map("admin_name")
+
   // 操作类型
-  module       String    // withdraw, refund, settlement
-  action       String    // export, review, payout, etc.
-  
+  module String // withdraw, refund, settlement
+  action String // export, review, payout, etc.
+
   // 操作对象
-  targetId     String?   @map("target_id")
-  targetType   String?   @map("target_type")
-  
+  targetId   String? @map("target_id")
+  targetType String? @map("target_type")
+
   // 操作详情
-  detail       String?   // JSON: 操作详情
-  filters      String?   // JSON: 导出时的筛选条件
-  
+  detail  String? // JSON: 操作详情
+  filters String? // JSON: 导出时的筛选条件
+
   // 来源信息
-  ip           String?
-  userAgent    String?   @map("user_agent")
-  
-  createdAt    DateTime  @default(now()) @map("created_at")
+  ip        String?
+  userAgent String? @map("user_agent")
+
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@index([module, action, createdAt])
   @@index([adminId, createdAt])
@@ -1057,21 +1058,21 @@ model AdminAuditLog {
 
 // 钱包负债记录 (用于退款扣回)
 model WalletDebt {
-  id              String    @id @default(uuid())
-  walletId        String    @map("wallet_id")
-  orderId         String    @map("order_id")
-  amount          Decimal   @db.Decimal(10, 2)                // 原负债金额
-  remainingAmount Decimal   @db.Decimal(10, 2) @map("remaining_amount") // 剩余待扣金额
-  reason          String                                      // 负债原因
-  type            String    @default("refund")                // refund(退款扣回), penalty(处罚)
-  status          String    @default("pending")               // pending(待偿还), completed(已结清)
-  
-  deductions      String?   // JSON: [{transactionId, amount, createdAt}] 扣款记录
-  
-  createdAt       DateTime  @default(now()) @map("created_at")
-  completedAt     DateTime? @map("completed_at")              // 结清时间
+  id              String  @id @default(uuid())
+  walletId        String  @map("wallet_id")
+  orderId         String  @map("order_id")
+  amount          Decimal @db.Decimal(10, 2) // 原负债金额
+  remainingAmount Decimal @map("remaining_amount") @db.Decimal(10, 2) // 剩余待扣金额
+  reason          String // 负债原因
+  type            String  @default("refund") // refund(退款扣回), penalty(处罚)
+  status          String  @default("pending") // pending(待偿还), completed(已结清)
 
-  wallet          EscortWallet @relation(fields: [walletId], references: [id])
+  deductions String? // JSON: [{transactionId, amount, createdAt}] 扣款记录
+
+  createdAt   DateTime  @default(now()) @map("created_at")
+  completedAt DateTime? @map("completed_at") // 结清时间
+
+  wallet EscortWallet @relation(fields: [walletId], references: [id])
 
   @@index([walletId, status])
   @@map("wallet_debts")
@@ -1079,64 +1080,74 @@ model WalletDebt {
 
 // 陪诊员评价
 model EscortReview {
-  id          String    @id @default(uuid())
-  orderId     String    @unique @map("order_id")   // 一个订单只能评价一次
-  escortId    String    @map("escort_id")
-  userId      String    @map("user_id")
-  
-  rating      Int       // 1-5 评分
-  content     String?   // 评价内容
-  tags        String[]  @default([])               // 评价标签: ["服务好", "准时到达"]
-  images      String[]  @default([])               // 评价图片
-  
-  // 陪诊员回复
-  replyContent String?  @map("reply_content")
-  replyAt      DateTime? @map("reply_at")
-  
-  status      String    @default("visible")        // visible(可见), hidden(隐藏)
-  isAnonymous Boolean   @default(false) @map("is_anonymous") // 是否匿名
-  
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  id       String @id @default(uuid())
+  orderId  String @unique @map("order_id") // 一个订单只能评价一次
+  escortId String @map("escort_id")
+  userId   String @map("user_id")
 
-  escort      Escort    @relation(fields: [escortId], references: [id])
+  rating  Int // 1-5 评分
+  content String? // 评价内容
+  tags    String[] @default([]) // 评价标签: ["服务好", "准时到达"]
+  images  String[] @default([]) // 评价图片
+
+  // 陪诊员回复
+  replyContent String?   @map("reply_content")
+  replyAt      DateTime? @map("reply_at")
+
+  status      String  @default("visible") // visible(可见), hidden(隐藏)
+  isAnonymous Boolean @default(false) @map("is_anonymous") // 是否匿名
+
+  // 隐藏审核信息
+  hideReason String?   @map("hide_reason") // 隐藏原因
+  hiddenBy   String?   @map("hidden_by") // 隐藏操作人ID
+  hiddenAt   DateTime? @map("hidden_at") // 隐藏时间
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // 关联
+  escort Escort @relation(fields: [escortId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+  order  Order  @relation(fields: [orderId], references: [id])
 
   @@index([escortId, createdAt])
+  @@index([userId])
+  @@index([status])
   @@map("escort_reviews")
 }
 
 // 分成配置 (全局)
 model CommissionConfig {
-  id                String    @id @default(uuid())
-  defaultRate       Int       @default(70) @map("default_rate")        // 默认分成比例
-  minWithdrawAmount Decimal   @default(100) @db.Decimal(10, 2) @map("min_withdraw_amount") // 最低提现金额
-  withdrawFeeRate   Decimal   @default(0) @db.Decimal(5, 4) @map("withdraw_fee_rate")   // 提现手续费率
-  withdrawFeeFixed  Decimal   @default(0) @db.Decimal(10, 2) @map("withdraw_fee_fixed") // 固定手续费
-  settlementMode    String    @default("realtime") @map("settlement_mode") // realtime(实时), frozen(冻结期)
-  settlementDays    Int       @default(0) @map("settlement_days")      // 冻结天数 (0=实时结算)
-  
+  id                String  @id @default(uuid())
+  defaultRate       Int     @default(70) @map("default_rate") // 默认分成比例
+  minWithdrawAmount Decimal @default(100) @map("min_withdraw_amount") @db.Decimal(10, 2) // 最低提现金额
+  withdrawFeeRate   Decimal @default(0) @map("withdraw_fee_rate") @db.Decimal(5, 4) // 提现手续费率
+  withdrawFeeFixed  Decimal @default(0) @map("withdraw_fee_fixed") @db.Decimal(10, 2) // 固定手续费
+  settlementMode    String  @default("realtime") @map("settlement_mode") // realtime(实时), frozen(冻结期)
+  settlementDays    Int     @default(0) @map("settlement_days") // 冻结天数 (0=实时结算)
+
   // 提现时间配置
-  withdrawDaysOfWeek String?  @map("withdraw_days_of_week") // 允许提现的星期 JSON: [1,2,3,4,5]
-  withdrawTimeRange  String?  @map("withdraw_time_range")   // 允许提现的时间段 JSON: {start:"09:00",end:"18:00"}
-  
-  remark          String?
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
+  withdrawDaysOfWeek String? @map("withdraw_days_of_week") // 允许提现的星期 JSON: [1,2,3,4,5]
+  withdrawTimeRange  String? @map("withdraw_time_range") // 允许提现的时间段 JSON: {start:"09:00",end:"18:00"}
+
+  remark    String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("commission_configs")
 }
 
 // 陪诊员-医院关联表 (多对多)
 model EscortHospital {
-  id           String   @id @default(uuid())
-  escortId     String   @map("escort_id")
-  hospitalId   String   @map("hospital_id")
-  familiarDepts String? @map("familiar_depts") // JSON: 熟悉科室列表
-  isPrimary    Boolean  @default(false) @map("is_primary") // 是否主要服务医院
-  createdAt    DateTime @default(now()) @map("created_at")
+  id            String   @id @default(uuid())
+  escortId      String   @map("escort_id")
+  hospitalId    String   @map("hospital_id")
+  familiarDepts String?  @map("familiar_depts") // JSON: 熟悉科室列表
+  isPrimary     Boolean  @default(false) @map("is_primary") // 是否主要服务医院
+  createdAt     DateTime @default(now()) @map("created_at")
 
-  escort       Escort   @relation(fields: [escortId], references: [id], onDelete: Cascade)
-  hospital     Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  escort   Escort   @relation(fields: [escortId], references: [id], onDelete: Cascade)
+  hospital Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
 
   @@unique([escortId, hospitalId])
   @@map("escort_hospitals")
@@ -1145,95 +1156,96 @@ model EscortHospital {
 // ========== 订单模块 ==========
 
 model Order {
-  id               String    @id @default(uuid())
-  orderNo          String    @unique @map("order_no")
-  userId           String    @map("user_id")
-  patientId        String    @map("patient_id")
-  serviceId        String    @map("service_id")
-  hospitalId       String    @map("hospital_id")
-  departmentId     String?   @map("department_id")    // 科室关联
-  doctorId         String?   @map("doctor_id")        // 医生关联
-  escortId         String?   @map("escort_id")
-  
+  id           String  @id @default(uuid())
+  orderNo      String  @unique @map("order_no")
+  userId       String  @map("user_id")
+  patientId    String  @map("patient_id")
+  serviceId    String  @map("service_id")
+  hospitalId   String  @map("hospital_id")
+  departmentId String? @map("department_id") // 科室关联
+  doctorId     String? @map("doctor_id") // 医生关联
+  escortId     String? @map("escort_id")
+
   // 预约信息
-  appointmentDate  DateTime  @map("appointment_date")
-  appointmentTime  String    @map("appointment_time")
-  departmentName   String?   @map("department_name")   // 保留: 兼容旧数据
-  appointmentAddress  String?  @map("appointment_address")   // Phase1: 详细地址
-  appointmentBuilding String?  @map("appointment_building")  // Phase1: 楼栋/门诊号
-  
+  appointmentDate     DateTime @map("appointment_date")
+  appointmentTime     String   @map("appointment_time")
+  departmentName      String?  @map("department_name") // 保留: 兼容旧数据
+  appointmentAddress  String?  @map("appointment_address") // Phase1: 详细地址
+  appointmentBuilding String?  @map("appointment_building") // Phase1: 楼栋/门诊号
+
   // 金额信息 - 使用 Decimal 避免浮点精度问题
-  totalAmount      Decimal   @map("total_amount") @db.Decimal(10, 2)
-  discountAmount   Decimal   @default(0) @map("discount_amount") @db.Decimal(10, 2)
-  paidAmount       Decimal   @default(0) @map("paid_amount") @db.Decimal(10, 2)
-  
+  totalAmount    Decimal @map("total_amount") @db.Decimal(10, 2)
+  discountAmount Decimal @default(0) @map("discount_amount") @db.Decimal(10, 2)
+  paidAmount     Decimal @default(0) @map("paid_amount") @db.Decimal(10, 2)
+
   // 分成信息 (Phase1 新增)
-  commissionRate   Int?      @map("commission_rate")     // 分成比例 0-100
-  commissionAmount Decimal?  @map("commission_amount") @db.Decimal(10, 2) // 陪诊员分成金额
-  platformAmount   Decimal?  @map("platform_amount") @db.Decimal(10, 2)   // 平台收入金额
-  
+  commissionRate   Int?     @map("commission_rate") // 分成比例 0-100
+  commissionAmount Decimal? @map("commission_amount") @db.Decimal(10, 2) // 陪诊员分成金额
+  platformAmount   Decimal? @map("platform_amount") @db.Decimal(10, 2) // 平台收入金额
+
   // 状态
-  status           String    @default("pending") // pending, paid, confirmed, assigned, arrived, in_progress, completed, cancelled, refunded
-  
+  status String @default("pending") // pending, paid, confirmed, assigned, arrived, in_progress, completed, cancelled, refunded
+
   // 派单信息 (Phase1 新增)
-  assignMethod     String?   @map("assign_method")       // grab(抢单), manual(手动派单), auto(智能派单), user_select(用户选择)
-  assignDeadline   DateTime? @map("assign_deadline")     // 派单截止时间
-  serviceDeadline  DateTime? @map("service_deadline")    // 服务截止时间
-  preAssignWorkStatus String? @map("pre_assign_work_status") // 抢单前陪诊员工作状态(用于恢复)
-  preAssignedEscortId String? @map("pre_assigned_escort_id") // 用户预选陪诊员ID（用户选择模式）
-  
+  assignMethod        String?   @map("assign_method") // grab(抢单), manual(手动派单), auto(智能派单), user_select(用户选择)
+  assignDeadline      DateTime? @map("assign_deadline") // 派单截止时间
+  serviceDeadline     DateTime? @map("service_deadline") // 服务截止时间
+  preAssignWorkStatus String?   @map("pre_assign_work_status") // 抢单前陪诊员工作状态(用于恢复)
+  preAssignedEscortId String?   @map("pre_assigned_escort_id") // 用户预选陪诊员ID（用户选择模式）
+
   // 服务证据 (Phase1 新增)
-  arrivePhotos     String[]  @default([]) @map("arrive_photos")   // 到达打卡照片
-  completePhotos   String[]  @default([]) @map("complete_photos") // 完成服务照片
-  
+  arrivePhotos   String[] @default([]) @map("arrive_photos") // 到达打卡照片
+  completePhotos String[] @default([]) @map("complete_photos") // 完成服务照片
+
   // 支付信息
-  paymentMethod    String?   @map("payment_method")
-  paymentTime      DateTime? @map("payment_time")
-  transactionId    String?   @map("transaction_id")
-  
+  paymentMethod String?   @map("payment_method")
+  paymentTime   DateTime? @map("payment_time")
+  transactionId String?   @map("transaction_id")
+
   // 备注
-  userRemark       String?   @map("user_remark")
-  adminRemark      String?   @map("admin_remark")
-  cancelReason     String?   @map("cancel_reason")
-  
+  userRemark   String? @map("user_remark")
+  adminRemark  String? @map("admin_remark")
+  cancelReason String? @map("cancel_reason")
+
   // 陪诊员反馈 (Phase1 新增 - 双向评价)
-  escortRating     Int?      @map("escort_rating")       // 陪诊员对用户的评分
-  escortRemark     String?   @map("escort_remark")       // 陪诊员备注
+  escortRating Int?    @map("escort_rating") // 陪诊员对用户的评分
+  escortRemark String? @map("escort_remark") // 陪诊员备注
 
   // 陪诊员快照 (软删除支持) - 订单创建/派单时冗余存储陪诊员信息
-  escortSnapshot   Json?     @map("escort_snapshot")     // { name, phone, avatar, levelCode, levelName }
+  escortSnapshot Json? @map("escort_snapshot") // { name, phone, avatar, levelCode, levelName }
 
   // 时间节点
-  createdAt        DateTime  @default(now()) @map("created_at")
-  updatedAt        DateTime  @updatedAt @map("updated_at")
-  paidAt           DateTime? @map("paid_at")        // 支付时间
-  assignedAt       DateTime? @map("assigned_at")    // 派单时间
-  arrivedAt        DateTime? @map("arrived_at")     // 陪诊员到达时间
-  startedAt        DateTime? @map("started_at")     // 服务开始时间
-  completedAt      DateTime? @map("completed_at")   // 服务完成时间
-  cancelledAt      DateTime? @map("cancelled_at")   // 取消时间
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  paidAt      DateTime? @map("paid_at") // 支付时间
+  assignedAt  DateTime? @map("assigned_at") // 派单时间
+  arrivedAt   DateTime? @map("arrived_at") // 陪诊员到达时间
+  startedAt   DateTime? @map("started_at") // 服务开始时间
+  completedAt DateTime? @map("completed_at") // 服务完成时间
+  cancelledAt DateTime? @map("cancelled_at") // 取消时间
 
   // 关联
-  user             User      @relation(fields: [userId], references: [id])
-  patient          Patient   @relation(fields: [patientId], references: [id])
-  service          Service   @relation(fields: [serviceId], references: [id])
-  hospital         Hospital  @relation(fields: [hospitalId], references: [id])
-  department       Department? @relation(fields: [departmentId], references: [id])
-  doctor           Doctor?   @relation(fields: [doctorId], references: [id])
-  escort           Escort?   @relation(fields: [escortId], references: [id])
-  logs             OrderLog[]
-  priceSnapshot    OrderPriceSnapshot?
+  user                User                 @relation(fields: [userId], references: [id])
+  patient             Patient              @relation(fields: [patientId], references: [id])
+  service             Service              @relation(fields: [serviceId], references: [id])
+  hospital            Hospital             @relation(fields: [hospitalId], references: [id])
+  department          Department?          @relation(fields: [departmentId], references: [id])
+  doctor              Doctor?              @relation(fields: [doctorId], references: [id])
+  escort              Escort?              @relation(fields: [escortId], references: [id])
+  logs                OrderLog[]
+  priceSnapshot       OrderPriceSnapshot?
   distributionRecords DistributionRecord[]
-  complaints       Complaint[]
-  chatSessions     ChatSession[]
+  complaints          Complaint[]
+  chatSessions        ChatSession[]
+  escortReview        EscortReview?
 
   // 营销相关
-  couponId         String?   @unique @map("coupon_id")
-  campaignId       String?   @map("campaign_id")
-  pointsUsed       Int       @default(0) @map("points_used")
-  
-  coupon           UserCoupon? @relation("OrderCoupon", fields: [couponId], references: [id])
-  campaign         Campaign? @relation(fields: [campaignId], references: [id])
+  couponId   String? @unique @map("coupon_id")
+  campaignId String? @map("campaign_id")
+  pointsUsed Int     @default(0) @map("points_used")
+
+  coupon   UserCoupon? @relation("OrderCoupon", fields: [couponId], references: [id])
+  campaign Campaign?   @relation(fields: [campaignId], references: [id])
 
   @@index([status, appointmentDate])
   @@index([escortId, status])
@@ -1253,123 +1265,123 @@ model OrderPriceSnapshot {
 
 // ========== 营销：价格配置 ==========
 model PricingConfig {
-  id                    String   @id @default(uuid())
-  
+  id String @id @default(uuid())
+
   // 折扣叠加规则
-  discountStackMode     String   @default("multiply") @map("discount_stack_mode")
+  discountStackMode String @default("multiply") @map("discount_stack_mode")
   // multiply: 乘法叠加（活动价 × 会员折扣）
   // min: 取最优价（活动价与会员价取较低）
-  
+
   // 优惠券规则
-  couponStackWithMember Boolean  @default(true) @map("coupon_stack_with_member")
+  couponStackWithMember Boolean @default(true) @map("coupon_stack_with_member")
   // true: 优惠券可与会员折扣叠加
   // false: 优惠券与会员折扣互斥，取较优
-  
+
   couponStackWithCampaign Boolean @default(true) @map("coupon_stack_with_campaign")
   // true: 优惠券可与活动叠加
   // false: 优惠券与活动互斥
-  
+
   // 积分规则
-  pointsEnabled         Boolean  @default(true) @map("points_enabled")
-  pointsRate            Int      @default(100) @map("points_rate")  // 100积分=1元
-  pointsMaxRate         Int      @default(10)  @map("points_max_rate") // 最高抵扣10%
-  
+  pointsEnabled Boolean @default(true) @map("points_enabled")
+  pointsRate    Int     @default(100) @map("points_rate") // 100积分=1元
+  pointsMaxRate Int     @default(10) @map("points_max_rate") // 最高抵扣10%
+
   // 最低支付
-  minPayAmount          Decimal  @default(0.01) @db.Decimal(10, 2) @map("min_pay_amount")
-  
+  minPayAmount Decimal @default(0.01) @map("min_pay_amount") @db.Decimal(10, 2)
+
   // 显示规则
-  showOriginalPrice     Boolean  @default(true) @map("show_original_price")
-  showMemberPrice       Boolean  @default(true) @map("show_member_price")
-  showSavings           Boolean  @default(true) @map("show_savings")
-  
-  createdAt             DateTime @default(now()) @map("created_at")
-  updatedAt             DateTime @updatedAt @map("updated_at")
-  
+  showOriginalPrice Boolean @default(true) @map("show_original_price")
+  showMemberPrice   Boolean @default(true) @map("show_member_price")
+  showSavings       Boolean @default(true) @map("show_savings")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
   @@map("pricing_configs")
 }
 
 // ========== 营销：会员 ==========
 model MembershipLevel {
-  id                String    @id @default(uuid())
-  name              String                          // VIP会员
-  code              String    @unique                // vip
-  icon              String?                         // 等级图标
-  color             String?                         // #FFD700
-  discount          Int       @default(100)          // 90 = 9折
-  overtimeFeeWaiver Int       @default(0)            // 50 = 50%减免
-  benefits          Json                            // 权益详情
-  sort              Int       @default(0)
-  status            String    @default("active")
-  createdAt         DateTime  @default(now()) @map("created_at")
-  updatedAt         DateTime  @updatedAt @map("updated_at")
+  id                String   @id @default(uuid())
+  name              String // VIP会员
+  code              String   @unique // vip
+  icon              String? // 等级图标
+  color             String? // #FFD700
+  discount          Int      @default(100) // 90 = 9折
+  overtimeFeeWaiver Int      @default(0) // 50 = 50%减免
+  benefits          Json // 权益详情
+  sort              Int      @default(0)
+  status            String   @default("active")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
 
-  plans             MembershipPlan[]
-  userMemberships   UserMembership[]
-  membershipOrders  MembershipOrder[]
-  upgradeRules      ConsumeUpgradeRule[]
+  plans            MembershipPlan[]
+  userMemberships  UserMembership[]
+  membershipOrders MembershipOrder[]
+  upgradeRules     ConsumeUpgradeRule[]
 
   @@map("membership_levels")
 }
 
 model MembershipPlan {
-  id              String    @id @default(uuid())
-  levelId         String    @map("level_id")
-  name            String                              // 月卡/季卡/年卡
-  code            String                              // monthly/quarterly/yearly
-  price           Decimal   @db.Decimal(10, 2)         // 29/69/199
-  originalPrice   Decimal?  @db.Decimal(10, 2)         // 原价（展示用）
-  duration        Int                                 // 30/90/365 天
-  renewalBonus    Int       @default(0)                // 续费赠送天数
-  description     String?
-  features        String[]                            // 卖点列表
-  sort            Int       @default(0)
-  recommended     Boolean  @default(false)            // 推荐标记
-  status          String    @default("active")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
+  id            String   @id @default(uuid())
+  levelId       String   @map("level_id")
+  name          String // 月卡/季卡/年卡
+  code          String // monthly/quarterly/yearly
+  price         Decimal  @db.Decimal(10, 2) // 29/69/199
+  originalPrice Decimal? @db.Decimal(10, 2) // 原价（展示用）
+  duration      Int // 30/90/365 天
+  renewalBonus  Int      @default(0) // 续费赠送天数
+  description   String?
+  features      String[] // 卖点列表
+  sort          Int      @default(0)
+  recommended   Boolean  @default(false) // 推荐标记
+  status        String   @default("active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
 
-  level           MembershipLevel @relation(fields: [levelId], references: [id])
+  level           MembershipLevel   @relation(fields: [levelId], references: [id])
   orders          MembershipOrder[]
   userMemberships UserMembership[]
 
-  @@unique([levelId, code])  // 同一等级下 code 唯一
+  @@unique([levelId, code]) // 同一等级下 code 唯一
   @@index([levelId])
   @@map("membership_plans")
 }
 
 model UserMembership {
-  id           String    @id @default(uuid())
-  userId       String    @map("user_id")
-  levelId      String    @map("level_id")
-  planId       String?   @map("plan_id")
-  
+  id      String  @id @default(uuid())
+  userId  String  @map("user_id")
+  levelId String  @map("level_id")
+  planId  String? @map("plan_id")
+
   // 来源
-  source       String    @default("purchase")
+  source String @default("purchase")
   // purchase: 购买套餐
   // consume: 消费升级
   // gift: 赠送
   // compensate: 补偿
-  
+
   // 快照（下单时记录，不受后续修改影响）
-  levelName    String    @map("level_name")
-  discount     Int
-  overtimeFeeWaiver Int @map("overtime_fee_waiver")
-  
+  levelName         String @map("level_name")
+  discount          Int
+  overtimeFeeWaiver Int    @map("overtime_fee_waiver")
+
   // 有效期
-  startAt      DateTime  @map("start_at")
-  expireAt     DateTime  @map("expire_at")
-  
+  startAt  DateTime @map("start_at")
+  expireAt DateTime @map("expire_at")
+
   // 状态
-  status       String    @default("active")
+  status String @default("active")
   // active: 生效中
   // expired: 已过期
   // cancelled: 已取消（退款）
-  
-  createdAt    DateTime  @default(now()) @map("created_at")
-  
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  level        MembershipLevel @relation(fields: [levelId], references: [id])
-  plan         MembershipPlan?  @relation(fields: [planId], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user  User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  level MembershipLevel @relation(fields: [levelId], references: [id])
+  plan  MembershipPlan? @relation(fields: [planId], references: [id])
 
   @@index([userId, status])
   @@index([expireAt])
@@ -1377,46 +1389,46 @@ model UserMembership {
 }
 
 model MembershipOrder {
-  id            String    @id @default(uuid())
-  orderNo       String    @unique @map("order_no")
-  userId        String    @map("user_id")
-  levelId       String    @map("level_id")
-  planId        String    @map("plan_id")
-  
+  id      String @id @default(uuid())
+  orderNo String @unique @map("order_no")
+  userId  String @map("user_id")
+  levelId String @map("level_id")
+  planId  String @map("plan_id")
+
   // 订单类型
-  type          String    @default("purchase")
+  type String @default("purchase")
   // purchase: 新购
   // renew: 续费
   // upgrade: 升级（预留）
-  
+
   // 快照
-  planName      String    @map("plan_name")
-  planPrice     Decimal   @db.Decimal(10, 2) @map("plan_price")
-  duration      Int                                    // 购买天数
-  bonusDays     Int       @default(0) @map("bonus_days") // 赠送天数
-  
+  planName  String  @map("plan_name")
+  planPrice Decimal @map("plan_price") @db.Decimal(10, 2)
+  duration  Int // 购买天数
+  bonusDays Int     @default(0) @map("bonus_days") // 赠送天数
+
   // 支付
-  amount        Decimal   @db.Decimal(10, 2)           // 实付金额
-  paymentMethod String?   @map("payment_method")       // wechat/alipay
+  amount        Decimal   @db.Decimal(10, 2) // 实付金额
+  paymentMethod String?   @map("payment_method") // wechat/alipay
   paidAt        DateTime? @map("paid_at")
-  
+
   // 状态
-  status        String    @default("pending")
+  status String @default("pending")
   // pending: 待支付
   // paid: 已支付
   // cancelled: 已取消
   // refunded: 已退款
-  
+
   // 退款
-  refundedAt    DateTime? @map("refunded_at")
-  refundAmount  Decimal?  @db.Decimal(10, 2) @map("refund_amount")
-  refundReason  String?   @map("refund_reason")
-  
-  createdAt     DateTime  @default(now()) @map("created_at")
-  
-  user          User      @relation(fields: [userId], references: [id])
-  level         MembershipLevel @relation(fields: [levelId], references: [id])
-  plan          MembershipPlan @relation(fields: [planId], references: [id])
+  refundedAt   DateTime? @map("refunded_at")
+  refundAmount Decimal?  @map("refund_amount") @db.Decimal(10, 2)
+  refundReason String?   @map("refund_reason")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user  User            @relation(fields: [userId], references: [id])
+  level MembershipLevel @relation(fields: [levelId], references: [id])
+  plan  MembershipPlan  @relation(fields: [planId], references: [id])
 
   @@index([userId])
   @@map("membership_orders")
@@ -1424,208 +1436,208 @@ model MembershipOrder {
 
 // 消费升级规则
 model ConsumeUpgradeRule {
-  id           String   @id @default(uuid())
-  levelId      String   @map("level_id")
-  threshold    Decimal  @db.Decimal(10, 2)   // 累计消费门槛
-  grantDays    Int      @map("grant_days")   // 赠送会员天数
-  
+  id        String  @id @default(uuid())
+  levelId   String  @map("level_id")
+  threshold Decimal @db.Decimal(10, 2) // 累计消费门槛
+  grantDays Int     @map("grant_days") // 赠送会员天数
+
   // 统计周期
-  period       String   @default("forever")
+  period String @default("forever")
   // forever: 累计总消费
   // yearly: 年度消费
   // monthly: 月度消费
-  
-  description  String?
-  sort         Int      @default(0)
-  status       String   @default("active")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
-  
-  level        MembershipLevel @relation(fields: [levelId], references: [id])
-  
+
+  description String?
+  sort        Int      @default(0)
+  status      String   @default("active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  level MembershipLevel @relation(fields: [levelId], references: [id])
+
   @@map("consume_upgrade_rules")
 }
 
 // ========== 营销：优惠券 ==========
 model CouponTemplate {
-  id                String   @id @default(uuid())
-  name              String                          // 优惠券名称
-  code              String?  @unique                // 兑换码（可选）
-  
+  id   String  @id @default(uuid())
+  name String // 优惠券名称
+  code String? @unique // 兑换码（可选）
+
   // 优惠类型
-  type              String                          // amount/percent/free
-  value             Decimal  @db.Decimal(10, 2)     // 面值或折扣
-  maxDiscount       Decimal? @db.Decimal(10, 2) @map("max_discount") // 折扣券最大抵扣
-  
+  type        String // amount/percent/free
+  value       Decimal  @db.Decimal(10, 2) // 面值或折扣
+  maxDiscount Decimal? @map("max_discount") @db.Decimal(10, 2) // 折扣券最大抵扣
+
   // 使用条件
-  minAmount         Decimal  @default(0) @db.Decimal(10, 2) @map("min_amount")
-  applicableScope   String   @default("all") @map("applicable_scope")
+  minAmount       Decimal  @default(0) @map("min_amount") @db.Decimal(10, 2)
+  applicableScope String   @default("all") @map("applicable_scope")
   // all: 全场通用
   // category: 指定分类
   // service: 指定服务
-  applicableIds     String[] @map("applicable_ids")
-  
+  applicableIds   String[] @map("applicable_ids")
+
   // 会员限制
-  memberOnly        Boolean  @default(false) @map("member_only")
-  memberLevelIds    String[] @map("member_level_ids")
-  
+  memberOnly     Boolean  @default(false) @map("member_only")
+  memberLevelIds String[] @map("member_level_ids")
+
   // 发放限制
-  totalQuantity     Int?     @map("total_quantity")   // 总发放量
-  perUserLimit      Int      @default(1) @map("per_user_limit")
-  
+  totalQuantity Int? @map("total_quantity") // 总发放量
+  perUserLimit  Int  @default(1) @map("per_user_limit")
+
   // 有效期
-  validityType      String   @default("fixed") @map("validity_type")
+  validityType String    @default("fixed") @map("validity_type")
   // fixed: 固定日期
   // relative: 领取后N天
-  startAt           DateTime? @map("start_at")
-  endAt             DateTime? @map("end_at")
-  validDays         Int?     @map("valid_days")
-  
+  startAt      DateTime? @map("start_at")
+  endAt        DateTime? @map("end_at")
+  validDays    Int?      @map("valid_days")
+
   // 叠加规则
-  stackWithMember   Boolean  @default(true) @map("stack_with_member")
-  stackWithCampaign Boolean  @default(true) @map("stack_with_campaign")
-  
+  stackWithMember   Boolean @default(true) @map("stack_with_member")
+  stackWithCampaign Boolean @default(true) @map("stack_with_campaign")
+
   // 展示
-  description       String?
-  tips              String?                         // 使用提示
-  
-  status            String   @default("active")
-  createdAt         DateTime @default(now()) @map("created_at")
-  updatedAt         DateTime @updatedAt @map("updated_at")
-  
-  userCoupons       UserCoupon[]
-  grantRules        CouponGrantRule[]
-  
+  description String?
+  tips        String? // 使用提示
+
+  status    String   @default("active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  userCoupons UserCoupon[]
+  grantRules  CouponGrantRule[]
+
   @@map("coupon_templates")
 }
 
 model UserCoupon {
-  id           String    @id @default(uuid())
-  userId       String    @map("user_id")
-  templateId   String    @map("template_id")
-  
+  id         String @id @default(uuid())
+  userId     String @map("user_id")
+  templateId String @map("template_id")
+
   // 快照（领取时记录，不受模板修改影响）
-  name         String
-  type         String
-  value        Decimal   @db.Decimal(10, 2)
-  maxDiscount  Decimal?  @db.Decimal(10, 2) @map("max_discount")
-  minAmount    Decimal   @db.Decimal(10, 2) @map("min_amount")
-  applicableScope String @map("applicable_scope")
-  applicableIds String[] @map("applicable_ids")
-  stackWithMember Boolean @map("stack_with_member")
-  stackWithCampaign Boolean @map("stack_with_campaign")
-  
+  name              String
+  type              String
+  value             Decimal  @db.Decimal(10, 2)
+  maxDiscount       Decimal? @map("max_discount") @db.Decimal(10, 2)
+  minAmount         Decimal  @map("min_amount") @db.Decimal(10, 2)
+  applicableScope   String   @map("applicable_scope")
+  applicableIds     String[] @map("applicable_ids")
+  stackWithMember   Boolean  @map("stack_with_member")
+  stackWithCampaign Boolean  @map("stack_with_campaign")
+
   // 状态
-  status       String    @default("unused")
+  status String @default("unused")
   // unused: 未使用
   // used: 已使用
   // expired: 已过期
   // returned: 已退回（订单退款）
-  
-  usedAt       DateTime? @map("used_at")
-  orderId      String?   @map("order_id")
-  
+
+  usedAt  DateTime? @map("used_at")
+  orderId String?   @map("order_id")
+
   // 有效期
-  startAt      DateTime  @map("start_at")
-  expireAt     DateTime  @map("expire_at")
-  
+  startAt  DateTime @map("start_at")
+  expireAt DateTime @map("expire_at")
+
   // 来源
-  source       String    @default("claim")
-  sourceId     String?   @map("source_id")
-  
-  createdAt    DateTime  @default(now()) @map("created_at")
-  
-  user         User      @relation(fields: [userId], references: [id])
-  template     CouponTemplate @relation(fields: [templateId], references: [id])
-  order        Order?    @relation("OrderCoupon")
-  
+  source   String  @default("claim")
+  sourceId String? @map("source_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user     User           @relation(fields: [userId], references: [id])
+  template CouponTemplate @relation(fields: [templateId], references: [id])
+  order    Order?         @relation("OrderCoupon")
+
   @@index([userId, status])
   @@index([expireAt])
   @@map("user_coupons")
 }
 
 model CouponGrantRule {
-  id           String   @id @default(uuid())
-  name         String
-  templateId   String   @map("template_id")
-  
+  id         String @id @default(uuid())
+  name       String
+  templateId String @map("template_id")
+
   // 触发条件
-  trigger      String
-  triggerConfig Json?   @map("trigger_config")
-  
+  trigger       String
+  triggerConfig Json?  @map("trigger_config")
+
   // 发放配置
-  grantQuantity Int     @default(1) @map("grant_quantity")
-  
-  status       String   @default("active")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
-  
-  template     CouponTemplate @relation(fields: [templateId], references: [id])
-  
+  grantQuantity Int @default(1) @map("grant_quantity")
+
+  status    String   @default("active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  template CouponTemplate @relation(fields: [templateId], references: [id])
+
   @@map("coupon_grant_rules")
 }
 
 // ========== 营销：积分 ==========
 model PointRule {
-  id           String   @id @default(uuid())
-  name         String                          // 规则名称
-  code         String   @unique                // order_consume/first_order/daily_checkin
-  
+  id   String @id @default(uuid())
+  name String // 规则名称
+  code String @unique // order_consume/first_order/daily_checkin
+
   // 积分配置
-  points       Int                             // 固定积分值
-  pointsRate   Decimal? @db.Decimal(5, 2) @map("points_rate") // 按比例（如消费1元=1分）
-  
+  points     Int // 固定积分值
+  pointsRate Decimal? @map("points_rate") @db.Decimal(5, 2) // 按比例（如消费1元=1分）
+
   // 每日限制
-  dailyLimit   Int?     @map("daily_limit")    // 每日获取上限
-  totalLimit   Int?     @map("total_limit")    // 总获取上限
-  
+  dailyLimit Int? @map("daily_limit") // 每日获取上限
+  totalLimit Int? @map("total_limit") // 总获取上限
+
   // 生效条件
-  conditions   Json?                           // 额外条件
-  
-  status       String   @default("active")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
-  
+  conditions Json? // 额外条件
+
+  status    String   @default("active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
   @@map("point_rules")
 }
 
 model UserPoint {
-  id             String   @id @default(uuid())
-  userId         String   @unique @map("user_id")
-  
-  totalPoints    Int      @default(0) @map("total_points")     // 累计获取
-  usedPoints     Int      @default(0) @map("used_points")      // 累计使用
-  expiredPoints  Int      @default(0) @map("expired_points")   // 累计过期
-  currentPoints  Int      @default(0) @map("current_points")   // 当前可用
-  
-  updatedAt      DateTime @updatedAt @map("updated_at")
-  
-  user           User     @relation(fields: [userId], references: [id])
-  
+  id     String @id @default(uuid())
+  userId String @unique @map("user_id")
+
+  totalPoints   Int @default(0) @map("total_points") // 累计获取
+  usedPoints    Int @default(0) @map("used_points") // 累计使用
+  expiredPoints Int @default(0) @map("expired_points") // 累计过期
+  currentPoints Int @default(0) @map("current_points") // 当前可用
+
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id])
+
   @@map("user_points")
 }
 
 model PointRecord {
-  id           String   @id @default(uuid())
-  userId       String   @map("user_id")
-  
+  id     String @id @default(uuid())
+  userId String @map("user_id")
+
   // 变更信息
-  type         String                          // earn/use/expire/refund
-  points       Int                             // 正数获取，负数消耗
-  balance      Int                             // 变更后余额
-  
+  type    String // earn/use/expire/refund
+  points  Int // 正数获取，负数消耗
+  balance Int // 变更后余额
+
   // 来源
-  source       String                          // order_consume/daily_checkin/...
-  sourceId     String?  @map("source_id")      // 关联ID
-  description  String                          // 描述
-  
+  source      String // order_consume/daily_checkin/...
+  sourceId    String? @map("source_id") // 关联ID
+  description String // 描述
+
   // 有效期（仅获取时）
-  expireAt     DateTime? @map("expire_at")
-  
-  createdAt    DateTime @default(now()) @map("created_at")
-  
-  user         User     @relation(fields: [userId], references: [id])
-  
+  expireAt DateTime? @map("expire_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
   @@index([userId, createdAt])
   @@index([expireAt])
   @@map("point_records")
@@ -1633,81 +1645,81 @@ model PointRecord {
 
 // ========== 营销：邀请 ==========
 model ReferralRule {
-  id               String   @id @default(uuid())
-  name             String                          // 规则名称
-  type             String                          // user: 用户邀请, patient: 就诊人邀请
-  
+  id   String @id @default(uuid())
+  name String // 规则名称
+  type String // user: 用户邀请, patient: 就诊人邀请
+
   // 邀请人奖励
-  inviterCouponId  String?  @map("inviter_coupon_id")
-  inviterPoints    Int      @default(0) @map("inviter_points")
-  
+  inviterCouponId String? @map("inviter_coupon_id")
+  inviterPoints   Int     @default(0) @map("inviter_points")
+
   // 被邀请人奖励
-  inviteeCouponId  String?  @map("invitee_coupon_id")
-  inviteePoints    Int      @default(0) @map("invitee_points")
-  
+  inviteeCouponId String? @map("invitee_coupon_id")
+  inviteePoints   Int     @default(0) @map("invitee_points")
+
   // 发放条件
   requireFirstOrder Boolean @default(true) @map("require_first_order")
   // user 类型：被邀请人需完成首单
   // patient 类型：仅需注册
-  
+
   // 限制
-  dailyLimit       Int?     @map("daily_limit")    // 每日邀请上限
-  totalLimit       Int?     @map("total_limit")    // 累计邀请上限
-  
-  status           String   @default("active")
-  createdAt        DateTime @default(now()) @map("created_at")
-  updatedAt        DateTime @updatedAt @map("updated_at")
-  
+  dailyLimit Int? @map("daily_limit") // 每日邀请上限
+  totalLimit Int? @map("total_limit") // 累计邀请上限
+
+  status    String   @default("active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
   @@map("referral_rules")
 }
 
 model UserInviteCode {
-  id         String   @id @default(uuid())
-  userId     String   @unique @map("user_id")
-  code       String   @unique                     // 唯一邀请码
-  
+  id     String @id @default(uuid())
+  userId String @unique @map("user_id")
+  code   String @unique // 唯一邀请码
+
   // 统计
-  inviteCount Int     @default(0) @map("invite_count")   // 邀请人数
-  rewardCount Int     @default(0) @map("reward_count")   // 已获奖励次数
-  
-  createdAt  DateTime @default(now()) @map("created_at")
-  
-  user       User     @relation(fields: [userId], references: [id])
-  
+  inviteCount Int @default(0) @map("invite_count") // 邀请人数
+  rewardCount Int @default(0) @map("reward_count") // 已获奖励次数
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
   @@map("user_invite_codes")
 }
 
 model ReferralRecord {
-  id           String    @id @default(uuid())
-  inviterId    String    @map("inviter_id")        // 邀请人
-  inviteeId    String?   @map("invitee_id")        // 被邀请人（注册后）
-  inviteCode   String    @map("invite_code")
-  
-  type         String                              // user/patient
-  
+  id         String  @id @default(uuid())
+  inviterId  String  @map("inviter_id") // 邀请人
+  inviteeId  String? @map("invitee_id") // 被邀请人（注册后）
+  inviteCode String  @map("invite_code")
+
+  type String // user/patient
+
   // 就诊人邀请相关
-  patientId    String?   @map("patient_id")
-  patientPhone String?   @map("patient_phone")
-  
+  patientId    String? @map("patient_id")
+  patientPhone String? @map("patient_phone")
+
   // 状态
-  status       String    @default("pending")
+  status String @default("pending")
   // pending: 待注册
   // registered: 已注册
   // rewarded: 已发放奖励
   // invalid: 无效（超时/作弊）
-  
+
   registeredAt DateTime? @map("registered_at")
   rewardedAt   DateTime? @map("rewarded_at")
-  
+
   // 奖励快照
-  inviterReward Json?    @map("inviter_reward")
-  inviteeReward Json?    @map("invitee_reward")
-  
-  createdAt    DateTime  @default(now()) @map("created_at")
-  
-  inviter      User      @relation("Inviter", fields: [inviterId], references: [id])
-  invitee      User?     @relation("Invitee", fields: [inviteeId], references: [id])
-  
+  inviterReward Json? @map("inviter_reward")
+  inviteeReward Json? @map("invitee_reward")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  inviter User  @relation("Inviter", fields: [inviterId], references: [id])
+  invitee User? @relation("Invitee", fields: [inviteeId], references: [id])
+
   @@index([inviterId])
   @@index([inviteeId])
   @@index([inviteCode])
@@ -1716,113 +1728,113 @@ model ReferralRecord {
 
 // ========== 营销：活动 ==========
 model Campaign {
-  id              String    @id @default(uuid())
-  name            String                              // 活动名称
-  code            String?   @unique                   // 活动代码
-  type            String                              // flash_sale/seckill/threshold/newcomer
-  
+  id   String  @id @default(uuid())
+  name String // 活动名称
+  code String? @unique // 活动代码
+  type String // flash_sale/seckill/threshold/newcomer
+
   // 时间
-  startAt         DateTime  @map("start_at")
-  endAt           DateTime  @map("end_at")
-  
+  startAt DateTime @map("start_at")
+  endAt   DateTime @map("end_at")
+
   // 优惠配置
-  discountType    String    @map("discount_type")     // amount/percent
-  discountValue   Decimal   @db.Decimal(10, 2) @map("discount_value")
-  maxDiscount     Decimal?  @db.Decimal(10, 2) @map("max_discount")  // 折扣上限
-  minAmount       Decimal   @default(0) @db.Decimal(10, 2) @map("min_amount")
-  
+  discountType  String   @map("discount_type") // amount/percent
+  discountValue Decimal  @map("discount_value") @db.Decimal(10, 2)
+  maxDiscount   Decimal? @map("max_discount") @db.Decimal(10, 2) // 折扣上限
+  minAmount     Decimal  @default(0) @map("min_amount") @db.Decimal(10, 2)
+
   // 适用范围
-  applicableScope String    @default("all") @map("applicable_scope")
+  applicableScope String   @default("all") @map("applicable_scope")
   // all: 全场
   // category: 指定分类
   // service: 指定服务
-  applicableIds   String[]  @map("applicable_ids")
-  
+  applicableIds   String[] @map("applicable_ids")
+
   // 限制
-  totalQuantity   Int?      @map("total_quantity")    // 总参与次数
-  perUserLimit    Int       @default(1) @map("per_user_limit")
-  
+  totalQuantity Int? @map("total_quantity") // 总参与次数
+  perUserLimit  Int  @default(1) @map("per_user_limit")
+
   // 展示
-  description     String?
-  bannerUrl       String?   @map("banner_url")
-  detailUrl       String?   @map("detail_url")
-  sort            Int       @default(0)
-  
+  description String?
+  bannerUrl   String? @map("banner_url")
+  detailUrl   String? @map("detail_url")
+  sort        Int     @default(0)
+
   // 叠加规则
-  stackWithMember Boolean   @default(true) @map("stack_with_member")
-  
-  status          String    @default("pending")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
-  
-  participations  CampaignParticipation[]
-  seckillItems    SeckillItem[]
-  orders          Order[]
-  
+  stackWithMember Boolean @default(true) @map("stack_with_member")
+
+  status    String   @default("pending")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  participations CampaignParticipation[]
+  seckillItems   SeckillItem[]
+  orders         Order[]
+
   @@index([status, startAt, endAt])
   @@map("campaigns")
 }
 
 model CampaignParticipation {
-  id           String   @id @default(uuid())
-  campaignId   String   @map("campaign_id")
-  userId       String   @map("user_id")
-  orderId      String?  @map("order_id")
-  
+  id         String  @id @default(uuid())
+  campaignId String  @map("campaign_id")
+  userId     String  @map("user_id")
+  orderId    String? @map("order_id")
+
   // 快照
-  discountAmount Decimal @db.Decimal(10, 2) @map("discount_amount")
-  
-  createdAt    DateTime @default(now()) @map("created_at")
-  
-  campaign     Campaign @relation(fields: [campaignId], references: [id])
-  user         User     @relation(fields: [userId], references: [id])
-  
+  discountAmount Decimal @map("discount_amount") @db.Decimal(10, 2)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  campaign Campaign @relation(fields: [campaignId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
+
   @@index([campaignId])
   @@index([userId])
   @@map("campaign_participations")
 }
 
 model SeckillItem {
-  id           String   @id @default(uuid())
-  campaignId   String   @map("campaign_id")
-  serviceId    String   @map("service_id")
-  
-  seckillPrice Decimal  @db.Decimal(10, 2) @map("seckill_price")
-  stockTotal   Int      @map("stock_total")
-  stockSold    Int      @default(0) @map("stock_sold")
-  
+  id         String @id @default(uuid())
+  campaignId String @map("campaign_id")
+  serviceId  String @map("service_id")
+
+  seckillPrice Decimal @map("seckill_price") @db.Decimal(10, 2)
+  stockTotal   Int     @map("stock_total")
+  stockSold    Int     @default(0) @map("stock_sold")
+
   // 每人限购
-  perUserLimit Int      @default(1) @map("per_user_limit")
-  
-  sort         Int      @default(0)
-  status       String   @default("active")
-  
-  campaign     Campaign @relation(fields: [campaignId], references: [id])
-  service      Service  @relation(fields: [serviceId], references: [id])
-  
+  perUserLimit Int @default(1) @map("per_user_limit")
+
+  sort   Int    @default(0)
+  status String @default("active")
+
+  campaign Campaign @relation(fields: [campaignId], references: [id])
+  service  Service  @relation(fields: [serviceId], references: [id])
+
   @@unique([campaignId, serviceId])
   @@map("seckill_items")
 }
 
 // 订单日志 (Phase1 新增)
 model OrderLog {
-  id           String    @id @default(uuid())
-  orderId      String    @map("order_id")
-  
-  action       String    // create, pay, assign, grab, arrive, start, complete, cancel, refund, remark
-  fromStatus   String?   @map("from_status")
-  toStatus     String?   @map("to_status")
-  
-  operatorType String    @map("operator_type")  // user, escort, admin, system
-  operatorId   String?   @map("operator_id")    // 操作人ID
-  operatorName String?   @map("operator_name")  // 操作人名称
-  
-  remark       String?                          // 备注
-  extra        String?                          // JSON: 额外信息
-  
-  createdAt    DateTime  @default(now()) @map("created_at")
+  id      String @id @default(uuid())
+  orderId String @map("order_id")
 
-  order        Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  action     String // create, pay, assign, grab, arrive, start, complete, cancel, refund, remark
+  fromStatus String? @map("from_status")
+  toStatus   String? @map("to_status")
+
+  operatorType String  @map("operator_type") // user, escort, admin, system
+  operatorId   String? @map("operator_id") // 操作人ID
+  operatorName String? @map("operator_name") // 操作人名称
+
+  remark String? // 备注
+  extra  String? // JSON: 额外信息
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([orderId, createdAt])
   @@map("order_logs")
@@ -1833,7 +1845,7 @@ model OrderLog {
 model Config {
   id        String   @id @default(uuid())
   key       String   @unique
-  value     String   // JSON
+  value     String // JSON
   remark    String?
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -1865,6 +1877,7 @@ model Admin {
   name      String
   email     String?
   phone     String?
+  avatar    String?  // 管理员头像
   role      String   @default("admin") // superadmin, admin, operator
   status    String   @default("active") // active, inactive
   createdAt DateTime @default(now()) @map("created_at")
@@ -1876,38 +1889,38 @@ model Admin {
 // ========== 投诉模块 ==========
 
 model Complaint {
-  id           String    @id @default(uuid())
-  orderId      String    @map("order_id")
-  userId       String    @map("user_id")
-  escortId     String?   @map("escort_id")
+  id       String  @id @default(uuid())
+  orderId  String  @map("order_id")
+  userId   String  @map("user_id")
+  escortId String? @map("escort_id")
 
-  type         String    // service(服务问题), escort(陪诊员问题), payment(支付问题), other(其他)
-  content      String    // 投诉内容
-  images       String[]  @default([])  // 投诉图片
+  type    String // service(服务问题), escort(陪诊员问题), payment(支付问题), other(其他)
+  content String // 投诉内容
+  images  String[] @default([]) // 投诉图片
 
-  status       String    @default("pending") // pending(待处理), investigating(调查中), resolved(已解决), rejected(已驳回)
+  status String @default("pending") // pending(待处理), investigating(调查中), resolved(已解决), rejected(已驳回)
 
   // 处理信息
-  handlerId    String?   @map("handler_id")     // 处理人ID（旧字段，兼容）
-  handlerName  String?   @map("handler_name")   // 处理人姓名
-  handleNote   String?   @map("handle_note")    // 处理备注
-  handleResult String?   @map("handle_result")  // 处理结果
+  handlerId    String? @map("handler_id") // 处理人ID（旧字段，兼容）
+  handlerName  String? @map("handler_name") // 处理人姓名
+  handleNote   String? @map("handle_note") // 处理备注
+  handleResult String? @map("handle_result") // 处理结果
 
   // 处理结果详情
-  handledBy    String?   @map("handled_by")     // 处理管理员ID
-  handledAt    DateTime? @map("handled_at")     // 处理时间
-  resolution   String?                          // 处理决议
-  userRefund   Decimal?  @db.Decimal(10, 2) @map("user_refund")    // 用户退款金额
-  userCoupon   Decimal?  @db.Decimal(10, 2) @map("user_coupon")    // 用户补偿优惠券金额
-  escortPenalty String?  @map("escort_penalty") // 陪诊员处罚：none, warning, deduct_points, downgrade, suspend
+  handledBy     String?   @map("handled_by") // 处理管理员ID
+  handledAt     DateTime? @map("handled_at") // 处理时间
+  resolution    String? // 处理决议
+  userRefund    Decimal?  @map("user_refund") @db.Decimal(10, 2) // 用户退款金额
+  userCoupon    Decimal?  @map("user_coupon") @db.Decimal(10, 2) // 用户补偿优惠券金额
+  escortPenalty String?   @map("escort_penalty") // 陪诊员处罚：none, warning, deduct_points, downgrade, suspend
 
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt @map("updated_at")
-  resolvedAt   DateTime? @map("resolved_at")    // 解决时间
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  resolvedAt DateTime? @map("resolved_at") // 解决时间
 
-  order        Order     @relation(fields: [orderId], references: [id])
-  user         User      @relation(fields: [userId], references: [id])
-  escort       Escort?   @relation(fields: [escortId], references: [id])
+  order  Order   @relation(fields: [orderId], references: [id])
+  user   User    @relation(fields: [userId], references: [id])
+  escort Escort? @relation(fields: [escortId], references: [id])
 
   @@index([orderId])
   @@index([userId])
@@ -1920,52 +1933,52 @@ model Complaint {
 
 // 消息模板
 model MessageTemplate {
-  id           String    @id @default(uuid())
-  code         String    @unique               // 模板代码：order_paid, order_assigned 等
-  name         String                          // 模板名称
-  type         String    @default("system")    // system(系统消息), sms(短信), wechat(微信订阅消息)
-  category     String    @default("system")    // system(系统), order(订单), marketing(营销)
-  title        String?                         // 消息标题
-  content      String                          // 消息内容（支持变量：{orderNo}, {escortName} 等）
-  channels     String[]  @default(["in_app"])  // 发送渠道: in_app, wechat, sms, push
+  id       String   @id @default(uuid())
+  code     String   @unique // 模板代码：order_paid, order_assigned 等
+  name     String // 模板名称
+  type     String   @default("system") // system(系统消息), sms(短信), wechat(微信订阅消息)
+  category String   @default("system") // system(系统), order(订单), marketing(营销)
+  title    String? // 消息标题
+  content  String // 消息内容（支持变量：{orderNo}, {escortName} 等）
+  channels String[] @default(["in_app"]) // 发送渠道: in_app, wechat, sms, push
 
   // 微信订阅消息配置
-  wechatTemplateId String? @map("wechat_template_id")  // 微信模板ID
+  wechatTemplateId String? @map("wechat_template_id") // 微信模板ID
 
   // 限流配置
-  rateLimit    Int?      @map("rate_limit")    // 每用户每小时最大发送次数
-  cooldown     Int?                            // 同一用户发送间隔（秒）
+  rateLimit Int? @map("rate_limit") // 每用户每小时最大发送次数
+  cooldown  Int? // 同一用户发送间隔（秒）
 
-  status       String    @default("active")    // active, inactive
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt @map("updated_at")
+  status    String   @default("active") // active, inactive
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("message_templates")
 }
 
 // 站内消息
 model Message {
-  id           String    @id @default(uuid())
-  userId       String    @map("user_id")
-  type         String    @default("system")    // system(系统通知), order(订单消息), promotion(营销消息)
-  category     String    @default("system")    // system, order, marketing
-  templateCode String?   @map("template_code") // 模板代码
+  id           String  @id @default(uuid())
+  userId       String  @map("user_id")
+  type         String  @default("system") // system(系统通知), order(订单消息), promotion(营销消息)
+  category     String  @default("system") // system, order, marketing
+  templateCode String? @map("template_code") // 模板代码
 
-  title        String                          // 消息标题
-  content      String                          // 消息内容
-  link         String?                         // 跳转链接
-  extra        String?                         // 额外数据（JSON 字符串）
+  title   String // 消息标题
+  content String // 消息内容
+  link    String? // 跳转链接
+  extra   String? // 额外数据（JSON 字符串）
 
   // 关联信息
-  relatedType  String?   @map("related_type")  // order, escort, etc.
-  relatedId    String?   @map("related_id")    // 关联ID
+  relatedType String? @map("related_type") // order, escort, etc.
+  relatedId   String? @map("related_id") // 关联ID
 
-  isRead       Boolean   @default(false) @map("is_read")
-  readAt       DateTime? @map("read_at")
+  isRead Boolean   @default(false) @map("is_read")
+  readAt DateTime? @map("read_at")
 
-  createdAt    DateTime  @default(now()) @map("created_at")
+  createdAt DateTime @default(now()) @map("created_at")
 
-  user         User      @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 
   @@index([userId, isRead])
   @@index([userId, createdAt])
@@ -1975,28 +1988,28 @@ model Message {
 
 // 通知发送日志
 model NotificationLog {
-  id           String    @id @default(uuid())
-  userId       String?   @map("user_id")
-  recipientId  String    @map("recipient_id")   // 接收者ID（可以是用户或陪诊员）
-  recipientType String   @default("user") @map("recipient_type") // user, escort
-  templateCode String    @map("template_code") // 模板代码
-  channel      String                          // wechat, sms, push, message
+  id            String  @id @default(uuid())
+  userId        String? @map("user_id")
+  recipientId   String  @map("recipient_id") // 接收者ID（可以是用户或陪诊员）
+  recipientType String  @default("user") @map("recipient_type") // user, escort
+  templateCode  String  @map("template_code") // 模板代码
+  channel       String // wechat, sms, push, message
 
   // 发送内容
-  title        String?
-  content      String
-  variables    Json?                           // 模板变量
+  title     String?
+  content   String
+  variables Json? // 模板变量
 
   // 关联信息
-  relatedType  String?   @map("related_type")  // order, escort, etc.
-  relatedId    String?   @map("related_id")    // 关联ID
+  relatedType String? @map("related_type") // order, escort, etc.
+  relatedId   String? @map("related_id") // 关联ID
 
   // 发送结果
-  status       String    @default("pending")   // pending, sent, failed
+  status       String    @default("pending") // pending, sent, failed
   errorMessage String?   @map("error_message")
   sentAt       DateTime? @map("sent_at")
 
-  createdAt    DateTime  @default(now()) @map("created_at")
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@index([userId, createdAt])
   @@index([recipientId, createdAt])
@@ -2009,23 +2022,23 @@ model NotificationLog {
 // 静态页面（关于我们、用户协议、隐私政策等）
 model Page {
   id          String    @id @default(uuid())
-  title       String                          // 页面标题
-  slug        String    @unique               // URL 别名（如: about, privacy, terms）
-  content     String    @db.Text              // 富文本内容
-  excerpt     String?   @db.Text              // 摘要/描述
-  coverImage  String?   @map("cover_image")   // 封面图
-  layout      String    @default("boxed")     // boxed=盒式居中, fullwidth=全宽
+  title       String // 页面标题
+  slug        String    @unique // URL 别名（如: about, privacy, terms）
+  content     String    @db.Text // 富文本内容
+  excerpt     String?   @db.Text // 摘要/描述
+  coverImage  String?   @map("cover_image") // 封面图
+  layout      String    @default("boxed") // boxed=盒式居中, fullwidth=全宽
   showTitle   Boolean   @default(true) @map("show_title") // 是否显示标题栏
-  seoTitle    String?   @map("seo_title")     // SEO 标题
-  seoDesc     String?   @map("seo_desc")      // SEO 描述
-  seoKeywords String?   @map("seo_keywords")  // SEO 关键词
-  sort        Int       @default(0)           // 排序权重
-  status      String    @default("draft")     // draft=草稿, published=已发布
-  publishedAt DateTime? @map("published_at")  // 发布时间
+  seoTitle    String?   @map("seo_title") // SEO 标题
+  seoDesc     String?   @map("seo_desc") // SEO 描述
+  seoKeywords String?   @map("seo_keywords") // SEO 关键词
+  sort        Int       @default(0) // 排序权重
+  status      String    @default("draft") // draft=草稿, published=已发布
+  publishedAt DateTime? @map("published_at") // 发布时间
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
 
-  menus       CmsMenu[]
+  menus CmsMenu[]
 
   @@index([slug])
   @@index([status])
@@ -2034,20 +2047,20 @@ model Page {
 
 // 文章分类
 model ArticleCategory {
-  id          String    @id @default(uuid())
-  name        String                          // 分类名称
-  slug        String    @unique               // URL 别名（如: help, news, guide）
-  description String?   @db.Text              // 分类描述
-  icon        String?                         // 图标（Lucide 图标名）
-  coverImage  String?   @map("cover_image")   // 封面图
-  sort        Int       @default(0)           // 排序权重
-  status      String    @default("active")    // active=启用, inactive=禁用
-  isSystem    Boolean   @default(false) @map("is_system")  // 是否系统内置分类（不可删除）
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  id          String   @id @default(uuid())
+  name        String // 分类名称
+  slug        String   @unique // URL 别名（如: help, news, guide）
+  description String?  @db.Text // 分类描述
+  icon        String? // 图标（Lucide 图标名）
+  coverImage  String?  @map("cover_image") // 封面图
+  sort        Int      @default(0) // 排序权重
+  status      String   @default("active") // active=启用, inactive=禁用
+  isSystem    Boolean  @default(false) @map("is_system") // 是否系统内置分类（不可删除）
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
-  articles    Article[]
-  menus       CmsMenu[]
+  articles Article[]
+  menus    CmsMenu[]
 
   @@index([slug])
   @@index([status])
@@ -2057,28 +2070,28 @@ model ArticleCategory {
 // 文章
 model Article {
   id          String    @id @default(uuid())
-  categoryId  String?   @map("category_id")   // 分类ID
-  title       String                          // 文章标题
-  slug        String    @unique               // URL 别名
-  summary     String?   @db.Text              // 摘要
-  content     String    @db.Text              // 富文本内容
-  coverImage  String?   @map("cover_image")   // 封面图
-  author      String?                         // 作者
-  source      String?                         // 来源
-  tags        String[]  @default([])          // 标签
-  viewCount   Int       @default(0) @map("view_count")  // 阅读量
-  isTop       Boolean   @default(false) @map("is_top")  // 置顶
-  isHot       Boolean   @default(false) @map("is_hot")  // 热门
-  seoTitle    String?   @map("seo_title")     // SEO 标题
-  seoDesc     String?   @map("seo_desc")      // SEO 描述
-  seoKeywords String?   @map("seo_keywords")  // SEO 关键词
-  sort        Int       @default(0)           // 排序权重
-  status      String    @default("draft")     // draft=草稿, published=已发布, archived=已归档
-  publishedAt DateTime? @map("published_at")  // 发布时间
+  categoryId  String?   @map("category_id") // 分类ID
+  title       String // 文章标题
+  slug        String    @unique // URL 别名
+  summary     String?   @db.Text // 摘要
+  content     String    @db.Text // 富文本内容
+  coverImage  String?   @map("cover_image") // 封面图
+  author      String? // 作者
+  source      String? // 来源
+  tags        String[]  @default([]) // 标签
+  viewCount   Int       @default(0) @map("view_count") // 阅读量
+  isTop       Boolean   @default(false) @map("is_top") // 置顶
+  isHot       Boolean   @default(false) @map("is_hot") // 热门
+  seoTitle    String?   @map("seo_title") // SEO 标题
+  seoDesc     String?   @map("seo_desc") // SEO 描述
+  seoKeywords String?   @map("seo_keywords") // SEO 关键词
+  sort        Int       @default(0) // 排序权重
+  status      String    @default("draft") // draft=草稿, published=已发布, archived=已归档
+  publishedAt DateTime? @map("published_at") // 发布时间
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
 
-  category    ArticleCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  category ArticleCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
   @@index([categoryId])
   @@index([slug])
@@ -2090,27 +2103,27 @@ model Article {
 
 // CMS 导航菜单
 model CmsMenu {
-  id          String    @id @default(uuid())
-  name        String                          // 菜单名称
-  code        String    @unique               // 菜单代码（如: main, footer, sidebar）
-  type        String    @default("link")      // 类型：link=自定义链接, category=文章分类, page=页面, user_login=用户登录, escort_register=陪诊员注册, escort_login=陪诊员登录, escort_forgot_password=陪诊员找回密码, escort_profile=陪诊员资料
-  url         String?                         // 链接地址（type=link时使用）
-  categoryId  String?   @map("category_id")   // 文章分类ID（type=category时使用）
-  pageId      String?   @map("page_id")       // 页面ID（type=page时使用）
-  target      String    @default("_self")     // 打开方式：_self/_blank
-  icon        String?                         // 图标
-  parentId    String?   @map("parent_id")     // 父级菜单ID
-  isHome      Boolean   @default(false) @map("is_home")  // 是否为首页（排他性，只能有一个）
-  hideInMain  Boolean   @default(false) @map("hide_in_main")  // 在主菜单中隐藏（用于仅在侧边栏等其他位置显示）
-  sort        Int       @default(0)           // 排序权重
-  status      String    @default("active")    // active=启用, inactive=禁用
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  id         String   @id @default(uuid())
+  name       String // 菜单名称
+  code       String   @unique // 菜单代码（如: main, footer, sidebar）
+  type       String   @default("link") // 类型：link=自定义链接, category=文章分类, page=页面, user_login=用户登录, escort_register=陪诊员注册, escort_login=陪诊员登录, escort_forgot_password=陪诊员找回密码, escort_profile=陪诊员资料
+  url        String? // 链接地址（type=link时使用）
+  categoryId String?  @map("category_id") // 文章分类ID（type=category时使用）
+  pageId     String?  @map("page_id") // 页面ID（type=page时使用）
+  target     String   @default("_self") // 打开方式：_self/_blank
+  icon       String? // 图标
+  parentId   String?  @map("parent_id") // 父级菜单ID
+  isHome     Boolean  @default(false) @map("is_home") // 是否为首页（排他性，只能有一个）
+  hideInMain Boolean  @default(false) @map("hide_in_main") // 在主菜单中隐藏（用于仅在侧边栏等其他位置显示）
+  sort       Int      @default(0) // 排序权重
+  status     String   @default("active") // active=启用, inactive=禁用
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
 
-  parent      CmsMenu?  @relation("MenuHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
-  children    CmsMenu[] @relation("MenuHierarchy")
-  category    ArticleCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  page        Page?     @relation(fields: [pageId], references: [id], onDelete: SetNull)
+  parent   CmsMenu?         @relation("MenuHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children CmsMenu[]        @relation("MenuHierarchy")
+  category ArticleCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  page     Page?            @relation(fields: [pageId], references: [id], onDelete: SetNull)
 
   @@index([parentId])
   @@index([categoryId])
@@ -2121,13 +2134,13 @@ model CmsMenu {
 // CMS 网站设置
 model CmsSetting {
   id        String   @id @default(uuid())
-  key       String   @unique               // 设置键名（如: site_name, site_logo）
-  value     String   @db.Text              // 设置值（支持长文本）
-  label     String                         // 显示名称
-  type      String   @default("text")      // 类型：text, textarea, image, switch, select
-  group     String   @default("general")   // 分组：general(基础), seo(SEO), social(社交), contact(联系)
-  options   String?                        // 选项（select类型时使用，JSON格式）
-  sort      Int      @default(0)           // 排序权重
+  key       String   @unique // 设置键名（如: site_name, site_logo）
+  value     String   @db.Text // 设置值（支持长文本）
+  label     String // 显示名称
+  type      String   @default("text") // 类型：text, textarea, image, switch, select
+  group     String   @default("general") // 分组：general(基础), seo(SEO), social(社交), contact(联系)
+  options   String? // 选项（select类型时使用，JSON格式）
+  sort      Int      @default(0) // 排序权重
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -2138,16 +2151,16 @@ model CmsSetting {
 // CMS 侧边栏
 model CmsSidebar {
   id          String   @id @default(uuid())
-  name        String                          // 侧边栏名称
-  code        String   @unique                // 唯一标识（如: blog-sidebar, page-sidebar）
-  description String?  @db.Text               // 描述
-  position    String   @default("right")      // 位置：left=左侧, right=右侧
-  width       String   @default("medium")     // 宽度：narrow=窄(240px), medium=中(300px), wide=宽(360px), custom=自定义
-  customWidth Int?     @map("custom_width")   // 自定义宽度（像素）
+  name        String // 侧边栏名称
+  code        String   @unique // 唯一标识（如: blog-sidebar, page-sidebar）
+  description String?  @db.Text // 描述
+  position    String   @default("right") // 位置：left=左侧, right=右侧
+  width       String   @default("medium") // 宽度：narrow=窄(240px), medium=中(300px), wide=宽(360px), custom=自定义
+  customWidth Int?     @map("custom_width") // 自定义宽度（像素）
   applyTo     Json     @default("[]") @map("apply_to") // 应用目标: [{type: 'page'|'category', id: string}]
-  widgets     Json     @default("[]")         // 组件配置JSON: [{type: 'menu'|'category'|'html', config: {...}}]
-  sort        Int      @default(0)            // 排序权重
-  status      String   @default("active")     // active=启用, inactive=禁用
+  widgets     Json     @default("[]") // 组件配置JSON: [{type: 'menu'|'category'|'html', config: {...}}]
+  sort        Int      @default(0) // 排序权重
+  status      String   @default("active") // active=启用, inactive=禁用
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
@@ -2157,24 +2170,24 @@ model CmsSidebar {
 // ========== 意见反馈模块 ==========
 
 model Feedback {
-  id        String   @id @default(uuid())
-  userId    String?  @map("user_id")          // 用户ID（可选，匿名反馈时为空）
-  type      String                             // suggestion(功能建议), bug(问题反馈), service(服务相关), experience(体验优化), other(其他)
-  content   String   @db.Text                  // 反馈内容
-  contact   String?                            // 联系方式（手机号或微信号）
-  images    String[] @default([])              // 反馈截图
-  status    String   @default("pending")       // pending(待处理), processing(处理中), resolved(已解决), closed(已关闭)
-  
+  id      String   @id @default(uuid())
+  userId  String?  @map("user_id") // 用户ID（可选，匿名反馈时为空）
+  type    String // suggestion(功能建议), bug(问题反馈), service(服务相关), experience(体验优化), other(其他)
+  content String   @db.Text // 反馈内容
+  contact String? // 联系方式（手机号或微信号）
+  images  String[] @default([]) // 反馈截图
+  status  String   @default("pending") // pending(待处理), processing(处理中), resolved(已解决), closed(已关闭)
+
   // 处理信息
-  handlerId   String?   @map("handler_id")     // 处理人ID
-  handlerName String?   @map("handler_name")   // 处理人姓名
-  handleNote  String?   @map("handle_note")    // 处理备注
-  handledAt   DateTime? @map("handled_at")     // 处理时间
-  
+  handlerId   String?   @map("handler_id") // 处理人ID
+  handlerName String?   @map("handler_name") // 处理人姓名
+  handleNote  String?   @map("handle_note") // 处理备注
+  handledAt   DateTime? @map("handled_at") // 处理时间
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([type])
@@ -2186,41 +2199,41 @@ model Feedback {
 // ========== 在线客服模块 ==========
 
 model ChatSession {
-  id           String    @id @default(uuid())
-  sessionNo    String    @unique @map("session_no")  // 会话编号 CS202501140001
-  
-  userId       String    @map("user_id")
-  adminId      String?   @map("admin_id")            // 接待客服ID
-  
+  id        String @id @default(uuid())
+  sessionNo String @unique @map("session_no") // 会话编号 CS202501140001
+
+  userId  String  @map("user_id")
+  adminId String? @map("admin_id") // 接待客服ID
+
   // 关联上下文
-  orderId      String?   @map("order_id")
-  serviceId    String?   @map("service_id")
-  source       String    @default("profile")         // profile(个人中心), service_detail(服务详情), order_detail(订单详情)
-  
+  orderId   String? @map("order_id")
+  serviceId String? @map("service_id")
+  source    String  @default("profile") // profile(个人中心), service_detail(服务详情), order_detail(订单详情)
+
   // 状态
-  status       String    @default("waiting")         // waiting(排队), chatting(进行中), closed(已结束)
-  
+  status String @default("waiting") // waiting(排队), chatting(进行中), closed(已结束)
+
   // 时间节点
-  startedAt    DateTime? @map("started_at")          // 客服接入时间
-  closedAt     DateTime? @map("closed_at")           // 结束时间
-  closeReason  String?   @map("close_reason")        // user_close, admin_close, timeout
-  
+  startedAt   DateTime? @map("started_at") // 客服接入时间
+  closedAt    DateTime? @map("closed_at") // 结束时间
+  closeReason String?   @map("close_reason") // user_close, admin_close, timeout
+
   // 满意度评价
-  rating       Int?                                  // 1-5 满意度
-  ratingContent String? @map("rating_content")       // 评价内容
-  
+  rating        Int? // 1-5 满意度
+  ratingContent String? @map("rating_content") // 评价内容
+
   // 统计字段
   messageCount Int       @default(0) @map("message_count")
-  firstReplyAt DateTime? @map("first_reply_at")      // 首次回复时间（计算响应速度）
-  
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt @map("updated_at")
+  firstReplyAt DateTime? @map("first_reply_at") // 首次回复时间（计算响应速度）
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // 关联
-  user         User      @relation("UserChatSessions", fields: [userId], references: [id])
-  order        Order?    @relation(fields: [orderId], references: [id])
-  service      Service?  @relation(fields: [serviceId], references: [id])
-  messages     ChatMessage[]
+  user     User          @relation("UserChatSessions", fields: [userId], references: [id])
+  order    Order?        @relation(fields: [orderId], references: [id])
+  service  Service?      @relation(fields: [serviceId], references: [id])
+  messages ChatMessage[]
 
   @@index([userId, status])
   @@index([adminId, status])
@@ -2229,27 +2242,27 @@ model ChatSession {
 }
 
 model ChatMessage {
-  id           String    @id @default(uuid())
-  sessionId    String    @map("session_id")
-  
-  senderType   String    @map("sender_type")         // user, admin, system
-  senderId     String?   @map("sender_id")           // 发送者ID
-  
-  type         String    @default("text")            // text, image, file, order_card, service_card, quick_reply
-  content      String    @db.Text                    // 消息内容
-  extra        Json?                                 // 扩展信息
+  id        String @id @default(uuid())
+  sessionId String @map("session_id")
+
+  senderType String  @map("sender_type") // user, admin, system
+  senderId   String? @map("sender_id") // 发送者ID
+
+  type    String @default("text") // text, image, file, order_card, service_card, quick_reply
+  content String @db.Text // 消息内容
+  extra   Json? // 扩展信息
   // text: null
   // image: { url, width, height, thumbnail }
   // file: { url, name, size, mimeType }
   // order_card: { orderId, orderNo, serviceName, status }
   // service_card: { serviceId, name, price, image }
-  
-  isRead       Boolean   @default(false) @map("is_read")
-  readAt       DateTime? @map("read_at")
-  
-  createdAt    DateTime  @default(now()) @map("created_at")
 
-  session      ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  isRead Boolean   @default(false) @map("is_read")
+  readAt DateTime? @map("read_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  session ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@index([sessionId, createdAt])
   @@index([sessionId, isRead])
@@ -2257,20 +2270,22 @@ model ChatMessage {
 }
 
 model QuickReply {
-  id           String    @id @default(uuid())
-  
-  category     String    @default("other")           // greeting(问候语), order(订单相关), payment(支付相关), service(服务相关), other
-  title        String                                // 标题（供客服选择用）
-  content      String    @db.Text                    // 回复内容
-  
-  useCount     Int       @default(0) @map("use_count") // 使用次数
-  
-  sort         Int       @default(0)
-  status       String    @default("active")          // active, inactive
-  
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt @map("updated_at")
+  id String @id @default(uuid())
+
+  category String @default("other") // greeting(问候语), order(订单相关), payment(支付相关), service(服务相关), other
+  title    String // 标题（供客服选择用）
+  content  String @db.Text // 回复内容
+
+  useCount       Int     @default(0) @map("use_count") // 使用次数
+  isAutoGreeting Boolean @default(false) @map("is_auto_greeting") // 是否为自动问候语（只能设置一个）
+
+  sort   Int    @default(0)
+  status String @default("active") // active, inactive
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([category, status])
+  @@index([isAutoGreeting])
   @@map("quick_replies")
 }

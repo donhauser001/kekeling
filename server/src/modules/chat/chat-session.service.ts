@@ -16,7 +16,7 @@ export class ChatSessionService {
   constructor(
     private prisma: PrismaService,
     private redis: RedisService,
-  ) {}
+  ) { }
 
   /**
    * 生成会话编号
@@ -250,7 +250,23 @@ export class ChatSessionService {
       throw new NotFoundException('会话不存在');
     }
 
-    return session;
+    // 查询客服（管理员）信息
+    let admin: { id: string; name: string; avatar: string | null } | null = null;
+    if (session.adminId) {
+      admin = await this.prisma.admin.findUnique({
+        where: { id: session.adminId },
+        select: {
+          id: true,
+          name: true,
+          avatar: true,
+        },
+      });
+    }
+
+    return {
+      ...session,
+      admin,
+    };
   }
 
   /**

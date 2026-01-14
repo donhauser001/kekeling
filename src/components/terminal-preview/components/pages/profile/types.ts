@@ -99,5 +99,7 @@ export interface EscortCardProps {
 
 export interface ServiceCardProps {
   colors: ThemeColors
+  primaryColor: string
+  onClick?: () => void
 }
 

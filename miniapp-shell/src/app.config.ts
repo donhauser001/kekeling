@@ -58,6 +58,9 @@ export default defineAppConfig({
         'pages/escort-apply/index',     // 陪诊员申请
         'pages/campaigns/index',        // 活动中心
         'pages/campaigns-detail/index', // 活动详情
+        'pages/review-submit/index',    // 评价提交
+        'pages/my-reviews/index',       // 我的评价
+        'pages/customer-service/index', // 在线客服
       ],
     },
     {
@@ -78,6 +81,7 @@ export default defineAppConfig({
         'pages/departments-select/index',  // 擅长科室选择
         'pages/working-hours/index',       // 工作时间设置
         'pages/escort-profile-edit/index', // 编辑陪诊员资料
+        'pages/escort-reviews/index',      // 收到的评价
       ],
     },
     {

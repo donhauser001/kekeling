@@ -186,4 +186,27 @@ export class AdminChatController {
         await this.quickReplyService.incrementUseCount(id);
         return ApiResponse.success(null, '记录成功');
     }
+
+    @Get('quick-replies/auto-greeting')
+    @ApiOperation({ summary: '获取自动问候语' })
+    async getAutoGreeting() {
+        const data = await this.quickReplyService.getAutoGreeting();
+        return ApiResponse.success(data);
+    }
+
+    @Post('quick-replies/:id/set-auto-greeting')
+    @ApiOperation({ summary: '设置为自动问候语' })
+    @ApiParam({ name: 'id', description: '快捷回复ID' })
+    async setAutoGreeting(@Param('id') id: string) {
+        const data = await this.quickReplyService.setAutoGreeting(id);
+        return ApiResponse.success(data, '设置成功');
+    }
+
+    @Post('quick-replies/:id/cancel-auto-greeting')
+    @ApiOperation({ summary: '取消自动问候语' })
+    @ApiParam({ name: 'id', description: '快捷回复ID' })
+    async cancelAutoGreeting(@Param('id') id: string) {
+        const data = await this.quickReplyService.cancelAutoGreeting(id);
+        return ApiResponse.success(data, '取消成功');
+    }
 }

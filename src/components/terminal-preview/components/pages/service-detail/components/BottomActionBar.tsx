@@ -14,9 +14,13 @@ export function BottomActionBar({
   serviceId,
   themeSettings,
   colors,
+  servicePhone,
   onNavigate,
+  onCustomerService,
+  onPhoneCall,
 }: BottomActionBarProps) {
   const { cardBg, borderColor, textMuted } = colors
+  const phone = String(servicePhone || themeSettings.servicePhone || '400-888-8888')
 
   return (
     <Box
@@ -49,6 +53,7 @@ export function BottomActionBar({
           flexDirection: 'column',
           alignItems: 'center',
         }}
+        onClick={onCustomerService}
       >
         <MessageCircle size={20 * wxScale} color={textMuted} />
         <Text style={{ fontSize: 10 * wxScale, marginTop: 2 * wxScale, color: textMuted }}>
@@ -64,6 +69,7 @@ export function BottomActionBar({
           flexDirection: 'column',
           alignItems: 'center',
         }}
+        onClick={() => onPhoneCall?.(phone)}
       >
         <Phone size={20 * wxScale} color={textMuted} />
         <Text style={{ fontSize: 10 * wxScale, marginTop: 2 * wxScale, color: textMuted }}>

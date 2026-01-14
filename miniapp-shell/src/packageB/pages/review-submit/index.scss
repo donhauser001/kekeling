@@ -1,0 +1,322 @@
+.page-container {
+    min-height: 100vh;
+    background-color: #f5f7fa;
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+.page-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background-color: #f5f7fa;
+}
+
+.loading-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid #e5e7eb;
+    border-top-color: #10b981;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+// 导航栏
+.nav-bar {
+    display: flex;
+    align-items: center;
+    padding: 44px 16px 12px;
+    background: #fff;
+
+    .back-btn {
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .title {
+        flex: 1;
+        text-align: center;
+        font-size: 17px;
+        font-weight: 600;
+        color: #1f2937;
+        margin-right: 32px;
+    }
+}
+
+// 订单信息卡片
+.order-card {
+    margin: 12px 16px;
+    padding: 16px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+
+    .order-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+
+        .escort-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 24px;
+            background: #f3f4f6;
+        }
+
+        .order-detail {
+            flex: 1;
+
+            .service-name {
+                font-size: 15px;
+                font-weight: 500;
+                color: #1f2937;
+                margin-bottom: 4px;
+            }
+
+            .escort-name {
+                font-size: 13px;
+                color: #6b7280;
+            }
+        }
+    }
+}
+
+// 评分区域
+.rating-section {
+    margin: 12px 16px;
+    padding: 24px 16px;
+    background: #fff;
+    border-radius: 12px;
+    text-align: center;
+
+    .section-title {
+        font-size: 16px;
+        font-weight: 500;
+        color: #1f2937;
+        margin-bottom: 16px;
+    }
+
+    .rating-stars {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        margin-bottom: 8px;
+
+        .star {
+            font-size: 36px;
+            color: #d1d5db;
+            transition: all 0.2s;
+
+            &.active {
+                color: #fbbf24;
+                transform: scale(1.1);
+            }
+        }
+    }
+
+    .rating-text {
+        font-size: 14px;
+        color: #6b7280;
+    }
+}
+
+// 标签区域
+.tags-section {
+    margin: 12px 16px;
+    padding: 16px;
+    background: #fff;
+    border-radius: 12px;
+
+    .section-title {
+        font-size: 15px;
+        font-weight: 500;
+        color: #1f2937;
+        margin-bottom: 12px;
+    }
+
+    .tags-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+
+        .tag {
+            padding: 8px 16px;
+            font-size: 13px;
+            color: #6b7280;
+            background: #f3f4f6;
+            border-radius: 20px;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+
+            &.selected {
+                color: #10b981;
+                background: #ecfdf5;
+                border-color: #10b981;
+            }
+        }
+    }
+}
+
+// 内容输入区域
+.content-section {
+    margin: 12px 16px;
+    padding: 16px;
+    background: #fff;
+    border-radius: 12px;
+
+    .section-title {
+        font-size: 15px;
+        font-weight: 500;
+        color: #1f2937;
+        margin-bottom: 12px;
+    }
+
+    .content-input {
+        width: 100%;
+        min-height: 120px;
+        padding: 12px;
+        font-size: 14px;
+        color: #1f2937;
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        box-sizing: border-box;
+
+        &::placeholder {
+            color: #9ca3af;
+        }
+    }
+
+    .char-count {
+        text-align: right;
+        font-size: 12px;
+        color: #9ca3af;
+        margin-top: 8px;
+    }
+}
+
+// 图片上传区域
+.images-section {
+    margin: 12px 16px;
+    padding: 16px;
+    background: #fff;
+    border-radius: 12px;
+
+    .section-title {
+        font-size: 15px;
+        font-weight: 500;
+        color: #1f2937;
+        margin-bottom: 12px;
+    }
+
+    .images-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+
+        .image-item {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            overflow: hidden;
+
+            .preview-image {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+
+            .delete-btn {
+                position: absolute;
+                top: 4px;
+                right: 4px;
+                width: 20px;
+                height: 20px;
+                background: rgba(0, 0, 0, 0.5);
+                border-radius: 10px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 12px;
+                color: #fff;
+            }
+        }
+
+        .add-image {
+            width: 80px;
+            height: 80px;
+            background: #f3f4f6;
+            border: 1px dashed #d1d5db;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+
+            .add-icon {
+                font-size: 24px;
+                color: #9ca3af;
+            }
+
+            .add-text {
+                font-size: 12px;
+                color: #9ca3af;
+            }
+        }
+    }
+}
+
+// 匿名选项
+.anonymous-section {
+    margin: 12px 16px;
+    padding: 16px;
+    background: #fff;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    .label {
+        font-size: 15px;
+        color: #1f2937;
+    }
+
+    .switch {
+        transform: scale(0.9);
+    }
+}
+
+// 提交按钮
+.submit-section {
+    padding: 16px;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
+
+    .submit-btn {
+        width: 100%;
+        height: 48px;
+        font-size: 16px;
+        font-weight: 500;
+        color: #fff;
+        background: #10b981;
+        border: none;
+        border-radius: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        &.disabled {
+            opacity: 0.5;
+        }
+    }
+}

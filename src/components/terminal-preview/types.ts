@@ -99,6 +99,11 @@ export type PreviewPage =
   | 'feedback'
   // 搜索
   | 'search'
+  // 评价与客服
+  | 'my-reviews'
+  | 'review-submit'
+  | 'customer-service'
+  | 'escort-reviews'
 
 /**
  * 有效的页面 key 列表（用于开发环境校验）
@@ -167,6 +172,11 @@ export const VALID_PAGE_KEYS: readonly PreviewPage[] = [
   'feedback',
   // 搜索
   'search',
+  // 评价与客服
+  'my-reviews',
+  'review-submit',
+  'customer-service',
+  'escort-reviews',
 ] as const
 
 // ============================================================================
@@ -263,6 +273,12 @@ export const PAGE_METADATA: Record<PreviewPage, PageMetadata> = {
 
   // 搜索
   'search': { entryAllowed: false, description: '搜索' },
+
+  // 评价与客服
+  'my-reviews': { entryAllowed: false, description: '我的评价' },
+  'review-submit': { entryAllowed: false, requiredParams: ['orderId'], description: '评价提交' },
+  'customer-service': { entryAllowed: false, description: '在线客服' },
+  'escort-reviews': { entryAllowed: false, description: '收到的评价（陪诊员）' },
 } as const
 
 /**
@@ -356,6 +372,12 @@ export interface PreviewPageParamsMap {
 
   // 搜索
   'search': { keyword?: string }
+
+  // 评价与客服
+  'my-reviews': Record<string, never>
+  'review-submit': { orderId: string; escortId?: string; escortName?: string; serviceName?: string; escortAvatar?: string }
+  'customer-service': Record<string, never>
+  'escort-reviews': Record<string, never>
 }
 
 /**

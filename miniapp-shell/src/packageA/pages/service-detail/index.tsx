@@ -75,6 +75,33 @@ function ServiceDetailPageContent() {
     }
   }
 
+  // 跳转到客服页面
+  const handleCustomerService = () => {
+    Taro.navigateTo({
+      url: `/packageB/pages/customer-service/index?source=service_detail&serviceId=${serviceId}`,
+    })
+  }
+
+  // 拨打电话
+  const handlePhoneCall = (phone: string | number) => {
+    const phoneStr = String(phone) // 确保是字符串
+    if (!phoneStr) {
+      Taro.showToast({ title: '暂无客服电话', icon: 'none' })
+      return
+    }
+    Taro.makePhoneCall({
+      phoneNumber: phoneStr,
+      fail: (err) => {
+        // 用户取消拨打不提示错误
+        if (err.errMsg?.includes('cancel')) return
+        Taro.showToast({
+          title: '拨打电话失败',
+          icon: 'none',
+        })
+      },
+    })
+  }
+
   if (isLoading) {
     return (
       <View className="page-loading">
@@ -102,6 +129,8 @@ function ServiceDetailPageContent() {
         onServiceClick={handleServiceClick}
         onNavigate={handleNavigate}
         effectiveViewerRole="user"
+        onCustomerService={handleCustomerService}
+        onPhoneCall={handlePhoneCall}
       />
     </View>
   )

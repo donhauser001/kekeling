@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback, useState } from 'react'
 import { io, Socket } from 'socket.io-client'
-import { useAuthStore } from '@/stores/authStore'
+import { useAuthStore } from '@/stores/auth-store'
 import type {
   ChatMessage,
   ChatSession,
@@ -26,15 +26,25 @@ interface UseChatSocketOptions {
 
 export function useChatSocket(options: UseChatSocketOptions = {}) {
   const socketRef = useRef<Socket | null>(null)
+  const optionsRef = useRef(options)
   const [isConnected, setIsConnected] = useState(false)
   const [connectionError, setConnectionError] = useState<string | null>(null)
-  const { accessToken } = useAuthStore()
+  const accessToken = useAuthStore((state) => state.auth.accessToken)
+
+  // 保持 options 的最新引用
+  useEffect(() => {
+    optionsRef.current = options
+  }, [options])
 
   // 建立连接
   const connect = useCallback(() => {
     if (socketRef.current?.connected) return
 
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+    // 自动根据当前域名确定 WebSocket URL
+    const apiUrl = import.meta.env.VITE_API_URL ||
+      (window.location.hostname === 'localhost'
+        ? 'http://localhost:3000'
+        : `${window.location.protocol}//${window.location.host}`)
     const wsUrl = apiUrl.replace(/^http/, 'ws')
 
     socketRef.current = io(`${wsUrl}/chat`, {
@@ -69,46 +79,46 @@ export function useChatSocket(options: UseChatSocketOptions = {}) {
 
     socket.on('error', (error) => {
       console.error('[ChatSocket] 错误:', error)
-      options.onError?.(error)
+      optionsRef.current.onError?.(error)
     })
 
     // 业务事件
     socket.on('new_message', (data: WsNewMessageEvent) => {
-      options.onNewMessage?.(data)
+      optionsRef.current.onNewMessage?.(data)
     })
 
     socket.on('new_session', (data: { session: ChatSession }) => {
-      options.onNewSession?.(data)
+      optionsRef.current.onNewSession?.(data)
     })
 
     socket.on('session_accepted', (data: WsSessionAcceptedEvent) => {
-      options.onSessionAccepted?.(data)
+      optionsRef.current.onSessionAccepted?.(data)
     })
 
     socket.on('session_closed', (data: WsSessionClosedEvent) => {
-      options.onSessionClosed?.(data)
+      optionsRef.current.onSessionClosed?.(data)
     })
 
     socket.on('session_transferred', (data: { session: ChatSession }) => {
-      options.onSessionTransferred?.(data)
+      optionsRef.current.onSessionTransferred?.(data)
     })
 
     socket.on('user_typing', (data: WsTypingEvent) => {
-      options.onUserTyping?.(data)
+      optionsRef.current.onUserTyping?.(data)
     })
 
     socket.on('admin_typing', (data: WsTypingEvent) => {
-      options.onAdminTyping?.(data)
+      optionsRef.current.onAdminTyping?.(data)
     })
 
     socket.on('user_read', (data: { sessionId: string; messageId?: string }) => {
-      options.onUserRead?.(data)
+      optionsRef.current.onUserRead?.(data)
     })
 
     socket.on('admin_read', (data: { sessionId: string; messageId?: string }) => {
-      options.onAdminRead?.(data)
+      optionsRef.current.onAdminRead?.(data)
     })
-  }, [accessToken, options])
+  }, [accessToken])
 
   // 断开连接
   const disconnect = useCallback(() => {

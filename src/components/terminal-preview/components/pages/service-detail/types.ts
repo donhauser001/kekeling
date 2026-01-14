@@ -27,6 +27,10 @@ export interface ServiceDetailPageProps {
   onNavigate?: (page: string, params?: Record<string, string>) => void
   /** 当前视角角色（用于显示陪诊员专属信息） */
   effectiveViewerRole?: PreviewViewerRole
+  /** 点击客服按钮回调 */
+  onCustomerService?: () => void
+  /** 点击电话按钮回调 */
+  onPhoneCall?: (phone: string) => void
 }
 
 /** 主题颜色配置 */
@@ -136,5 +140,8 @@ export interface BottomActionBarProps {
   serviceId: string
   themeSettings: ThemeSettings
   colors: ThemeColors
+  servicePhone?: string
   onNavigate?: (page: string, params?: Record<string, string>) => void
+  onCustomerService?: () => void
+  onPhoneCall?: (phone: string) => void
 }

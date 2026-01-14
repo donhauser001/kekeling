@@ -1,6 +1,7 @@
 /**
  * 客服卡片组件
  * 按《小程序页面改造规范》改造
+ * 设计风格与陪诊员工作台卡片保持一致
  */
 
 import { Box, Text, Icon } from '../../../../ui/primitives'
@@ -9,11 +10,12 @@ import type { ServiceCardProps } from '../types'
 
 const wxScale = isWxEnvironment() ? 1.1 : 1
 
-export function ServiceCard({ colors }: ServiceCardProps) {
+export function ServiceCard({ colors, primaryColor, onClick }: ServiceCardProps) {
   const { cardBg, textPrimary, textMuted } = colors
 
   return (
     <Box
+      onClick={onClick}
       style={{
         marginLeft: 12 * wxScale,
         marginRight: 12 * wxScale,
@@ -27,10 +29,26 @@ export function ServiceCard({ colors }: ServiceCardProps) {
         paddingTop: 12 * wxScale,
         paddingBottom: 12 * wxScale,
         backgroundColor: cardBg,
+        borderWidth: 1,
+        borderStyle: 'solid',
+        borderColor: `${primaryColor}40`,
+        cursor: onClick ? 'pointer' : undefined,
       }}
     >
-      {/* 图标 */}
-      <Icon name="headset" size={24 * wxScale} color="#52c41a" />
+      {/* 图标 - 圆形背景容器，与工作台卡片风格一致 */}
+      <Box
+        style={{
+          width: 40 * wxScale,
+          height: 40 * wxScale,
+          borderRadius: 20 * wxScale,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: primaryColor,
+        }}
+      >
+        <Icon name="headset" size={20 * wxScale} color="#fff" />
+      </Box>
 
       {/* 文字 */}
       <Box style={{ flex: 1 }}>
@@ -49,7 +67,7 @@ export function ServiceCard({ colors }: ServiceCardProps) {
         </Text>
       </Box>
 
-      {/* 按钮 */}
+      {/* 按钮 - 胶囊按钮 */}
       <Box
         style={{
           paddingLeft: 16 * wxScale,
@@ -57,7 +75,7 @@ export function ServiceCard({ colors }: ServiceCardProps) {
           paddingTop: 6 * wxScale,
           paddingBottom: 6 * wxScale,
           borderRadius: 9999,
-          backgroundColor: '#52c41a',
+          backgroundColor: primaryColor,
         }}
       >
         <Text style={{ fontSize: 12 * wxScale, color: '#fff' }}>立即咨询</Text>

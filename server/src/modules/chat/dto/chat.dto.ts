@@ -1,4 +1,5 @@
 import { IsString, IsOptional, IsInt, Min, Max, IsEnum, IsBoolean } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 // 会话来源
@@ -44,9 +45,10 @@ export enum QuickReplyCategory {
 // ========== 会话相关 DTO ==========
 
 export class CreateSessionDto {
-  @ApiProperty({ enum: ChatSource, description: '会话来源' })
+  @ApiPropertyOptional({ enum: ChatSource, description: '会话来源', default: ChatSource.PROFILE })
+  @IsOptional()
   @IsEnum(ChatSource)
-  source: ChatSource;
+  source?: ChatSource = ChatSource.PROFILE;
 
   @ApiPropertyOptional({ description: '关联订单ID' })
   @IsOptional()
@@ -77,12 +79,14 @@ export class SessionQueryDto {
 
   @ApiPropertyOptional({ description: '页码', default: 1 })
   @IsOptional()
+  @Type(() => Number)
   @IsInt()
   @Min(1)
   page?: number;
 
   @ApiPropertyOptional({ description: '每页数量', default: 20 })
   @IsOptional()
+  @Type(() => Number)
   @IsInt()
   @Min(1)
   @Max(100)
@@ -143,6 +147,7 @@ export class MessageQueryDto {
 
   @ApiPropertyOptional({ description: '获取数量', default: 20 })
   @IsOptional()
+  @Type(() => Number)
   @IsInt()
   @Min(1)
   @Max(100)
@@ -195,6 +200,11 @@ export class UpdateQuickReplyDto {
   @IsOptional()
   @IsString()
   status?: string;
+
+  @ApiPropertyOptional({ description: '是否为自动问候语' })
+  @IsOptional()
+  @IsBoolean()
+  isAutoGreeting?: boolean;
 }
 
 export class QuickReplyQueryDto {
@@ -210,12 +220,14 @@ export class QuickReplyQueryDto {
 
   @ApiPropertyOptional({ description: '页码', default: 1 })
   @IsOptional()
+  @Type(() => Number)
   @IsInt()
   @Min(1)
   page?: number;
 
   @ApiPropertyOptional({ description: '每页数量', default: 50 })
   @IsOptional()
+  @Type(() => Number)
   @IsInt()
   @Min(1)
   @Max(100)

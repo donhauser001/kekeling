@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   MessageSquare,
   Users,
@@ -9,7 +9,7 @@ import {
   WifiOff,
   RefreshCw,
 } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/hooks/use-toast'
@@ -17,13 +17,14 @@ import { SessionList } from './components/session-list'
 import { ChatWindow } from './components/chat-window'
 import { useChatSocket } from './hooks/use-chat-socket'
 import { chatApi, quickReplyApi } from './api'
-import type {
-  ChatSession,
-  ChatMessage,
-  QuickReply,
-  ChatSessionStatus,
+import { configApi } from '@/lib/api/config'
+import {
+  type ChatSession,
+  type ChatMessage,
+  type QuickReply,
+  type ChatSessionStatus,
   MessageType,
-  ChatStats,
+  SenderType,
 } from './types'
 
 export function SupportChat() {
@@ -36,11 +37,10 @@ export function SupportChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isUserTyping, setIsUserTyping] = useState(false)
 
-  // 获取会话列表
+  // 获取会话列表（始终获取所有会话，筛选在前端进行）
   const { data: sessionsData, refetch: refetchSessions } = useQuery({
-    queryKey: ['chat-sessions', statusFilter],
+    queryKey: ['chat-sessions'],
     queryFn: () => chatApi.getSessions({
-      status: statusFilter === 'all' ? undefined : statusFilter,
       pageSize: 100,
     }),
     refetchInterval: 10000, // 10秒刷新一次
@@ -58,6 +58,15 @@ export function SupportChat() {
     queryKey: ['quick-replies-active'],
     queryFn: quickReplyApi.getActive,
   })
+
+  // 获取品牌设置（用于客服头像）
+  const { data: themeSettings } = useQuery({
+    queryKey: ['theme-settings'],
+    queryFn: configApi.getThemeSettings,
+  })
+
+  // 客服头像：使用 footerLogo，与小程序保持一致
+  const csAvatarUrl = themeSettings?.footerLogo || themeSettings?.headerLogo || ''
 
   // WebSocket 连接
   const socket = useChatSocket({
@@ -166,8 +175,26 @@ export function SupportChat() {
 
       const result = await socket.closeSession(selectedSession.id, reason)
       if (result.success) {
+        // 立即更新当前会话状态为已结束
+        setSelectedSession((prev) =>
+          prev ? { ...prev, status: 'closed' as ChatSessionStatus } : null
+        )
+        // 添加系统消息到消息列表
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `system-${Date.now()}`,
+            sessionId: selectedSession.id,
+            type: MessageType.TEXT,
+            content: '会话已结束，感谢您的咨询',
+            senderType: SenderType.SYSTEM,
+            isRead: true,
+            createdAt: new Date().toISOString(),
+          },
+        ])
         toast({
           title: '会话已结束',
+          description: '用户将收到会话结束通知',
         })
         refetchSessions()
       } else {
@@ -206,119 +233,90 @@ export function SupportChat() {
   const sessions = sessionsData?.items || []
 
   return (
-    <div className="flex flex-col h-full">
-      {/* 统计卡片 */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-        <StatsCard
-          title="排队中"
-          value={stats?.waiting || 0}
-          icon={<Clock className="h-4 w-4" />}
-          trend={stats?.waiting && stats.waiting > 0 ? 'up' : undefined}
-        />
-        <StatsCard
-          title="进行中"
-          value={stats?.chatting || 0}
-          icon={<MessageSquare className="h-4 w-4" />}
-        />
-        <StatsCard
-          title="今日完成"
-          value={stats?.todayClosed || 0}
-          icon={<Users className="h-4 w-4" />}
-        />
-        <StatsCard
-          title="平均评分"
-          value={stats?.avgRating?.toFixed(1) || '-'}
-          icon={<Star className="h-4 w-4" />}
-        />
+    <div className="flex flex-col h-full min-h-0">
+      {/* 顶部工具栏：统计 + 连接状态 */}
+      <div className="flex items-center justify-between gap-4 mb-4 shrink-0">
+        {/* 统计信息 */}
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4 text-orange-500" />
+            <span className="text-muted-foreground">排队</span>
+            <span className="font-semibold">{stats?.waiting || 0}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <MessageSquare className="h-4 w-4 text-green-500" />
+            <span className="text-muted-foreground">进行中</span>
+            <span className="font-semibold">{stats?.chatting || 0}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Users className="h-4 w-4 text-blue-500" />
+            <span className="text-muted-foreground">今日完成</span>
+            <span className="font-semibold">{stats?.todayClosed || 0}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Star className="h-4 w-4 text-yellow-500" />
+            <span className="text-muted-foreground">评分</span>
+            <span className="font-semibold">{stats?.avgRating?.toFixed(1) || '-'}</span>
+          </div>
+        </div>
+
+        {/* 连接状态 */}
+        <div className="flex items-center gap-2">
+          {socket.isConnected ? (
+            <Badge variant="outline" className="gap-1.5">
+              <Wifi className="h-3.5 w-3.5 text-green-500" />
+              已连接
+            </Badge>
+          ) : (
+            <Badge variant="destructive" className="gap-1.5">
+              <WifiOff className="h-3.5 w-3.5" />
+              未连接
+            </Badge>
+          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => refetchSessions()}
+          >
+            <RefreshCw className="h-4 w-4 mr-1.5" />
+            刷新
+          </Button>
+        </div>
       </div>
 
-      {/* 连接状态 */}
-      <div className="flex items-center gap-2 mb-4">
-        {socket.isConnected ? (
-          <Badge variant="outline" className="gap-1">
-            <Wifi className="h-3 w-3 text-green-500" />
-            已连接
-          </Badge>
-        ) : (
-          <Badge variant="destructive" className="gap-1">
-            <WifiOff className="h-3 w-3" />
-            未连接
-          </Badge>
-        )}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => refetchSessions()}
-        >
-          <RefreshCw className="h-4 w-4 mr-1" />
-          刷新
-        </Button>
-      </div>
-
-      {/* 主内容区 */}
-      <div className="flex-1 grid grid-cols-12 gap-4 min-h-0">
+      {/* 主内容区 - 使用 flex-1 自动填充剩余空间 */}
+      <div className="grid grid-cols-12 gap-4 flex-1 min-h-0">
         {/* 会话列表 */}
-        <Card className="col-span-4 flex flex-col overflow-hidden">
+        <Card className="col-span-4 overflow-hidden flex flex-col !p-0">
           <SessionList
             sessions={sessions}
             selectedId={selectedSession?.id}
             onSelect={(session) => setSelectedSession(session)}
             statusFilter={statusFilter}
             onStatusFilterChange={setStatusFilter}
-            className="flex-1"
+            className="h-full"
           />
         </Card>
 
         {/* 聊天窗口 */}
-        <Card className="col-span-8 flex flex-col overflow-hidden">
+        <Card className="col-span-8 overflow-hidden flex flex-col !p-0">
           <ChatWindow
             session={selectedSession}
             messages={messages}
             quickReplies={quickReplies}
             isTyping={isUserTyping}
+            csAvatarUrl={csAvatarUrl}
             onSendMessage={handleSendMessage}
             onAcceptSession={handleAcceptSession}
             onCloseSession={handleCloseSession}
             onTyping={handleTyping}
             onMarkRead={handleMarkRead}
             onUseQuickReply={handleUseQuickReply}
-            className="flex-1"
+            className="h-full"
           />
         </Card>
       </div>
     </div>
-  )
-}
-
-// 统计卡片组件
-function StatsCard({
-  title,
-  value,
-  icon,
-  trend,
-}: {
-  title: string
-  value: number | string
-  icon: React.ReactNode
-  trend?: 'up' | 'down'
-}) {
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        {icon}
-      </CardHeader>
-      <CardContent>
-        <div className="flex items-center gap-2">
-          <div className="text-2xl font-bold">{value}</div>
-          {trend === 'up' && (
-            <Badge variant="destructive" className="text-xs">
-              需处理
-            </Badge>
-          )}
-        </div>
-      </CardContent>
-    </Card>
   )
 }
 

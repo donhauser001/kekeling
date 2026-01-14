@@ -133,6 +133,9 @@ export function ProfilePage({
       case 'address':
         onNavigate?.('address-list')
         break
+      case 'my-reviews':
+        onNavigate?.('my-reviews')
+        break
       case 'feedback':
         onNavigate?.('feedback')
         break
@@ -202,7 +205,7 @@ export function ProfilePage({
       />
 
       {/* 客服卡片 */}
-      <ServiceCard colors={colors} />
+      <ServiceCard colors={colors} primaryColor={primaryColor} onClick={() => onNavigate?.('customer-service')} />
     </Box>
   )
 }

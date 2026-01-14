@@ -361,6 +361,11 @@ export const sidebarData: SidebarData = {
               icon: MessageCircle,
             },
             {
+              title: '快捷回复',
+              url: '/support/quick-replies',
+              icon: MessagesSquare,
+            },
+            {
               title: '评价管理',
               url: '/support/reviews',
               icon: Star,

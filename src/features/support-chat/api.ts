@@ -29,7 +29,7 @@ export const chatApi = {
     if (params.userId) searchParams.set('userId', params.userId)
     if (params.page) searchParams.set('page', params.page.toString())
     if (params.pageSize) searchParams.set('pageSize', params.pageSize.toString())
-    
+
     return request(`/admin/chat/sessions?${searchParams.toString()}`)
   },
 
@@ -75,7 +75,7 @@ export const chatApi = {
     const searchParams = new URLSearchParams()
     if (params.before) searchParams.set('before', params.before)
     if (params.limit) searchParams.set('limit', params.limit.toString())
-    
+
     return request(`/admin/chat/sessions/${sessionId}/messages?${searchParams.toString()}`)
   },
 }
@@ -97,7 +97,7 @@ export const quickReplyApi = {
     if (params.status) searchParams.set('status', params.status)
     if (params.page) searchParams.set('page', params.page.toString())
     if (params.pageSize) searchParams.set('pageSize', params.pageSize.toString())
-    
+
     return request(`/admin/chat/quick-replies?${searchParams.toString()}`)
   },
 
@@ -158,6 +158,25 @@ export const quickReplyApi = {
   // 记录使用
   recordUse: async (id: string): Promise<void> => {
     return request(`/admin/chat/quick-replies/${id}/use`, {
+      method: 'POST',
+    })
+  },
+
+  // 获取自动问候语
+  getAutoGreeting: async (): Promise<QuickReply | null> => {
+    return request('/admin/chat/quick-replies/auto-greeting')
+  },
+
+  // 设置为自动问候语
+  setAutoGreeting: async (id: string): Promise<QuickReply> => {
+    return request(`/admin/chat/quick-replies/${id}/set-auto-greeting`, {
+      method: 'POST',
+    })
+  },
+
+  // 取消自动问候语
+  cancelAutoGreeting: async (id: string): Promise<QuickReply> => {
+    return request(`/admin/chat/quick-replies/${id}/cancel-auto-greeting`, {
       method: 'POST',
     })
   },

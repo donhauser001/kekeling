@@ -1,9 +1,8 @@
 import { useMemo } from 'react'
 import { formatDistanceToNow } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
-import { MessageSquare, User } from 'lucide-react'
+import { MessageSquare, User, Star } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -61,21 +60,21 @@ export function SessionList({
     }, [filteredSessions])
 
     return (
-        <div className={cn('flex flex-col h-full', className)}>
+        <div className={cn('flex flex-col', className)} style={{ height: '100%', overflow: 'hidden' }}>
             {/* 状态筛选 */}
-            <div className="p-3 border-b">
+            <div className="px-3 py-2.5 border-b shrink-0 bg-muted/30">
                 <Tabs value={statusFilter} onValueChange={(v) => onStatusFilterChange(v as any)}>
-                    <TabsList className="grid w-full grid-cols-4">
-                        <TabsTrigger value="all" className="text-xs">
+                    <TabsList className="grid w-full grid-cols-4 h-8">
+                        <TabsTrigger value="all" className="text-xs h-7">
                             全部 ({sessions.length})
                         </TabsTrigger>
-                        <TabsTrigger value="waiting" className="text-xs">
+                        <TabsTrigger value="waiting" className="text-xs h-7">
                             排队 ({statusCounts.waiting || 0})
                         </TabsTrigger>
-                        <TabsTrigger value="chatting" className="text-xs">
+                        <TabsTrigger value="chatting" className="text-xs h-7">
                             进行 ({statusCounts.chatting || 0})
                         </TabsTrigger>
-                        <TabsTrigger value="closed" className="text-xs">
+                        <TabsTrigger value="closed" className="text-xs h-7">
                             结束 ({statusCounts.closed || 0})
                         </TabsTrigger>
                     </TabsList>
@@ -83,25 +82,25 @@ export function SessionList({
             </div>
 
             {/* 会话列表 */}
-            <ScrollArea className="flex-1">
-                <div className="divide-y">
-                    {sortedSessions.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                            <MessageSquare className="h-12 w-12 mb-4 opacity-20" />
-                            <p>暂无会话</p>
-                        </div>
-                    ) : (
-                        sortedSessions.map((session) => (
+            <div style={{ flex: '1 1 0', minHeight: 0, overflowY: 'auto' }}>
+                {sortedSessions.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                        <MessageSquare className="h-10 w-10 mb-3 opacity-20" />
+                        <p className="text-sm">暂无会话</p>
+                    </div>
+                ) : (
+                    <div>
+                        {sortedSessions.map((session) => (
                             <SessionItem
                                 key={session.id}
                                 session={session}
                                 isSelected={session.id === selectedId}
                                 onClick={() => onSelect(session)}
                             />
-                        ))
-                    )}
-                </div>
-            </ScrollArea>
+                        ))}
+                    </div>
+                )}
+            </div>
         </div>
     )
 }
@@ -123,35 +122,37 @@ function SessionItem({ session, isSelected, onClick }: SessionItemProps) {
     return (
         <div
             className={cn(
-                'flex items-start gap-3 p-3 cursor-pointer transition-colors hover:bg-accent/50',
+                'flex items-start gap-3 px-3 py-3 cursor-pointer transition-colors hover:bg-accent/50 border-b',
                 isSelected && 'bg-accent'
             )}
             onClick={onClick}
         >
             {/* 头像 */}
-            <div className="relative">
+            <div className="relative shrink-0 mt-0.5">
                 <Avatar className="h-10 w-10">
                     <AvatarImage src={user?.avatar} />
                     <AvatarFallback>
                         <User className="h-5 w-5" />
                     </AvatarFallback>
                 </Avatar>
-                {/* 状态指示器 */}
-                <div
-                    className={cn(
-                        'absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-background',
-                        config.color
-                    )}
-                />
             </div>
 
             {/* 内容 */}
             <div className="flex-1 min-w-0">
+                {/* 第一行：名字 + 状态 + 时间 */}
                 <div className="flex items-center justify-between gap-2">
-                    <span className="font-medium truncate">
-                        {user?.nickname || user?.phone || '未知用户'}
-                    </span>
-                    <span className="text-xs text-muted-foreground whitespace-nowrap">
+                    <div className="flex items-center gap-2 min-w-0">
+                        <span className="font-medium truncate">
+                            {user?.nickname || user?.phone || '未知用户'}
+                        </span>
+                        <Badge
+                            variant={status === 'waiting' ? 'destructive' : status === 'chatting' ? 'default' : 'secondary'}
+                            className="text-xs h-5 shrink-0"
+                        >
+                            {config.label}
+                        </Badge>
+                    </div>
+                    <span className="text-xs text-muted-foreground whitespace-nowrap shrink-0">
                         {formatDistanceToNow(new Date(updatedAt), {
                             addSuffix: true,
                             locale: zhCN,
@@ -159,15 +160,15 @@ function SessionItem({ session, isSelected, onClick }: SessionItemProps) {
                     </span>
                 </div>
 
-                {/* 最后消息 */}
-                <div className="flex items-center gap-2 mt-1">
+                {/* 第二行：最后消息 + 未读数 */}
+                <div className="flex items-center gap-2 mt-1.5">
                     {lastMessage ? (
                         <p className="text-sm text-muted-foreground truncate flex-1">
                             {lastMessage.senderType === 'admin' && (
                                 <span className="text-primary">[客服] </span>
                             )}
                             {lastMessage.senderType === 'system' && (
-                                <span className="text-orange-500">[系统] </span>
+                                <span className="text-green-600">[系统] </span>
                             )}
                             {lastMessage.type === 'image' ? '[图片]' : lastMessage.content}
                         </p>
@@ -179,24 +180,37 @@ function SessionItem({ session, isSelected, onClick }: SessionItemProps) {
 
                     {/* 未读数量 */}
                     {unreadCount > 0 && (
-                        <Badge variant="destructive" className="h-5 min-w-[20px] px-1.5">
+                        <Badge variant="destructive" className="h-5 min-w-[20px] px-1.5 text-xs">
                             {unreadCount > 99 ? '99+' : unreadCount}
                         </Badge>
                     )}
                 </div>
 
-                {/* 标签 */}
-                <div className="flex items-center gap-2 mt-1.5">
-                    <Badge variant="outline" className="text-xs h-5">
-                        {config.label}
-                    </Badge>
+                {/* 第三行：评分/来源标签 */}
+                <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                    {/* 评分显示（已结束的会话） */}
+                    {status === 'closed' && session.rating && (
+                        <div className="flex items-center gap-1">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                                <Star
+                                    key={star}
+                                    className={cn(
+                                        'h-3 w-3',
+                                        star <= session.rating! ? 'fill-amber-400 text-amber-400' : 'text-gray-300'
+                                    )}
+                                />
+                            ))}
+                        </div>
+                    )}
+
+                    {/* 来源标签 */}
                     {session.source === 'order_detail' && session.order && (
-                        <Badge variant="secondary" className="text-xs h-5">
+                        <Badge variant="outline" className="text-xs h-5">
                             订单咨询
                         </Badge>
                     )}
                     {session.source === 'service_detail' && session.service && (
-                        <Badge variant="secondary" className="text-xs h-5">
+                        <Badge variant="outline" className="text-xs h-5">
                             服务咨询
                         </Badge>
                     )}

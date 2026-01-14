@@ -1,0 +1,20 @@
+/**
+ * 在线客服页面样式
+ * 大部分样式已内联到 style 中，此处仅保留动画和安全区域
+ */
+
+// 加载动画
+.loading-spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+// 输入区域底部安全区域
+.input-area-safe {
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+}

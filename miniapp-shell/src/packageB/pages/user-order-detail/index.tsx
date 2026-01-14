@@ -62,11 +62,22 @@ function UserOrderDetailPageContent() {
       'escort-detail': '/packageB/pages/escort-detail/index',
       'order-complaint': '/packageB/pages/order-complaint/index',
       'user-orders': '/packageB/pages/user-orders/index',
+      'review-submit': '/packageB/pages/review-submit/index',
+      'customer-service': '/packageB/pages/customer-service/index',
     }
     const basePath = PAGE_MAP[page]
     if (basePath) {
       let url = basePath
-      if (params?.id) {
+      if (page === 'review-submit' && params) {
+        // 评价页面需要传递多个参数
+        const queryParams = new URLSearchParams()
+        if (params.orderId) queryParams.append('orderId', params.orderId)
+        if (params.escortId) queryParams.append('escortId', params.escortId)
+        if (params.escortName) queryParams.append('escortName', encodeURIComponent(params.escortName))
+        if (params.serviceName) queryParams.append('serviceName', encodeURIComponent(params.serviceName))
+        if (params.escortAvatar) queryParams.append('escortAvatar', encodeURIComponent(params.escortAvatar))
+        url += `?${queryParams.toString()}`
+      } else if (params?.id) {
         url += `?id=${params.id}`
       }
       Taro.navigateTo({ url })

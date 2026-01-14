@@ -21,6 +21,7 @@ import { AdminSettlementController } from './controllers/admin-settlement.contro
 import { AdminFinanceController } from './controllers/admin-finance.controller';
 import { AdminHotKeywordsController } from './controllers/admin-hot-keywords.controller';
 import { AdminChatController } from './controllers/admin-chat.controller';
+import { AdminReviewsController } from './controllers/admin-reviews.controller';
 import { AdminOrdersService } from './services/admin-orders.service';
 import { AdminEscortsService } from './services/admin-escorts.service';
 import { AdminEscortLevelsService } from './services/admin-escort-levels.service';
@@ -35,6 +36,7 @@ import { AdminEscortIdentityService } from './services/admin-escort-identity.ser
 import { AdminPatientsService } from './services/admin-patients.service';
 import { AdminSettlementService } from './services/admin-settlement.service';
 import { AdminHotKeywordsService } from './services/admin-hot-keywords.service';
+import { AdminReviewsService } from './services/admin-reviews.service';
 import { EscortAppModule } from '../escort-app/escort-app.module';
 import { MembershipModule } from '../membership/membership.module';
 import { CouponsModule } from '../coupons/coupons.module';
@@ -78,6 +80,7 @@ import { ChatModule } from '../chat/chat.module';
     AdminFinanceController,
     AdminHotKeywordsController,
     AdminChatController,
+    AdminReviewsController,
   ],
   providers: [
     AdminOrdersService,
@@ -94,6 +97,7 @@ import { ChatModule } from '../chat/chat.module';
     AdminPatientsService,
     AdminSettlementService,
     AdminHotKeywordsService,
+    AdminReviewsService,
   ],
   exports: [AdminSettlementService],
 })

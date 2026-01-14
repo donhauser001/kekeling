@@ -13,12 +13,14 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { ChatSessionService } from './chat-session.service';
 import { ChatMessageService } from './chat-message.service';
+import { QuickReplyService } from './quick-reply.service';
 import {
   WsSendMessageDto,
   WsTypingDto,
   WsReadDto,
   SenderType,
   ChatSessionStatus,
+  MessageType,
 } from './dto/chat.dto';
 
 interface AuthenticatedSocket extends Socket {
@@ -49,7 +51,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private configService: ConfigService,
     private sessionService: ChatSessionService,
     private messageService: ChatMessageService,
-  ) {}
+    private quickReplyService: QuickReplyService,
+  ) { }
 
   /**
    * 处理连接
@@ -209,6 +212,25 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.server.to(`session_${data.sessionId}`).emit('new_message', {
         message: systemMessage,
       });
+
+      // 发送自动问候语（如果有配置）
+      const autoGreeting = await this.quickReplyService.getAutoGreeting();
+      if (autoGreeting) {
+        const greetingMessage = await this.messageService.sendMessage(
+          {
+            sessionId: data.sessionId,
+            type: MessageType.TEXT,
+            content: autoGreeting.content,
+          },
+          SenderType.ADMIN,
+          client.adminId,
+        );
+        this.server.to(`session_${data.sessionId}`).emit('new_message', {
+          message: greetingMessage,
+        });
+        // 记录使用次数
+        await this.quickReplyService.incrementUseCount(autoGreeting.id);
+      }
 
       return { success: true, session };
     } catch (error: any) {

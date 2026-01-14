@@ -250,5 +250,38 @@ export class EscortAppController {
     };
     return this.escortAppService.updateServiceSettings(req.user.userId, settings);
   }
+
+  // ============================================
+  // 评价相关 API
+  // ============================================
+
+  // 获取我收到的评价
+  @Get('reviews')
+  async getMyReviews(
+    @Request() req,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+  ) {
+    return this.escortAppService.getMyReviews(req.user.userId, {
+      page: page ? parseInt(page) : undefined,
+      pageSize: pageSize ? parseInt(pageSize) : undefined,
+    });
+  }
+
+  // 回复评价
+  @Post('reviews/:id/reply')
+  async replyReview(
+    @Request() req,
+    @Param('id') id: string,
+    @Body() body: { content: string },
+  ) {
+    return this.escortAppService.replyReview(req.user.userId, id, body.content);
+  }
+
+  // 获取我的评价统计
+  @Get('reviews/stats')
+  async getMyReviewStats(@Request() req) {
+    return this.escortAppService.getMyReviewStats(req.user.userId);
+  }
 }
 

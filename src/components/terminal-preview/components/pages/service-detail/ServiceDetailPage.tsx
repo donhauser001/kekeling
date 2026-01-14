@@ -39,6 +39,8 @@ export function ServiceDetailPage({
   onServiceClick,
   onNavigate,
   effectiveViewerRole = 'user',
+  onCustomerService,
+  onPhoneCall,
 }: ServiceDetailPageProps) {
   // 是否为陪诊员视角
   const isEscort = effectiveViewerRole === 'escort'
@@ -193,7 +195,10 @@ export function ServiceDetailPage({
         serviceId={serviceId}
         themeSettings={themeSettings}
         colors={colors}
+        servicePhone={themeSettings.servicePhone}
         onNavigate={onNavigate}
+        onCustomerService={onCustomerService}
+        onPhoneCall={onPhoneCall}
       />
     </Box>
   )

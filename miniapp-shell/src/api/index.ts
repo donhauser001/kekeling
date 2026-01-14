@@ -64,3 +64,50 @@ export {
   setDefaultPatient,
   getDefaultPatient,
 } from './patient'
+
+// 评价 API
+export * as reviewApi from './review'
+export {
+  createReview,
+  updateReview,
+  getOrderReviewStatus,
+  getMyReviews,
+  getEscortReviews,
+  getReceivedReviews,
+  replyToReview,
+  getMyReviewStats,
+  getRecommendedTags,
+  POSITIVE_TAGS,
+  NEGATIVE_TAGS,
+} from './review'
+export type {
+  Review,
+  ReviewStats,
+  PaginatedReviews,
+  OrderReviewStatus,
+  CreateReviewRequest,
+  UpdateReviewRequest,
+} from './review'
+
+// 在线客服 API
+export * as chatApi from './chat'
+export {
+  getOrCreateSession,
+  getCurrentSession,
+  sendMessage,
+  getMessages,
+  markMessagesRead,
+  closeSession,
+  rateSession,
+  getUnreadCount,
+  WS_URL,
+  WS_EVENTS,
+} from './chat'
+export type {
+  ChatMessage,
+  ChatSession,
+  MessageType,
+  SenderType,
+  PaginatedMessages,
+  SendMessageRequest,
+} from './chat'

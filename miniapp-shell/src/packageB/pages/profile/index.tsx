@@ -88,10 +88,15 @@ const PAGE_ROUTE_MAP: Record<string, string> = {
   'help-center': '/packageB/pages/help-center/index',
   'article-detail': '/packageB/pages/article-detail/index',
   'cms-page': '/packageB/pages/cms-page/index',
+  // 评价与客服
+  'my-reviews': '/packageB/pages/my-reviews/index',
+  'review-submit': '/packageB/pages/review-submit/index',
+  'customer-service': '/packageB/pages/customer-service/index',
   // 陪诊员相关
   'escort-detail': '/packageB/pages/escort-detail/index',
   'order-complaint': '/packageB/pages/order-complaint/index',
   'escort-apply': '/packageB/pages/escort-apply/index',
+  'escort-reviews': '/packageC/pages/escort-reviews/index',
   // 活动中心
   'campaigns': '/packageB/pages/campaigns/index',
   'campaign-detail': '/packageB/pages/campaigns-detail/index',
@@ -224,17 +229,17 @@ function ProfilePageContent() {
    */
   const handleExitEscortMode = useCallback(() => {
     console.log('[ProfilePage] 退出陪诊员模式')
-    
+
     // 清除陪诊员 token
     clearPreviewEscortToken()
-    
+
     // 提示用户
     Taro.showToast({
       title: '已退出陪诊员模式',
       icon: 'success',
       duration: 1500,
     })
-    
+
     // 刷新页面以更新视角
     setTimeout(() => {
       Taro.reLaunch({

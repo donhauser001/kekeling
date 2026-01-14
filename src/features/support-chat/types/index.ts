@@ -46,6 +46,13 @@ export interface ChatUser {
   phone?: string
 }
 
+// 客服（管理员）信息
+export interface ChatAdmin {
+  id: string
+  name: string
+  avatar?: string
+}
+
 // 订单信息
 export interface ChatOrder {
   id: string
@@ -107,6 +114,7 @@ export interface ChatSession {
   updatedAt: string
   // 关联数据
   user?: ChatUser
+  admin?: ChatAdmin
   order?: ChatOrder
   service?: ChatService
   messages?: ChatMessage[]
@@ -119,6 +127,7 @@ export interface QuickReply {
   title: string
   content: string
   useCount: number
+  isAutoGreeting: boolean // 是否为自动问候语
   sort: number
   status: string
   createdAt: string

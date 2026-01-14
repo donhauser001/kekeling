@@ -67,7 +67,7 @@ export function StatsCard({ homeSettings, statsData, themeSettings }: StatsCardP
                 {/* 数字行：数字居中，后缀作为附加显示 */}
                 <Box style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center' }}>
                   <Text
-                    style={{ fontSize: 28 * wxScale, fontWeight: 'bold', color: '#ffffff', lineHeight: 1.2 }}
+                    style={{ fontSize: 24 * wxScale, fontWeight: 'bold', color: '#ffffff', lineHeight: 1.2 }}
                   >
                     {getStatsValue(statsData, item.key, item.customValue)}
                   </Text>

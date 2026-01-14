@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(sshpass -p 'Kekeling.2581264' scp root@8.130.23.38:/var/www/kekeling/server/.env ~/.kekeling-env-backup)",
+      "Bash(sshpass -p 'Kekeling.2581264' ssh root@8.130.23.38 \"cd /var/www/kekeling/server && CI=true pnpm install && pnpm build && pm2 restart kekeling-api\")",
+      "Bash(sshpass -p 'Kekeling.2581264' ssh root@8.130.23.38 \"cd /var/www/kekeling/server && npx prisma generate && pnpm build && pm2 restart kekeling-api\")",
+      "Bash(pnpm vite build:*)",
+      "Bash(rsync -avz --delete -e \"sshpass -p ''Kekeling.2581264'' ssh -o StrictHostKeyChecking=no\" dist/ root@8.130.23.38:/var/www/kekeling/dist/)",
+      "Bash(sshpass -p 'Kekeling.2581264' ssh root@8.130.23.38 \"pm2 list && pm2 logs kekeling-api --lines 20 --nostream\")"
+    ]
+  }
+}
