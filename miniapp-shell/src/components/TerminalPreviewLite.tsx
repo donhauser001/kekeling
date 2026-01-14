@@ -204,6 +204,39 @@ export function TerminalPreviewLite({
   }, [])
 
   /**
+   * 分类点击 - 跳转到服务页并定位到对应分类
+   */
+  const handleCategoryClick = useCallback((categoryId: string) => {
+    console.log('[TerminalPreviewLite] ✅ 分类点击触发，分类ID:', categoryId)
+    Taro.showToast({ title: '跳转中...', icon: 'loading', duration: 500 })
+    Taro.navigateTo({
+      url: `/packageA/pages/services/index?categoryId=${categoryId}`,
+      fail: (err) => {
+        console.error('[TerminalPreviewLite] 跳转失败:', err)
+        Taro.reLaunch({
+          url: `/packageA/pages/services/index?categoryId=${categoryId}`,
+        })
+      },
+    })
+  }, [])
+
+  /**
+   * 查看更多服务 - 跳转到服务页面
+   */
+  const handleViewMoreServices = useCallback(() => {
+    console.log('[TerminalPreviewLite] 跳转服务页')
+    Taro.navigateTo({
+      url: '/packageA/pages/services/index',
+      fail: (err) => {
+        console.error('[TerminalPreviewLite] 跳转失败:', err)
+        Taro.reLaunch({
+          url: '/packageA/pages/services/index',
+        })
+      },
+    })
+  }, [])
+
+  /**
    * TabBar 页面切换 - 跳转到分包页面
    * home 页面不跳转（当前页），其他页面跳转到对应分包
    * 使用 navigateTo 保留首页，避免 reLaunch 超时问题
@@ -310,6 +343,7 @@ export function TerminalPreviewLite({
           categories={categories}
           themeSettings={themeSettings}
           isDarkMode={isDarkMode}
+          onCategoryClick={handleCategoryClick}
         />
 
         {/* 轮播图 */}
@@ -335,6 +369,7 @@ export function TerminalPreviewLite({
           themeSettings={themeSettings}
           isDarkMode={isDarkMode}
           onServiceClick={handleServiceClick}
+          onViewMore={handleViewMoreServices}
         />
 
         {/* 内容区 */}

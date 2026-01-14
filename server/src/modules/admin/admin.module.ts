@@ -20,6 +20,7 @@ import { AdminPatientsController, AdminUserPatientsController } from './controll
 import { AdminSettlementController } from './controllers/admin-settlement.controller';
 import { AdminFinanceController } from './controllers/admin-finance.controller';
 import { AdminHotKeywordsController } from './controllers/admin-hot-keywords.controller';
+import { AdminChatController } from './controllers/admin-chat.controller';
 import { AdminOrdersService } from './services/admin-orders.service';
 import { AdminEscortsService } from './services/admin-escorts.service';
 import { AdminEscortLevelsService } from './services/admin-escort-levels.service';
@@ -40,6 +41,7 @@ import { CouponsModule } from '../coupons/coupons.module';
 import { PointsModule } from '../points/points.module';
 import { NotificationModule } from '../notification/notification.module';
 import { DistributionModule } from '../distribution/distribution.module';
+import { ChatModule } from '../chat/chat.module';
 
 @Module({
   imports: [
@@ -49,6 +51,7 @@ import { DistributionModule } from '../distribution/distribution.module';
     PointsModule,
     NotificationModule,
     DistributionModule,
+    ChatModule,
   ],
   controllers: [
     AdminOrdersController,
@@ -74,6 +77,7 @@ import { DistributionModule } from '../distribution/distribution.module';
     AdminSettlementController,
     AdminFinanceController,
     AdminHotKeywordsController,
+    AdminChatController,
   ],
   providers: [
     AdminOrdersService,

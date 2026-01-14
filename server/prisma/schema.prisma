@@ -43,6 +43,7 @@ model User {
   addresses      UserAddress[]
   escortApplications EscortApplication[]
   feedbacks     Feedback[]
+  chatSessions  ChatSession[] @relation("UserChatSessions")
 
   @@map("users")
 }
@@ -198,6 +199,7 @@ model Service {
   guarantees       ServiceGuaranteeOnService[]  // 服务保障关联
   operationGuides  OperationGuideOnService[]    // 操作规范关联
   seckillItems     SeckillItem[]
+  chatSessions     ChatSession[]
 
   @@map("services")
 }
@@ -1223,6 +1225,7 @@ model Order {
   priceSnapshot    OrderPriceSnapshot?
   distributionRecords DistributionRecord[]
   complaints       Complaint[]
+  chatSessions     ChatSession[]
 
   // 营销相关
   couponId         String?   @unique @map("coupon_id")
@@ -2178,4 +2181,96 @@ model Feedback {
   @@index([status])
   @@index([createdAt])
   @@map("feedbacks")
+}
+
+// ========== 在线客服模块 ==========
+
+model ChatSession {
+  id           String    @id @default(uuid())
+  sessionNo    String    @unique @map("session_no")  // 会话编号 CS202501140001
+  
+  userId       String    @map("user_id")
+  adminId      String?   @map("admin_id")            // 接待客服ID
+  
+  // 关联上下文
+  orderId      String?   @map("order_id")
+  serviceId    String?   @map("service_id")
+  source       String    @default("profile")         // profile(个人中心), service_detail(服务详情), order_detail(订单详情)
+  
+  // 状态
+  status       String    @default("waiting")         // waiting(排队), chatting(进行中), closed(已结束)
+  
+  // 时间节点
+  startedAt    DateTime? @map("started_at")          // 客服接入时间
+  closedAt     DateTime? @map("closed_at")           // 结束时间
+  closeReason  String?   @map("close_reason")        // user_close, admin_close, timeout
+  
+  // 满意度评价
+  rating       Int?                                  // 1-5 满意度
+  ratingContent String? @map("rating_content")       // 评价内容
+  
+  // 统计字段
+  messageCount Int       @default(0) @map("message_count")
+  firstReplyAt DateTime? @map("first_reply_at")      // 首次回复时间（计算响应速度）
+  
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  // 关联
+  user         User      @relation("UserChatSessions", fields: [userId], references: [id])
+  order        Order?    @relation(fields: [orderId], references: [id])
+  service      Service?  @relation(fields: [serviceId], references: [id])
+  messages     ChatMessage[]
+
+  @@index([userId, status])
+  @@index([adminId, status])
+  @@index([status, createdAt])
+  @@map("chat_sessions")
+}
+
+model ChatMessage {
+  id           String    @id @default(uuid())
+  sessionId    String    @map("session_id")
+  
+  senderType   String    @map("sender_type")         // user, admin, system
+  senderId     String?   @map("sender_id")           // 发送者ID
+  
+  type         String    @default("text")            // text, image, file, order_card, service_card, quick_reply
+  content      String    @db.Text                    // 消息内容
+  extra        Json?                                 // 扩展信息
+  // text: null
+  // image: { url, width, height, thumbnail }
+  // file: { url, name, size, mimeType }
+  // order_card: { orderId, orderNo, serviceName, status }
+  // service_card: { serviceId, name, price, image }
+  
+  isRead       Boolean   @default(false) @map("is_read")
+  readAt       DateTime? @map("read_at")
+  
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  session      ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, createdAt])
+  @@index([sessionId, isRead])
+  @@map("chat_messages")
+}
+
+model QuickReply {
+  id           String    @id @default(uuid())
+  
+  category     String    @default("other")           // greeting(问候语), order(订单相关), payment(支付相关), service(服务相关), other
+  title        String                                // 标题（供客服选择用）
+  content      String    @db.Text                    // 回复内容
+  
+  useCount     Int       @default(0) @map("use_count") // 使用次数
+  
+  sort         Int       @default(0)
+  status       String    @default("active")          // active, inactive
+  
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  @@index([category, status])
+  @@map("quick_replies")
 }

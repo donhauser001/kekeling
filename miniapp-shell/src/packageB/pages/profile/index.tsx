@@ -10,6 +10,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ProfilePage as ProfilePageComponent } from '@terminal-preview/components/pages/ProfilePage'
 import { TabBarNav } from '@terminal-preview/components'
 import { previewApi } from '@terminal-preview/api'
+import { clearPreviewEscortToken } from '@terminal-preview/session'
 import type { ThemeSettings } from '@terminal-preview/types'
 import { defaultThemeSettings } from '@terminal-preview/types'
 import type { TabKey } from '@terminal-preview/constants'
@@ -222,8 +223,24 @@ function ProfilePageContent() {
    * 退出陪诊员模式
    */
   const handleExitEscortMode = useCallback(() => {
-    // 小程序中暂不支持陪诊员模式切换
     console.log('[ProfilePage] 退出陪诊员模式')
+    
+    // 清除陪诊员 token
+    clearPreviewEscortToken()
+    
+    // 提示用户
+    Taro.showToast({
+      title: '已退出陪诊员模式',
+      icon: 'success',
+      duration: 1500,
+    })
+    
+    // 刷新页面以更新视角
+    setTimeout(() => {
+      Taro.reLaunch({
+        url: '/packageB/pages/profile/index',
+      })
+    }, 1500)
   }, [])
 
   /**

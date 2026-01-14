@@ -23,6 +23,8 @@ interface ServiceRecommendationProps {
   themeSettings: ThemeSettings
   isDarkMode?: boolean
   onServiceClick?: (serviceId: string) => void
+  /** 点击"查看更多服务"按钮的回调 */
+  onViewMore?: () => void
 }
 
 export function ServiceRecommendation({
@@ -32,6 +34,7 @@ export function ServiceRecommendation({
   themeSettings,
   isDarkMode = false,
   onServiceClick,
+  onViewMore,
 }: ServiceRecommendationProps) {
   const [layoutMode, setLayoutMode] = useState<LayoutMode>('grid')
 
@@ -314,8 +317,9 @@ export function ServiceRecommendation({
 
       {/* 查看更多 */}
       <Box
-        className='mt-3 flex items-center justify-center gap-0.5 text-xs'
+        className='mt-3 flex items-center justify-center gap-0.5 text-xs cursor-pointer'
         style={{ marginTop: 12 * wxScale, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 * wxScale }}
+        onClick={onViewMore}
       >
         <Text style={{ fontSize: 13 * wxScale, color: textMuted }}>查看更多服务</Text>
         <Text style={{ fontSize: 13 * wxScale, color: textMuted }}>›</Text>

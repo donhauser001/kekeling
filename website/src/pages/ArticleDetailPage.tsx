@@ -65,7 +65,7 @@ function RelatedArticleCard({ article }: { article: Article }) {
         </h4>
         <p className="text-sm text-gray-400 mt-2 flex items-center gap-1">
           <Icon name="time" className="text-xs" />
-          {article.publishedAt 
+          {article.publishedAt
             ? new Date(article.publishedAt).toLocaleDateString('zh-CN')
             : '-'}
         </p>
@@ -87,7 +87,7 @@ export function ArticleDetailPage() {
 
     setLoading(true)
     setError(null)
-    
+
     articleApi
       .getBySlug(slug)
       .then(setArticle)
@@ -100,7 +100,7 @@ export function ArticleDetailPage() {
   // 加载相关文章
   useEffect(() => {
     if (!article?.categoryId) return
-    
+
     articleApi
       .getList({
         page: 1,
@@ -172,8 +172,8 @@ export function ArticleDetailPage() {
             {article.category && (
               <>
                 <Icon name="right" className="text-xs text-gray-300" />
-                <Link 
-                  to={`/category/${article.category.slug}`} 
+                <Link
+                  to={`/category/${article.category.slug}`}
                   className="text-gray-500 hover:text-primary-600 transition-colors"
                 >
                   {article.category.name}
@@ -228,17 +228,17 @@ export function ArticleDetailPage() {
                       <Icon name="time" className="text-sm" />
                       {article.publishedAt
                         ? new Date(article.publishedAt).toLocaleDateString('zh-CN', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric',
-                          })
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                        })
                         : '-'}
                     </span>
                     <span className="flex items-center gap-1">
                       <Icon name="browse" className="text-sm" />
                       {article.viewCount || 0} 阅读
                     </span>
-                    <button 
+                    <button
                       onClick={handleShare}
                       className="flex items-center gap-1 hover:text-primary-600 transition-colors ml-auto"
                     >
@@ -256,7 +256,7 @@ export function ArticleDetailPage() {
                 )}
 
                 {/* 正文内容 */}
-                <div 
+                <div
                   className="prose prose-lg max-w-none 
                     prose-headings:text-gray-900 prose-headings:font-bold
                     prose-h2:text-xl prose-h2:mt-8 prose-h2:mb-4

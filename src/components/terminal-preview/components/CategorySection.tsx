@@ -16,6 +16,8 @@ interface CategorySectionProps {
   categories: ServiceCategory[]
   themeSettings: ThemeSettings
   isDarkMode?: boolean
+  /** 分类点击回调，传递分类 ID */
+  onCategoryClick?: (categoryId: string) => void
 }
 
 // 隐藏滚动条的样式
@@ -35,17 +37,19 @@ function PinnedCategoryCard({
   index,
   primaryColor,
   isDarkMode = false,
+  onClick,
 }: {
   category: ServiceCategory
   index: number
   primaryColor: string
   isDarkMode?: boolean
+  onClick?: () => void
 }) {
   const color = category.color || (index === 0 ? primaryColor : '#22c55e')
 
   return (
     <Box
-      className='flex flex-1 items-center justify-between gap-3 rounded-2xl px-3 py-5 shadow-sm'
+      className='flex flex-1 items-center justify-between gap-3 rounded-2xl px-3 py-5 shadow-sm cursor-pointer transition-all active:scale-[0.98]'
       style={{
         display: 'flex',
         flex: 1,
@@ -59,6 +63,7 @@ function PinnedCategoryCard({
         paddingBottom: 20 * wxScale,
         backgroundColor: isDarkMode ? '#2a2a2a' : '#ffffff',
       }}
+      onClick={onClick}
     >
       {/* 左侧内容 */}
       <Box className='flex-1 min-w-0' style={{ flex: 1, minWidth: 0 }}>
@@ -112,15 +117,18 @@ function CategoryTag({
   category,
   primaryColor,
   isDarkMode = false,
+  onClick,
 }: {
   category: ServiceCategory
   primaryColor: string
   isDarkMode?: boolean
+  onClick?: () => void
 }) {
   const baseColor = extractBaseColor(category.color, primaryColor)
 
   return (
     <Box
+      className='cursor-pointer transition-all active:scale-[0.98]'
       style={{
         display: 'flex',
         flexShrink: 0,
@@ -133,6 +141,7 @@ function CategoryTag({
         paddingBottom: 8 * wxScale,
         backgroundColor: isDarkMode ? '#3a3a3a' : '#f3f4f6',
       }}
+      onClick={onClick}
     >
       <Box
         style={{
@@ -349,6 +358,7 @@ export function CategorySection({
   categories,
   themeSettings,
   isDarkMode = false,
+  onCategoryClick,
 }: CategorySectionProps) {
   const isWeb = isBrowserEnvironment()
   // 置顶分类
@@ -394,6 +404,7 @@ export function CategorySection({
               index={index}
               primaryColor={themeSettings.primaryColor}
               isDarkMode={isDarkMode}
+              onClick={() => onCategoryClick?.(category.id)}
             />
           ))}
         </Box>
@@ -424,6 +435,7 @@ export function CategorySection({
                   category={category}
                   primaryColor={themeSettings.primaryColor}
                   isDarkMode={isDarkMode}
+                  onClick={() => onCategoryClick?.(category.id)}
                 />
               ))}
             </Box>
@@ -436,6 +448,7 @@ export function CategorySection({
                     category={category}
                     primaryColor={themeSettings.primaryColor}
                     isDarkMode={isDarkMode}
+                    onClick={() => onCategoryClick?.(category.id)}
                   />
                 ))}
               </Box>

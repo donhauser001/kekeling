@@ -34,9 +34,10 @@ export function SearchBar({ isDarkMode = false, themeSettings, onSearchClick }: 
       style={{
         position: 'relative',
         zIndex: 10,
-        marginLeft: 16 * wxScale,
-        marginRight: 16 * wxScale,
+        paddingLeft: 16 * wxScale,
+        paddingRight: 16 * wxScale,
         marginBottom: 4 * wxScale,
+        boxSizing: 'border-box',
       }}
     >
       <Button
@@ -54,6 +55,7 @@ export function SearchBar({ isDarkMode = false, themeSettings, onSearchClick }: 
             ? '0 2px 8px rgba(0,0,0,0.3)' 
             : '0 2px 12px rgba(0,0,0,0.08)',
           backgroundColor: cardBg,
+          boxSizing: 'border-box',
         }}
         aria-label="搜索"
       >

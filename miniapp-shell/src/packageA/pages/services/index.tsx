@@ -5,7 +5,7 @@
  */
 import { useState, useEffect, useCallback } from 'react'
 import { View } from '@tarojs/components'
-import Taro, { useShareAppMessage, useShareTimeline } from '@tarojs/taro'
+import Taro, { useShareAppMessage, useShareTimeline, useRouter } from '@tarojs/taro'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ServicesPage as ServicesPageComponent } from '@terminal-preview/components/pages/ServicesPage'
 import { TabBarNav } from '@terminal-preview/components'
@@ -26,12 +26,16 @@ const queryClient = new QueryClient({
 })
 
 function ServicesPageContent() {
+  const router = useRouter()
+  // 从 URL 参数获取初始分类 ID
+  const initialCategoryId = router.params.categoryId || undefined
+  
   const [themeSettings, setThemeSettings] = useState<ThemeSettings>(defaultThemeSettings)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    console.log('[ServicesPage] 页面加载')
+    console.log('[ServicesPage] 页面加载, 初始分类:', initialCategoryId)
 
     previewApi.getThemeSettings()
       .then((settings) => {
@@ -107,6 +111,7 @@ function ServicesPageContent() {
           onServiceClick={handleServiceClick}
           onSearchClick={handleSearchClick}
           effectiveViewerRole="user"
+          initialCategory={initialCategoryId}
         />
       </View>
       <TabBarNav

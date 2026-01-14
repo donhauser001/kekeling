@@ -10,7 +10,7 @@
  */
 
 import { useState, useEffect } from 'react'
-import { Box, Text, ScrollView, Icon } from '../../ui/primitives'
+import { Box, Text, Icon } from '../../ui/primitives'
 import { isWxEnvironment } from '../../platform/env'
 import type { ThemeSettings } from '../../types'
 import { getWxBridge } from '../../bridge'
@@ -265,11 +265,12 @@ export function UserOrdersPage({
       </Box>
 
       {/* 订单列表 */}
-      <ScrollView
+      <Box
         style={{
           paddingLeft: 12 * wxScale,
           paddingRight: 12 * wxScale,
           paddingTop: 12 * wxScale,
+          boxSizing: 'border-box',
         }}
       >
         {filteredOrders.length === 0 ? (
@@ -569,7 +570,7 @@ export function UserOrdersPage({
             </Box>
           ))
         )}
-      </ScrollView>
+      </Box>
 
       {/* 底部 TabBar - 固定定位 */}
       <Box

@@ -32,7 +32,9 @@
     "@nestjs/jwt": "^10.2.0",
     "@nestjs/passport": "^10.0.3",
     "@nestjs/platform-express": "^10.0.0",
+    "@nestjs/platform-socket.io": "^10.4.22",
     "@nestjs/swagger": "^7.1.17",
+    "@nestjs/websockets": "^10.4.22",
     "@prisma/client": "^5.7.1",
     "axios": "^1.6.2",
     "bcryptjs": "^2.4.3",
@@ -46,6 +48,7 @@
     "redis": "^5.10.0",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1",
+    "socket.io": "^4.8.3",
     "wechatpay-node-v3": "^2.1.1"
   },
   "devDependencies": {

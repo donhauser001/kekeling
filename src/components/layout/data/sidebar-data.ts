@@ -73,9 +73,7 @@ import {
   Sparkles,
   UserPlus,
   Headphones,
-  TicketCheck,
   MessageCircle,
-  AlertCircle,
   Star,
   Shield,
   UserCog2,
@@ -358,29 +356,19 @@ export const sidebarData: SidebarData = {
           icon: Headphones,
           items: [
             {
-              title: '工单管理',
-              url: '/support/tickets',
-              icon: TicketCheck,
-            },
-            {
               title: '在线客服',
               url: '/support/chat',
               icon: MessageCircle,
             },
             {
-              title: '投诉建议',
-              url: '/support/complaints',
-              icon: AlertCircle,
+              title: '评价管理',
+              url: '/support/reviews',
+              icon: Star,
             },
             {
               title: '意见反馈',
               url: '/support/feedback',
               icon: MessageSquareText,
-            },
-            {
-              title: '评价管理',
-              url: '/support/reviews',
-              icon: Star,
             },
           ],
         },

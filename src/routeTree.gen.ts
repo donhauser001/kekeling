@@ -57,7 +57,9 @@ import { Route as ClerkauthSignInRouteImport } from './routes/clerk/(auth)/sign-
 import { Route as AuthenticatedWithdrawalsSettingsRouteImport } from './routes/_authenticated/withdrawals/settings'
 import { Route as AuthenticatedUsersPatientsRouteImport } from './routes/_authenticated/users/patients'
 import { Route as AuthenticatedUsersUserIdRouteImport } from './routes/_authenticated/users/$userId'
+import { Route as AuthenticatedSupportQuickRepliesRouteImport } from './routes/_authenticated/support/quick-replies'
 import { Route as AuthenticatedSupportFeedbackRouteImport } from './routes/_authenticated/support/feedback'
+import { Route as AuthenticatedSupportChatRouteImport } from './routes/_authenticated/support/chat'
 import { Route as AuthenticatedSettingsSmsRouteImport } from './routes/_authenticated/settings/sms'
 import { Route as AuthenticatedSettingsPaymentRouteImport } from './routes/_authenticated/settings/payment'
 import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings/notifications'
@@ -363,10 +365,22 @@ const AuthenticatedUsersUserIdRoute =
     path: '/users/$userId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedSupportQuickRepliesRoute =
+  AuthenticatedSupportQuickRepliesRouteImport.update({
+    id: '/support/quick-replies',
+    path: '/support/quick-replies',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSupportFeedbackRoute =
   AuthenticatedSupportFeedbackRouteImport.update({
     id: '/support/feedback',
     path: '/support/feedback',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSupportChatRoute =
+  AuthenticatedSupportChatRouteImport.update({
+    id: '/support/chat',
+    path: '/support/chat',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedSettingsSmsRoute =
@@ -649,7 +663,9 @@ export interface FileRoutesByFullPath {
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/settings/payment': typeof AuthenticatedSettingsPaymentRoute
   '/settings/sms': typeof AuthenticatedSettingsSmsRoute
+  '/support/chat': typeof AuthenticatedSupportChatRoute
   '/support/feedback': typeof AuthenticatedSupportFeedbackRoute
+  '/support/quick-replies': typeof AuthenticatedSupportQuickRepliesRoute
   '/users/$userId': typeof AuthenticatedUsersUserIdRoute
   '/users/patients': typeof AuthenticatedUsersPatientsRoute
   '/withdrawals/settings': typeof AuthenticatedWithdrawalsSettingsRoute
@@ -737,7 +753,9 @@ export interface FileRoutesByTo {
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/settings/payment': typeof AuthenticatedSettingsPaymentRoute
   '/settings/sms': typeof AuthenticatedSettingsSmsRoute
+  '/support/chat': typeof AuthenticatedSupportChatRoute
   '/support/feedback': typeof AuthenticatedSupportFeedbackRoute
+  '/support/quick-replies': typeof AuthenticatedSupportQuickRepliesRoute
   '/users/$userId': typeof AuthenticatedUsersUserIdRoute
   '/users/patients': typeof AuthenticatedUsersPatientsRoute
   '/withdrawals/settings': typeof AuthenticatedWithdrawalsSettingsRoute
@@ -830,7 +848,9 @@ export interface FileRoutesById {
   '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/_authenticated/settings/payment': typeof AuthenticatedSettingsPaymentRoute
   '/_authenticated/settings/sms': typeof AuthenticatedSettingsSmsRoute
+  '/_authenticated/support/chat': typeof AuthenticatedSupportChatRoute
   '/_authenticated/support/feedback': typeof AuthenticatedSupportFeedbackRoute
+  '/_authenticated/support/quick-replies': typeof AuthenticatedSupportQuickRepliesRoute
   '/_authenticated/users/$userId': typeof AuthenticatedUsersUserIdRoute
   '/_authenticated/users/patients': typeof AuthenticatedUsersPatientsRoute
   '/_authenticated/withdrawals/settings': typeof AuthenticatedWithdrawalsSettingsRoute
@@ -921,7 +941,9 @@ export interface FileRouteTypes {
     | '/settings/notifications'
     | '/settings/payment'
     | '/settings/sms'
+    | '/support/chat'
     | '/support/feedback'
+    | '/support/quick-replies'
     | '/users/$userId'
     | '/users/patients'
     | '/withdrawals/settings'
@@ -1009,7 +1031,9 @@ export interface FileRouteTypes {
     | '/settings/notifications'
     | '/settings/payment'
     | '/settings/sms'
+    | '/support/chat'
     | '/support/feedback'
+    | '/support/quick-replies'
     | '/users/$userId'
     | '/users/patients'
     | '/withdrawals/settings'
@@ -1101,7 +1125,9 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/notifications'
     | '/_authenticated/settings/payment'
     | '/_authenticated/settings/sms'
+    | '/_authenticated/support/chat'
     | '/_authenticated/support/feedback'
+    | '/_authenticated/support/quick-replies'
     | '/_authenticated/users/$userId'
     | '/_authenticated/users/patients'
     | '/_authenticated/withdrawals/settings'
@@ -1508,11 +1534,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedUsersUserIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/support/quick-replies': {
+      id: '/_authenticated/support/quick-replies'
+      path: '/support/quick-replies'
+      fullPath: '/support/quick-replies'
+      preLoaderRoute: typeof AuthenticatedSupportQuickRepliesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/support/feedback': {
       id: '/_authenticated/support/feedback'
       path: '/support/feedback'
       fullPath: '/support/feedback'
       preLoaderRoute: typeof AuthenticatedSupportFeedbackRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/support/chat': {
+      id: '/_authenticated/support/chat'
+      path: '/support/chat'
+      fullPath: '/support/chat'
+      preLoaderRoute: typeof AuthenticatedSupportChatRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/settings/sms': {
@@ -1852,7 +1892,9 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedFinanceSettlementsRoute: typeof AuthenticatedFinanceSettlementsRoute
   AuthenticatedFinanceTransactionsRoute: typeof AuthenticatedFinanceTransactionsRoute
   AuthenticatedServicesIdRoute: typeof AuthenticatedServicesIdRoute
+  AuthenticatedSupportChatRoute: typeof AuthenticatedSupportChatRoute
   AuthenticatedSupportFeedbackRoute: typeof AuthenticatedSupportFeedbackRoute
+  AuthenticatedSupportQuickRepliesRoute: typeof AuthenticatedSupportQuickRepliesRoute
   AuthenticatedUsersUserIdRoute: typeof AuthenticatedUsersUserIdRoute
   AuthenticatedUsersPatientsRoute: typeof AuthenticatedUsersPatientsRoute
   AuthenticatedWithdrawalsSettingsRoute: typeof AuthenticatedWithdrawalsSettingsRoute
@@ -1923,7 +1965,9 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedFinanceSettlementsRoute: AuthenticatedFinanceSettlementsRoute,
   AuthenticatedFinanceTransactionsRoute: AuthenticatedFinanceTransactionsRoute,
   AuthenticatedServicesIdRoute: AuthenticatedServicesIdRoute,
+  AuthenticatedSupportChatRoute: AuthenticatedSupportChatRoute,
   AuthenticatedSupportFeedbackRoute: AuthenticatedSupportFeedbackRoute,
+  AuthenticatedSupportQuickRepliesRoute: AuthenticatedSupportQuickRepliesRoute,
   AuthenticatedUsersUserIdRoute: AuthenticatedUsersUserIdRoute,
   AuthenticatedUsersPatientsRoute: AuthenticatedUsersPatientsRoute,
   AuthenticatedWithdrawalsSettingsRoute: AuthenticatedWithdrawalsSettingsRoute,

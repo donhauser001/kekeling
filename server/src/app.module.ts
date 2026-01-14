@@ -35,6 +35,7 @@ import { ReferralsModule } from './modules/referrals/referrals.module';
 import { CampaignsModule } from './modules/campaigns/campaigns.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
 import { DistributionModule } from './modules/distribution/distribution.module';
+import { ChatModule } from './modules/chat/chat.module';
 import { RedisModule } from './modules/redis/redis.module';
 import { PagesModule } from './modules/cms/pages/pages.module';
 import { ArticleCategoriesModule } from './modules/cms/article-categories/article-categories.module';
@@ -93,6 +94,7 @@ import { UserAddressesModule } from './modules/user-addresses/user-addresses.mod
     CampaignsModule,    // 活动系统
     FeedbackModule,     // 意见反馈系统
     DistributionModule, // 分销系统
+    ChatModule,         // 在线客服系统
     PagesModule,            // CMS 页面管理
     ArticleCategoriesModule, // CMS 文章分类管理
     ArticlesModule,         // CMS 文章管理

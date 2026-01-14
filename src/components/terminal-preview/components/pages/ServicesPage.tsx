@@ -40,6 +40,8 @@ interface ServicesPageProps {
   onSearchClick?: () => void
   /** 当前视角角色（用于显示陪诊员专属信息） */
   effectiveViewerRole?: PreviewViewerRole
+  /** 初始选中的分类 ID（从首页跳转时传入） */
+  initialCategory?: string
 }
 
 // 排序选项配置（纯文字，无图标）
@@ -51,13 +53,14 @@ const sortOptionConfigs: { value: SortType; label: string }[] = [
   { value: 'price-desc', label: '价格↓' },
 ]
 
-export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: bannerDataOverride, onServiceClick, onSearchClick, effectiveViewerRole = 'user' }: ServicesPageProps) {
+export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: bannerDataOverride, onServiceClick, onSearchClick, effectiveViewerRole = 'user', initialCategory }: ServicesPageProps) {
   // 调试日志
-  console.log('[ServicesPage] 组件渲染')
+  console.log('[ServicesPage] 组件渲染, 初始分类:', initialCategory)
 
   // 是否为陪诊员视角
   const isEscort = effectiveViewerRole === 'escort'
-  const [activeCategory, setActiveCategory] = useState('all')
+  // 如果有初始分类参数，则使用它；否则默认 'all'
+  const [activeCategory, setActiveCategory] = useState(initialCategory || 'all')
   const [layoutMode, setLayoutMode] = useState<LayoutMode>('grid')
   const [sortType, setSortType] = useState<SortType>('default')
   const [showSortMenu, setShowSortMenu] = useState(false)
