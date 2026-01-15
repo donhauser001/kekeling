@@ -97,6 +97,8 @@ export type PreviewPage =
   | 'escort-profile-edit'
   // 意见反馈
   | 'feedback'
+  // 我的收藏
+  | 'favorites'
   // 搜索
   | 'search'
   // 评价与客服
@@ -170,6 +172,8 @@ export const VALID_PAGE_KEYS: readonly PreviewPage[] = [
   'escort-profile-edit',
   // 意见反馈
   'feedback',
+  // 我的收藏
+  'favorites',
   // 搜索
   'search',
   // 评价与客服
@@ -271,6 +275,9 @@ export const PAGE_METADATA: Record<PreviewPage, PageMetadata> = {
   // 意见反馈
   'feedback': { entryAllowed: false, description: '意见反馈' },
 
+  // 我的收藏
+  'favorites': { entryAllowed: false, description: '我的收藏' },
+
   // 搜索
   'search': { entryAllowed: false, description: '搜索' },
 
@@ -369,6 +376,9 @@ export interface PreviewPageParamsMap {
 
   // 意见反馈
   'feedback': Record<string, never>
+
+  // 我的收藏
+  'favorites': Record<string, never>
 
   // 搜索
   'search': { keyword?: string }
@@ -867,6 +877,7 @@ export interface ThemeSettings {
   footerLogoDark: string
   headerShowName: boolean
   headerShowSlogan: boolean
+  footerShowLogo: boolean
   footerShowName: boolean
   footerShowSlogan: boolean
   headerLayout: BrandLayout
@@ -1115,6 +1126,7 @@ export const defaultThemeSettings: ThemeSettings = {
   footerLogoDark: '',
   headerShowName: true,
   headerShowSlogan: false,
+  footerShowLogo: true,
   footerShowName: true,
   footerShowSlogan: true,
   headerLayout: 'logo-name',

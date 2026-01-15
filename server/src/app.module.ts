@@ -45,6 +45,7 @@ import { SettingsModule } from './modules/cms/settings/settings.module';
 import { SidebarsModule } from './modules/cms/sidebars/sidebars.module';
 import { UserAddressesModule } from './modules/user-addresses/user-addresses.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
+import { FavoritesModule } from './modules/favorites/favorites.module';
 
 @Module({
   imports: [
@@ -104,6 +105,7 @@ import { ReviewsModule } from './modules/reviews/reviews.module';
     SidebarsModule,         // CMS 侧边栏管理
     UserAddressesModule,    // 用户地址管理
     ReviewsModule,          // 用户评价系统
+    FavoritesModule,        // 收藏功能
     TestModule, // ⚠️ 仅开发环境，生产环境请注释
   ],
 })

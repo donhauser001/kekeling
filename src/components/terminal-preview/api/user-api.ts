@@ -38,11 +38,15 @@ import type {
   PointsInfo,
   PointsRecordsResponse,
   ReferralInfo,
+  ReferralRecordsResponse,
   Campaign,
   CampaignDetail,
   AvailableCoupon,
   CheckInStatus,
   CheckInResult,
+  PointsTaskItem,
+  ClaimTaskResult,
+  MarketingSettings,
 } from './types'
 import {
   getMockMembershipData,
@@ -78,6 +82,35 @@ export const getBanners = (area: string = 'home') =>
 
 /** 获取统计数据 */
 export const getStats = () => userRequest<StatsData>('/home/stats')
+
+// ============================================================================
+// 营销设置 API
+// ============================================================================
+
+/** 默认营销设置（API 失败时使用） */
+const DEFAULT_MARKETING_SETTINGS: MarketingSettings = {
+  membershipEnabled: true,
+  pointsEnabled: true,
+  couponsEnabled: true,
+  referralsEnabled: true,
+  campaignsEnabled: true,
+}
+
+/**
+ * 获取营销功能设置
+ * 接口: GET /config/marketing/settings
+ * 通道: userRequest
+ * 用于控制小程序端功能入口的显示/隐藏
+ */
+export const getMarketingSettings = async (): Promise<MarketingSettings> => {
+  try {
+    const data = await userRequest<MarketingSettings>('/config/marketing/settings')
+    return data
+  } catch (error) {
+    console.warn('[previewApi.getMarketingSettings] 获取失败，使用默认配置:', error)
+    return DEFAULT_MARKETING_SETTINGS
+  }
+}
 
 // ============================================================================
 // 订单统计 API
@@ -153,6 +186,7 @@ export const getUserOrders = async (params?: {
   status?: string
   page?: number
   pageSize?: number
+  includeMembership?: boolean
 }): Promise<UserOrdersResponse> => {
   try {
     const searchParams = new URLSearchParams()
@@ -164,6 +198,9 @@ export const getUserOrders = async (params?: {
     }
     if (params?.pageSize) {
       searchParams.append('pageSize', String(params.pageSize))
+    }
+    if (params?.includeMembership) {
+      searchParams.append('includeMembership', 'true')
     }
     const query = searchParams.toString()
     const url = query ? `/orders?${query}` : '/orders'
@@ -840,14 +877,15 @@ export const getMembershipPlans = async (): Promise<MembershipPlan[]> => {
  */
 export const purchaseMembership = async (planId: string): Promise<{ success: boolean; orderId?: string; message?: string }> => {
   try {
-    const response = await userRequest<{ orderId: string; amount: number; status: string }>('/membership/purchase', {
+    // 后端返回完整订单对象，字段名是 id
+    const response = await userRequest<{ id: string; orderNo: string; amount: number; status: string }>('/membership/purchase', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ planId }),
     })
-    return { success: true, orderId: response.orderId }
+    return { success: true, orderId: response.id }
   } catch (error) {
     if (error instanceof ApiError) {
       return { success: false, message: error.message }
@@ -952,30 +990,67 @@ export const checkIn = async (): Promise<{ success: boolean; data?: CheckInResul
 }
 
 /**
+ * 获取积分任务列表
+ * 接口: GET /points/tasks
+ * 通道: userRequest
+ */
+export const getPointsTasks = async (): Promise<PointsTaskItem[]> => {
+  try {
+    return await userRequest<PointsTaskItem[]>('/points/tasks')
+  } catch (error) {
+    console.warn('[previewApi.getPointsTasks] 请求失败:', error)
+    return []
+  }
+}
+
+/**
+ * 领取任务奖励
+ * 接口: POST /points/tasks/:taskCode/claim
+ * 通道: userRequest
+ */
+export const claimPointsTask = async (
+  taskCode: string
+): Promise<{ success: boolean; data?: ClaimTaskResult; message?: string }> => {
+  try {
+    const data = await userRequest<ClaimTaskResult>(`/points/tasks/${taskCode}/claim`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({}),
+    })
+    return { success: true, data }
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return { success: false, message: error.message }
+    }
+    return { success: false, message: '领取失败，请重试' }
+  }
+}
+
+/**
  * 获取邀请信息
- * 接口: GET /referrals/stats + GET /referrals/invite-code
+ * 接口: GET /referrals/stats（包含 inviteCode）
  * 通道: userRequest
  */
 export const getReferralInfo = async (): Promise<ReferralInfo> => {
   try {
-    // 合并两个 API 的数据
-    const [stats, inviteData] = await Promise.all([
-      userRequest<{
-        invitedCount: number
-        earnedPoints: number
-        pendingPoints: number
-        rewardPoints?: number
-      }>('/referrals/stats'),
-      userRequest<{
-        inviteCode: string
-      }>('/referrals/invite-code'),
-    ])
+    // 后端 /referrals/stats 已经包含 inviteCode，无需单独请求
+    const stats = await userRequest<{
+      inviteCode: string
+      totalInvites: number
+      registeredCount: number
+      rewardedCount: number
+      inviteCount: number
+      rewardCount: number
+    }>('/referrals/stats')
+
     return {
-      inviteCode: inviteData.inviteCode,
-      invitedCount: stats.invitedCount,
-      earnedPoints: stats.earnedPoints,
-      pendingPoints: stats.pendingPoints,
-      rewardPoints: stats.rewardPoints ?? 100, // 默认奖励积分
+      inviteCode: stats.inviteCode,
+      invitedCount: stats.inviteCount || stats.totalInvites || 0,
+      earnedPoints: stats.rewardCount * 100 || 0, // 估算已获得积分
+      pendingPoints: (stats.registeredCount - stats.rewardedCount) * 100 || 0, // 估算待领取积分
+      rewardPoints: 100, // 默认奖励积分
     }
   } catch (error) {
     if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
@@ -984,6 +1059,40 @@ export const getReferralInfo = async (): Promise<ReferralInfo> => {
     }
     console.warn('[previewApi.getReferralInfo] 请求失败，降级 mock:', error)
     return getMockReferralInfo()
+  }
+}
+
+/**
+ * 获取邀请记录列表
+ * 接口: GET /referrals/records
+ * 通道: userRequest
+ */
+export const getReferralRecords = async (params?: {
+  type?: string
+  status?: string
+  page?: number
+  pageSize?: number
+}): Promise<ReferralRecordsResponse> => {
+  try {
+    const queryParams = new URLSearchParams()
+    if (params?.type) queryParams.append('type', params.type)
+    if (params?.status) queryParams.append('status', params.status)
+    if (params?.page) queryParams.append('page', String(params.page))
+    if (params?.pageSize) queryParams.append('pageSize', String(params.pageSize))
+
+    const query = queryParams.toString()
+    const url = query ? `/referrals/records?${query}` : '/referrals/records'
+
+    return await userRequest<ReferralRecordsResponse>(url)
+  } catch (error) {
+    console.warn('[previewApi.getReferralRecords] 请求失败:', error)
+    // 返回空列表
+    return {
+      data: [],
+      total: 0,
+      page: params?.page || 1,
+      pageSize: params?.pageSize || 10,
+    }
   }
 }
 
@@ -1439,6 +1548,26 @@ export const getPaymentParams = async (orderId: string): Promise<WxPaymentParams
   })
 }
 
+/**
+ * 获取会员订单支付参数（创建预支付订单）
+ * 接口: POST /payment/membership-prepay
+ * 通道: userRequest
+ */
+/** 0元订单免支付响应 */
+export interface FreeOrderResponse {
+  freeOrder: true
+  orderId: string
+  orderNo: string
+}
+
+export const getMembershipPaymentParams = async (orderId: string): Promise<WxPaymentParams | FreeOrderResponse> => {
+  return await userRequest<WxPaymentParams | FreeOrderResponse>('/payment/membership-prepay', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ orderId }),
+  })
+}
+
 /** 支付状态响应 */
 export interface PaymentStatusResponse {
   paid: boolean
@@ -1495,5 +1624,118 @@ export const cancelOrder = async (orderId: string, reason?: string): Promise<{ s
       return { success: false, message: error.message || '取消失败' }
     }
     return { success: false, message: '网络错误' }
+  }
+}
+
+// ============================================================================
+// 收藏 API
+// ============================================================================
+
+/** 收藏项数据 */
+export interface FavoriteItem {
+  id: string
+  serviceId: string
+  createdAt: string
+  service: {
+    id: string
+    name: string
+    description: string
+    price: number
+    coverImage: string
+    rating: number
+    orderCount: number
+    categoryId: string
+    categoryName: string
+  }
+}
+
+/** 收藏列表响应 */
+export interface FavoritesResponse {
+  data: FavoriteItem[]
+  total: number
+  page: number
+  pageSize: number
+}
+
+/**
+ * 添加收藏
+ * 接口: POST /favorites/:serviceId
+ * 通道: userRequest
+ */
+export const addFavorite = async (serviceId: string): Promise<{ success: boolean; message?: string }> => {
+  try {
+    await userRequest(`/favorites/${serviceId}`, {
+      method: 'POST',
+    })
+    return { success: true, message: '收藏成功' }
+  } catch (error) {
+    if (error instanceof ApiError) {
+      // 409 表示已收藏
+      if (error.status === 409) {
+        return { success: true, message: '已收藏' }
+      }
+      return { success: false, message: error.message || '收藏失败' }
+    }
+    return { success: false, message: '网络错误' }
+  }
+}
+
+/**
+ * 取消收藏
+ * 接口: DELETE /favorites/:serviceId
+ * 通道: userRequest
+ */
+export const removeFavorite = async (serviceId: string): Promise<{ success: boolean; message?: string }> => {
+  try {
+    await userRequest(`/favorites/${serviceId}`, {
+      method: 'DELETE',
+    })
+    return { success: true, message: '已取消收藏' }
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return { success: false, message: error.message || '取消失败' }
+    }
+    return { success: false, message: '网络错误' }
+  }
+}
+
+/**
+ * 获取收藏列表
+ * 接口: GET /favorites
+ * 通道: userRequest
+ */
+export const getFavorites = async (params?: { page?: number; pageSize?: number }): Promise<FavoritesResponse> => {
+  const query = new URLSearchParams()
+  if (params?.page) query.set('page', String(params.page))
+  if (params?.pageSize) query.set('pageSize', String(params.pageSize))
+  const queryStr = query.toString()
+  return userRequest<FavoritesResponse>(`/favorites${queryStr ? `?${queryStr}` : ''}`)
+}
+
+/**
+ * 检查是否已收藏
+ * 接口: GET /favorites/check/:serviceId
+ * 通道: userRequest
+ */
+export const checkFavorite = async (serviceId: string): Promise<boolean> => {
+  try {
+    const res = await userRequest<{ isFavorite: boolean }>(`/favorites/check/${serviceId}`)
+    return res.isFavorite
+  } catch {
+    return false
+  }
+}
+
+/**
+ * 获取已收藏的服务ID列表
+ * 接口: GET /favorites/ids
+ * 通道: userRequest
+ */
+export const getFavoriteIds = async (): Promise<string[]> => {
+  try {
+    const res = await userRequest<{ ids: string[] }>('/favorites/ids')
+    return res.ids
+  } catch {
+    return []
   }
 }

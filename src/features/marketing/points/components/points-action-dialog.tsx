@@ -37,14 +37,30 @@ const formSchema = z.object({
   name: z.string().min(1, '请输入规则名称'),
   code: z.string().min(1, '请输入规则编码'),
   type: z.string().min(1, '请选择类型'),
-  points: z.coerce.number().int('必须是整数'),
+  calcMode: z.enum(['fixed', 'rate']).default('fixed'), // 计算方式：固定积分 / 按比例
+  points: z.coerce.number().int('必须是整数').optional(),
+  pointsRate: z.coerce.number().min(0).max(1, '比例不能超过1').optional(),
   applicableScope: z.string().default('all'),
   applicableIds: z.string().optional(),
   dailyLimit: z.coerce.number().min(0).optional(),
   totalLimit: z.coerce.number().min(0).optional(),
   description: z.string().optional(),
   isActive: z.boolean().default(true),
-})
+}).refine(
+  (data) => {
+    if (data.calcMode === 'fixed') {
+      return data.points !== undefined && data.points !== null
+    }
+    if (data.calcMode === 'rate') {
+      return data.pointsRate !== undefined && data.pointsRate !== null && data.pointsRate > 0
+    }
+    return true
+  },
+  {
+    message: '请填写积分数或积分比例',
+    path: ['points'],
+  }
+)
 
 type FormValues = z.infer<typeof formSchema>
 
@@ -71,7 +87,9 @@ export function PointsActionDialog({
       name: '',
       code: '',
       type: 'earn',
+      calcMode: 'fixed',
       points: 0,
+      pointsRate: undefined,
       applicableScope: 'all',
       applicableIds: '',
       dailyLimit: undefined,
@@ -83,11 +101,17 @@ export function PointsActionDialog({
 
   useEffect(() => {
     if (open && currentRow) {
+      // 根据现有数据判断计算方式
+      const hasRate = currentRow.pointsRate !== undefined && currentRow.pointsRate !== null && Number(currentRow.pointsRate) > 0
+      const calcMode = hasRate ? 'rate' : 'fixed'
+      
       form.reset({
         name: currentRow.name,
         code: currentRow.code,
         type: currentRow.type,
+        calcMode,
         points: currentRow.points ?? 0,
+        pointsRate: hasRate ? Number(currentRow.pointsRate) : undefined,
         applicableScope: currentRow.applicableScope || 'all',
         applicableIds: currentRow.applicableIds?.join(',') || '',
         dailyLimit: currentRow.dailyLimit || undefined,
@@ -100,7 +124,9 @@ export function PointsActionDialog({
         name: '',
         code: '',
         type: 'earn',
+        calcMode: 'fixed',
         points: 0,
+        pointsRate: undefined,
         applicableScope: 'all',
         applicableIds: '',
         dailyLimit: undefined,
@@ -139,14 +165,28 @@ export function PointsActionDialog({
   })
 
   const onSubmit = (values: FormValues) => {
-    const payload = {
-      ...values,
+    // 根据计算方式设置积分字段
+    const payload: any = {
+      name: values.name,
+      code: values.code,
+      type: values.type,
+      applicableScope: values.applicableScope,
       applicableIds: values.applicableIds
         ? values.applicableIds.split(',').map((s) => s.trim()).filter(Boolean)
         : [],
       dailyLimit: values.dailyLimit || undefined,
       totalLimit: values.totalLimit || undefined,
       description: values.description || undefined,
+      isActive: values.isActive,
+    }
+
+    // 根据计算方式设置积分或比例
+    if (values.calcMode === 'fixed') {
+      payload.points = values.points || 0
+      payload.pointsRate = null // 清空比例
+    } else {
+      payload.points = 0 // 固定积分设为0
+      payload.pointsRate = values.pointsRate
     }
 
     if (isEdit && currentRow) {
@@ -168,12 +208,13 @@ export function PointsActionDialog({
         name: watchedValues.name || '新规则',
         code: watchedValues.code,
         type: (watchedValues.type as 'earn' | 'spend') || 'earn',
-        points: watchedValues.points || 0,
-        description: watchedValues.description,
+        points: watchedValues.calcMode === 'fixed' ? (watchedValues.points || 0) : 0,
+        pointsRate: watchedValues.calcMode === 'rate' ? watchedValues.pointsRate : undefined,
+        description: watchedValues.description || (watchedValues.calcMode === 'rate' ? `按订单金额 ${(watchedValues.pointsRate || 0) * 100}% 发放` : undefined),
         isActive: watchedValues.isActive,
       }],
     },
-  }), [watchedValues.name, watchedValues.code, watchedValues.type, watchedValues.points, watchedValues.description, watchedValues.isActive, currentRow?.id])
+  }), [watchedValues.name, watchedValues.code, watchedValues.type, watchedValues.calcMode, watchedValues.points, watchedValues.pointsRate, watchedValues.description, watchedValues.isActive, currentRow?.id])
 
   // 脏表单关闭拦截
   const onOpenChangeWrapper = (open: boolean) => {
@@ -253,18 +294,85 @@ export function PointsActionDialog({
                     />
                     <FormField
                       control={form.control}
-                      name='points'
+                      name='calcMode'
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>积分数 *</FormLabel>
-                          <FormControl>
-                            <Input type='number' {...field} />
-                          </FormControl>
-                          <FormDescription>获取为正，消耗为负</FormDescription>
+                          <FormLabel>计算方式 *</FormLabel>
+                          <SelectDropdown
+                            defaultValue={field.value}
+                            onValueChange={field.onChange}
+                            placeholder='请选择计算方式'
+                            items={[
+                              { label: '固定积分', value: 'fixed' },
+                              { label: '按金额比例', value: 'rate' },
+                            ]}
+                          />
+                          <FormDescription>
+                            {field.value === 'rate' ? '按订单金额计算积分' : '发放固定数量积分'}
+                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
+                  </div>
+
+                  <div className='grid grid-cols-2 items-start gap-4'>
+                    {watchedValues.calcMode === 'fixed' ? (
+                      <FormField
+                        control={form.control}
+                        name='points'
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>积分数 *</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type='number' 
+                                placeholder='如：100'
+                                value={field.value ?? ''}
+                                onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : 0)}
+                              />
+                            </FormControl>
+                            <FormDescription>获取为正，消耗为负</FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    ) : (
+                      <FormField
+                        control={form.control}
+                        name='pointsRate'
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>积分比例 *</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type='number' 
+                                step='0.01'
+                                placeholder='如：0.01'
+                                value={field.value ?? ''}
+                                onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              如 0.01 表示订单金额的 1%，100元订单获得 1 积分
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
+                    <div className='text-sm text-muted-foreground pt-8'>
+                      {watchedValues.calcMode === 'rate' && (
+                        <div className='rounded-md bg-muted p-3'>
+                          <div className='font-medium mb-1'>计算示例</div>
+                          <div>订单金额 ¥100</div>
+                          <div>比例 {watchedValues.pointsRate || 0.01}</div>
+                          <div className='font-medium text-primary'>
+                            = {Math.floor(100 * (watchedValues.pointsRate || 0.01))} 积分
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div className='grid grid-cols-2 items-start gap-4'>

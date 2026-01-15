@@ -98,6 +98,24 @@ export class AdminPointsController {
     return ApiResponse.success(result);
   }
 
+  @Get('user-points')
+  @ApiOperation({ summary: '获取用户积分列表（兼容）' })
+  @ApiQuery({ name: 'userId', required: false })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'pageSize', required: false })
+  async getUserPointsAlt(
+    @Query('userId') userId?: string,
+    @Query('page') page?: number,
+    @Query('pageSize') pageSize?: number,
+  ) {
+    const result = await this.pointsService.getUserPoints({
+      userId,
+      page: page ? Number(page) : 1,
+      pageSize: pageSize ? Number(pageSize) : 10,
+    });
+    return ApiResponse.success(result);
+  }
+
   @Post('adjust')
   @ApiOperation({ summary: '手动调整积分' })
   async adjustPoints(@Body() dto: AdjustPointsDto) {

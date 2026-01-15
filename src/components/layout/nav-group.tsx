@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react'
+import { type ReactNode, useMemo } from 'react'
 import { Link, useLocation } from '@tanstack/react-router'
 import { ChevronRight } from 'lucide-react'
 import {
@@ -32,15 +32,44 @@ import {
   type NavLink,
   type NavGroup as NavGroupProps,
 } from './types'
+import { useMarketingSettings } from '@/hooks/use-marketing-settings'
+import { type MarketingSettings } from '@/lib/api'
 
 export function NavGroup({ title, items }: NavGroupProps) {
   const { state, isMobile } = useSidebar()
   const href = useLocation({ select: (location) => location.href })
+  const { settings: marketingSettings } = useMarketingSettings()
+
+  // 根据功能开关过滤菜单项
+  const filteredItems = useMemo(() => {
+    return items
+      .map((item) => {
+        // 如果有子菜单项，过滤掉被禁用的功能
+        if (item.items) {
+          const filteredSubItems = item.items.filter((subItem) => {
+            if (!subItem.featureKey) return true
+            return marketingSettings[subItem.featureKey as keyof MarketingSettings] !== false
+          })
+          // 如果所有子菜单都被过滤掉了，隐藏整个父菜单
+          if (filteredSubItems.length === 0) return null
+          return { ...item, items: filteredSubItems }
+        }
+        // 如果菜单本身有 featureKey，检查是否启用
+        if (item.featureKey) {
+          return marketingSettings[item.featureKey as keyof MarketingSettings] !== false ? item : null
+        }
+        return item
+      })
+      .filter(Boolean) as NavItem[]
+  }, [items, marketingSettings])
+
+  if (filteredItems.length === 0) return null
+
   return (
     <SidebarGroup>
       <SidebarGroupLabel>{title}</SidebarGroupLabel>
       <SidebarMenu>
-        {items.map((item) => {
+        {filteredItems.map((item) => {
           const key = `${item.title}-${item.url}`
 
           if (!item.items)

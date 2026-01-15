@@ -24,41 +24,51 @@ export class MembershipService {
   // ========== 用户端方法 ==========
 
   /**
-   * 获取会员等级列表
+   * 获取会员卡列表（可购买）
+   * 会员卡 = 会员等级 = 可直接购买的商品
    */
   async getLevels() {
     return this.prisma.membershipLevel.findMany({
       where: { status: 'active' },
-      include: {
-        plans: {
-          where: { status: 'active' },
-          orderBy: [{ recommended: 'desc' }, { sort: 'asc' }],
-        },
-      },
-      orderBy: { sort: 'asc' },
-    });
-  }
-
-  /**
-   * 获取会员套餐列表
-   */
-  async getPlans(levelId?: string) {
-    const where: Prisma.MembershipPlanWhereInput = { status: 'active' };
-    if (levelId) {
-      where.levelId = levelId;
-    }
-
-    return this.prisma.membershipPlan.findMany({
-      where,
-      include: {
-        level: true,
-      },
       orderBy: [{ recommended: 'desc' }, { sort: 'asc' }],
     });
   }
 
   /**
+   * [废弃] 获取会员套餐列表
+   * 改用 getLevels()，会员卡即套餐
+   */
+  async getPlans(levelId?: string) {
+    // 兼容旧接口：返回 MembershipLevel 数据，字段映射为 Plan 格式
+    const levels = await this.prisma.membershipLevel.findMany({
+      where: { status: 'active' },
+      orderBy: [{ recommended: 'desc' }, { sort: 'asc' }],
+    });
+
+    // 映射为 Plan 格式（兼容小程序）
+    return levels.map(level => ({
+      id: level.id,
+      levelId: level.id,
+      name: level.name,
+      code: level.code,
+      price: level.price,
+      originalPrice: level.originalPrice,
+      duration: level.duration,
+      renewalBonus: 0,
+      description: level.description,
+      features: [],
+      sort: level.sort,
+      recommended: level.recommended,
+      status: level.status,
+      createdAt: level.createdAt,
+      updatedAt: level.updatedAt,
+      level: level, // 兼容旧代码
+    }));
+  }
+
+  /**
    * 获取当前用户会员状态
+   * 一个用户只能持有一种会员卡
    */
   async getMyMembership(userId: string) {
     const now = new Date();
@@ -70,7 +80,6 @@ export class MembershipService {
       },
       include: {
         level: true,
-        plan: true,
       },
       orderBy: { expireAt: 'desc' },
     });
@@ -84,8 +93,18 @@ export class MembershipService {
       (membership.expireAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
     );
 
+    // 获取用户积分
+    const userPoints = await this.prisma.userPoint.findUnique({
+      where: { userId },
+    });
+
     return {
-      ...membership,
+      id: membership.id,
+      level: membership.level?.code || membership.levelId, // 兼容前端 level 字段
+      levelId: membership.levelId,
+      levelName: membership.levelName,
+      expireAt: membership.expireAt.toISOString().split('T')[0], // 格式化为 YYYY-MM-DD
+      points: userPoints?.currentPoints || 0,
       daysLeft,
       discount: membership.discount,
       overtimeFeeWaiver: membership.overtimeFeeWaiver,
@@ -119,38 +138,78 @@ export class MembershipService {
   }
 
   /**
-   * 购买/续费会员
+   * 购买/续费/升级会员卡
+   * @param userId 用户ID
+   * @param levelId 会员卡ID（即 MembershipLevel.id）
+   * 
+   * 规则：
+   * - 一个用户只能持有一种会员卡
+   * - 续费同一会员卡 = 时间叠加，全额支付
+   * - 升级到不同会员卡 = 折算旧会员剩余价值后补差额
    */
-  async purchase(userId: string, planId: string) {
-    const plan = await this.prisma.membershipPlan.findUnique({
-      where: { id: planId },
-      include: { level: true },
+  async purchase(userId: string, levelId: string) {
+    // 查找会员卡（现在是 MembershipLevel）
+    const memberCard = await this.prisma.membershipLevel.findUnique({
+      where: { id: levelId },
     });
 
-    if (!plan || plan.status !== 'active') {
-      throw new NotFoundException('套餐不存在或已下架');
+    if (!memberCard || memberCard.status !== 'active') {
+      throw new NotFoundException('会员卡不存在或已下架');
     }
 
-    // 获取当前会员
-    const current = await this.getMyMembership(userId);
+    // 获取当前有效会员（直接查数据库，获取完整信息）
+    const now = new Date();
+    const current = await this.prisma.userMembership.findFirst({
+      where: {
+        userId,
+        status: 'active',
+        expireAt: { gt: now },
+      },
+      include: {
+        level: true,
+      },
+      orderBy: { expireAt: 'desc' },
+    });
 
-    // 计算有效期
-    let startAt: Date;
-    let expireAt: Date;
+    // 计算折算信息
+    let upgradeCredit = new Prisma.Decimal(0);
+    let upgradeRemainingDays = 0;
+    let orderType = 'purchase'; // purchase: 新购, renew: 续费, upgrade: 升级
+    let upgradeFromLevelId: string | null = null;
+    let upgradeFromLevelName: string | null = null;
 
-    if (current && current.expireAt > new Date()) {
-      // 有效期内续费：在原有效期基础上叠加
-      startAt = current.startAt;
-      const totalDays = plan.duration + plan.renewalBonus;
-      expireAt = new Date(current.expireAt);
-      expireAt.setDate(expireAt.getDate() + totalDays);
-    } else {
-      // 新购或已过期：从当前时间开始
-      startAt = new Date();
-      const totalDays = plan.duration + plan.renewalBonus;
-      expireAt = new Date();
-      expireAt.setDate(expireAt.getDate() + totalDays);
+    if (current && current.expireAt > now) {
+      // 计算剩余天数
+      upgradeRemainingDays = Math.ceil(
+        (current.expireAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+      );
+      
+      if (current.levelId === levelId) {
+        // 续费同一会员卡：时间叠加，全额支付
+        orderType = 'renew';
+        // 续费不折算，upgradeCredit 保持为 0
+        this.logger.log(`[会员] 用户 ${userId} 续费 ${memberCard.name}，剩余 ${upgradeRemainingDays} 天将叠加`);
+      } else {
+        // 升级到不同会员卡：折算旧会员剩余价值
+        orderType = 'upgrade';
+        upgradeFromLevelId = current.levelId;
+        upgradeFromLevelName = current.levelName;
+        
+        // 计算剩余价值 = (原价格 / 原时长) * 剩余天数
+        const originalPrice = Number(current.price || 0);
+        const originalDuration = current.duration || 1;
+        const dailyValue = originalPrice / originalDuration;
+        upgradeCredit = new Prisma.Decimal(dailyValue * upgradeRemainingDays);
+        this.logger.log(`[会员] 用户 ${userId} 升级 ${current.levelName} → ${memberCard.name}，折算 ${upgradeCredit} 元`);
+      }
     }
+
+    // 计算实付金额
+    // 续费：全额支付
+    // 升级：新价格 - 折算金额
+    const newPrice = Number(memberCard.price);
+    const creditAmount = Number(upgradeCredit);
+    const finalAmount = Math.max(0, newPrice - creditAmount);
 
     // 生成订单号
     const orderNo = this.generateOrderNo();
@@ -160,34 +219,41 @@ export class MembershipService {
       data: {
         orderNo,
         userId,
-        levelId: plan.levelId,
-        planId,
-        type: current ? 'renew' : 'purchase',
-        planName: plan.name,
-        planPrice: plan.price,
-        duration: plan.duration,
-        bonusDays: plan.renewalBonus,
-        amount: plan.price,
+        levelId: memberCard.id,
+        type: orderType,
+        levelName: memberCard.name,
+        levelPrice: memberCard.price,
+        duration: memberCard.duration,
+        // 升级折算信息
+        upgradeFromLevelId,
+        upgradeFromLevelName,
+        upgradeCredit,
+        upgradeRemainingDays,
+        // 实付金额
+        amount: new Prisma.Decimal(finalAmount),
         status: 'pending',
       },
       include: {
-        plan: {
-          include: { level: true },
-        },
         level: true,
       },
     });
+
+    this.logger.log(`[会员订单] 用户 ${userId} 创建订单 ${orderNo}, 类型: ${orderType}, 金额: ¥${finalAmount}`);
 
     return order;
   }
 
   /**
    * 支付成功回调
+   * 
+   * 规则：
+   * - 一个用户只能持有一种会员卡
+   * - 升级时，将旧会员标记为 replaced，创建新会员
    */
   async paymentSuccess(orderNo: string, transactionId?: string) {
     const order = await this.prisma.membershipOrder.findUnique({
       where: { orderNo },
-      include: { plan: true, level: true },
+      include: { level: true },
     });
 
     if (!order) {
@@ -198,68 +264,92 @@ export class MembershipService {
       return order; // 已处理，幂等
     }
 
-    // 使用事务：更新订单 + 创建/更新会员
+    const now = new Date();
+
+    // 获取当前有效会员（用于续费时叠加时间）
+    const currentMembership = await this.prisma.userMembership.findFirst({
+      where: {
+        userId: order.userId,
+        levelId: order.levelId, // 续费必须是同一会员卡
+        status: 'active',
+        expireAt: { gt: now },
+      },
+      orderBy: { expireAt: 'desc' },
+    });
+
+    // 使用事务：更新订单 + 创建会员 + 标记旧会员
     return this.prisma.$transaction(async (tx) => {
       // 更新订单状态
       await tx.membershipOrder.update({
         where: { id: order.id },
         data: {
           status: 'paid',
-          paymentMethod: 'wechat',
-          paidAt: new Date(),
+          paymentMethod: transactionId ? 'wechat' : 'free',
+          paidAt: now,
         },
       });
 
-      // 获取当前会员
-      const current = await tx.userMembership.findFirst({
-        where: {
-          userId: order.userId,
-          status: 'active',
-          expireAt: { gt: new Date() },
-        },
-      });
-
-      // 计算有效期
       let startAt: Date;
       let expireAt: Date;
 
-      if (current && current.expireAt > new Date()) {
-        startAt = current.startAt;
-        expireAt = new Date(current.expireAt);
-        expireAt.setDate(expireAt.getDate() + order.duration + order.bonusDays);
-      } else {
-        startAt = new Date();
-        expireAt = new Date();
-        expireAt.setDate(expireAt.getDate() + order.duration + order.bonusDays);
-      }
-
-      // 创建或更新会员
-      if (current) {
+      if (order.type === 'renew' && currentMembership) {
+        // 续费：时间叠加，基于当前会员到期时间延长
+        startAt = now;
+        expireAt = new Date(currentMembership.expireAt);
+        expireAt.setDate(expireAt.getDate() + order.duration);
+        
+        // 续费时更新现有会员记录的到期时间，而不是创建新记录
         await tx.userMembership.update({
-          where: { id: current.id },
+          where: { id: currentMembership.id },
           data: {
             expireAt,
-            planId: order.planId,
-            levelName: order.level.name,
-            discount: order.level.discount,
-            overtimeFeeWaiver: order.level.overtimeFeeWaiver,
+            // 累加续费价格
+            price: { increment: order.levelPrice },
+            duration: { increment: order.duration },
           },
         });
+        
+        this.logger.log(`[会员] 用户 ${order.userId} 续费 ${order.level.name}, 时间叠加至 ${expireAt.toISOString()}`);
       } else {
+        // 新购或升级：标记旧会员为 replaced，从现在开始
+        if (order.type === 'upgrade') {
+          await tx.userMembership.updateMany({
+            where: {
+              userId: order.userId,
+              status: 'active',
+              expireAt: { gt: now },
+            },
+            data: {
+              status: 'replaced',
+            },
+          });
+        }
+
+        startAt = now;
+        expireAt = new Date(now);
+        expireAt.setDate(expireAt.getDate() + order.duration);
+
+        // 创建新会员记录
         await tx.userMembership.create({
           data: {
             userId: order.userId,
             levelId: order.levelId,
-            planId: order.planId,
-            source: 'purchase',
+            source: order.type,
             levelName: order.level.name,
+            price: order.levelPrice,
+            duration: order.duration,
             discount: order.level.discount,
             overtimeFeeWaiver: order.level.overtimeFeeWaiver,
+            // 升级折算信息
+            upgradeFrom: order.upgradeFromLevelId,
+            upgradeCredit: order.upgradeCredit,
             startAt,
             expireAt,
             status: 'active',
           },
         });
+
+        this.logger.log(`[会员] 用户 ${order.userId} 开通 ${order.level.name}, 有效期至 ${expireAt.toISOString()}`);
       }
 
       return order;
@@ -360,60 +450,121 @@ export class MembershipService {
   // ========== 管理端方法 ==========
 
   /**
-   * 获取等级列表
+   * 获取会员卡列表（管理端）
+   * 会员卡 = 会员等级 = 可购买商品
    */
   async getLevelsForAdmin(params: { page?: number; pageSize?: number }) {
     const { page = 1, pageSize = 10 } = params;
+    const now = new Date();
 
-    const [data, total] = await Promise.all([
+    const [data, total, totalUsers, activeMembers] = await Promise.all([
       this.prisma.membershipLevel.findMany({
         include: {
           _count: {
             select: {
-              userMemberships: true,
-              plans: true,
+              userMemberships: {
+                where: { 
+                  status: 'active',
+                  expireAt: { gt: now },
+                },
+              },
+              membershipOrders: {
+                where: { status: 'paid' },
+              },
             },
           },
         },
-        orderBy: { sort: 'asc' },
+        orderBy: [{ recommended: 'desc' }, { sort: 'asc' }],
         skip: (page - 1) * pageSize,
         take: pageSize,
       }),
       this.prisma.membershipLevel.count(),
+      // 统计总用户数
+      this.prisma.user.count(),
+      // 统计有效会员数（用于计算普通用户数）
+      this.prisma.userMembership.count({
+        where: {
+          status: 'active',
+          expireAt: { gt: now },
+        },
+      }),
     ]);
 
     return {
       data: data.map((item) => ({
         ...item,
         memberCount: item._count.userMemberships,
-        planCount: item._count.plans,
+        orderCount: item._count.membershipOrders,
         _count: undefined,
       })),
       total,
       page,
       pageSize,
+      // 额外统计信息
+      stats: {
+        totalUsers,
+        activeMembers,
+        normalUsers: totalUsers - activeMembers,
+      },
     };
   }
 
   /**
-   * 创建等级
+   * 创建会员卡
+   * code 由后端自动生成（格式：MC + 时间戳 + 随机数）
    */
   async createLevel(dto: CreateMembershipLevelDto) {
+    // 自动生成唯一 code
+    const code = this.generateMembershipCode();
+    
     return this.prisma.membershipLevel.create({
       data: {
-        ...dto,
-        benefits: dto.benefits || {},
+        name: dto.name,
+        code,
+        price: new Prisma.Decimal(dto.price),
+        originalPrice: dto.originalPrice ? new Prisma.Decimal(dto.originalPrice) : null,
+        duration: dto.duration,
+        icon: dto.icon,
+        color: dto.color,
+        discount: dto.discount,
+        overtimeFeeWaiver: dto.overtimeFeeWaiver || 0,
+        benefits: dto.benefits || null,
+        description: dto.description,
+        recommended: dto.recommended || false,
+        sort: dto.sort || 0,
+        status: dto.status || 'active',
       },
     });
   }
 
   /**
-   * 更新等级
+   * 生成会员卡编码
+   * 格式：MC + 年月日 + 4位随机数
+   */
+  private generateMembershipCode(): string {
+    const date = new Date();
+    const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
+    const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+    return `MC${dateStr}${random}`;
+  }
+
+  /**
+   * 更新会员卡
    */
   async updateLevel(id: string, dto: UpdateMembershipLevelDto) {
+    const updateData: any = { ...dto };
+    
+    // 转换 Decimal 类型
+    if (dto.price !== undefined) {
+      updateData.price = new Prisma.Decimal(dto.price);
+    }
+    if (dto.originalPrice !== undefined) {
+      updateData.originalPrice = dto.originalPrice ? new Prisma.Decimal(dto.originalPrice) : null;
+    }
+
     return this.prisma.membershipLevel.update({
       where: { id },
-      data: dto,
+      data: updateData,
     });
   }
 

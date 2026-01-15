@@ -4,6 +4,7 @@ import {
     BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { ConfigService } from '../config/config.service';
 import { Prisma } from '@prisma/client';
 import {
     CreatePointRuleDto,
@@ -13,7 +14,33 @@ import {
 
 @Injectable()
 export class PointsService {
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        private configService?: ConfigService,
+    ) { }
+
+    /**
+     * 检查积分功能是否启用
+     * 支持动态 import 场景（configService 可能为空）
+     */
+    private async isPointsEnabled(): Promise<boolean> {
+        // 如果有注入的 ConfigService，直接使用
+        if (this.configService) {
+            const settings = await this.configService.getMarketingSettings();
+            return settings.pointsEnabled !== false;
+        }
+
+        // 动态 import 场景：手动创建 ConfigService 实例
+        try {
+            const { ConfigService: ConfigSvc } = await import('../config/config.service');
+            const configService = new ConfigSvc(this.prisma);
+            const settings = await configService.getMarketingSettings();
+            return settings.pointsEnabled !== false;
+        } catch (error) {
+            console.warn('[PointsService] 获取营销设置失败，默认启用积分功能:', error);
+            return true; // 获取失败时默认启用
+        }
+    }
 
     // ========== 用户端方法 ==========
 
@@ -100,6 +127,11 @@ export class PointsService {
      * 每日签到
      */
     async checkIn(userId: string) {
+        // 检查积分功能是否启用
+        if (!(await this.isPointsEnabled())) {
+            throw new BadRequestException('积分功能暂未开放');
+        }
+
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const tomorrow = new Date(today);
@@ -287,6 +319,290 @@ export class PointsService {
             consecutiveDays: todayCheckIn ? consecutiveDays + 1 : consecutiveDays,
             todayPoints: todayCheckIn?.points || 0,
         };
+    }
+
+    // ========== 积分任务方法 ==========
+
+    /**
+     * 任务配置
+     */
+    private readonly TASKS_CONFIG = [
+        {
+            code: 'daily_checkin',
+            name: '每日签到',
+            description: '每日签到可获得积分',
+            icon: 'time',
+            defaultPoints: 10,
+            isRateBased: false,
+        },
+        {
+            code: 'complete_profile',
+            name: '完善个人信息',
+            description: '完善个人资料可获得积分',
+            icon: 'user',
+            defaultPoints: 50,
+            isRateBased: false,
+        },
+        {
+            code: 'first_order',
+            name: '完成首单',
+            description: '完成第一笔订单可获得积分',
+            icon: 'shopping-cart-one',
+            defaultPoints: 100,
+            isRateBased: false,
+        },
+        {
+            code: 'order_complete',
+            name: '订单积分',
+            description: '每笔订单完成后按金额比例获得积分',
+            icon: 'shopping-bag',
+            defaultPoints: 0,
+            defaultRate: 0.01,
+            isRateBased: true,
+        },
+        {
+            code: 'referral',
+            name: '邀请好友',
+            description: '邀请好友注册可获得积分',
+            icon: 'peoples',
+            defaultPoints: 200,
+            isRateBased: false,
+        },
+    ];
+
+    /**
+     * 获取积分任务列表
+     * 只返回已启用的任务（规则存在且 status='active'）
+     */
+    async getPointsTasks(userId: string) {
+        const tasks: Array<{
+            code: string;
+            name: string;
+            description: string;
+            icon: string;
+            points: number;
+            pointsRate?: number;
+            isRateBased?: boolean;
+            status: 'pending' | 'completed' | 'claimed';
+        }> = [];
+
+        for (const taskConfig of this.TASKS_CONFIG) {
+            let points = (taskConfig as any).defaultPoints || 0;
+            let pointsRate = (taskConfig as any).defaultRate || 0;
+            let isEnabled = false;
+
+            // 邀请好友任务检查 referral_rules 表的 status
+            // 注意：邀请奖励开关已移至「积分与奖励」模块的「邀请奖励」选项卡
+            if (taskConfig.code === 'referral') {
+                const referralRule = await this.prisma.referralRule.findFirst({
+                    where: { status: 'active' },
+                });
+                if (referralRule) {
+                    isEnabled = true;
+                    // 邀请人积分作为显示值
+                    points = referralRule.inviterPoints || (taskConfig as any).defaultPoints || 0;
+                }
+            } else {
+                // 其他任务检查 point_rules 表
+                const rule = await this.prisma.pointRule.findFirst({
+                    where: { code: taskConfig.code, status: 'active' },
+                });
+                if (rule) {
+                    isEnabled = true;
+                    points = rule.points || (taskConfig as any).defaultPoints || 0;
+                    pointsRate = rule.pointsRate
+                        ? Number(rule.pointsRate)
+                        : (taskConfig as any).defaultRate || 0;
+                }
+            }
+
+            // 如果规则不存在或未启用，跳过该任务
+            if (!isEnabled) {
+                continue;
+            }
+
+            // 判断任务状态
+            // order_complete 和 referral 是持续性任务，状态始终为 pending
+            const status =
+                taskConfig.code === 'order_complete' || taskConfig.code === 'referral'
+                    ? 'pending'
+                    : await this.getTaskStatus(userId, taskConfig.code);
+
+            tasks.push({
+                code: taskConfig.code,
+                name: taskConfig.name,
+                description: taskConfig.description,
+                icon: taskConfig.icon,
+                points,
+                pointsRate: (taskConfig as any).isRateBased ? pointsRate : undefined,
+                isRateBased: (taskConfig as any).isRateBased,
+                status,
+            });
+        }
+
+        return tasks;
+    }
+
+    /**
+     * 获取任务状态
+     */
+    private async getTaskStatus(
+        userId: string,
+        taskCode: string,
+    ): Promise<'pending' | 'completed' | 'claimed'> {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        switch (taskCode) {
+            case 'daily_checkin': {
+                // 签到：检查今日是否签到
+                const todayCheckIn = await this.prisma.pointRecord.findFirst({
+                    where: {
+                        userId,
+                        source: 'daily_checkin',
+                        createdAt: { gte: today, lt: tomorrow },
+                    },
+                });
+                return todayCheckIn ? 'claimed' : 'pending';
+            }
+
+            case 'complete_profile': {
+                // 完善个人信息：检查是否已领取
+                const profileClaimed = await this.prisma.pointRecord.findFirst({
+                    where: { userId, source: 'complete_profile' },
+                });
+                if (profileClaimed) return 'claimed';
+
+                // 检查用户资料是否完整
+                const user = await this.prisma.user.findUnique({
+                    where: { id: userId },
+                });
+                const isComplete = user && user.nickname && user.phone && user.avatar;
+                return isComplete ? 'completed' : 'pending';
+            }
+
+            case 'first_order': {
+                // 首单：检查是否已领取
+                const firstOrderClaimed = await this.prisma.pointRecord.findFirst({
+                    where: { userId, source: 'first_order' },
+                });
+                if (firstOrderClaimed) return 'claimed';
+
+                // 检查是否有已完成的订单
+                const completedOrder = await this.prisma.order.findFirst({
+                    where: { userId, status: 'completed' },
+                });
+                return completedOrder ? 'completed' : 'pending';
+            }
+
+            case 'referral': {
+                // 邀请好友：检查是否已领取
+                const referralClaimed = await this.prisma.pointRecord.findFirst({
+                    where: { userId, source: 'referral' },
+                });
+                if (referralClaimed) return 'claimed';
+
+                // 检查是否有成功邀请的好友（使用 ReferralRecord 表）
+                const referral = await this.prisma.referralRecord.findFirst({
+                    where: { inviterId: userId, status: 'rewarded' },
+                });
+                return referral ? 'completed' : 'pending';
+            }
+
+            default:
+                return 'pending';
+        }
+    }
+
+    /**
+     * 领取任务奖励
+     */
+    async claimTask(userId: string, taskCode: string) {
+        // 检查积分功能是否启用
+        if (!(await this.isPointsEnabled())) {
+            throw new BadRequestException('积分功能暂未开放');
+        }
+
+        // 检查任务是否存在
+        const taskConfig = this.TASKS_CONFIG.find((t) => t.code === taskCode);
+        if (!taskConfig) {
+            throw new BadRequestException('任务不存在');
+        }
+
+        // 检查任务状态
+        const status = await this.getTaskStatus(userId, taskCode);
+
+        if (status === 'pending') {
+            throw new BadRequestException('任务尚未完成');
+        }
+
+        if (status === 'claimed') {
+            throw new BadRequestException('奖励已领取');
+        }
+
+        // 获取任务规则
+        const rule = await this.prisma.pointRule.findFirst({
+            where: { code: taskCode, status: 'active' },
+        });
+
+        const points = rule?.points || taskConfig.defaultPoints;
+
+        // 计算有效期（积分默认1年有效）
+        const expireAt = new Date();
+        expireAt.setFullYear(expireAt.getFullYear() + 1);
+
+        // 使用事务：增加积分 + 记录流水
+        return this.prisma.$transaction(async (tx) => {
+            // 获取或创建用户积分
+            let userPoint = await tx.userPoint.findUnique({
+                where: { userId },
+            });
+
+            if (!userPoint) {
+                userPoint = await tx.userPoint.create({
+                    data: {
+                        userId,
+                        totalPoints: 0,
+                        usedPoints: 0,
+                        expiredPoints: 0,
+                        currentPoints: 0,
+                    },
+                });
+            }
+
+            const newBalance = userPoint.currentPoints + points;
+
+            // 更新用户积分
+            await tx.userPoint.update({
+                where: { userId },
+                data: {
+                    totalPoints: { increment: points },
+                    currentPoints: { increment: points },
+                },
+            });
+
+            // 记录积分流水
+            await tx.pointRecord.create({
+                data: {
+                    userId,
+                    type: 'earn',
+                    points,
+                    balance: newBalance,
+                    source: taskCode,
+                    description: `${taskConfig.name}奖励`,
+                    expireAt,
+                },
+            });
+
+            return {
+                points,
+                totalPoints: newBalance,
+                taskCode,
+                taskName: taskConfig.name,
+            };
+        });
     }
 
     // ========== 管理端方法 ==========
@@ -539,6 +855,11 @@ export class PointsService {
         sourceId?: string,
         expireDays: number = 365,
     ) {
+        // 检查积分功能是否启用
+        if (!(await this.isPointsEnabled())) {
+            return 0; // 积分功能关闭，不发放积分
+        }
+
         // 获取规则
         const rule = await this.prisma.pointRule.findFirst({
             where: {
@@ -653,6 +974,11 @@ export class PointsService {
         sourceId: string,
         description: string,
     ) {
+        // 检查积分功能是否启用
+        if (!(await this.isPointsEnabled())) {
+            throw new BadRequestException('积分功能暂未开放');
+        }
+
         const userPoint = await this.prisma.userPoint.findUnique({
             where: { userId },
         });

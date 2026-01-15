@@ -319,6 +319,14 @@ function WithdrawContent({
 }: WithdrawContentProps) {
   const primaryColor = themeSettings.primaryColor
 
+  // 根据金额大小计算自适应字号（#32）
+  const getAmountFontSize = (value: number): number => {
+    if (value >= 100000) return 22 * wxScale  // 10万+：小字号
+    if (value >= 10000) return 28 * wxScale   // 1万+：中字号
+    return 36 * wxScale                        // 默认：大字号
+  }
+  const amountFontSize = getAmountFontSize(stats.withdrawable)
+
   // 计算实际到账金额
   const inputAmount = parseFloat(amount) || 0
   const fee = inputAmount * stats.feeRate
@@ -385,7 +393,7 @@ function WithdrawContent({
           <Text
             style={{
               display: 'block',
-              fontSize: 36 * wxScale,
+              fontSize: amountFontSize,
               fontWeight: 700,
               color: '#fff',
               marginTop: 8 * wxScale,

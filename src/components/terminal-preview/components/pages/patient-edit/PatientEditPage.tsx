@@ -189,12 +189,12 @@ export function PatientEditPage({
         paddingBottom: 16 * wxScale,
       }}
     >
-      {/* 顶部导航栏 */}
+      {/* 顶部导航栏 - 符合规范 3.3.2 */}
       <Box
         style={{
           position: 'sticky',
           top: 0,
-          zIndex: 20,
+          zIndex: 100,
           paddingTop: wxSafeAreaTop,
           backgroundColor: primaryColor,
         }}
@@ -203,48 +203,55 @@ export function PatientEditPage({
           style={{
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
+            justifyContent: 'center',
+            position: 'relative',
+            height: 44 * wxScale,
             paddingLeft: 12 * wxScale,
             paddingRight: 12 * wxScale,
-            paddingTop: 12 * wxScale,
-            paddingBottom: 12 * wxScale,
           }}
         >
+          {/* 返回按钮（绝对定位左侧） */}
           <Box
             onClick={onBack}
             style={{
-              width: 32 * wxScale,
-              height: 32 * wxScale,
+              position: 'absolute',
+              left: 12 * wxScale,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              width: 36 * wxScale,
+              height: 36 * wxScale,
             }}
           >
-            <Icon name="left" size={20 * wxScale} color="#fff" />
+            <Icon name="left" size={22 * wxScale} color="#fff" />
           </Box>
-          <Text style={{ fontSize: 16 * wxScale, fontWeight: 600, color: '#fff' }}>
+          {/* 标题（居中） */}
+          <Text style={{ fontSize: 17 * wxScale, fontWeight: 600, color: '#fff' }}>
             {isEdit ? '编辑就诊人' : '添加就诊人'}
           </Text>
-          <Box style={{ width: 32 * wxScale }} />
+          {/* 右侧区域留空，不放操作按钮（避免胶囊遮挡） */}
         </Box>
       </Box>
 
       {/* 表单内容 */}
-      <ScrollView
-        style={{
-          paddingLeft: 12 * wxScale,
-          paddingRight: 12 * wxScale,
-          paddingTop: 12 * wxScale,
-        }}
-      >
-        {/* 基本信息卡片 */}
+      <ScrollView style={{ flex: 1 }}>
+        {/* 内容容器 - 小程序中 ScrollView 的 padding 可能不生效，用 Box 包裹 */}
         <Box
           style={{
-            borderRadius: 12 * wxScale,
-            overflow: 'hidden',
-            backgroundColor: cardBg,
+            paddingLeft: 12 * wxScale,
+            paddingRight: 12 * wxScale,
+            paddingTop: 12 * wxScale,
+            paddingBottom: 100 * wxScale,
           }}
         >
+          {/* 基本信息卡片 */}
+          <Box
+            style={{
+              borderRadius: 12 * wxScale,
+              overflow: 'hidden',
+              backgroundColor: cardBg,
+            }}
+          >
           {/* 姓名 */}
           <FormRow
             icon="user"
@@ -311,7 +318,7 @@ export function PatientEditPage({
 
           {/* 年龄 */}
           <FormRow
-            icon="calendar"
+            icon="date-comes-back"
             label="年龄"
             required
             borderColor={borderColor}
@@ -340,7 +347,7 @@ export function PatientEditPage({
 
           {/* 手机号 */}
           <FormRow
-            icon="phone"
+            icon="phone-telephone"
             label="手机号"
             required
             borderColor={borderColor}
@@ -424,11 +431,12 @@ export function PatientEditPage({
           </FormRow>
         </Box>
 
-        {/* 提示信息 */}
-        <Box style={{ paddingLeft: 8 * wxScale, paddingRight: 8 * wxScale, marginTop: 12 * wxScale }}>
-          <Text style={{ fontSize: 12 * wxScale, color: textMuted, lineHeight: 1.5 }}>
-            <Text style={{ color: '#ef4444' }}>*</Text> 为必填项，请如实填写就诊人信息，以便医院核实身份。
-          </Text>
+          {/* 提示信息 */}
+          <Box style={{ paddingLeft: 8 * wxScale, paddingRight: 8 * wxScale, marginTop: 12 * wxScale }}>
+            <Text style={{ fontSize: 12 * wxScale, color: textMuted, lineHeight: 1.5 }}>
+              <Text style={{ color: '#ef4444' }}>*</Text> 为必填项，请如实填写就诊人信息，以便医院核实身份。
+            </Text>
+          </Box>
         </Box>
       </ScrollView>
 

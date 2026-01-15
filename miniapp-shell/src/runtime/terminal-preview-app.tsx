@@ -18,6 +18,7 @@
 
 import { useState, useEffect } from 'react'
 import { View, Text } from '@tarojs/components'
+import Taro from '@tarojs/taro'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 // 使用精简版首页组件，不导入完整版 TerminalPreview
 // 完整版会拉入 45+ 页面组件导致主包超限
@@ -34,6 +35,26 @@ import {
   hasUserLoggedOut,
   setUserLoggedOut,
 } from '../api'
+
+// 主题缓存 key（与 app.tsx 保持一致）
+const THEME_CACHE_KEY = 'kekeling_theme_settings'
+
+/**
+ * 从缓存读取主题设置
+ * 优先使用缓存的主题，避免闪烁
+ */
+function getCachedThemeSettings(): ThemeSettings {
+  try {
+    const cached = Taro.getStorageSync(THEME_CACHE_KEY)
+    if (cached) {
+      const parsed = JSON.parse(cached)
+      return { ...defaultThemeSettings, ...parsed }
+    }
+  } catch (e) {
+    console.warn('[Theme] 读取缓存失败:', e)
+  }
+  return defaultThemeSettings
+}
 
 // ============================================================================
 // 常量
@@ -80,18 +101,26 @@ type LoginState = 'checking' | 'logging' | 'success' | 'error' | 'logged_out'
 export function TerminalPreviewApp() {
   const [loginState, setLoginState] = useState<LoginState>('checking')
   const [errorMsg, setErrorMsg] = useState<string>('')
-  const [themeSettings, setThemeSettings] = useState<ThemeSettings>(defaultThemeSettings)
+  // 使用缓存的主题作为初始值，避免闪烁（#2）
+  const [themeSettings, setThemeSettings] = useState<ThemeSettings>(() => getCachedThemeSettings())
 
   const isDarkMode = false
   const colors = getThemeColors(isDarkMode)
   const primaryColor = themeSettings.primaryColor
 
-  // 加载主题设置
+  // 加载主题设置（如果有新的，更新缓存）
   useEffect(() => {
     previewApi.getThemeSettings()
       .then((settings) => {
         if (settings) {
-          setThemeSettings({ ...defaultThemeSettings, ...settings })
+          const merged = { ...defaultThemeSettings, ...settings }
+          setThemeSettings(merged)
+          // 更新缓存
+          try {
+            Taro.setStorageSync(THEME_CACHE_KEY, JSON.stringify(settings))
+          } catch (e) {
+            console.warn('[Theme] 更新缓存失败:', e)
+          }
         }
       })
       .catch(console.error)

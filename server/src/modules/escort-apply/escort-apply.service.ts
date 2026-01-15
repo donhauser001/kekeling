@@ -216,6 +216,12 @@ export class EscortApplyService {
         inviteCode: dto.inviteCode,
         inviterId,
         status: 'pending',
+        // 新增字段（#27 陪诊员注册字段补齐）
+        age: dto.age,
+        hospitals: dto.hospitals || [],
+        departments: dto.departments || [],
+        specialties: dto.specialties,
+        serviceAreas: dto.serviceAreas,
       },
     });
 
@@ -291,6 +297,12 @@ export class EscortApplyService {
         inviteCode: dto.inviteCode,
         inviterId,
         status: 'pending',
+        // 新增字段（#27 陪诊员注册字段补齐）
+        age: dto.age,
+        hospitals: dto.hospitals || [],
+        departments: dto.departments || [],
+        specialties: dto.specialties,
+        serviceAreas: dto.serviceAreas,
       },
     });
 

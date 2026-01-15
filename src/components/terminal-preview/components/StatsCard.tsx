@@ -65,13 +65,14 @@ export function StatsCard({ homeSettings, statsData, themeSettings }: StatsCardP
               {/* 数字和文字分行显示，数字居中对齐（排除后缀符号） */}
               <Box style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
                 {/* 数字行：数字居中，后缀作为附加显示 */}
+                {/* #20: 缩小统计数字字号 24 -> 20 */}
                 <Box style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center' }}>
                   <Text
-                    style={{ fontSize: 24 * wxScale, fontWeight: 'bold', color: '#ffffff', lineHeight: 1.2 }}
+                    style={{ fontSize: 20 * wxScale, fontWeight: 'bold', color: '#ffffff', lineHeight: 1.2 }}
                   >
                     {getStatsValue(statsData, item.key, item.customValue)}
                   </Text>
-                  <Text style={{ fontSize: 14 * wxScale, fontWeight: 'normal', color: 'rgba(255,255,255,0.9)' }}>
+                  <Text style={{ fontSize: 12 * wxScale, fontWeight: 'normal', color: 'rgba(255,255,255,0.9)' }}>
                     {item.suffix}
                   </Text>
                 </Box>

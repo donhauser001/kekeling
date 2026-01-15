@@ -562,3 +562,39 @@ export interface MiniappSettings {
   devEscortId: string;
 }
 
+// ============================================
+// 营销设置
+// ============================================
+
+// 营销配置键
+export const MARKETING_CONFIG_KEYS = {
+  // 会员功能开关
+  MEMBERSHIP_ENABLED: 'marketing.membership_enabled',
+  // 积分功能开关
+  POINTS_ENABLED: 'marketing.points_enabled',
+  // 优惠券功能开关
+  COUPONS_ENABLED: 'marketing.coupons_enabled',
+  // 活动功能开关
+  CAMPAIGNS_ENABLED: 'marketing.campaigns_enabled',
+  // 注意：邀请奖励开关已移至「积分与奖励」模块，通过 referral_rules 表的 status 控制
+} as const;
+
+// 营销配置默认值
+export const MARKETING_CONFIG_DEFAULTS: Record<string, any> = {
+  [MARKETING_CONFIG_KEYS.MEMBERSHIP_ENABLED]: true,
+  [MARKETING_CONFIG_KEYS.POINTS_ENABLED]: true,
+  [MARKETING_CONFIG_KEYS.COUPONS_ENABLED]: true,
+  [MARKETING_CONFIG_KEYS.CAMPAIGNS_ENABLED]: true,
+};
+
+// 营销设置类型
+export interface MarketingSettings {
+  /** 会员功能开关 */
+  membershipEnabled: boolean;
+  /** 积分功能开关 */
+  pointsEnabled: boolean;
+  /** 优惠券功能开关 */
+  couponsEnabled: boolean;
+  /** 活动功能开关 */
+  campaignsEnabled: boolean;
+}

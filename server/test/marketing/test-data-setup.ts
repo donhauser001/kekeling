@@ -68,6 +68,8 @@ async function setupTestData() {
         data: {
           name: '测试会员',
           code: 'test_member',
+          price: new Decimal(99),
+          duration: 30,
           discount: 90, // 9折
           overtimeFeeWaiver: 0,
           benefits: { list: ['测试权益1', '测试权益2'] },

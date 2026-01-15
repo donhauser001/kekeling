@@ -5,6 +5,7 @@ import {
     Pencil,
     ShoppingCart,
     Users as UsersIcon,
+    Crown,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -17,6 +18,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { DataTableColumnHeader } from '@/components/data-table'
+import { cn } from '@/lib/utils'
 import type { User } from '@/lib/api'
 
 interface GetUsersColumnsOptions {
@@ -107,6 +109,38 @@ export function getUsersColumns({
             meta: { title: '就诊人' },
         },
         {
+            accessorKey: 'category',
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title='会员等级' />
+            ),
+            cell: ({ row }) => {
+                const user = row.original
+                const membership = user.membership
+                
+                if (membership) {
+                    return (
+                        <div className='flex items-center gap-1.5'>
+                            <Crown className={cn(
+                                'h-4 w-4',
+                                membership.levelColor?.includes('amber') ? 'text-amber-500' :
+                                membership.levelColor?.includes('yellow') ? 'text-yellow-500' :
+                                membership.levelColor?.includes('sky') ? 'text-sky-500' :
+                                'text-primary'
+                            )} />
+                            <span className='font-medium'>{membership.levelName}</span>
+                            <span className='text-muted-foreground text-xs'>
+                                ({membership.daysLeft}天)
+                            </span>
+                        </div>
+                    )
+                }
+                return (
+                    <span className='text-muted-foreground'>普通用户</span>
+                )
+            },
+            meta: { title: '会员等级' },
+        },
+        {
             accessorKey: 'isEscort',
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title='角色' />
@@ -118,7 +152,7 @@ export function getUsersColumns({
                         陪诊员
                     </Badge>
                 ) : (
-                    <Badge variant='outline'>普通用户</Badge>
+                    <Badge variant='outline'>用户</Badge>
                 )
             },
             meta: { title: '角色' },

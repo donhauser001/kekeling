@@ -5,6 +5,17 @@
 import { request, type PaginatedData } from './request'
 import type { Order } from './orders'
 
+export interface UserMembershipInfo {
+  id: string
+  levelId: string
+  levelName: string
+  levelCode?: string
+  levelColor?: string
+  discount: number
+  expireAt: string
+  daysLeft: number
+}
+
 export interface User {
   id: string
   openid: string
@@ -20,8 +31,18 @@ export interface User {
     level: string
     status: string
   } | null
+  // 会员信息
+  membership?: UserMembershipInfo | null
+  // 用户分类（会员等级名称或"普通用户"）
+  category?: string
   createdAt: string
   updatedAt: string
+}
+
+export interface UserDetailMembership extends UserMembershipInfo {
+  overtimeFeeWaiver: number
+  startAt: string
+  source: string
 }
 
 export interface UserDetail extends User {
@@ -59,6 +80,24 @@ export interface UserDetail extends User {
       hospital: { id: string; name: string }
     }>
   }
+  // 详细会员信息
+  membership?: UserDetailMembership | null
+  // 积分信息
+  points?: {
+    current: number
+    total: number
+    used: number
+  }
+  // 会员订单历史
+  membershipOrders?: Array<{
+    id: string
+    orderNo: string
+    levelName: string
+    amount: number
+    status: string
+    createdAt: string
+    paidAt?: string | null
+  }>
 }
 
 export interface UserQuery {

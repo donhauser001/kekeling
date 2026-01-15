@@ -35,16 +35,19 @@ export class OrdersController {
   @ApiQuery({ name: 'status', required: false })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'pageSize', required: false })
+  @ApiQuery({ name: 'includeMembership', required: false, description: '是否包含会员订单' })
   async findAll(
     @CurrentUser('sub') userId: string,
     @Query('status') status?: string,
     @Query('page') page?: number,
     @Query('pageSize') pageSize?: number,
+    @Query('includeMembership') includeMembership?: string,
   ) {
     const result = await this.ordersService.findByUser(userId, {
       status,
       page: page ? Number(page) : 1,
       pageSize: pageSize ? Number(pageSize) : 10,
+      includeMembership: includeMembership === 'true',
     });
     return ApiResponse.success(result);
   }

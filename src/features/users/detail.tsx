@@ -32,6 +32,7 @@ import {
   TrendingDown,
   RotateCcw,
   Ticket,
+  Crown,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Header } from '@/components/layout/header'
@@ -376,6 +377,14 @@ export function UserDetail() {
               <div className="flex-1 space-y-3">
                 <div className="flex flex-wrap items-center gap-3">
                   <h2 className="text-xl font-semibold">{user.nickname || '微信用户'}</h2>
+                  {user.membership ? (
+                    <Badge className="bg-amber-500 text-white">
+                      <Crown className="mr-1 h-3 w-3" />
+                      {user.membership.levelName}
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary">普通用户</Badge>
+                  )}
                   {user.isEscort && (
                     <Badge className="bg-purple-500 text-white">
                       <Shield className="mr-1 h-3 w-3" />
@@ -537,13 +546,43 @@ export function UserDetail() {
                 <CardContent className="space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">会员等级</span>
-                    <Badge variant="secondary">普通用户</Badge>
+                    {user.membership ? (
+                      <div className="flex items-center gap-2">
+                        <Badge className="bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+                          <Crown className="mr-1 h-3 w-3" />
+                          {user.membership.levelName}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          剩余 {user.membership.daysLeft} 天
+                        </span>
+                      </div>
+                    ) : (
+                      <Badge variant="secondary">普通用户</Badge>
+                    )}
                   </div>
+                  {user.membership && (
+                    <>
+                      <Separator />
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">折扣优惠</span>
+                        <span className="font-medium text-green-600">
+                          {user.membership.discount / 10} 折
+                        </span>
+                      </div>
+                      <Separator />
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">到期时间</span>
+                        <span className="text-sm">
+                          {new Date(user.membership.expireAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </>
+                  )}
                   <Separator />
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">可用积分</span>
                     <span className="font-medium text-amber-600">
-                      {pointLoading ? '...' : (userPointData?.data?.[0]?.currentPoints || 0)} 分
+                      {user.points?.current || 0} 分
                     </span>
                   </div>
                   <Separator />
@@ -839,7 +878,7 @@ export function UserDetail() {
                     <div>
                       <p className="text-sm text-muted-foreground">可用积分</p>
                       <p className="font-semibold text-xl">
-                        {pointLoading ? '-' : (userPointData?.data?.[0]?.currentPoints || 0)}
+                        {user.points?.current || 0}
                       </p>
                     </div>
                   </div>
@@ -854,7 +893,7 @@ export function UserDetail() {
                     <div>
                       <p className="text-sm text-muted-foreground">累计获得</p>
                       <p className="font-semibold text-xl">
-                        {pointLoading ? '-' : (userPointData?.data?.[0]?.totalPoints || 0)}
+                        {user.points?.total || 0}
                       </p>
                     </div>
                   </div>
@@ -869,7 +908,7 @@ export function UserDetail() {
                     <div>
                       <p className="text-sm text-muted-foreground">已使用</p>
                       <p className="font-semibold text-xl">
-                        {pointLoading ? '-' : (userPointData?.data?.[0]?.usedPoints || 0)}
+                        {user.points?.used || 0}
                       </p>
                     </div>
                   </div>

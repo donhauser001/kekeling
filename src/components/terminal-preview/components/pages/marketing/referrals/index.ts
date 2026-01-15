@@ -3,5 +3,7 @@
  */
 
 export { ReferralsPage } from './ReferralsPage'
+export { ReferralRecordsPage } from './ReferralRecordsPage'
 export type { ReferralsPageProps } from './types'
+export type { ReferralRecordsPageProps } from './ReferralRecordsPage'
 

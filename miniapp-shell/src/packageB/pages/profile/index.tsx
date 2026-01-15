@@ -2,6 +2,11 @@
  * 我的页面（用户中心）
  *
  * 小程序独立页面，复用终端预览器的 ProfilePage 组件
+ *
+ * 陪诊员视角逻辑：
+ * - effectiveViewerRole 由 escortToken 推导（useViewerRole hook）
+ * - 退出陪诊员模式 = 清除 escortToken → effectiveViewerRole 自动变成 'user'
+ * - 再次进入工作台需要重新登录获取 escortToken
  */
 import { useState, useEffect, useCallback, Component, type ReactNode } from 'react'
 import { View, Text } from '@tarojs/components'
@@ -10,7 +15,11 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ProfilePage as ProfilePageComponent } from '@terminal-preview/components/pages/ProfilePage'
 import { TabBarNav } from '@terminal-preview/components'
 import { previewApi } from '@terminal-preview/api'
-import { clearPreviewEscortToken } from '@terminal-preview/session'
+import {
+  getPreviewEscortToken,
+  clearPreviewEscortToken,
+} from '@terminal-preview/session'
+import { useViewerRole } from '@terminal-preview/hooks/useViewerRole'
 import type { ThemeSettings } from '@terminal-preview/types'
 import { defaultThemeSettings } from '@terminal-preview/types'
 import type { TabKey } from '@terminal-preview/constants'
@@ -67,6 +76,8 @@ const queryClient = new QueryClient({
  * ProfilePage 内部路由 -> 小程序分包路径
  */
 const PAGE_ROUTE_MAP: Record<string, string> = {
+  // 收藏
+  'favorites': '/packageB/pages/favorites/index',
   // 用户相关
   'user-orders': '/packageB/pages/user-orders/index',
   'user-order-detail': '/packageB/pages/user-order-detail/index',
@@ -148,6 +159,22 @@ function ProfilePageContent() {
   // 内容就绪标记 - 使用短延迟确保组件已渲染
   const [isReady, setIsReady] = useState(false)
 
+  // 本地 escortToken 状态
+  const [localEscortToken, setLocalEscortToken] = useState<string | null>(() => {
+    return getPreviewEscortToken()
+  })
+
+  // 使用 useViewerRole 进行身份验证和视角推导
+  const { effectiveViewerRole } = useViewerRole({
+    escortSession: localEscortToken ? { token: localEscortToken } : undefined,
+    onEscortTokenChange: (token) => {
+      if (token === null) {
+        setLocalEscortToken(null)
+      }
+    },
+    isPreviewMode: true,
+  })
+
   useEffect(() => {
     console.log('[ProfilePage] useEffect 执行 - 异步加载主题设置')
 
@@ -217,6 +244,7 @@ function ProfilePageContent() {
 
   /**
    * 工作台入口点击
+   * 跳转到工作台页面，工作台页面会处理登录逻辑
    */
   const handleWorkbenchClick = useCallback(() => {
     Taro.navigateTo({
@@ -226,12 +254,16 @@ function ProfilePageContent() {
 
   /**
    * 退出陪诊员模式
+   * 清除 escortToken，刷新页面使 effectiveViewerRole 变为 'user'
    */
   const handleExitEscortMode = useCallback(() => {
     console.log('[ProfilePage] 退出陪诊员模式')
 
     // 清除陪诊员 token
     clearPreviewEscortToken()
+
+    // 更新本地状态
+    setLocalEscortToken(null)
 
     // 提示用户
     Taro.showToast({
@@ -272,7 +304,7 @@ function ProfilePageContent() {
     }
   }, [])
 
-  console.log('[ProfilePage] 渲染, isReady:', isReady)
+  console.log('[ProfilePage] 渲染, isReady:', isReady, 'effectiveViewerRole:', effectiveViewerRole)
 
   // 就绪前显示骨架屏，确保用户快速看到内容
   if (!isReady) {
@@ -297,7 +329,7 @@ function ProfilePageContent() {
           <ProfilePageComponent
             themeSettings={themeSettings}
             isDarkMode={false}
-            effectiveViewerRole="user"
+            effectiveViewerRole={effectiveViewerRole}
             onNavigate={handleNavigate}
             onEscortEntryClick={handleEscortEntryClick}
             onWorkbenchClick={handleWorkbenchClick}
@@ -325,4 +357,3 @@ export default function ProfilePage() {
     </ErrorBoundary>
   )
 }
-

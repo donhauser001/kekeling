@@ -30,6 +30,26 @@ import {
   defaultHomeSettings,
   defaultStatsData,
 } from '@terminal-preview/types'
+
+// 主题缓存 key（与 app.tsx 保持一致）
+const THEME_CACHE_KEY = 'kekeling_theme_settings'
+
+/**
+ * 从缓存读取主题设置
+ * 优先使用缓存的主题，避免闪烁（#2）
+ */
+function getCachedThemeSettings(): ThemeSettings | null {
+  try {
+    const cached = Taro.getStorageSync(THEME_CACHE_KEY)
+    if (cached) {
+      const parsed = JSON.parse(cached)
+      return { ...defaultThemeSettings, ...parsed }
+    }
+  } catch (e) {
+    // 静默失败
+  }
+  return null
+}
 import {
   BrandSection,
   SearchBar,
@@ -111,7 +131,8 @@ export function TerminalPreviewLite({
   // 数据获取
   // ============================================================================
 
-  const [fetchedThemeSettings, setFetchedThemeSettings] = useState<ThemeSettings | null>(null)
+  // 使用缓存的主题作为初始值，避免闪烁（#2）
+  const [fetchedThemeSettings, setFetchedThemeSettings] = useState<ThemeSettings | null>(() => getCachedThemeSettings())
   const [fetchedHomeSettings, setFetchedHomeSettings] = useState<HomePageSettings | null>(null)
   const [fetchedBannerData, setFetchedBannerData] = useState<BannerAreaData | null>(null)
   const [fetchedStatsData, setFetchedStatsData] = useState<StatsData | null>(null)
@@ -202,6 +223,7 @@ export function TerminalPreviewLite({
       url: '/packageA/pages/search/index',
     })
   }, [])
+
 
   /**
    * 分类点击 - 跳转到服务页并定位到对应分类

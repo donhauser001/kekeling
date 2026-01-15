@@ -32,38 +32,49 @@ export function getMembershipColumns({ onView, onEdit, onDelete }: MembershipCol
     {
       accessorKey: 'name',
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title='等级名称' />
+        <DataTableColumnHeader column={column} title='会员卡名称' />
       ),
-      cell: ({ row }) => (
-        <div className='font-medium'>{row.getValue('name')}</div>
-      ),
-      meta: { title: '等级名称' },
+      cell: ({ row }) => {
+        const recommended = row.original.recommended
+        return (
+          <div className='flex items-center gap-2'>
+            <span className='font-medium'>{row.getValue('name')}</span>
+            {recommended && (
+              <Badge variant='default' className='bg-amber-500 text-xs'>推荐</Badge>
+            )}
+          </div>
+        )
+      },
+      meta: { title: '会员卡名称' },
       enableHiding: false,
     },
     {
-      accessorKey: 'level',
+      accessorKey: 'code',
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title='等级' />
+        <DataTableColumnHeader column={column} title='编号' />
       ),
       cell: ({ row }) => (
-        <Badge variant='outline'>Lv.{row.getValue('level')}</Badge>
+        <code className='text-xs bg-muted px-1.5 py-0.5 rounded font-mono'>{row.getValue('code')}</code>
       ),
-      meta: { title: '等级' },
-    },
-    {
-      accessorKey: 'discount',
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title='折扣' className='text-right' />
-      ),
-      cell: ({ row }) => <div className='text-right'>{row.getValue('discount')}%</div>,
-      meta: { title: '折扣', className: 'text-right' },
+      meta: { title: '编号' },
     },
     {
       accessorKey: 'price',
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title='价格' className='text-right' />
       ),
-      cell: ({ row }) => <div className='text-right font-mono'>¥{row.getValue('price')}</div>,
+      cell: ({ row }) => {
+        const price = row.getValue('price') as number
+        const originalPrice = row.original.originalPrice
+        return (
+          <div className='text-right'>
+            <span className='font-mono font-medium text-primary'>¥{price}</span>
+            {originalPrice && originalPrice > price && (
+              <span className='ml-1 text-xs text-muted-foreground line-through'>¥{originalPrice}</span>
+            )}
+          </div>
+        )
+      },
       meta: { title: '价格', className: 'text-right' },
     },
     {
@@ -73,6 +84,35 @@ export function getMembershipColumns({ onView, onEdit, onDelete }: MembershipCol
       ),
       cell: ({ row }) => <span>{row.getValue('duration')}天</span>,
       meta: { title: '时长' },
+    },
+    {
+      accessorKey: 'discount',
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title='折扣' className='text-right' />
+      ),
+      cell: ({ row }) => {
+        const discount = row.getValue('discount') as number
+        return (
+          <div className='text-right'>
+            {discount < 100 ? (
+              <Badge variant='secondary' className='font-mono'>{discount / 10}折</Badge>
+            ) : (
+              <span className='text-muted-foreground'>无</span>
+            )}
+          </div>
+        )
+      },
+      meta: { title: '折扣', className: 'text-right' },
+    },
+    {
+      accessorKey: 'memberCount',
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title='会员数' className='text-right' />
+      ),
+      cell: ({ row }) => (
+        <div className='text-right font-mono'>{row.original.memberCount || 0}</div>
+      ),
+      meta: { title: '会员数', className: 'text-right' },
     },
     {
       accessorKey: 'status',

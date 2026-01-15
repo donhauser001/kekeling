@@ -33,6 +33,9 @@ export function ReferralsPage({
   isDarkMode,
   onBack,
   referralsOverride,
+  onInvite,
+  onCopyInviteCode,
+  onNavigateToRecords,
 }: ReferralsPageProps) {
   // ============================================================================
   // 数据状态（规则 4: useState + useEffect 替代 useQuery）
@@ -222,86 +225,133 @@ export function ReferralsPage({
         {/* 邀请信息 */}
         {!isError && referralInfo && (
           <>
-            {/* 邀请海报区 */}
+            {/* 邀请海报卡片 */}
             <Box
               style={{
                 borderRadius: 12 * wxScale,
-                padding: 24 * wxScale,
-                color: '#ffffff',
-                textAlign: 'center',
-                background: `linear-gradient(135deg, ${primaryColor} 0%, ${adjustColor(primaryColor, -30)} 100%)`,
+                overflow: 'hidden',
+                background: `linear-gradient(180deg, ${primaryColor} 0%, ${adjustColor(primaryColor, -30)} 100%)`,
               }}
             >
-              <Text
-                style={{
-                  fontSize: 20 * wxScale,
-                  fontWeight: 700,
-                  color: '#ffffff',
-                  marginBottom: 8 * wxScale,
-                }}
-              >
-                邀请好友 共享优惠
-              </Text>
-              <Text
-                style={{
-                  fontSize: 14 * wxScale,
-                  color: 'rgba(255,255,255,0.8)',
-                  marginBottom: 16 * wxScale,
-                }}
-              >
-                每邀请1位好友，双方各得{referralInfo.rewardPoints}积分
-              </Text>
-
-              {/* 邀请码 */}
+              {/* 标题区 */}
               <Box
                 style={{
-                  backgroundColor: 'rgba(255,255,255,0.2)',
-                  borderRadius: 8 * wxScale,
-                  padding: 12 * wxScale,
-                  marginBottom: 16 * wxScale,
+                  paddingTop: 24 * wxScale,
+                  paddingBottom: 20 * wxScale,
+                  paddingLeft: 20 * wxScale,
+                  paddingRight: 20 * wxScale,
+                  textAlign: 'center',
                 }}
               >
                 <Text
                   style={{
+                    display: 'block',
+                    fontSize: 20 * wxScale,
+                    fontWeight: 700,
+                    color: '#ffffff',
+                    textAlign: 'center',
+                  }}
+                >
+                  邀请好友 共享优惠
+                </Text>
+                <Text
+                  style={{
+                    display: 'block',
+                    fontSize: 13 * wxScale,
+                    color: 'rgba(255,255,255,0.85)',
+                    marginTop: 8 * wxScale,
+                    textAlign: 'center',
+                  }}
+                >
+                  每邀请1位好友，双方各得{referralInfo.rewardPoints}积分
+                </Text>
+              </Box>
+
+              {/* 邀请码区域 */}
+              <Box
+                onClick={() => onCopyInviteCode?.(referralInfo.inviteCode)}
+                style={{
+                  marginLeft: 16 * wxScale,
+                  marginRight: 16 * wxScale,
+                  backgroundColor: '#ffffff',
+                  borderRadius: 12 * wxScale,
+                  paddingTop: 20 * wxScale,
+                  paddingBottom: 20 * wxScale,
+                  paddingLeft: 16 * wxScale,
+                  paddingRight: 16 * wxScale,
+                  cursor: 'pointer',
+                }}
+              >
+                <Text
+                  style={{
+                    display: 'block',
                     fontSize: 12 * wxScale,
-                    color: 'rgba(255,255,255,0.8)',
-                    marginBottom: 4 * wxScale,
+                    color: '#9ca3af',
+                    textAlign: 'center',
+                    marginBottom: 12 * wxScale,
                   }}
                 >
                   我的邀请码
                 </Text>
                 <Text
                   style={{
-                    fontSize: 24 * wxScale,
+                    display: 'block',
+                    fontSize: 26 * wxScale,
                     fontWeight: 700,
-                    color: '#ffffff',
-                    letterSpacing: 4,
+                    color: '#111827',
+                    letterSpacing: 2,
+                    fontFamily: 'monospace',
+                    textAlign: 'center',
                   }}
                 >
-                  {referralInfo.inviteCode}
+                  {referralInfo.inviteCode || '生成中...'}
                 </Text>
+                {referralInfo.inviteCode && (
+                  <Box
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 4 * wxScale,
+                      marginTop: 12 * wxScale,
+                    }}
+                  >
+                    <Icon name="copy" size={14 * wxScale} color="#9ca3af" />
+                    <Text style={{ fontSize: 12 * wxScale, color: '#9ca3af' }}>
+                      点击复制
+                    </Text>
+                  </Box>
+                )}
               </Box>
 
               {/* 分享按钮 */}
-              <Button
+              <Box
                 style={{
-                  width: '100%',
-                  paddingTop: 12 * wxScale,
-                  paddingBottom: 12 * wxScale,
-                  backgroundColor: '#ffffff',
-                  borderRadius: 9999,
+                  padding: 16 * wxScale,
+                  paddingTop: 20 * wxScale,
                 }}
               >
-                <Text
+                <Button
+                  onClick={onInvite}
                   style={{
-                    fontSize: 14 * wxScale,
-                    fontWeight: 500,
-                    color: primaryColor,
+                    width: '100%',
+                    paddingTop: 14 * wxScale,
+                    paddingBottom: 14 * wxScale,
+                    backgroundColor: '#ffffff',
+                    borderRadius: 9999,
                   }}
                 >
-                  立即邀请好友
-                </Text>
-              </Button>
+                  <Text
+                    style={{
+                      fontSize: 16 * wxScale,
+                      fontWeight: 600,
+                      color: primaryColor,
+                    }}
+                  >
+                    立即邀请好友
+                  </Text>
+                </Button>
+              </Box>
             </Box>
 
             {/* 邀请统计 */}
@@ -333,11 +383,12 @@ export function ReferralsPage({
             </Box>
 
             {/* 邀请规则 */}
-            <Box style={{ marginTop: 16 * wxScale }}>
+            <Box style={{ marginTop: 20 * wxScale }}>
               <Text
                 style={{
-                  fontSize: 14 * wxScale,
-                  fontWeight: 500,
+                  display: 'block',
+                  fontSize: 15 * wxScale,
+                  fontWeight: 600,
                   color: textPrimary,
                   marginBottom: 12 * wxScale,
                 }}
@@ -346,7 +397,7 @@ export function ReferralsPage({
               </Text>
               <Box
                 style={{
-                  borderRadius: 8 * wxScale,
+                  borderRadius: 12 * wxScale,
                   padding: 16 * wxScale,
                   backgroundColor: cardBg,
                 }}
@@ -358,12 +409,13 @@ export function ReferralsPage({
                       display: 'flex',
                       alignItems: 'flex-start',
                       gap: 8 * wxScale,
-                      marginBottom: index < REFERRAL_RULES.length - 1 ? 8 * wxScale : 0,
+                      marginBottom: index < REFERRAL_RULES.length - 1 ? 12 * wxScale : 0,
                     }}
                   >
                     <Text
                       style={{
-                        fontSize: 12 * wxScale,
+                        fontSize: 13 * wxScale,
+                        fontWeight: 500,
                         color: primaryColor,
                       }}
                     >
@@ -371,9 +423,10 @@ export function ReferralsPage({
                     </Text>
                     <Text
                       style={{
-                        fontSize: 12 * wxScale,
+                        fontSize: 13 * wxScale,
                         color: textSecondary,
                         flex: 1,
+                        lineHeight: 1.5,
                       }}
                     >
                       {rule}
@@ -386,20 +439,23 @@ export function ReferralsPage({
             {/* 邀请记录入口 */}
             <Box style={{ marginTop: 16 * wxScale }}>
               <Box
+                onClick={onNavigateToRecords}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   padding: 16 * wxScale,
-                  borderRadius: 8 * wxScale,
+                  borderRadius: 12 * wxScale,
                   backgroundColor: cardBg,
+                  cursor: 'pointer',
                 }}
               >
                 <Box style={{ display: 'flex', alignItems: 'center', gap: 12 * wxScale }}>
-                  <Icon name="list" size={24 * wxScale} color={primaryColor} />
+                  <Icon name="list" size={22 * wxScale} color={primaryColor} />
                   <Text
                     style={{
                       fontSize: 14 * wxScale,
+                      fontWeight: 500,
                       color: textPrimary,
                     }}
                   >

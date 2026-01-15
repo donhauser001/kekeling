@@ -35,8 +35,6 @@ export const orderStatuses = [
 
 export const serviceCategories = [
   { label: '陪诊服务', value: '陪诊服务', icon: Stethoscope },
-  { label: '诊断服务', value: '诊断服务', icon: MessageSquare },
-  { label: '跑腿服务', value: '跑腿服务', icon: Truck },
-  { label: '酒店服务', value: '酒店服务', icon: Building },
+  { label: '代办服务', value: '代办服务', icon: Truck },
 ] as const
 

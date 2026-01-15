@@ -40,16 +40,32 @@ export function ApplyForm({
     emergencyContact: '',
     emergencyPhone: '',
     inviteCode: '',
+    // 新增字段
+    age: '',
+    hospitals: [],
+    departments: [],
+    specialties: '',
+    serviceAreas: '',
   })
   const [inviter, setInviter] = useState<InviterInfo | null>(null)
   const [inviteCodeError, setInviteCodeError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  const updateField = (field: keyof ApplyFormData, value: string) => {
+  const updateField = (field: keyof ApplyFormData, value: string | string[]) => {
     setFormData(prev => ({ ...prev, [field]: value }))
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }))
+    }
+
+    // 从身份证自动计算年龄
+    if (field === 'idCard' && typeof value === 'string' && value.length >= 14) {
+      const birthYear = value.length === 18 ? value.substring(6, 10) : '19' + value.substring(6, 8)
+      const currentYear = new Date().getFullYear()
+      const calculatedAge = currentYear - parseInt(birthYear, 10)
+      if (calculatedAge >= 18 && calculatedAge <= 70) {
+        setFormData(prev => ({ ...prev, age: calculatedAge.toString() }))
+      }
     }
   }
 
@@ -314,6 +330,105 @@ export function ApplyForm({
             placeholder="请输入紧急联系人电话"
             type="tel"
             maxLength={11}
+            style={{
+              flex: 1,
+              fontSize: 14 * wxScale,
+              color: colors.textPrimary,
+              backgroundColor: 'transparent',
+            }}
+          />
+        </FormItem>
+      </Box>
+
+      {/* 专业信息（#27 陪诊员注册字段补齐） */}
+      <Box
+        style={{
+          padding: 16 * wxScale,
+          borderRadius: 12 * wxScale,
+          backgroundColor: colors.cardBg,
+          marginBottom: 12 * wxScale,
+        }}
+      >
+        <Text
+          style={{
+            display: 'block',
+            fontSize: 16 * wxScale,
+            fontWeight: 600,
+            color: colors.textPrimary,
+            marginBottom: 16 * wxScale,
+          }}
+        >
+          专业信息（选填）
+        </Text>
+
+        {/* 年龄（自动从身份证计算） */}
+        <FormItem label="年龄" colors={colors}>
+          <Input
+            value={formData.age}
+            onChange={(value) => updateField('age', value)}
+            placeholder="输入身份证后自动计算"
+            type="number"
+            disabled={!!formData.idCard && formData.age !== ''}
+            style={{
+              flex: 1,
+              fontSize: 14 * wxScale,
+              color: formData.idCard && formData.age ? colors.textSecondary : colors.textPrimary,
+              backgroundColor: 'transparent',
+            }}
+          />
+        </FormItem>
+
+        {/* 服务医院 */}
+        <FormItem label="服务医院" colors={colors}>
+          <Input
+            value={formData.hospitals.join('、')}
+            onChange={(value) => updateField('hospitals', value.split('、').filter(Boolean))}
+            placeholder="请输入服务医院（多个用顿号分隔）"
+            style={{
+              flex: 1,
+              fontSize: 14 * wxScale,
+              color: colors.textPrimary,
+              backgroundColor: 'transparent',
+            }}
+          />
+        </FormItem>
+
+        {/* 擅长科室 */}
+        <FormItem label="擅长科室" colors={colors}>
+          <Input
+            value={formData.departments.join('、')}
+            onChange={(value) => updateField('departments', value.split('、').filter(Boolean))}
+            placeholder="请输入擅长科室（多个用顿号分隔）"
+            style={{
+              flex: 1,
+              fontSize: 14 * wxScale,
+              color: colors.textPrimary,
+              backgroundColor: 'transparent',
+            }}
+          />
+        </FormItem>
+
+        {/* 擅长病种 */}
+        <FormItem label="擅长病种" colors={colors}>
+          <Input
+            value={formData.specialties}
+            onChange={(value) => updateField('specialties', value)}
+            placeholder="请输入擅长病种"
+            style={{
+              flex: 1,
+              fontSize: 14 * wxScale,
+              color: colors.textPrimary,
+              backgroundColor: 'transparent',
+            }}
+          />
+        </FormItem>
+
+        {/* 服务领域 */}
+        <FormItem label="服务领域" colors={colors} noBorder>
+          <Input
+            value={formData.serviceAreas}
+            onChange={(value) => updateField('serviceAreas', value)}
+            placeholder="请输入服务/产品领域"
             style={{
               flex: 1,
               fontSize: 14 * wxScale,

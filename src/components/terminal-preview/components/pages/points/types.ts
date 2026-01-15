@@ -65,5 +65,7 @@ export interface PointsTask {
   icon: string
   points: number
   completed: boolean
+  /** 自定义积分显示文本（如 "1元+1积分"） */
+  pointsText?: string
 }
 

@@ -26,6 +26,7 @@ export const ORDER_ENTRY_CONFIG: OrderEntryConfig[] = [
 // ============================================================================
 
 export const MENU_ITEMS: MenuItem[] = [
+  { key: 'favorites', title: '我的收藏', icon: 'like' },
   { key: 'patients', title: '就诊人管理', icon: 'peoples' },
   { key: 'address', title: '地址管理', icon: 'map-draw' },
   { key: 'my-reviews', title: '我的评价', icon: 'comment' },

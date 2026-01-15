@@ -24,8 +24,9 @@ export default function UserOrdersPage() {
   const router = useRouter()
   const [themeSettings, setThemeSettings] = useState<ThemeSettings>(defaultThemeSettings)
 
-  // 从路由参数获取初始 tab
+  // 从路由参数获取初始 tab 和是否包含会员订单
   const initialTab = router.params?.tab || 'all'
+  const includeMembership = router.params?.includeMembership === 'true'
 
   useEffect(() => {
     console.log('[UserOrdersPage] 页面加载, tab:', initialTab)
@@ -92,7 +93,7 @@ export default function UserOrdersPage() {
       <UserOrdersPageComponent
         themeSettings={themeSettings}
         isDarkMode={false}
-        pageParams={{ tab: initialTab }}
+        pageParams={{ tab: initialTab, includeMembership: includeMembership ? 'true' : 'false' }}
         onBack={handleBack}
         onNavigate={handleNavigate}
         onPageChange={handlePageChange}

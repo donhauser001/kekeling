@@ -22,6 +22,9 @@ export type { PointsRecordsPageProps } from './PointsRecordsPage'
 export { ReferralsPage } from './ReferralsPage'
 export type { ReferralsPageProps } from './ReferralsPage'
 
+export { ReferralRecordsPage } from './referrals/ReferralRecordsPage'
+export type { ReferralRecordsPageProps } from './referrals/ReferralRecordsPage'
+
 export { CampaignsPage } from './CampaignsPage'
 export type { CampaignsPageProps } from './CampaignsPage'
 

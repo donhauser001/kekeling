@@ -6,7 +6,6 @@ import {
   Param,
   UseGuards,
   Req,
-  RawBodyRequest,
   BadRequestException,
 } from '@nestjs/common';
 import { PaymentService } from './payment.service';
@@ -57,11 +56,44 @@ export class PaymentController {
   }
 
   /**
+   * 创建会员订单预支付
+   */
+  @Post('membership-prepay')
+  @UseGuards(JwtAuthGuard)
+  async createMembershipPrepay(
+    @Body() body: { orderId: string },
+    @CurrentUser() currentUser: any,
+  ) {
+    // openid 可能在顶层或 user 对象中
+    const openid = currentUser?.openid || currentUser?.user?.openid;
+    
+    if (!openid) {
+      console.error('[Payment:membership-prepay] 用户 openid 缺失，无法发起支付', {
+        userId: currentUser?.sub || currentUser?.user?.id,
+      });
+      throw new BadRequestException('用户未绑定微信，无法发起支付');
+    }
+    
+    console.log('[Payment:membership-prepay] 发起会员支付:', { orderId: body.orderId, openid: openid.substring(0, 10) + '...' });
+    
+    const result = await this.paymentService.createMembershipPrepay({
+      orderId: body.orderId,
+      openid,
+    });
+    return ApiResponse.success(result);
+  }
+
+  /**
    * 微信支付回调
+   * 接收微信服务器发送的 XML 格式支付结果通知
    */
   @Post('notify')
-  async handleNotify(@Req() req: RawBodyRequest<Request>) {
-    const xmlData = req.body?.toString() || '';
+  async handleNotify(@Req() req: Request) {
+    // 通过自定义中间件读取的原始 XML 数据
+    const xmlData = (req as any).rawXmlBody || '';
+    
+    console.log('[Payment:notify] 收到回调请求, 数据长度:', xmlData.length, ', 前100字符:', xmlData.substring(0, 100));
+    
     const result = await this.paymentService.handlePaymentNotify(xmlData);
 
     // 返回微信要求的 XML 格式

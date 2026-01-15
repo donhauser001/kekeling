@@ -75,6 +75,10 @@ export const FeedbackPage = lazy(() =>
   import('./feedback').then(m => ({ default: m.FeedbackPage }))
 )
 
+export const FavoritesPage = lazy(() =>
+  import('./favorites').then(m => ({ default: m.FavoritesPage }))
+)
+
 export const SearchPage = lazy(() =>
   import('./SearchPage').then(m => ({ default: m.SearchPage }))
 )

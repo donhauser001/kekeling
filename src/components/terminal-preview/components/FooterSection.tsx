@@ -2,11 +2,20 @@
  * 底部信息区组件
  *
  * 使用跨宿主原语组件，支持 Web 和小程序
+ * 
+ * #23 排版调整：三行布局
+ * - 第一行：品牌名
+ * - 第二行：品牌口号
+ * - 第三行：客服热线
  */
 
-import { Box, Text } from '../ui/primitives'
+import { Box, Text, Image } from '../ui/primitives'
 import type { ThemeSettings, FooterVisiblePage } from '../types'
-import { BrandSection } from './BrandSection'
+import { getResourceUrl } from '../utils'
+import { isWxEnvironment } from '../platform/env'
+
+// 小程序环境的缩放比例
+const wxScale = isWxEnvironment() ? 1.1 : 1
 
 interface FooterSectionProps {
   themeSettings: ThemeSettings
@@ -28,6 +37,27 @@ export function FooterSection({ themeSettings, isDarkMode, currentPage = 'home' 
 
   const servicePhone = themeSettings.servicePhone || '400-888-8888'
   const showPhone = themeSettings.servicePhoneEnabled !== false
+  const textColor = isDarkMode ? '#9ca3af' : '#6b7280'
+  const brandNameColor = isDarkMode ? '#e5e7eb' : '#374151'
+
+  // Logo - 优先使用独立开关，向后兼容 footerLayout（#34）
+  const lightLogo = themeSettings.footerLogo || themeSettings.headerLogo
+  const darkLogo = themeSettings.footerLogoDark || themeSettings.headerLogoDark
+  const selectedLogo = isDarkMode ? (darkLogo || lightLogo) : (lightLogo || darkLogo)
+  const logoUrl = getResourceUrl(selectedLogo)
+  // 如果 footerShowLogo 显式设置，使用它；否则从 footerLayout 推断
+  const showLogo = themeSettings.footerShowLogo !== undefined
+    ? themeSettings.footerShowLogo
+    : themeSettings.footerLayout?.includes('logo')
+  const hasLogo = showLogo && logoUrl
+  // 品牌名显示开关：显式设置或从 footerLayout 推断
+  const showName = themeSettings.footerShowName !== undefined
+    ? themeSettings.footerShowName
+    : (themeSettings.footerLayout?.includes('name') || themeSettings.footerLayout === 'logo-slogan' ? false : true)
+  // 品牌口号显示开关
+  const showSlogan = themeSettings.footerShowSlogan !== undefined
+    ? themeSettings.footerShowSlogan
+    : themeSettings.footerLayout?.includes('slogan')
 
   return (
     <Box
@@ -35,39 +65,85 @@ export function FooterSection({ themeSettings, isDarkMode, currentPage = 'home' 
       style={{
         position: 'relative',
         zIndex: 10,
-        paddingLeft: 16,
-        paddingRight: 16,
-        paddingTop: 24,
-        paddingBottom: 24,
+        paddingLeft: 16 * wxScale,
+        paddingRight: 16 * wxScale,
+        paddingTop: 24 * wxScale,
+        paddingBottom: 24 * wxScale,
         textAlign: 'center',
         backgroundColor: isDarkMode ? '#1f1f1f' : '#f9fafb',
       }}
     >
-      <BrandSection
-        layout={themeSettings.footerLayout}
-        lightLogo={themeSettings.footerLogo || themeSettings.headerLogo}
-        darkLogo={themeSettings.footerLogoDark || themeSettings.headerLogoDark}
-        themeSettings={themeSettings}
-        isDarkMode={isDarkMode}
-        isFooter
-      />
-      {showPhone && (
-        <Box
-          className='mt-3 flex items-center justify-center gap-1.5 text-xs'
-          style={{
-            marginTop: 12,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 6,
-          }}
-        >
-          <Text style={{ fontSize: 12, color: isDarkMode ? '#6b7280' : '#9ca3af' }}>📞</Text>
-          <Text style={{ fontSize: 12, color: isDarkMode ? '#6b7280' : '#9ca3af' }}>
-            客服热线：{servicePhone}
+      {/* #23: 三行排版布局 */}
+      <Box
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 8 * wxScale,
+        }}
+      >
+        {/* 第一行：Logo + 品牌名（根据开关独立控制） */}
+        {(hasLogo || showName) && (
+          <Box
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8 * wxScale,
+            }}
+          >
+            {hasLogo && (
+              <Image
+                src={logoUrl}
+                alt='Logo'
+                style={{ height: 24 * wxScale, width: 48 * wxScale, objectFit: 'contain' }}
+                mode="aspectFit"
+              />
+            )}
+            {showName && (
+              <Text
+                style={{
+                  fontSize: 16 * wxScale,
+                  fontWeight: 600,
+                  color: brandNameColor,
+                }}
+              >
+                {themeSettings.brandName || '科科灵陪诊'}
+              </Text>
+            )}
+          </Box>
+        )}
+
+        {/* 第二行：品牌口号（根据开关控制） */}
+        {showSlogan && themeSettings.brandSlogan && (
+          <Text
+            style={{
+              fontSize: 13 * wxScale,
+              color: textColor,
+            }}
+          >
+            {themeSettings.brandSlogan}
           </Text>
-        </Box>
-      )}
+        )}
+
+        {/* 第三行：客服热线 */}
+        {showPhone && (
+          <Box
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 4 * wxScale,
+              marginTop: 4 * wxScale,
+            }}
+          >
+            <Text style={{ fontSize: 12 * wxScale, color: textColor }}>📞</Text>
+            <Text style={{ fontSize: 12 * wxScale, color: textColor }}>
+              客服热线：{servicePhone}
+            </Text>
+          </Box>
+        )}
+      </Box>
     </Box>
   )
 }

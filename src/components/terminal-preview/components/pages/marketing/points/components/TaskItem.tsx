@@ -1,5 +1,10 @@
 /**
  * 积分中心页面 - 任务项子组件
+ *
+ * 支持三种状态：
+ * - pending: 未完成（显示"去完成"按钮）
+ * - completed: 已完成待领取（显示"领取"按钮，高亮）
+ * - claimed: 已领取（显示"已领取"，置灰）
  */
 
 import { Box, Text, Button, Icon } from '../../../../../ui/primitives'
@@ -12,17 +17,91 @@ interface TaskItemProps {
   task: PointsTask
   themeSettings: ThemeSettings
   isDarkMode: boolean
-  onTaskClick?: (taskId: string) => void
+  /** 领取中状态（用于禁用按钮） */
+  isClaiming?: boolean
+  /** 去完成按钮点击 */
+  onGoComplete?: (taskCode: string) => void
+  /** 领取按钮点击 */
+  onClaim?: (taskCode: string) => void
 }
 
-export function TaskItem({ task, themeSettings, isDarkMode, onTaskClick }: TaskItemProps) {
+export function TaskItem({
+  task,
+  themeSettings,
+  isDarkMode,
+  isClaiming = false,
+  onGoComplete,
+  onClaim,
+}: TaskItemProps) {
   const cardBg = isDarkMode ? '#2a2a2a' : '#ffffff'
   const textPrimary = isDarkMode ? '#f3f4f6' : '#111827'
   const textSecondary = isDarkMode ? '#9ca3af' : '#6b7280'
+  const primaryColor = themeSettings.primaryColor
 
+  // 按钮点击处理
   const handleClick = () => {
-    if (!task.completed && onTaskClick) {
-      onTaskClick(task.id)
+    if (isClaiming) return
+
+    switch (task.status) {
+      case 'pending':
+        onGoComplete?.(task.code)
+        break
+      case 'completed':
+        onClaim?.(task.code)
+        break
+      case 'claimed':
+        // 已领取，不做任何操作
+        break
+    }
+  }
+
+  // 按钮文字
+  const getButtonText = () => {
+    if (isClaiming && task.status === 'completed') {
+      return '领取中...'
+    }
+    switch (task.status) {
+      case 'pending':
+        return '去完成'
+      case 'completed':
+        return '领取'
+      case 'claimed':
+        return '已领取'
+    }
+  }
+
+  // 按钮样式
+  const getButtonStyle = () => {
+    const baseStyle = {
+      paddingLeft: 12 * wxScale,
+      paddingRight: 12 * wxScale,
+      paddingTop: isWxEnvironment() ? 4 * wxScale : 4,
+      paddingBottom: isWxEnvironment() ? 4 * wxScale : 4,
+      borderRadius: 9999,
+    }
+
+    switch (task.status) {
+      case 'pending':
+        // 未完成：主题色背景
+        return {
+          ...baseStyle,
+          backgroundColor: primaryColor,
+          opacity: 1,
+        }
+      case 'completed':
+        // 可领取：高亮，带呼吸效果
+        return {
+          ...baseStyle,
+          backgroundColor: '#22c55e', // 绿色，表示可领取
+          opacity: isClaiming ? 0.6 : 1,
+        }
+      case 'claimed':
+        // 已领取：置灰
+        return {
+          ...baseStyle,
+          backgroundColor: '#9ca3af',
+          opacity: 0.6,
+        }
     }
   }
 
@@ -39,7 +118,7 @@ export function TaskItem({ task, themeSettings, isDarkMode, onTaskClick }: TaskI
       }}
     >
       <Box style={{ display: 'flex', alignItems: 'center', gap: 12 * wxScale }}>
-        <Icon name={task.icon as any} size={24 * wxScale} color={themeSettings.primaryColor} />
+        <Icon name={task.icon as any} size={24 * wxScale} color={primaryColor} />
         <Box>
           <Text
             style={{
@@ -52,30 +131,24 @@ export function TaskItem({ task, themeSettings, isDarkMode, onTaskClick }: TaskI
           <Text
             style={{
               fontSize: 12 * wxScale,
-              color: textSecondary,
+              color: task.status === 'completed' ? '#22c55e' : textSecondary,
+              fontWeight: task.status === 'completed' ? 500 : 400,
             }}
           >
             +{task.points} 积分
+            {task.status === 'completed' && ' · 可领取'}
           </Text>
         </Box>
       </Box>
       <Button
         onClick={handleClick}
-        style={{
-          paddingLeft: 12 * wxScale,
-          paddingRight: 12 * wxScale,
-          paddingTop: isWxEnvironment() ? 4 * wxScale : 4,
-          paddingBottom: isWxEnvironment() ? 4 * wxScale : 4,
-          borderRadius: 9999,
-          backgroundColor: task.completed ? '#9ca3af' : themeSettings.primaryColor,
-          opacity: task.completed ? 0.6 : 1,
-        }}
+        disabled={task.status === 'claimed' || isClaiming}
+        style={getButtonStyle()}
       >
         <Text style={{ fontSize: 12 * wxScale, color: '#ffffff' }}>
-          {task.completed ? '已完成' : '去完成'}
+          {getButtonText()}
         </Text>
       </Button>
     </Box>
   )
 }
-

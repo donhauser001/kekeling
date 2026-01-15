@@ -1,13 +1,13 @@
-import { IsString, IsOptional, IsInt, IsBoolean, IsEnum, IsArray, Min, Max } from 'class-validator';
+import { IsString, IsOptional, IsInt, IsBoolean, IsEnum, IsArray, Min, Max, IsNumber } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
 // ========== 用户端 DTO ==========
 
 export class PurchaseMembershipDto {
-  @ApiProperty({ description: '套餐ID' })
+  @ApiProperty({ description: '会员卡ID（即 levelId）' })
   @IsString()
-  planId: string;
+  planId: string; // 兼容旧字段名，实际是 levelId
 }
 
 export class RefundMembershipOrderDto {
@@ -20,62 +20,107 @@ export class RefundMembershipOrderDto {
 // ========== 管理端 DTO ==========
 
 export class CreateMembershipLevelDto {
-  @ApiProperty({ description: '等级名称' })
+  @ApiProperty({ description: '会员卡名称（如：黄金月卡、铂金季卡）' })
   @IsString()
   name: string;
 
-  @ApiProperty({ description: '等级代码' })
-  @IsString()
-  code: string;
+  // code 由后端自动生成，前端无需传入
 
-  @ApiPropertyOptional({ description: '等级图标' })
+  @ApiProperty({ description: '售价' })
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  price: number;
+
+  @ApiPropertyOptional({ description: '原价（划线价）' })
+  @Type(() => Number)
+  @IsNumber()
+  @IsOptional()
+  originalPrice?: number;
+
+  @ApiProperty({ description: '有效天数' })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  duration: number;
+
+  @ApiPropertyOptional({ description: '图标URL' })
   @IsString()
   @IsOptional()
   icon?: string;
 
-  @ApiPropertyOptional({ description: '等级颜色' })
+  @ApiPropertyOptional({ description: '主题色' })
   @IsString()
   @IsOptional()
   color?: string;
 
-  @ApiProperty({ description: '折扣率（0-100，90表示9折）' })
+  @ApiProperty({ description: '折扣率（0-100，90表示9折）', default: 100 })
+  @Type(() => Number)
   @IsInt()
   @Min(0)
   @Max(100)
   discount: number;
 
-  @ApiProperty({ description: '超时费减免比例（0-100）' })
+  @ApiPropertyOptional({ description: '超时费减免比例（0-100）', default: 0 })
   @IsInt()
   @Min(0)
   @Max(100)
-  overtimeFeeWaiver: number;
+  @IsOptional()
+  overtimeFeeWaiver?: number;
 
-  @ApiProperty({ description: '权益详情（JSON）' })
-  benefits: any;
+  @ApiPropertyOptional({ description: '权益详情（JSON）' })
+  @IsOptional()
+  benefits?: any;
 
-  @ApiPropertyOptional({ description: '排序' })
+  @ApiPropertyOptional({ description: '简短描述' })
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @ApiPropertyOptional({ description: '是否推荐', default: false })
+  @IsBoolean()
+  @IsOptional()
+  recommended?: boolean;
+
+  @ApiPropertyOptional({ description: '排序', default: 0 })
   @IsInt()
   @IsOptional()
   sort?: number;
 
-  @ApiPropertyOptional({ description: '状态' })
+  @ApiPropertyOptional({ description: '状态', default: 'active' })
   @IsEnum(['active', 'inactive'])
   @IsOptional()
   status?: string;
 }
 
 export class UpdateMembershipLevelDto {
-  @ApiPropertyOptional({ description: '等级名称' })
+  @ApiPropertyOptional({ description: '会员卡名称' })
   @IsString()
   @IsOptional()
   name?: string;
 
-  @ApiPropertyOptional({ description: '等级图标' })
+  @ApiPropertyOptional({ description: '售价' })
+  @Type(() => Number)
+  @IsOptional()
+  price?: number;
+
+  @ApiPropertyOptional({ description: '原价（划线价）' })
+  @Type(() => Number)
+  @IsOptional()
+  originalPrice?: number;
+
+  @ApiPropertyOptional({ description: '有效天数' })
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  duration?: number;
+
+  @ApiPropertyOptional({ description: '图标URL' })
   @IsString()
   @IsOptional()
   icon?: string;
 
-  @ApiPropertyOptional({ description: '等级颜色' })
+  @ApiPropertyOptional({ description: '主题色' })
   @IsString()
   @IsOptional()
   color?: string;
@@ -97,6 +142,16 @@ export class UpdateMembershipLevelDto {
   @ApiPropertyOptional({ description: '权益详情（JSON）' })
   @IsOptional()
   benefits?: any;
+
+  @ApiPropertyOptional({ description: '简短描述' })
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @ApiPropertyOptional({ description: '是否推荐' })
+  @IsBoolean()
+  @IsOptional()
+  recommended?: boolean;
 
   @ApiPropertyOptional({ description: '排序' })
   @IsInt()

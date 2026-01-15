@@ -10,17 +10,34 @@ import { request, type PaginatedData } from './request'
 
 export interface MembershipLevel {
   id: string
-  name: string
-  level: number
-  discount: number
-  price: number
-  duration: number
-  bonusDays: number
-  description: string | null
-  benefits: string[]
+  name: string          // 会员卡名称：黄金月卡、铂金季卡
+  code: string          // 唯一编码
+  price: number         // 售价
+  originalPrice?: number // 原价（划线价）
+  duration: number      // 有效天数
+  icon?: string         // 图标
+  color?: string        // 主题色
+  discount: number      // 折扣率 90=9折
+  overtimeFeeWaiver: number // 超时费减免
+  benefits?: any        // 权益详情
+  description?: string  // 简短描述
+  recommended: boolean  // 推荐标记
+  sort: number          // 排序
   status: 'active' | 'inactive'
   createdAt: string
   updatedAt: string
+  // 统计字段（后端返回）
+  memberCount?: number
+  orderCount?: number
+}
+
+// 会员等级列表响应（带统计信息）
+export interface MembershipLevelsResponse extends PaginatedData<MembershipLevel> {
+  stats?: {
+    totalUsers: number
+    activeMembers: number
+    normalUsers: number
+  }
 }
 
 export interface MembershipPlan {
@@ -62,14 +79,19 @@ export interface MembershipQuery {
 }
 
 export interface CreateMembershipLevelData {
-  name: string
-  level: number
-  discount: number
-  price: number
-  duration: number
-  bonusDays?: number
-  description?: string
-  benefits?: string[]
+  name: string           // 会员卡名称
+  // code 由后端自动生成，前端无需传入
+  price: number          // 售价
+  originalPrice?: number // 原价
+  duration: number       // 有效天数
+  icon?: string          // 图标
+  color?: string         // 主题色
+  discount: number       // 折扣率
+  overtimeFeeWaiver?: number // 超时费减免
+  benefits?: any         // 权益详情
+  description?: string   // 简短描述
+  recommended?: boolean  // 推荐标记
+  sort?: number          // 排序
   status?: 'active' | 'inactive'
 }
 
@@ -77,7 +99,7 @@ export interface UpdateMembershipLevelData extends Partial<CreateMembershipLevel
 
 export const membershipApi = {
   getLevels: (params?: MembershipQuery) =>
-    request<PaginatedData<MembershipLevel>>('/admin/membership/levels', { params }),
+    request<MembershipLevelsResponse>('/admin/membership/levels', { params }),
 
   getLevelById: (id: string) => request<MembershipLevel>(`/admin/membership/levels/${id}`),
 
@@ -713,6 +735,28 @@ export const pricingConfigApi = {
 
   update: (data: UpdatePricingConfigData) =>
     request<PricingConfig>('/admin/pricing/config', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+}
+
+// ============================================================================
+// 营销设置
+// ============================================================================
+
+export interface MarketingSettings {
+  membershipEnabled: boolean
+  pointsEnabled: boolean
+  couponsEnabled: boolean
+  campaignsEnabled: boolean
+  // 注意：邀请奖励开关已移至「积分与奖励」模块，通过 referral_rules 表控制
+}
+
+export const marketingSettingsApi = {
+  get: () => request<MarketingSettings>('/config/marketing/settings'),
+
+  update: (data: Partial<MarketingSettings>) =>
+    request<MarketingSettings>('/config/marketing/settings', {
       method: 'PUT',
       body: JSON.stringify(data),
     }),

@@ -84,22 +84,6 @@ export function SearchBar({ isDarkMode = false, themeSettings, onSearchClick }: 
         }}>
           搜索服务、医院、医生
         </Text>
-
-        {/* 右侧语音图标 */}
-        <Box
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: 26 * wxScale,
-            height: 26 * wxScale,
-            borderRadius: 13 * wxScale,
-            backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#f0f0f0',
-            flexShrink: 0,
-          }}
-        >
-          <Icon name="voice" size={13 * wxScale} color={placeholderColor} />
-        </Box>
       </Button>
     </Box>
   )

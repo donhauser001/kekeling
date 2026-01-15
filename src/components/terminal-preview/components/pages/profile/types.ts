@@ -11,13 +11,13 @@ import type { ThemeSettings, PreviewViewerRole, BannerAreaData } from '../../../
 export interface ProfilePageProps {
   themeSettings: ThemeSettings
   isDarkMode?: boolean
-  /** 当前视角角色 */
+  /** 当前视角角色（由 escortToken 推导） */
   effectiveViewerRole?: PreviewViewerRole
-  /** 点击陪诊员入口回调 */
+  /** 点击陪诊员入口回调（用户无资质时，跳转申请页） */
   onEscortEntryClick?: () => void
-  /** 点击进入工作台回调 */
+  /** 点击进入工作台回调（用户有资质时，可能需要登录） */
   onWorkbenchClick?: () => void
-  /** 退出陪诊员视角回调 */
+  /** 退出陪诊员视角回调（清除 escortToken） */
   onExitEscortMode?: () => void
   /** 导航到其他页面 */
   onNavigate?: (page: string, params?: Record<string, string>) => void
@@ -46,7 +46,7 @@ export interface UserProfile {
   nickname?: string | null
   phone?: string | null
   avatar?: string | null
-  isEscort?: boolean  // 是否已是陪诊员（审核通过）
+  isEscort?: boolean  // 是否已是陪诊员（审核通过，有资质）
   escortId?: string | null
 }
 
@@ -70,9 +70,13 @@ export interface MenuItem {
 
 export interface UserHeaderProps {
   userProfile?: UserProfile
-  isEscort: boolean
+  /** 是否处于陪诊员视角（基于 effectiveViewerRole） */
+  isEscortMode: boolean
+  /** 是否有陪诊员资质（基于 userProfile.isEscort） */
+  hasEscortQualification: boolean
   primaryColor: string
   onSettingsClick: () => void
+  /** 退出陪诊员视角回调 */
   onExitEscortMode?: () => void
 }
 
@@ -90,7 +94,8 @@ export interface MenuSectionProps {
 }
 
 export interface EscortCardProps {
-  isEscort: boolean
+  /** 是否有陪诊员资质 */
+  hasEscortQualification: boolean
   colors: ThemeColors
   primaryColor: string
   onEscortEntryClick?: () => void
@@ -102,4 +107,3 @@ export interface ServiceCardProps {
   primaryColor: string
   onClick?: () => void
 }
-

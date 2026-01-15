@@ -250,8 +250,7 @@ export function EscortProfileEditPage({
           style={{
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            position: 'relative',
+            justifyContent: 'space-between',
             height: 44 * wxScale,
             paddingLeft: 12 * wxScale,
             paddingRight: 12 * wxScale,
@@ -261,32 +260,27 @@ export function EscortProfileEditPage({
           <Box
             onClick={onBack}
             style={{
-              position: 'absolute',
-              left: 12 * wxScale,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              width: 36 * wxScale,
+              minWidth: 50 * wxScale,
               height: 36 * wxScale,
             }}
           >
             <Icon name="left" size={22 * wxScale} color="#fff" />
           </Box>
           {/* 标题 */}
-          <Text style={{ fontSize: 17 * wxScale, fontWeight: 600, color: '#fff' }}>
+          <Text style={{ fontSize: 17 * wxScale, fontWeight: 600, color: '#fff', textAlign: 'center' }}>
             编辑资料
           </Text>
           {/* 保存按钮 */}
           <Box
             onClick={isSaving ? undefined : handleSave}
             style={{
-              position: 'absolute',
-              right: 12 * wxScale,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              paddingLeft: 8 * wxScale,
-              paddingRight: 8 * wxScale,
+              minWidth: 50 * wxScale,
               height: 36 * wxScale,
               opacity: isSaving ? 0.5 : 1,
             }}

@@ -10,6 +10,7 @@ import {
   List,
   Search as SearchIcon,
   X,
+  Download,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -207,6 +208,73 @@ export function Orders() {
     }
   }
 
+  // 导出状态
+  const [isExporting, setIsExporting] = useState(false)
+
+  // 导出报表
+  const handleExport = () => {
+    if (orders.length === 0) {
+      toast.error('没有可导出的数据')
+      return
+    }
+
+    setIsExporting(true)
+
+    try {
+      // 状态映射
+      const statusMap: Record<string, string> = {
+        pending: '待处理',
+        assigned: '已派单',
+        arrived: '已到达',
+        in_progress: '进行中',
+        completed: '已完成',
+        cancelled: '已取消',
+        refunded: '已退款',
+      }
+
+      // 构建CSV内容
+      const headers = ['订单号', '服务名称', '客户姓名', '客户电话', '医院', '预约日期', '预约时间', '陪诊员', '状态', '金额', '创建时间']
+      const rows = orders.map(order => [
+        order.orderNo,
+        order.serviceName,
+        order.customerName,
+        order.customerPhone,
+        order.hospital,
+        order.appointmentDate ? new Date(order.appointmentDate).toLocaleDateString('zh-CN') : '-',
+        order.appointmentTime || '-',
+        order.escortName || '未分配',
+        statusMap[order.status] || order.status,
+        `¥${Number(order.amount || 0).toFixed(2)}`,
+        order.createdAt ? new Date(order.createdAt).toLocaleString('zh-CN') : '-',
+      ])
+
+      // 添加BOM以支持Excel正确识别UTF-8
+      const BOM = '\uFEFF'
+      const csvContent = BOM + [
+        headers.join(','),
+        ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      ].join('\n')
+
+      // 创建下载
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `订单报表_${new Date().toISOString().split('T')[0]}.csv`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+
+      toast.success(`已导出 ${orders.length} 条订单`)
+    } catch (err) {
+      console.error('导出失败', err)
+      toast.error('导出失败，请重试')
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
   return (
     <>
       <Header fixed>
@@ -226,7 +294,14 @@ export function Orders() {
             <h2 className='text-2xl font-bold tracking-tight'>订单管理</h2>
             <p className='text-muted-foreground'>管理所有服务订单和跟踪订单状态</p>
           </div>
-          <Button variant='outline'>导出报表</Button>
+          <Button variant='outline' onClick={handleExport} disabled={isExporting || isLoading}>
+            {isExporting ? (
+              <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+            ) : (
+              <Download className='mr-2 h-4 w-4' />
+            )}
+            导出报表
+          </Button>
         </div>
 
         {/* 统计卡片 */}

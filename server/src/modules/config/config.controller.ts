@@ -3,7 +3,7 @@ import { ApiTags, ApiOperation, ApiParam, ApiBody } from '@nestjs/swagger';
 import { ConfigService } from './config.service';
 import { SmsService } from '../escort-auth/sms.service';
 import { ApiResponse } from '../../common/response/api-response';
-import { type OrderSettings, type ThemeSettings, type BannerPosition, type BannerAreaConfig, type HomePageSettings, type SmsSettings, type MiniappSettings, type WechatPaySettings, type AlipaySettings } from './dto/config.dto';
+import { type OrderSettings, type ThemeSettings, type BannerPosition, type BannerAreaConfig, type HomePageSettings, type SmsSettings, type MiniappSettings, type WechatPaySettings, type AlipaySettings, type MarketingSettings } from './dto/config.dto';
 
 @ApiTags('系统配置')
 @Controller('config')
@@ -310,6 +310,24 @@ export class ConfigController {
       },
     };
     return ApiResponse.success(maskedData);
+  }
+
+  // ============================================
+  // 营销设置专用接口
+  // ============================================
+
+  @Get('marketing/settings')
+  @ApiOperation({ summary: '获取营销设置' })
+  async getMarketingSettings() {
+    const data = await this.configService.getMarketingSettings();
+    return ApiResponse.success(data);
+  }
+
+  @Put('marketing/settings')
+  @ApiOperation({ summary: '更新营销设置' })
+  async updateMarketingSettings(@Body() body: Partial<MarketingSettings>) {
+    const data = await this.configService.updateMarketingSettings(body);
+    return ApiResponse.success(data, '保存成功');
   }
 
   // ============================================

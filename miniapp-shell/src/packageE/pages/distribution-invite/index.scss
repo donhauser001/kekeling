@@ -5,6 +5,20 @@
   background-color: #f5f7fa;
 }
 
+// 重置小程序 Button 默认样式（用于分享按钮）
+.share-button-reset {
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  line-height: inherit !important;
+  font-size: inherit !important;
+  background: transparent !important;
+  
+  &::after {
+    display: none !important;
+  }
+}
+
 .page-loading {
   height: 100vh;
   display: flex;

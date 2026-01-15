@@ -21,6 +21,7 @@ async function bootstrap() {
 
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     httpsOptions,
+    rawBody: true, // 支持微信支付回调的 XML raw body
   });
 
   // ⚠️ 重要：CORS 必须在静态文件服务之前配置，否则字体文件无法跨域访问

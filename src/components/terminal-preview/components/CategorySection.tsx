@@ -65,14 +65,15 @@ function PinnedCategoryCard({
       }}
       onClick={onClick}
     >
-      {/* 左侧内容 */}
-      <Box className='flex-1 min-w-0' style={{ flex: 1, minWidth: 0 }}>
-        {/* 标题 + 数量 */}
-        <Box
-          className='flex items-center gap-2 mb-1.5'
-          style={{ display: 'flex', alignItems: 'center', gap: 8 * wxScale, marginBottom: 6 * wxScale }}
-        >
-          <Text style={{ fontSize: 18 * wxScale, fontWeight: 600, color }}>{category.name}</Text>
+        {/* 左侧内容 */}
+        <Box className='flex-1 min-w-0' style={{ flex: 1, minWidth: 0 }}>
+          {/* 标题 + 数量 */}
+          <Box
+            className='flex items-center gap-2 mb-1.5'
+            style={{ display: 'flex', alignItems: 'center', gap: 8 * wxScale, marginBottom: 6 * wxScale }}
+          >
+            {/* #20: 增大分类标题字号 18 -> 22 */}
+            <Text style={{ fontSize: 22 * wxScale, fontWeight: 600, color }}>{category.name}</Text>
           <Text
             style={{
               borderRadius: 12,
@@ -212,7 +213,8 @@ function PlaceholderCategories({
         >
           <Box style={{ flex: 1 }}>
             <Box style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-              <Text style={{ fontSize: 18, fontWeight: 600, color: primaryColor }}>陪诊服务</Text>
+              {/* #20: 增大分类标题字号 18 -> 22 */}
+              <Text style={{ fontSize: 22, fontWeight: 600, color: primaryColor }}>陪诊服务</Text>
               <Text
                 style={{
                   borderRadius: 12,
@@ -262,7 +264,8 @@ function PlaceholderCategories({
         >
           <Box style={{ flex: 1 }}>
             <Box style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-              <Text style={{ fontSize: 18, fontWeight: 600, color: '#22c55e' }}>代办服务</Text>
+              {/* #20: 增大分类标题字号 18 -> 22 */}
+              <Text style={{ fontSize: 22, fontWeight: 600, color: '#22c55e' }}>代办服务</Text>
               <Text
                 style={{
                   borderRadius: 12,

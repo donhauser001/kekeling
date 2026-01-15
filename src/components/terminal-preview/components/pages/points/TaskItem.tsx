@@ -47,7 +47,7 @@ export function TaskItem({ task, themeSettings, isDarkMode, onTaskClick }: TaskI
               color: textSecondary,
             }}
           >
-            +{task.points} 积分
+            {task.pointsText || `+${task.points} 积分`}
           </Text>
         </Box>
       </Box>

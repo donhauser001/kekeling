@@ -42,6 +42,18 @@ export interface ApplyFormData {
   emergencyContact: string
   emergencyPhone: string
   inviteCode: string
+  // 新增字段（#27 陪诊员注册字段补齐）
+  age: string // 用字符串方便表单处理，提交时转为数字
+  hospitals: string[] // 服务医院ID列表
+  departments: string[] // 擅长科室列表
+  specialties: string // 擅长病种
+  serviceAreas: string // 服务领域
+}
+
+// 医院信息（用于选择器展示）
+export interface HospitalOption {
+  id: string
+  name: string
 }
 
 export interface ThemeColors {

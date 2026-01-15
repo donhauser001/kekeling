@@ -25,3 +25,55 @@
     transform: rotate(360deg);
   }
 }
+
+// 功能关闭提示样式
+.feature-disabled-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background-color: #f5f7fa;
+  padding: 40px 20px;
+}
+
+.feature-disabled-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.feature-disabled-icon {
+  font-size: 64px;
+  margin-bottom: 24px;
+}
+
+.feature-disabled-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 12px;
+}
+
+.feature-disabled-desc {
+  font-size: 14px;
+  color: #6b7280;
+  margin-bottom: 32px;
+}
+
+.feature-disabled-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 160px;
+  height: 44px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  border-radius: 22px;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.feature-disabled-btn-text {
+  font-size: 16px;
+  font-weight: 500;
+  color: #fff;
+}

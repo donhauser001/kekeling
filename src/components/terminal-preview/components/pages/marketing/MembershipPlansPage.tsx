@@ -11,6 +11,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Box, Text, Icon, Button } from '../../../ui/primitives'
 import { isWxEnvironment } from '../../../platform/env'
+import { getWxBridge } from '../../../bridge'
 import type { ThemeSettings, MembershipPlanOverride } from '../../../types'
 import { previewApi } from '../../../api'
 import type { MembershipPlan } from '../../../api'
@@ -29,6 +30,10 @@ export interface MembershipPlansPageProps {
    * - array: 覆盖数据
    */
   plansOverride?: MembershipPlanOverride[]
+  /**
+   * 导航回调
+   */
+  onNavigate?: (page: string, params?: Record<string, string>) => void
 }
 
 // ============================================================================
@@ -47,6 +52,7 @@ export function MembershipPlansPage({
   isDarkMode,
   onBack,
   plansOverride,
+  onNavigate,
 }: MembershipPlansPageProps) {
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null)
   const [apiPlans, setApiPlans] = useState<MembershipPlan[]>([])
@@ -57,6 +63,7 @@ export function MembershipPlansPage({
   const [purchaseResult, setPurchaseResult] = useState<{
     success: boolean
     message: string
+    orderId?: string
   } | null>(null)
 
   // 颜色配置
@@ -111,25 +118,78 @@ export function MembershipPlansPage({
   const handlePurchase = async () => {
     if (!selectedPlanId || isPurchasing) return
 
+    const wxBridge = getWxBridge()
     setIsPurchasing(true)
     setPurchaseResult(null)
 
     try {
-      const result = await previewApi.purchaseMembership(selectedPlanId)
-      if (result.success) {
-        setPurchaseResult({
-          success: true,
-          message: '订单创建成功，请完成支付',
-        })
-        // 实际场景中这里会跳转到支付页面
-        // 预览器中仅展示成功提示
-      } else {
+      // Step 1: 创建会员订单
+      wxBridge.showToast({ title: '订单创建中...', icon: 'loading' })
+      const orderResult = await previewApi.purchaseMembership(selectedPlanId)
+
+      if (!orderResult.success || !orderResult.orderId) {
         setPurchaseResult({
           success: false,
-          message: result.message || '购买失败，请重试',
+          message: orderResult.message || '订单创建失败',
         })
+        setIsPurchasing(false)
+        return
+      }
+
+      console.log('[MembershipPlansPage] 订单创建成功:', orderResult.orderId)
+
+      // Step 2: 获取支付参数
+      wxBridge.showToast({ title: '正在调起支付...', icon: 'loading' })
+      const paymentParams = await previewApi.getMembershipPaymentParams(orderResult.orderId)
+      console.log('[MembershipPlansPage] 获取支付参数:', paymentParams)
+
+      // 检查是否是 0 元订单（免支付）
+      if ('freeOrder' in paymentParams && paymentParams.freeOrder) {
+        // 0 元订单，已自动完成
+        console.log('[MembershipPlansPage] 0元订单已自动完成')
+        setPurchaseResult({
+          success: true,
+          message: '会员开通成功！',
+          orderId: orderResult.orderId,
+        })
+        return
+      }
+
+      // Step 3: 调起微信支付
+      const payResult = await wxBridge.requestPayment({
+        timeStamp: paymentParams.timeStamp,
+        nonceStr: paymentParams.nonceStr,
+        package: paymentParams.package,
+        signType: paymentParams.signType as 'MD5' | 'HMAC-SHA256' | 'RSA',
+        paySign: paymentParams.paySign,
+      })
+
+      if (payResult.success) {
+        // 支付成功
+        setPurchaseResult({
+          success: true,
+          message: '会员开通成功！',
+          orderId: orderResult.orderId,
+        })
+      } else {
+        // 支付取消或失败
+        const errorMsg = payResult.errMsg || '支付未完成'
+        if (errorMsg.includes('cancel')) {
+          setPurchaseResult({
+            success: false,
+            message: '已取消支付，订单已保存，可稍后支付',
+            orderId: orderResult.orderId,
+          })
+        } else {
+          setPurchaseResult({
+            success: false,
+            message: errorMsg,
+            orderId: orderResult.orderId,
+          })
+        }
       }
     } catch (error: any) {
+      console.error('[MembershipPlansPage] 购买失败:', error)
       setPurchaseResult({
         success: false,
         message: error.message || '网络错误，请重试',
@@ -141,10 +201,14 @@ export function MembershipPlansPage({
 
   // 关闭结果提示
   const handleCloseResult = () => {
-    setPurchaseResult(null)
     if (purchaseResult?.success) {
-      onBack?.() // 购买成功后返回
+      // 支付成功，跳转到订单列表
+      onNavigate?.('user-orders')
+    } else if (purchaseResult?.orderId) {
+      // 支付失败但有订单，跳转到订单列表查看待支付订单
+      onNavigate?.('user-orders')
     }
+    setPurchaseResult(null)
   }
 
   return (
@@ -392,7 +456,7 @@ export function MembershipPlansPage({
                   textAlign: 'center',
                 }}
               >
-                {purchaseResult.success ? '开通成功' : '开通失败'}
+                {purchaseResult.success ? '开通成功' : purchaseResult.orderId ? '支付未完成' : '开通失败'}
               </Text>
               <Text
                 style={{
@@ -419,7 +483,7 @@ export function MembershipPlansPage({
                 }}
               >
                 <Text style={{ fontSize: 14 * wxScale, color: '#fff' }}>
-                  {purchaseResult.success ? '返回' : '关闭'}
+                  {purchaseResult.success ? '查看订单' : purchaseResult.orderId ? '查看订单' : '关闭'}
                 </Text>
               </Button>
             </Box>

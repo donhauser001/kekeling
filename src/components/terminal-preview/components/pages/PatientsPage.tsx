@@ -454,12 +454,12 @@ export function PatientsPage({
         paddingBottom: 16 * wxScale,
       }}
     >
-      {/* 顶部导航栏 */}
+      {/* 顶部导航栏 - 符合规范 3.3.2 */}
       <Box
         style={{
           position: 'sticky',
           top: 0,
-          zIndex: 20,
+          zIndex: 100,
           paddingTop: wxSafeAreaTop,
           backgroundColor: primaryColor,
         }}
@@ -468,121 +468,118 @@ export function PatientsPage({
           style={{
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
+            justifyContent: 'center',
+            position: 'relative',
+            height: 44 * wxScale,
+            paddingLeft: 12 * wxScale,
+            paddingRight: 12 * wxScale,
+          }}
+        >
+          {/* 返回按钮（绝对定位左侧） */}
+          <Box
+            onClick={onBack}
+            style={{
+              position: 'absolute',
+              left: 12 * wxScale,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 36 * wxScale,
+              height: 36 * wxScale,
+            }}
+          >
+            <Icon name="left" size={22 * wxScale} color="#fff" />
+          </Box>
+          {/* 标题（居中） */}
+          <Text style={{ fontSize: 17 * wxScale, fontWeight: 600, color: '#fff' }}>
+            就诊人管理
+          </Text>
+          {/* 右侧区域留空，不放操作按钮（避免胶囊遮挡） */}
+        </Box>
+      </Box>
+
+      {/* 就诊人列表 */}
+      <ScrollView style={{ flex: 1 }}>
+        {/* 内容容器 - 小程序中 ScrollView 的 padding 可能不生效，用 Box 包裹 */}
+        <Box
+          style={{
             paddingLeft: 12 * wxScale,
             paddingRight: 12 * wxScale,
             paddingTop: 12 * wxScale,
             paddingBottom: 12 * wxScale,
           }}
         >
-          <Box
-            onClick={onBack}
-            style={{
-              width: 32 * wxScale,
-              height: 32 * wxScale,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Icon name="left" size={20 * wxScale} color="#fff" />
-          </Box>
-          <Text style={{ fontSize: 16 * wxScale, fontWeight: 600, color: '#fff' }}>
-            就诊人管理
-          </Text>
-          <Box
-            onClick={handleAdd}
-            style={{
-              width: 32 * wxScale,
-              height: 32 * wxScale,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Icon name="plus" size={20 * wxScale} color="#fff" />
-          </Box>
-        </Box>
-      </Box>
-
-      {/* 就诊人列表 */}
-      <ScrollView
-        style={{
-          paddingLeft: 12 * wxScale,
-          paddingRight: 12 * wxScale,
-          paddingTop: 12 * wxScale,
-        }}
-      >
-        {patients.length === 0 ? (
-          <Box
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              paddingTop: 64 * wxScale,
-              paddingBottom: 64 * wxScale,
-            }}
-          >
-            <Icon name="user" size={64 * wxScale} color={textMuted} />
-            <Text style={{ marginTop: 16 * wxScale, fontSize: 14 * wxScale, color: textMuted }}>
-              暂无就诊人信息
-            </Text>
+          {patients.length === 0 ? (
             <Box
-              onClick={handleAdd}
-              style={{
-                marginTop: 16 * wxScale,
-                paddingLeft: 24 * wxScale,
-                paddingRight: 24 * wxScale,
-                paddingTop: isWxEnvironment() ? 8 * wxScale : 6,
-                paddingBottom: isWxEnvironment() ? 8 * wxScale : 6,
-                borderRadius: 9999,
-                backgroundColor: primaryColor,
-              }}
-            >
-              <Text style={{ fontSize: 14 * wxScale, color: '#fff' }}>添加就诊人</Text>
-            </Box>
-          </Box>
-        ) : (
-          <>
-            {patients.map(patient => (
-              <PatientCard
-                key={patient.id}
-                patient={patient}
-                isMenuOpen={activeMenuId === patient.id}
-                onToggleMenu={() => setActiveMenuId(activeMenuId === patient.id ? null : patient.id)}
-                onEdit={() => handleEdit(patient.id)}
-                onSetDefault={() => handleSetDefault(patient.id)}
-                onDelete={() => handleDelete(patient.id)}
-                themeSettings={themeSettings}
-                isDarkMode={isDarkMode}
-              />
-            ))}
-
-            {/* 底部添加按钮 */}
-            <Box
-              onClick={handleAdd}
               style={{
                 display: 'flex',
+                flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: 8 * wxScale,
-                paddingTop: 12 * wxScale,
-                paddingBottom: 12 * wxScale,
-                borderRadius: 12 * wxScale,
-                backgroundColor: `${primaryColor}10`,
-                borderWidth: 1,
-                borderColor: primaryColor,
-                borderStyle: 'dashed',
+                paddingTop: 64 * wxScale,
+                paddingBottom: 64 * wxScale,
               }}
             >
-              <Icon name="plus" size={16 * wxScale} color={primaryColor} />
-              <Text style={{ fontSize: 14 * wxScale, fontWeight: 500, color: primaryColor }}>
-                添加就诊人
+              <Icon name="user" size={64 * wxScale} color={textMuted} />
+              <Text style={{ marginTop: 16 * wxScale, fontSize: 14 * wxScale, color: textMuted }}>
+                暂无就诊人信息
               </Text>
+              <Box
+                onClick={handleAdd}
+                style={{
+                  marginTop: 16 * wxScale,
+                  paddingLeft: 24 * wxScale,
+                  paddingRight: 24 * wxScale,
+                  paddingTop: isWxEnvironment() ? 8 * wxScale : 6,
+                  paddingBottom: isWxEnvironment() ? 8 * wxScale : 6,
+                  borderRadius: 9999,
+                  backgroundColor: primaryColor,
+                }}
+              >
+                <Text style={{ fontSize: 14 * wxScale, color: '#fff' }}>添加就诊人</Text>
+              </Box>
             </Box>
-          </>
-        )}
+          ) : (
+            <>
+              {patients.map(patient => (
+                <PatientCard
+                  key={patient.id}
+                  patient={patient}
+                  isMenuOpen={activeMenuId === patient.id}
+                  onToggleMenu={() => setActiveMenuId(activeMenuId === patient.id ? null : patient.id)}
+                  onEdit={() => handleEdit(patient.id)}
+                  onSetDefault={() => handleSetDefault(patient.id)}
+                  onDelete={() => handleDelete(patient.id)}
+                  themeSettings={themeSettings}
+                  isDarkMode={isDarkMode}
+                />
+              ))}
+
+              {/* 底部添加按钮 */}
+              <Box
+                onClick={handleAdd}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8 * wxScale,
+                  paddingTop: 12 * wxScale,
+                  paddingBottom: 12 * wxScale,
+                  borderRadius: 12 * wxScale,
+                  backgroundColor: `${primaryColor}10`,
+                  borderWidth: 1,
+                  borderColor: primaryColor,
+                  borderStyle: 'dashed',
+                }}
+              >
+                <Icon name="plus" size={16 * wxScale} color={primaryColor} />
+                <Text style={{ fontSize: 14 * wxScale, fontWeight: 500, color: primaryColor }}>
+                  添加就诊人
+                </Text>
+              </Box>
+            </>
+          )}
+        </Box>
       </ScrollView>
 
       {/* 点击遮罩层关闭菜单 */}

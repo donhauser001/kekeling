@@ -26,7 +26,7 @@ import type {
 import {
   mockMedicalRecords,
   generateDateOptions,
-  TIME_OPTIONS,
+  getAvailableTimeOptions,
   getThemeColors,
 } from './constants'
 
@@ -83,6 +83,9 @@ export function CreateOrderPage({
   // 优惠券数据（从 API 获取）
   const [coupons, setCoupons] = useState<Coupon[]>([])
 
+  // 优惠券功能是否启用
+  const [couponsEnabled, setCouponsEnabled] = useState(true)
+
   // "下单后填写"开关状态
   const [fillLater, setFillLater] = useState(false)
 
@@ -127,28 +130,41 @@ export function CreateOrderPage({
 
     setIsLoading(true)
 
-    // 并行获取服务详情、就诊人列表、医院列表、优惠券列表
+    // 并行获取服务详情、就诊人列表、医院列表、营销设置
     Promise.all([
       previewApi.getServiceDetail(serviceId),
       previewApi.getPatients(),
       previewApi.getHospitals({ pageSize: 100 }),
-      previewApi.getMyCoupons(),
+      previewApi.getMarketingSettings(),
     ])
-      .then(([serviceData, patientsData, hospitalsRes, couponsRes]) => {
+      .then(([serviceData, patientsData, hospitalsRes, marketingSettings]) => {
         setService(serviceData)
         setPatients(patientsData)
         setHospitals(hospitalsRes.data || [])
 
-        // 转换优惠券数据格式
-        const availableCoupons: Coupon[] = (couponsRes.items || [])
-          .filter((c) => c.status === 'available')
-          .map((c) => ({
-            id: c.id,
-            name: c.name,
-            amount: c.amount,
-            minAmount: c.minAmount,
-          }))
-        setCoupons(availableCoupons)
+        // 检查优惠券功能是否启用
+        const isCouponsEnabled = marketingSettings?.couponsEnabled !== false
+        setCouponsEnabled(isCouponsEnabled)
+
+        // 仅当优惠券功能启用时才获取优惠券
+        if (isCouponsEnabled) {
+          previewApi.getMyCoupons()
+            .then((couponsRes) => {
+              // 转换优惠券数据格式
+              const availableCoupons: Coupon[] = (couponsRes.items || [])
+                .filter((c) => c.status === 'available')
+                .map((c) => ({
+                  id: c.id,
+                  name: c.name,
+                  amount: c.amount,
+                  minAmount: c.minAmount,
+                }))
+              setCoupons(availableCoupons)
+            })
+            .catch((err) => {
+              console.error('[CreateOrderPage] 优惠券加载失败', err)
+            })
+        }
 
         // 如果有默认就诊人，自动选中
         const defaultPatient = patientsData.find((p) => p.isDefault)
@@ -238,7 +254,18 @@ export function CreateOrderPage({
 
   // 日期和时间选项
   const dateOptions = generateDateOptions()
-  const timeOptions = TIME_OPTIONS
+  const timeOptions = getAvailableTimeOptions(selectedDate)
+
+  // 当日期变化时，检查已选时间是否仍然有效
+  useEffect(() => {
+    if (selectedDate && selectedTime) {
+      const availableTimes = getAvailableTimeOptions(selectedDate)
+      const isTimeStillValid = availableTimes.some(t => t.value === selectedTime)
+      if (!isTimeStillValid) {
+        setSelectedTime(null) // 清除无效的时间选择
+      }
+    }
+  }, [selectedDate, selectedTime])
 
   // ============================================================================
   // 事件处理
@@ -281,7 +308,8 @@ export function CreateOrderPage({
         appointmentTime: selectedTime || '',
         departmentName: selectedDepartment?.name,
         remark: remark || undefined,
-        couponId: selectedCouponId || undefined,
+        // 仅当优惠券功能启用时才传递 couponId
+        couponId: couponsEnabled ? (selectedCouponId || undefined) : undefined,
       })
 
       console.log('[CreateOrderPage] 订单创建成功:', orderResult)
@@ -488,14 +516,16 @@ export function CreateOrderPage({
         timeOptions={timeOptions}
       />
 
-      {/* 优惠券 */}
-      <CouponSection
-        selectedCoupon={selectedCoupon}
-        availableCouponCount={coupons.length}
-        onOpenPicker={() => setShowCouponPicker(true)}
-        colors={colors}
-        primaryColor={primaryColor}
-      />
+      {/* 优惠券 - 仅当功能启用时显示 */}
+      {couponsEnabled && (
+        <CouponSection
+          selectedCoupon={selectedCoupon}
+          availableCouponCount={coupons.length}
+          onOpenPicker={() => setShowCouponPicker(true)}
+          colors={colors}
+          primaryColor={primaryColor}
+        />
+      )}
 
       {/* 备注 */}
       <RemarkSection value={remark} onChange={setRemark} colors={colors} />
@@ -634,8 +664,8 @@ export function CreateOrderPage({
         />
       )}
 
-      {/* 优惠券选择弹窗 */}
-      {showCouponPicker && (
+      {/* 优惠券选择弹窗 - 仅当功能启用时显示 */}
+      {couponsEnabled && showCouponPicker && (
         <CouponPicker
           coupons={coupons}
           selectedCoupon={selectedCoupon}

@@ -9,7 +9,7 @@
  * - 规则 3：wxScale 只作用于视觉尺寸，不作用于逻辑布局
  */
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import {
   Search,
   Rocket,
@@ -22,6 +22,7 @@ import { previewApi } from '../../api'
 import { formatCount } from '../../utils'
 import { getResourceUrl } from '../../utils'
 import { BannerSection } from '../BannerSection'
+import { getWxBridge } from '../../bridge/wx-bridge'
 
 // 小程序缩放比例（规则 3：只用于视觉尺寸）
 const wxScale = isWxEnvironment() ? 1.1 : 1
@@ -115,6 +116,16 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
       .finally(() => setServicesLoading(false))
   }, [activeCategory])
 
+  // 获取用户收藏列表
+  useEffect(() => {
+    previewApi.getFavoriteIds()
+      .then(ids => {
+        console.log('[ServicesPage] 收藏列表加载成功:', ids.length, '条')
+        setFavorites(new Set(ids))
+      })
+      .catch(err => console.error('[ServicesPage] 收藏列表加载失败:', err))
+  }, [])
+
   const bannerData = bannerDataOverride ?? fetchedBannerData ?? null
 
   // 分类列表（添加"全部"选项）
@@ -140,18 +151,45 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
   }, [services, sortType])
 
   // 切换收藏
-  const toggleFavorite = (id: string, e: React.MouseEvent) => {
+  const toggleFavorite = useCallback(async (id: string, e: React.MouseEvent) => {
     e.stopPropagation()
+    const wxBridge = getWxBridge()
+    const isFavorited = favorites.has(id)
+
+    // 先乐观更新 UI
     setFavorites(prev => {
       const newSet = new Set(prev)
-      if (newSet.has(id)) {
+      if (isFavorited) {
         newSet.delete(id)
       } else {
         newSet.add(id)
       }
       return newSet
     })
-  }
+
+    // 调用 API
+    try {
+      if (isFavorited) {
+        const result = await previewApi.removeFavorite(id)
+        wxBridge.showToast({ title: result.message || '已取消收藏', icon: 'none' })
+      } else {
+        const result = await previewApi.addFavorite(id)
+        wxBridge.showToast({ title: result.message || '收藏成功', icon: 'success' })
+      }
+    } catch (err) {
+      // API 失败时回滚
+      setFavorites(prev => {
+        const newSet = new Set(prev)
+        if (isFavorited) {
+          newSet.add(id) // 回滚：重新添加
+        } else {
+          newSet.delete(id) // 回滚：重新删除
+        }
+        return newSet
+      })
+      wxBridge.showToast({ title: '操作失败', icon: 'none' })
+    }
+  }, [favorites])
 
   // 分享
   const handleShare = (_service: ServiceListItem, e: React.MouseEvent) => {

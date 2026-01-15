@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Body,
+  Param,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -11,6 +12,7 @@ import {
   ApiOperation,
   ApiBearerAuth,
   ApiQuery,
+  ApiParam,
 } from '@nestjs/swagger';
 import { PointsService } from './points.service';
 import { CheckInDto } from './dto/points.dto';
@@ -72,6 +74,28 @@ export class PointsController {
   async getCheckInStatus(@CurrentUser('sub') userId: string) {
     const data = await this.pointsService.getCheckInStatus(userId);
     return ApiResponse.success(data);
+  }
+
+  @Get('tasks')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '获取积分任务列表' })
+  async getPointsTasks(@CurrentUser('sub') userId: string) {
+    const data = await this.pointsService.getPointsTasks(userId);
+    return ApiResponse.success(data);
+  }
+
+  @Post('tasks/:taskCode/claim')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '领取任务奖励' })
+  @ApiParam({ name: 'taskCode', description: '任务代码' })
+  async claimTask(
+    @CurrentUser('sub') userId: string,
+    @Param('taskCode') taskCode: string,
+  ) {
+    const data = await this.pointsService.claimTask(userId, taskCode);
+    return ApiResponse.success(data, '领取成功');
   }
 }
 

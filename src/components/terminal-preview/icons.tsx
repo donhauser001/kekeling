@@ -31,8 +31,7 @@ const iconNameMap: Record<string, IconName> = {
   '代办挂号': 'appointment',
   '代取报告': 'checklist',
   '代办病历': 'medical-files',
-  '诊断服务': 'stethoscope',
-  '酒店服务': 'home',
+  '代办服务': 'clipboard-list',
   '特色服务': 'lightning',
 
   // === Lucide 图标名称映射 ===

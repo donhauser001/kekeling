@@ -83,7 +83,7 @@ import { Route as AuthenticatedDistributionRecordsRouteImport } from './routes/_
 import { Route as AuthenticatedDistributionApplicationsRouteImport } from './routes/_authenticated/distribution/applications'
 import { Route as AuthenticatedAppHotKeywordsRouteImport } from './routes/_authenticated/app/hot-keywords'
 import { Route as AuthenticatedAppBannersRouteImport } from './routes/_authenticated/app/banners'
-import { Route as AuthenticatedMarketingReferralsIndexRouteImport } from './routes/_authenticated/marketing/referrals/index'
+import { Route as AuthenticatedMarketingSettingsIndexRouteImport } from './routes/_authenticated/marketing/settings/index'
 import { Route as AuthenticatedMarketingPricingIndexRouteImport } from './routes/_authenticated/marketing/pricing/index'
 import { Route as AuthenticatedMarketingPointsIndexRouteImport } from './routes/_authenticated/marketing/points/index'
 import { Route as AuthenticatedMarketingMembershipIndexRouteImport } from './routes/_authenticated/marketing/membership/index'
@@ -520,10 +520,10 @@ const AuthenticatedAppBannersRoute = AuthenticatedAppBannersRouteImport.update({
   path: '/app/banners',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedMarketingReferralsIndexRoute =
-  AuthenticatedMarketingReferralsIndexRouteImport.update({
-    id: '/marketing/referrals/',
-    path: '/marketing/referrals/',
+const AuthenticatedMarketingSettingsIndexRoute =
+  AuthenticatedMarketingSettingsIndexRouteImport.update({
+    id: '/marketing/settings/',
+    path: '/marketing/settings/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedMarketingPricingIndexRoute =
@@ -724,7 +724,7 @@ export interface FileRoutesByFullPath {
   '/marketing/membership': typeof AuthenticatedMarketingMembershipIndexRoute
   '/marketing/points': typeof AuthenticatedMarketingPointsIndexRoute
   '/marketing/pricing': typeof AuthenticatedMarketingPricingIndexRoute
-  '/marketing/referrals': typeof AuthenticatedMarketingReferralsIndexRoute
+  '/marketing/settings': typeof AuthenticatedMarketingSettingsIndexRoute
 }
 export interface FileRoutesByTo {
   '/clerk': typeof ClerkAuthenticatedRouteRouteWithChildren
@@ -815,7 +815,7 @@ export interface FileRoutesByTo {
   '/marketing/membership': typeof AuthenticatedMarketingMembershipIndexRoute
   '/marketing/points': typeof AuthenticatedMarketingPointsIndexRoute
   '/marketing/pricing': typeof AuthenticatedMarketingPricingIndexRoute
-  '/marketing/referrals': typeof AuthenticatedMarketingReferralsIndexRoute
+  '/marketing/settings': typeof AuthenticatedMarketingSettingsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -911,7 +911,7 @@ export interface FileRoutesById {
   '/_authenticated/marketing/membership/': typeof AuthenticatedMarketingMembershipIndexRoute
   '/_authenticated/marketing/points/': typeof AuthenticatedMarketingPointsIndexRoute
   '/_authenticated/marketing/pricing/': typeof AuthenticatedMarketingPricingIndexRoute
-  '/_authenticated/marketing/referrals/': typeof AuthenticatedMarketingReferralsIndexRoute
+  '/_authenticated/marketing/settings/': typeof AuthenticatedMarketingSettingsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -1005,7 +1005,7 @@ export interface FileRouteTypes {
     | '/marketing/membership'
     | '/marketing/points'
     | '/marketing/pricing'
-    | '/marketing/referrals'
+    | '/marketing/settings'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/clerk'
@@ -1096,7 +1096,7 @@ export interface FileRouteTypes {
     | '/marketing/membership'
     | '/marketing/points'
     | '/marketing/pricing'
-    | '/marketing/referrals'
+    | '/marketing/settings'
   id:
     | '__root__'
     | '/_authenticated'
@@ -1191,7 +1191,7 @@ export interface FileRouteTypes {
     | '/_authenticated/marketing/membership/'
     | '/_authenticated/marketing/points/'
     | '/_authenticated/marketing/pricing/'
-    | '/_authenticated/marketing/referrals/'
+    | '/_authenticated/marketing/settings/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1729,11 +1729,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppBannersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/marketing/referrals/': {
-      id: '/_authenticated/marketing/referrals/'
-      path: '/marketing/referrals'
-      fullPath: '/marketing/referrals'
-      preLoaderRoute: typeof AuthenticatedMarketingReferralsIndexRouteImport
+    '/_authenticated/marketing/settings/': {
+      id: '/_authenticated/marketing/settings/'
+      path: '/marketing/settings'
+      fullPath: '/marketing/settings'
+      preLoaderRoute: typeof AuthenticatedMarketingSettingsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/marketing/pricing/': {
@@ -1962,7 +1962,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMarketingMembershipIndexRoute: typeof AuthenticatedMarketingMembershipIndexRoute
   AuthenticatedMarketingPointsIndexRoute: typeof AuthenticatedMarketingPointsIndexRoute
   AuthenticatedMarketingPricingIndexRoute: typeof AuthenticatedMarketingPricingIndexRoute
-  AuthenticatedMarketingReferralsIndexRoute: typeof AuthenticatedMarketingReferralsIndexRoute
+  AuthenticatedMarketingSettingsIndexRoute: typeof AuthenticatedMarketingSettingsIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -2046,8 +2046,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedMarketingPointsIndexRoute,
   AuthenticatedMarketingPricingIndexRoute:
     AuthenticatedMarketingPricingIndexRoute,
-  AuthenticatedMarketingReferralsIndexRoute:
-    AuthenticatedMarketingReferralsIndexRoute,
+  AuthenticatedMarketingSettingsIndexRoute:
+    AuthenticatedMarketingSettingsIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

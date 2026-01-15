@@ -18,8 +18,7 @@ import { MembershipActionDialog } from './components/membership-action-dialog'
 import { MembershipDetailSheet } from './components/membership-detail-sheet'
 
 const topNav = [
-  { title: '会员等级', href: '/marketing/membership', isActive: true },
-  { title: '会员方案', href: '/marketing/membership/plans', isActive: false },
+  { title: '会员卡管理', href: '/marketing/membership', isActive: true },
   { title: '用户会员', href: '/marketing/membership/users', isActive: false },
 ]
 

@@ -27,6 +27,7 @@ const queryClient = new QueryClient({
 const PAGE_ROUTE_MAP: Record<string, string> = {
   'withdraw': '/packageC/pages/withdraw/index',
   'workbench': '/packageC/pages/workbench/index',
+  'workbench-orders-pool': '/packageC/pages/orders-pool/index',
 }
 
 function EarningsPageContent() {

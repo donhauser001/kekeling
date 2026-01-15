@@ -10,6 +10,11 @@ interface PrepayParams {
   openid: string;
 }
 
+interface MembershipPrepayParams {
+  orderId: string;
+  openid: string;
+}
+
 export interface WxPaymentParams {
   appId: string;
   timeStamp: string;
@@ -396,19 +401,252 @@ export class PaymentService {
     }
   }
 
+  // 创建会员订单预支付（调用微信统一下单接口）
+  async createMembershipPrepay(params: MembershipPrepayParams): Promise<WxPaymentParams | { freeOrder: true; orderId: string; orderNo: string }> {
+    const { orderId, openid } = params;
+
+    // 获取会员订单信息
+    const membershipOrder = await this.prisma.membershipOrder.findUnique({
+      where: { id: orderId },
+      include: { plan: true, level: true },
+    });
+
+    if (!membershipOrder) {
+      throw new BadRequestException('会员订单不存在');
+    }
+
+    if (membershipOrder.status !== 'pending') {
+      throw new BadRequestException('订单状态不允许支付');
+    }
+
+    // 计算实际支付金额（分）
+    const totalFee = Math.round(Number(membershipOrder.amount) * 100);
+
+    // 0 元订单直接完成，无需支付
+    if (totalFee <= 0) {
+      console.log(`[Payment] 会员订单 ${membershipOrder.orderNo} 金额为0，直接完成`);
+      // 调用 MembershipService 完成订单
+      const membershipService = await import('../membership/membership.service');
+      // 这里需要通过注入的方式调用，先直接更新订单状态
+      await this.completeMembershipOrderDirectly(membershipOrder);
+      return {
+        freeOrder: true,
+        orderId: membershipOrder.id,
+        orderNo: membershipOrder.orderNo,
+      };
+    }
+
+    // 获取支付配置
+    const payConfig = await this.getWechatPayConfig();
+    
+    if (!payConfig.appId || !payConfig.mchId || !payConfig.apiKey) {
+      throw new BadRequestException('微信支付未配置，请先在后台配置支付参数');
+    }
+
+    if (!payConfig.notifyUrl) {
+      throw new BadRequestException('微信支付回调地址未配置');
+    }
+
+    // 构建统一下单请求参数
+    const nonceStr = this.generateNonceStr();
+    // 获取商品名称，优先使用 level，兼容旧数据使用 plan
+    const productName = membershipOrder.level?.name || membershipOrder.plan?.name || membershipOrder.levelName || '会员套餐';
+    
+    console.log(`[Payment] 会员订单详情: orderNo=${membershipOrder.orderNo}, amount=${membershipOrder.amount}, totalFee=${totalFee}分, productName=${productName}`);
+    
+    const unifiedOrderParams: Record<string, string | number> = {
+      appid: String(payConfig.appId),
+      mch_id: String(payConfig.mchId),
+      nonce_str: nonceStr,
+      body: productName,
+      out_trade_no: membershipOrder.orderNo,
+      total_fee: totalFee,
+      spbill_create_ip: '127.0.0.1',
+      notify_url: payConfig.notifyUrl,
+      trade_type: 'JSAPI',
+      openid: openid,
+    };
+    
+    console.log(`[Payment] 会员订单统一下单参数: appid=${payConfig.appId}, mch_id=${payConfig.mchId}, total_fee=${totalFee}`);
+
+    // 生成签名
+    const sign = this.generateSign(unifiedOrderParams, payConfig.apiKey);
+    unifiedOrderParams.sign = sign;
+
+    // 构建 XML 请求体
+    const xmlData = this.buildXml(unifiedOrderParams);
+    
+    console.log(`[Payment] 会员订单统一下单请求: orderNo=${membershipOrder.orderNo}, totalFee=${totalFee}分`);
+
+    try {
+      // 调用微信统一下单接口
+      const responseXml = await this.httpPost('https://api.mch.weixin.qq.com/pay/unifiedorder', xmlData);
+      const response = this.parseXml(responseXml);
+      console.log(`[Payment] 会员订单统一下单响应: return_code=${response.return_code}, result_code=${response.result_code}`);
+
+      if (response.return_code !== 'SUCCESS') {
+        console.error('[Payment] 会员订单统一下单失败:', response.return_msg);
+        throw new InternalServerErrorException(`微信支付请求失败: ${response.return_msg}`);
+      }
+
+      if (response.result_code !== 'SUCCESS') {
+        console.error('[Payment] 会员订单统一下单业务失败:', response.err_code, response.err_code_des);
+        throw new BadRequestException(`微信支付失败: ${response.err_code_des || response.err_code}`);
+      }
+
+      const prepayId = response.prepay_id;
+      if (!prepayId) {
+        throw new InternalServerErrorException('获取 prepay_id 失败');
+      }
+
+      // 生成小程序调起支付的参数
+      const timeStamp = Math.floor(Date.now() / 1000).toString();
+      const payNonceStr = this.generateNonceStr();
+      const packageStr = `prepay_id=${prepayId}`;
+
+      const paySignParams: Record<string, string> = {
+        appId: payConfig.appId,
+        timeStamp,
+        nonceStr: payNonceStr,
+        package: packageStr,
+        signType: 'MD5',
+      };
+      const paySign = this.generateSign(paySignParams, payConfig.apiKey);
+
+      console.log(`[Payment] 会员订单预支付创建成功: orderNo=${membershipOrder.orderNo}, prepayId=${prepayId}`);
+
+      return {
+        appId: payConfig.appId,
+        timeStamp,
+        nonceStr: payNonceStr,
+        package: packageStr,
+        signType: 'MD5',
+        paySign,
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException || error instanceof InternalServerErrorException) {
+        throw error;
+      }
+      console.error('[Payment] 会员订单统一下单请求异常:', error);
+      throw new InternalServerErrorException('微信支付服务异常，请稍后重试');
+    }
+  }
+
+  // 直接完成 0 元会员订单（无需微信支付）
+  private async completeMembershipOrderDirectly(membershipOrder: any) {
+    const now = new Date();
+    const userId = membershipOrder.userId;
+    const levelId = membershipOrder.levelId;
+    const duration = membershipOrder.duration || membershipOrder.level?.duration || 30;
+    const orderType = membershipOrder.type || 'purchase';
+
+    // 获取会员卡信息
+    const level = membershipOrder.level || await this.prisma.membershipLevel.findUnique({
+      where: { id: levelId },
+    });
+
+    // 获取当前有效会员（用于续费时叠加时间）
+    const currentMembership = await this.prisma.userMembership.findFirst({
+      where: {
+        userId,
+        levelId,
+        status: 'active',
+        expireAt: { gt: now },
+      },
+      orderBy: { expireAt: 'desc' },
+    });
+
+    let expireAt: Date;
+
+    if (orderType === 'renew' && currentMembership) {
+      // 续费：时间叠加
+      expireAt = new Date(currentMembership.expireAt);
+      expireAt.setDate(expireAt.getDate() + duration);
+      
+      // 更新现有会员记录
+      await this.prisma.userMembership.update({
+        where: { id: currentMembership.id },
+        data: {
+          expireAt,
+          price: { increment: membershipOrder.levelPrice },
+          duration: { increment: duration },
+        },
+      });
+      
+      console.log(`[Payment] 0元续费订单完成: orderNo=${membershipOrder.orderNo}, 时间叠加至 ${expireAt.toISOString()}`);
+    } else {
+      // 新购或升级
+      expireAt = new Date(now);
+      expireAt.setDate(expireAt.getDate() + duration);
+
+      // 如果是升级，先将旧会员标记为已替换
+      if (orderType === 'upgrade') {
+        await this.prisma.userMembership.updateMany({
+          where: {
+            userId,
+            status: 'active',
+            expireAt: { gt: now },
+          },
+          data: {
+            status: 'replaced',
+          },
+        });
+      }
+
+      // 创建新会员记录
+      await this.prisma.userMembership.create({
+        data: {
+          userId,
+          levelId,
+          source: orderType,
+          levelName: level?.name || membershipOrder.levelName,
+          price: membershipOrder.levelPrice,
+          duration,
+          discount: level?.discount || 100,
+          overtimeFeeWaiver: level?.overtimeFeeWaiver || 0,
+          upgradeFrom: membershipOrder.upgradeFromLevelId,
+          upgradeCredit: membershipOrder.upgradeCredit || 0,
+          startAt: now,
+          expireAt,
+          status: 'active',
+        },
+      });
+      
+      console.log(`[Payment] 0元会员订单完成: orderNo=${membershipOrder.orderNo}, userId=${userId}, levelName=${level?.name}`);
+    }
+
+    // 更新订单状态
+    await this.prisma.membershipOrder.update({
+      where: { id: membershipOrder.id },
+      data: {
+        status: 'paid',
+        paidAt: now,
+        paymentMethod: 'free',
+      },
+    });
+  }
+
   // 处理支付回调
   async handlePaymentNotify(xmlData: string): Promise<{ success: boolean; message: string }> {
+    console.log('[Payment] ========== 收到微信支付回调 ==========');
+    console.log('[Payment] 回调数据长度:', xmlData?.length || 0);
+    console.log('[Payment] 回调数据:', xmlData?.substring(0, 500));
+    
     try {
-      // TODO: 解析微信回调 XML 数据
-      // 验证签名
-      // 更新订单状态
+      if (!xmlData || xmlData.length === 0) {
+        console.error('[Payment] 回调数据为空');
+        return { success: false, message: '回调数据为空' };
+      }
 
-      // 解析 XML（简化处理，实际需要使用 xml2js 等库）
+      // 解析 XML
       const orderNoMatch = xmlData.match(/<out_trade_no><!\[CDATA\[(.*?)\]\]><\/out_trade_no>/);
       const transactionIdMatch = xmlData.match(/<transaction_id><!\[CDATA\[(.*?)\]\]><\/transaction_id>/);
       const resultCodeMatch = xmlData.match(/<result_code><!\[CDATA\[(.*?)\]\]><\/result_code>/);
 
+      console.log('[Payment] 解析结果: orderNo=', orderNoMatch?.[1], 'transactionId=', transactionIdMatch?.[1], 'resultCode=', resultCodeMatch?.[1]);
+
       if (!orderNoMatch || !transactionIdMatch) {
+        console.error('[Payment] 回调参数解析失败');
         return { success: false, message: '参数错误' };
       }
 
@@ -417,6 +655,7 @@ export class PaymentService {
       const resultCode = resultCodeMatch?.[1];
 
       if (resultCode !== 'SUCCESS') {
+        console.error('[Payment] 支付结果不是SUCCESS:', resultCode);
         return { success: false, message: '支付失败' };
       }
 

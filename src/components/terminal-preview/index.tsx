@@ -111,6 +111,8 @@ import {
   EscortProfileEditPage,
   // 意见反馈
   FeedbackPage,
+  // 我的收藏
+  FavoritesPage,
   // 分销中心页面（Step 11.3-11.5）
   DistributionPage,
   DistributionMembersPage,
@@ -1166,6 +1168,17 @@ export function TerminalPreview({
             isDarkMode={isDarkMode}
             onBack={() => navigateToPage('profile')}
             onNavigate={(page, params) => navigateToPage(page, params)}
+          />
+        )
+
+      // 我的收藏
+      case 'favorites':
+        return (
+          <FavoritesPage
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            onBack={() => navigateToPage('profile')}
+            onServiceClick={(serviceId) => navigateToPage('service-detail', { id: serviceId })}
           />
         )
 

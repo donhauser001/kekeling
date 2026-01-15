@@ -1,6 +1,12 @@
 /**
  * 用户头部组件
  * 按《小程序页面改造规范》改造
+ *
+ * 陪诊员视角逻辑：
+ * - isEscortMode: 是否处于陪诊员视角（由 escortToken 推导）
+ * - hasEscortQualification: 是否有陪诊员资质（后端返回）
+ * - 只有 isEscortMode 为 true 时才显示退出按钮
+ * - 退出按钮调用 onExitEscortMode，清除 escortToken
  */
 
 import { Box, Text, Image, Icon } from '../../../../ui/primitives'
@@ -11,15 +17,12 @@ const wxScale = isWxEnvironment() ? 1.1 : 1
 
 // 小程序头部安全区域
 const wxStatusBarHeight = 44
-const _wxCapsuleTop = 6 // 保留用于未来胶囊对齐
-const _wxCapsuleHeight = 32 // 保留用于未来胶囊对齐
-void _wxCapsuleTop
-void _wxCapsuleHeight
 const wxSafeAreaTop = isWxEnvironment() ? wxStatusBarHeight : 0
 
 export function UserHeader({
   userProfile,
-  isEscort,
+  isEscortMode,
+  hasEscortQualification,
   primaryColor,
   onSettingsClick,
   onExitEscortMode,
@@ -34,8 +37,8 @@ export function UserHeader({
         background: `linear-gradient(180deg, ${primaryColor} 0%, ${primaryColor}dd 100%)`,
       }}
     >
-      {/* 陪诊员身份提示条 */}
-      {isEscort && (
+      {/* 陪诊员模式提示条 - 只有处于陪诊员视角时才显示 */}
+      {isEscortMode && (
         <Box
           style={{
             display: 'flex',
@@ -68,7 +71,9 @@ export function UserHeader({
             }}
           >
             <Icon name="return" size={12 * wxScale} color="rgba(255, 255, 255, 0.8)" />
-            <Text style={{ fontSize: 12 * wxScale, color: 'rgba(255, 255, 255, 0.8)' }}>退出</Text>
+            <Text style={{ fontSize: 12 * wxScale, color: 'rgba(255, 255, 255, 0.8)' }}>
+              退出
+            </Text>
           </Box>
         </Box>
       )}
@@ -103,7 +108,8 @@ export function UserHeader({
             <Text style={{ fontSize: 18 * wxScale, fontWeight: 600, color: '#fff' }}>
               {userProfile?.nickname || '微信用户'}
             </Text>
-            {isEscort && (
+            {/* 陪诊员标签 - 有资质就显示 */}
+            {hasEscortQualification && (
               <Box
                 style={{
                   paddingLeft: 6 * wxScale,
@@ -144,4 +150,3 @@ export function UserHeader({
     </Box>
   )
 }
-

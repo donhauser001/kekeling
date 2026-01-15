@@ -6,6 +6,10 @@ import {
   IsEnum,
   Matches,
   Length,
+  IsInt,
+  Min,
+  Max,
+  IsArray,
 } from 'class-validator';
 
 export enum Gender {
@@ -59,4 +63,37 @@ export class CreateEscortApplicationDto {
   @IsString()
   @IsOptional()
   inviteCode?: string;
+
+  // ========== 新增字段（#27 陪诊员注册字段补齐）==========
+
+  @ApiPropertyOptional({ description: '年龄（可选，可从身份证自动计算）' })
+  @IsInt({ message: '年龄必须为整数' })
+  @Min(18, { message: '年龄不能小于18岁' })
+  @Max(70, { message: '年龄不能大于70岁' })
+  @IsOptional()
+  age?: number;
+
+  @ApiPropertyOptional({ description: '服务医院ID列表', type: [String] })
+  @IsArray({ message: '医院列表格式错误' })
+  @IsString({ each: true, message: '医院ID必须为字符串' })
+  @IsOptional()
+  hospitals?: string[];
+
+  @ApiPropertyOptional({ description: '擅长科室列表', type: [String] })
+  @IsArray({ message: '科室列表格式错误' })
+  @IsString({ each: true, message: '科室名称必须为字符串' })
+  @IsOptional()
+  departments?: string[];
+
+  @ApiPropertyOptional({ description: '擅长病种（文本描述）' })
+  @IsString()
+  @IsOptional()
+  @Length(0, 500, { message: '擅长病种描述不能超过500个字符' })
+  specialties?: string;
+
+  @ApiPropertyOptional({ description: '服务/产品领域（文本描述）' })
+  @IsString()
+  @IsOptional()
+  @Length(0, 500, { message: '服务领域描述不能超过500个字符' })
+  serviceAreas?: string;
 }

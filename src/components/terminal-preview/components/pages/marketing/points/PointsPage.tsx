@@ -12,15 +12,20 @@
  * - 规则 9: emoji → Icon 组件
  * - 规则 4.1: 添加骨架屏
  * - 规则 12: 已拆分为模块化结构
+ *
+ * 积分任务功能：
+ * - 从 API 获取任务列表及状态
+ * - 支持三种状态：pending/completed/claimed
+ * - 可领取状态显示"领取"按钮，点击领取积分
  */
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Box, Text, Button, Icon } from '../../../../ui/primitives'
 import { isWxEnvironment } from '../../../../platform/env'
 import { previewApi } from '../../../../api'
 import type { PointsInfo } from '../../../../api'
-import { wxScale, wxSafeAreaTop, POINTS_TASKS } from './constants'
-import type { PointsPageProps } from './types'
+import { wxScale, wxSafeAreaTop, DEFAULT_POINTS_TASKS } from './constants'
+import type { PointsPageProps, PointsTask } from './types'
 import {
   PointsPageSkeleton,
   PointsCard,
@@ -46,6 +51,13 @@ export function PointsPage({
   const [isLoading, setIsLoading] = useState(!pointsOverride)
   const [isError, setIsError] = useState(false)
 
+  // 积分任务列表
+  const [tasks, setTasks] = useState<PointsTask[]>(DEFAULT_POINTS_TASKS)
+  const [tasksLoading, setTasksLoading] = useState(true)
+
+  // 领取中的任务代码
+  const [claimingTaskCode, setClaimingTaskCode] = useState<string | null>(null)
+
   // 获取积分信息
   useEffect(() => {
     if (pointsOverride) {
@@ -68,14 +80,42 @@ export function PointsPage({
       })
   }, [pointsOverride])
 
+  // 获取任务列表
+  useEffect(() => {
+    if (pointsOverride) {
+      setTasksLoading(false)
+      return
+    }
+
+    setTasksLoading(true)
+
+    previewApi.getPointsTasks()
+      .then((data) => {
+        if (data && data.length > 0) {
+          setTasks(data)
+        }
+        setTasksLoading(false)
+      })
+      .catch((err) => {
+        console.error('[PointsPage] 加载任务列表失败:', err)
+        setTasksLoading(false)
+      })
+  }, [pointsOverride])
+
   // 重试加载
   const handleRetry = () => {
     setIsLoading(true)
     setIsError(false)
 
-    previewApi.getMyPoints()
-      .then((data) => {
-        setApiPointsInfo(data)
+    Promise.all([
+      previewApi.getMyPoints(),
+      previewApi.getPointsTasks(),
+    ])
+      .then(([pointsData, tasksData]) => {
+        setApiPointsInfo(pointsData)
+        if (tasksData && tasksData.length > 0) {
+          setTasks(tasksData)
+        }
         setIsLoading(false)
       })
       .catch((err) => {
@@ -108,6 +148,119 @@ export function PointsPage({
   const textSecondary = isDarkMode ? '#9ca3af' : '#6b7280'
   const textMuted = isDarkMode ? '#6b7280' : '#9ca3af'
   const primaryColor = themeSettings.primaryColor
+
+  // 去完成任务
+  const handleGoComplete = useCallback((taskCode: string) => {
+    switch (taskCode) {
+      case 'daily_checkin':
+        // 签到任务：直接调用签到接口
+        handleClaimTask(taskCode)
+        break
+      case 'complete_profile':
+        onNavigate?.('user-profile-edit')
+        break
+      case 'first_order':
+        onNavigate?.('services')
+        break
+      case 'referral':
+        onNavigate?.('referrals')
+        break
+      default:
+        break
+    }
+  }, [onNavigate])
+
+  // 领取任务奖励
+  const handleClaimTask = useCallback(async (taskCode: string) => {
+    if (claimingTaskCode) return
+
+    setClaimingTaskCode(taskCode)
+
+    try {
+      // 签到任务使用签到接口
+      if (taskCode === 'daily_checkin') {
+        const result = await previewApi.checkIn()
+        if (result.success && result.data) {
+          // 更新积分余额
+          if (apiPointsInfo) {
+            setApiPointsInfo({
+              ...apiPointsInfo,
+              balance: result.data.totalPoints,
+              totalEarned: apiPointsInfo.totalEarned + result.data.points,
+            })
+          }
+          // 更新任务状态
+          setTasks((prev) =>
+            prev.map((t) =>
+              t.code === taskCode ? { ...t, status: 'claimed' as const } : t
+            )
+          )
+          // 显示提示
+          if (isWxEnvironment()) {
+            // @ts-expect-error wx is available in miniapp
+            wx.showToast({
+              title: `签到成功 +${result.data.points}积分`,
+              icon: 'success',
+            })
+          }
+        } else {
+          if (isWxEnvironment()) {
+            // @ts-expect-error wx is available in miniapp
+            wx.showToast({
+              title: result.message || '签到失败',
+              icon: 'none',
+            })
+          }
+        }
+      } else {
+        // 其他任务使用领取接口
+        const result = await previewApi.claimPointsTask(taskCode)
+        if (result.success && result.data) {
+          // 更新积分余额
+          if (apiPointsInfo) {
+            setApiPointsInfo({
+              ...apiPointsInfo,
+              balance: result.data.totalPoints,
+              totalEarned: apiPointsInfo.totalEarned + result.data.points,
+            })
+          }
+          // 更新任务状态
+          setTasks((prev) =>
+            prev.map((t) =>
+              t.code === taskCode ? { ...t, status: 'claimed' as const } : t
+            )
+          )
+          // 显示提示
+          if (isWxEnvironment()) {
+            // @ts-expect-error wx is available in miniapp
+            wx.showToast({
+              title: `领取成功 +${result.data.points}积分`,
+              icon: 'success',
+            })
+          }
+        } else {
+          if (isWxEnvironment()) {
+            // @ts-expect-error wx is available in miniapp
+            wx.showToast({
+              title: result.message || '领取失败',
+              icon: 'none',
+            })
+          }
+        }
+      }
+    } catch (error) {
+      console.error('[PointsPage] 领取任务失败:', error)
+      if (isWxEnvironment()) {
+        // @ts-expect-error wx is available in miniapp
+        wx.showToast({
+          title: '领取失败，请重试',
+          icon: 'none',
+        })
+      }
+    } finally {
+      setClaimingTaskCode(null)
+    }
+  }, [claimingTaskCode, apiPointsInfo])
 
   // 加载中显示骨架屏
   if (isLoading) {
@@ -259,30 +412,16 @@ export function PointsPage({
                     />
                   ))
                 ) : (
-                  // 显示默认积分任务
-                  POINTS_TASKS.map((task) => (
+                  // 显示积分任务列表
+                  tasks.map((task) => (
                     <TaskItem
-                      key={task.id}
+                      key={task.code}
                       task={task}
                       themeSettings={themeSettings}
                       isDarkMode={isDarkMode}
-                      onTaskClick={(taskId) => {
-                        // 根据任务 ID 跳转到对应页面
-                        switch (taskId) {
-                          case '1': // 每日签到
-                            // TODO: 签到功能
-                            break
-                          case '2': // 完善个人信息
-                            onNavigate?.('user-profile-edit')
-                            break
-                          case '3': // 完成首单
-                            onNavigate?.('services')
-                            break
-                          case '4': // 邀请好友
-                            onNavigate?.('referrals')
-                            break
-                        }
-                      }}
+                      isClaiming={claimingTaskCode === task.code}
+                      onGoComplete={handleGoComplete}
+                      onClaim={handleClaimTask}
                     />
                   ))
                 )}
@@ -302,6 +441,7 @@ export function PointsPage({
                 积分兑换
               </Text>
               <Box
+                onClick={() => onNavigate?.('points-mall')}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -345,4 +485,3 @@ export function PointsPage({
     </Box>
   )
 }
-

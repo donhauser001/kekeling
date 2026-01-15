@@ -652,6 +652,58 @@ export class CouponsService {
     }
 
     /**
+     * 获取用户优惠券列表（管理端）
+     */
+    async getUserCouponsForAdmin(params: {
+        userId?: string;
+        status?: string;
+        page?: number;
+        pageSize?: number;
+    }) {
+        const { userId, status, page = 1, pageSize = 10 } = params;
+
+        const where: Prisma.UserCouponWhereInput = {};
+        if (userId) {
+            where.userId = userId;
+        }
+        if (status) {
+            where.status = status;
+        }
+
+        const [data, total] = await Promise.all([
+            this.prisma.userCoupon.findMany({
+                where,
+                include: {
+                    template: true,
+                    user: {
+                        select: {
+                            id: true,
+                            nickname: true,
+                            phone: true,
+                        },
+                    },
+                },
+                orderBy: { createdAt: 'desc' },
+                skip: (page - 1) * pageSize,
+                take: pageSize,
+            }),
+            this.prisma.userCoupon.count({ where }),
+        ]);
+
+        return {
+            data: data.map((item) => ({
+                ...item,
+                value: Number(item.value),
+                maxDiscount: item.maxDiscount ? Number(item.maxDiscount) : null,
+                minAmount: Number(item.minAmount),
+            })),
+            total,
+            page,
+            pageSize,
+        };
+    }
+
+    /**
      * 订单退款时退回优惠券
      */
     async returnCoupon(orderId: string) {

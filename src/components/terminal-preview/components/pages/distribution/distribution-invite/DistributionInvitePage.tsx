@@ -35,6 +35,8 @@ export function DistributionInvitePage({
   effectiveViewerRole,
   onNavigate,
   onLogin,
+  renderShareButton,
+  onSaveQRCode,
 }: DistributionInvitePageProps) {
   const isEscort = effectiveViewerRole === 'escort'
   const primaryColor = themeSettings.primaryColor
@@ -478,31 +480,54 @@ export function DistributionInvitePage({
               <Icon name="copy" size={16 * wxScale} color={primaryColor} />
               <Text style={{ fontSize: 14 * wxScale, color: primaryColor }}>复制链接</Text>
             </Box>
-            <Box
-              onClick={() => {
-                if (isWxEnvironment()) {
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  const wx = (window as any).wx
-                  wx?.showToast?.({ title: '请使用分享功能', icon: 'none' })
-                } else {
-                  alert('分享功能需要在终端环境中使用')
-                }
-              }}
-              style={{
-                flex: 1,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8 * wxScale,
-                paddingTop: 10 * wxScale,
-                paddingBottom: 10 * wxScale,
-                borderRadius: 8 * wxScale,
-                backgroundColor: primaryColor,
-              }}
-            >
-              <Icon name="share-three" size={16 * wxScale} color="#fff" />
-              <Text style={{ fontSize: 14 * wxScale, color: '#fff' }}>分享好友</Text>
-            </Box>
+            {/* 分享按钮：小程序需要使用原生 Button openType="share" */}
+            {renderShareButton ? (
+              renderShareButton({
+                children: (
+                  <>
+                    <Icon name="share-three" size={16 * wxScale} color="#fff" />
+                    <Text style={{ fontSize: 14 * wxScale, color: '#fff' }}>分享好友</Text>
+                  </>
+                ),
+                style: {
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8 * wxScale,
+                  paddingTop: 10 * wxScale,
+                  paddingBottom: 10 * wxScale,
+                  borderRadius: 8 * wxScale,
+                  backgroundColor: primaryColor,
+                },
+              })
+            ) : (
+              <Box
+                onClick={() => {
+                  if (isWxEnvironment()) {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const wx = (window as any).wx
+                    wx?.showToast?.({ title: '请点击右上角分享', icon: 'none' })
+                  } else {
+                    alert('分享功能需要在终端环境中使用')
+                  }
+                }}
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8 * wxScale,
+                  paddingTop: 10 * wxScale,
+                  paddingBottom: 10 * wxScale,
+                  borderRadius: 8 * wxScale,
+                  backgroundColor: primaryColor,
+                }}
+              >
+                <Icon name="share-three" size={16 * wxScale} color="#fff" />
+                <Text style={{ fontSize: 14 * wxScale, color: '#fff' }}>分享好友</Text>
+              </Box>
+            )}
           </Box>
         </Box>
 
@@ -544,17 +569,38 @@ export function DistributionInvitePage({
                 />
               </Box>
             </Box>
-            <Text
-              style={{
-                display: 'block',
-                fontSize: 12 * wxScale,
-                textAlign: 'center',
-                marginTop: 12 * wxScale,
-                color: textSecondary,
-              }}
-            >
-              长按保存二维码分享给好友
-            </Text>
+            {/* 保存到相册按钮 */}
+            {onSaveQRCode ? (
+              <Box
+                onClick={() => onSaveQRCode(inviteData.qrCodeUrl!)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8 * wxScale,
+                  marginTop: 12 * wxScale,
+                  paddingTop: 10 * wxScale,
+                  paddingBottom: 10 * wxScale,
+                  borderRadius: 8 * wxScale,
+                  backgroundColor: `${primaryColor}15`,
+                }}
+              >
+                <Icon name="download" size={16 * wxScale} color={primaryColor} />
+                <Text style={{ fontSize: 14 * wxScale, color: primaryColor }}>保存到相册</Text>
+              </Box>
+            ) : (
+              <Text
+                style={{
+                  display: 'block',
+                  fontSize: 12 * wxScale,
+                  textAlign: 'center',
+                  marginTop: 12 * wxScale,
+                  color: textSecondary,
+                }}
+              >
+                长按保存二维码分享给好友
+              </Text>
+            )}
           </Box>
         )}
 

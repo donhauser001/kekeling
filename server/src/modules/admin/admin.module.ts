@@ -22,6 +22,7 @@ import { AdminFinanceController } from './controllers/admin-finance.controller';
 import { AdminHotKeywordsController } from './controllers/admin-hot-keywords.controller';
 import { AdminChatController } from './controllers/admin-chat.controller';
 import { AdminReviewsController } from './controllers/admin-reviews.controller';
+import { AdminPricingController } from './controllers/admin-pricing.controller';
 import { AdminOrdersService } from './services/admin-orders.service';
 import { AdminEscortsService } from './services/admin-escorts.service';
 import { AdminEscortLevelsService } from './services/admin-escort-levels.service';
@@ -44,6 +45,7 @@ import { PointsModule } from '../points/points.module';
 import { NotificationModule } from '../notification/notification.module';
 import { DistributionModule } from '../distribution/distribution.module';
 import { ChatModule } from '../chat/chat.module';
+import { PricingModule } from '../pricing/pricing.module';
 
 @Module({
   imports: [
@@ -54,6 +56,7 @@ import { ChatModule } from '../chat/chat.module';
     NotificationModule,
     DistributionModule,
     ChatModule,
+    PricingModule,
   ],
   controllers: [
     AdminOrdersController,
@@ -81,6 +84,7 @@ import { ChatModule } from '../chat/chat.module';
     AdminHotKeywordsController,
     AdminChatController,
     AdminReviewsController,
+    AdminPricingController,
   ],
   providers: [
     AdminOrdersService,

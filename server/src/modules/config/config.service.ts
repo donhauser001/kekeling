@@ -17,6 +17,8 @@ import {
   MINIAPP_CONFIG_DEFAULTS,
   PAYMENT_CONFIG_KEYS,
   PAYMENT_CONFIG_DEFAULTS,
+  MARKETING_CONFIG_KEYS,
+  MARKETING_CONFIG_DEFAULTS,
   type OrderSettings,
   type DispatchWeights,
   type ThemeSettings,
@@ -29,6 +31,7 @@ import {
   type PaymentSettings,
   type WechatPaySettings,
   type AlipaySettings,
+  type MarketingSettings,
 } from './dto/config.dto';
 
 @Injectable()
@@ -892,6 +895,63 @@ export class ConfigService {
     ]);
 
     return { wechat, alipay };
+  }
+
+  // ============================================
+  // 营销设置专用方法
+  // ============================================
+
+  /**
+   * 获取营销设置
+   * 注意：邀请奖励开关已移至「积分与奖励」模块，通过 referral_rules 表的 status 控制
+   */
+  async getMarketingSettings(): Promise<MarketingSettings> {
+    const keys = Object.values(MARKETING_CONFIG_KEYS) as string[];
+    const configs = await this.getMultiple(keys);
+
+    return {
+      membershipEnabled:
+        configs[MARKETING_CONFIG_KEYS.MEMBERSHIP_ENABLED] ??
+        MARKETING_CONFIG_DEFAULTS[MARKETING_CONFIG_KEYS.MEMBERSHIP_ENABLED],
+      pointsEnabled:
+        configs[MARKETING_CONFIG_KEYS.POINTS_ENABLED] ??
+        MARKETING_CONFIG_DEFAULTS[MARKETING_CONFIG_KEYS.POINTS_ENABLED],
+      couponsEnabled:
+        configs[MARKETING_CONFIG_KEYS.COUPONS_ENABLED] ??
+        MARKETING_CONFIG_DEFAULTS[MARKETING_CONFIG_KEYS.COUPONS_ENABLED],
+      campaignsEnabled:
+        configs[MARKETING_CONFIG_KEYS.CAMPAIGNS_ENABLED] ??
+        MARKETING_CONFIG_DEFAULTS[MARKETING_CONFIG_KEYS.CAMPAIGNS_ENABLED],
+    };
+  }
+
+  /**
+   * 更新营销设置
+   */
+  async updateMarketingSettings(settings: Partial<MarketingSettings>): Promise<MarketingSettings> {
+    const keyMap: Record<keyof MarketingSettings, string> = {
+      membershipEnabled: MARKETING_CONFIG_KEYS.MEMBERSHIP_ENABLED,
+      pointsEnabled: MARKETING_CONFIG_KEYS.POINTS_ENABLED,
+      couponsEnabled: MARKETING_CONFIG_KEYS.COUPONS_ENABLED,
+      campaignsEnabled: MARKETING_CONFIG_KEYS.CAMPAIGNS_ENABLED,
+    };
+
+    const configs: { key: string; value: any }[] = [];
+
+    for (const [field, value] of Object.entries(settings)) {
+      if (value !== undefined && keyMap[field as keyof MarketingSettings]) {
+        configs.push({
+          key: keyMap[field as keyof MarketingSettings],
+          value,
+        });
+      }
+    }
+
+    if (configs.length > 0) {
+      await this.setMultiple(configs);
+    }
+
+    return this.getMarketingSettings();
   }
 }
 

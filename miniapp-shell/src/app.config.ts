@@ -35,6 +35,7 @@ export default defineAppConfig({
       name: 'user',
       pages: [
         'pages/profile/index',          // 我的页面
+        'pages/favorites/index',        // 我的收藏
         'pages/user-orders/index',      // 我的订单
         'pages/user-order-detail/index', // 订单详情
         'pages/patients/index',         // 就诊人管理
@@ -52,6 +53,7 @@ export default defineAppConfig({
         'pages/article-detail/index',   // 文章详情
         'pages/cms-page/index',         // CMS页面（使用 WebView）
         'pages/referrals/index',        // 邀请有礼
+        'pages/referral-records/index', // 邀请记录
         'pages/escort-detail/index',    // 陪诊员详情
         'pages/order-complaint/index',  // 订单投诉
         'pages/coupons-available/index', // 领券中心

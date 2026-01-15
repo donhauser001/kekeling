@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useSearch } from '@tanstack/react-router'
+import { useQuery } from '@tanstack/react-query'
 import {
     useReactTable,
     getCoreRowModel,
@@ -10,10 +11,7 @@ import {
 } from '@tanstack/react-table'
 import {
     Tags,
-    Plus,
     MoreHorizontal,
-    Pencil,
-    Trash2,
     Users,
     Crown,
     Star,
@@ -24,6 +22,7 @@ import {
     LayoutGrid,
     List,
     Eye,
+    Loader2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -69,6 +68,7 @@ import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { cn } from '@/lib/utils'
+import { membershipApi, type MembershipLevel } from '@/lib/api'
 
 // 导入组件
 import { getRolesColumns } from './components/roles-columns'
@@ -84,6 +84,11 @@ interface UserCategory {
     isSystem: boolean
     color: string
     icon: 'crown' | 'star' | 'building' | 'user' | 'zap' | 'gift'
+    // 关联会员卡信息
+    membershipLevelId?: string
+    price?: number
+    duration?: number
+    discount?: number
 }
 
 interface Benefit {
@@ -180,68 +185,72 @@ const iconOptions = [
     { value: 'gift', label: '礼物', icon: Gift },
 ] as const
 
-const initialCategories: UserCategory[] = [
-    {
-        id: '1',
-        name: '至尊VIP',
-        description: '最高等级会员，享受全部特权和最优折扣',
-        userCount: 128,
-        benefits: ['all'],
-        isSystem: true,
-        color: 'bg-amber-500',
-        icon: 'crown',
-    },
-    {
-        id: '2',
-        name: '黄金会员',
-        description: '高级会员用户，享受大部分会员特权',
-        userCount: 1256,
-        benefits: ['discount:10', 'points:double', 'service:vip', 'service:priority', 'activity:early'],
-        isSystem: true,
-        color: 'bg-yellow-500',
-        icon: 'star',
-    },
-    {
-        id: '3',
-        name: '白银会员',
-        description: '中级会员用户，享受基础会员特权',
-        userCount: 5832,
-        benefits: ['discount:5', 'points:birthday', 'service:return', 'points:exchange'],
-        isSystem: true,
-        color: 'bg-gray-400',
-        icon: 'star',
-    },
-    {
-        id: '4',
-        name: '企业用户',
-        description: '企业级用户，享受企业专属服务和批量优惠',
-        userCount: 89,
-        benefits: ['discount:20', 'service:vip', 'service:priority', 'activity:exclusive'],
-        isSystem: false,
-        color: 'bg-blue-500',
-        icon: 'building',
-    },
-    {
-        id: '5',
-        name: '普通用户',
-        description: '注册用户，享受基础服务',
-        userCount: 25680,
-        benefits: ['points:exchange', 'service:return'],
-        isSystem: true,
-        color: 'bg-slate-500',
-        icon: 'user',
-    },
-    {
-        id: '6',
-        name: '新用户',
-        description: '新注册用户，享受新人专属福利',
-        userCount: 3420,
-        benefits: ['discount:10', 'activity:gift', 'content:trial'],
-        isSystem: true,
-        color: 'bg-green-500',
-        icon: 'gift',
-    },
-]
+// 将会员卡转换为用户分类的辅助函数
+const membershipLevelToCategory = (level: MembershipLevel): UserCategory => {
+    // 根据折扣确定图标
+    const getIcon = (discount: number): UserCategory['icon'] => {
+        if (discount <= 80) return 'crown'
+        if (discount <= 90) return 'star'
+        return 'gift'
+    }
+    
+    // 根据价格确定颜色
+    const getColor = (price: number): string => {
+        if (price >= 200) return 'bg-amber-500'  // 高端会员
+        if (price >= 100) return 'bg-yellow-500' // 中端会员
+        if (price >= 50) return 'bg-sky-500'     // 基础会员
+        return 'bg-green-500'                    // 入门会员
+    }
+    
+    // 将会员权益转换为权益键
+    const getBenefits = (level: MembershipLevel): string[] => {
+        const benefits: string[] = []
+        if (level.discount < 100) {
+            benefits.push(`discount:${100 - level.discount}`)
+        }
+        if (level.benefits) {
+            const benefitsList = typeof level.benefits === 'object' && 'list' in level.benefits 
+                ? (level.benefits as { list: string[] }).list 
+                : Array.isArray(level.benefits) ? level.benefits : []
+            benefitsList.forEach((b: string) => {
+                // 尝试匹配已知的权益
+                if (b.includes('积分') || b.includes('双倍')) benefits.push('points:double')
+                if (b.includes('客服') || b.includes('VIP')) benefits.push('service:vip')
+                if (b.includes('优先') || b.includes('预约')) benefits.push('service:priority')
+                if (b.includes('退换') || b.includes('无忧')) benefits.push('service:return')
+                if (b.includes('生日')) benefits.push('points:birthday')
+            })
+        }
+        return [...new Set(benefits)]
+    }
+    
+    return {
+        id: level.id,
+        name: level.name,
+        description: level.description || `${level.duration}天会员，享受${level.discount}%折扣`,
+        userCount: (level as any).memberCount || 0,
+        benefits: getBenefits(level),
+        isSystem: true, // 会员卡都是系统分类
+        color: getColor(Number(level.price) || 0),
+        icon: getIcon(level.discount),
+        membershipLevelId: level.id,
+        price: Number(level.price) || 0,
+        duration: level.duration,
+        discount: level.discount,
+    }
+}
+
+// 普通用户分类（未购买任何会员的用户）
+const normalUserCategory: UserCategory = {
+    id: 'normal-user',
+    name: '普通用户',
+    description: '注册用户，享受基础服务',
+    userCount: 0, // 将从后端获取
+    benefits: ['service:return'],
+    isSystem: true,
+    color: 'bg-slate-500',
+    icon: 'user',
+}
 
 interface CategoryFormData {
     name: string
@@ -276,7 +285,24 @@ const getIconComponent = (iconName: string) => {
 export function Roles() {
     const search = useSearch({ strict: false }) as Record<string, unknown>
 
-    const [categories, setCategories] = useState<UserCategory[]>(initialCategories)
+    // 从后端获取会员卡数据
+    const { data: membershipData, isLoading } = useQuery({
+        queryKey: ['membership-levels'],
+        queryFn: () => membershipApi.getLevels({ pageSize: 100 }),
+    })
+
+    // 将会员卡数据转换为用户分类
+    const categories = useMemo<UserCategory[]>(() => {
+        if (!membershipData?.data) {
+            return [normalUserCategory]
+        }
+        const membershipCategories = membershipData.data.map(membershipLevelToCategory)
+        // 按价格降序排列，然后添加普通用户分类
+        membershipCategories.sort((a, b) => (b.price || 0) - (a.price || 0))
+        // 更新普通用户数量
+        const normalUsers = membershipData.stats?.normalUsers || 0
+        return [...membershipCategories, { ...normalUserCategory, userCount: normalUsers }]
+    }, [membershipData])
 
     // 视图模式
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
@@ -352,10 +378,10 @@ export function Roles() {
         setDeleteDialogOpen(true)
     }
 
-    // 执行删除
+    // 执行删除 (会员卡分类不支持在此页面删除，需要去会员管理页面)
     const handleDelete = () => {
         if (!deletingCategory) return
-        setCategories(categories.filter(c => c.id !== deletingCategory.id))
+        // 会员卡分类不支持删除，这里只是关闭对话框
         setDeleteDialogOpen(false)
         setDeletingCategory(null)
     }
@@ -388,30 +414,10 @@ export function Roles() {
         return Object.keys(errors).length === 0
     }
 
-    // 保存分类
+    // 保存分类 (会员卡分类需要去会员管理页面编辑)
     const handleSaveCategory = () => {
         if (!validateForm()) return
-
-        if (categoryDialogMode === 'create') {
-            const newCategory: UserCategory = {
-                id: Date.now().toString(),
-                name: formData.name,
-                description: formData.description,
-                color: formData.color,
-                icon: formData.icon,
-                isSystem: formData.isSystem,
-                benefits: formData.benefits,
-                userCount: 0,
-            }
-            setCategories([...categories, newCategory])
-        } else if (editingCategory) {
-            setCategories(categories.map(r =>
-                r.id === editingCategory.id
-                    ? { ...r, name: formData.name, description: formData.description, color: formData.color, icon: formData.icon, benefits: formData.benefits }
-                    : r
-            ))
-        }
-
+        // 会员卡分类不支持在此页面编辑，这里只是关闭对话框
         setCategoryDialogOpen(false)
     }
 
@@ -474,103 +480,119 @@ export function Roles() {
     })
 
     // 渲染卡片视图
-    const renderGridView = () => (
-        <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
-            {categories.map((category) => {
-                const IconComponent = getIconComponent(category.icon)
-                return (
-                    <Card
-                        key={category.id}
-                        className='cursor-pointer transition-all hover:shadow-md'
-                        onClick={() => handleView(category)}
-                    >
-                        <CardHeader className='pb-3'>
-                            <div className='flex items-start justify-between'>
-                                <div className='flex items-center gap-3'>
-                                    <div
-                                        className={cn(
-                                            'flex h-10 w-10 items-center justify-center rounded-lg',
-                                            category.color
-                                        )}
-                                    >
-                                        <IconComponent className='h-5 w-5 text-white' />
-                                    </div>
-                                    <div>
-                                        <CardTitle className='flex items-center gap-2 text-base'>
-                                            {category.name}
-                                            {category.isSystem && (
-                                                <Badge variant='secondary' className='text-xs'>
-                                                    系统
-                                                </Badge>
+    const renderGridView = () => {
+        if (isLoading) {
+            return (
+                <div className='flex items-center justify-center py-12'>
+                    <Loader2 className='h-8 w-8 animate-spin text-muted-foreground' />
+                </div>
+            )
+        }
+        
+        return (
+            <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
+                {categories.map((category) => {
+                    const IconComponent = getIconComponent(category.icon)
+                    const isMembershipCard = !!category.membershipLevelId
+                    
+                    return (
+                        <Card
+                            key={category.id}
+                            className='cursor-pointer transition-all hover:shadow-md'
+                            onClick={() => handleView(category)}
+                        >
+                            <CardHeader className='pb-3'>
+                                <div className='flex items-start justify-between'>
+                                    <div className='flex items-center gap-3'>
+                                        <div
+                                            className={cn(
+                                                'flex h-10 w-10 items-center justify-center rounded-lg',
+                                                category.color
                                             )}
-                                        </CardTitle>
-                                        <div className='text-muted-foreground flex items-center gap-1 text-sm'>
-                                            <Users className='h-3.5 w-3.5' />
-                                            {category.userCount.toLocaleString()} 人
+                                        >
+                                            <IconComponent className='h-5 w-5 text-white' />
+                                        </div>
+                                        <div>
+                                            <CardTitle className='flex items-center gap-2 text-base'>
+                                                {category.name}
+                                                {isMembershipCard && (
+                                                    <Badge variant='secondary' className='text-xs'>
+                                                        会员卡
+                                                    </Badge>
+                                                )}
+                                                {!isMembershipCard && category.isSystem && (
+                                                    <Badge variant='outline' className='text-xs'>
+                                                        系统
+                                                    </Badge>
+                                                )}
+                                            </CardTitle>
+                                            <div className='text-muted-foreground flex items-center gap-1 text-sm'>
+                                                <Users className='h-3.5 w-3.5' />
+                                                {category.userCount.toLocaleString()} 人
+                                            </div>
                                         </div>
                                     </div>
+                                    <DropdownMenu modal={false}>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button
+                                                variant='ghost'
+                                                size='icon'
+                                                className='h-8 w-8'
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                <MoreHorizontal className='h-4 w-4' />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align='end' className='w-[160px]'>
+                                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleView(category) }}>
+                                                查看详情
+                                                <DropdownMenuShortcut>
+                                                    <Eye className='h-4 w-4' />
+                                                </DropdownMenuShortcut>
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
                                 </div>
-                                <DropdownMenu modal={false}>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button
-                                            variant='ghost'
-                                            size='icon'
-                                            className='h-8 w-8'
-                                            onClick={(e) => e.stopPropagation()}
-                                        >
-                                            <MoreHorizontal className='h-4 w-4' />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align='end' className='w-[160px]'>
-                                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleView(category) }}>
-                                            查看详情
-                                            <DropdownMenuShortcut>
-                                                <Eye className='h-4 w-4' />
-                                            </DropdownMenuShortcut>
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openEditDialog(category) }}>
-                                            编辑
-                                            <DropdownMenuShortcut>
-                                                <Pencil className='h-4 w-4' />
-                                            </DropdownMenuShortcut>
-                                        </DropdownMenuItem>
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem
-                                            className='text-destructive focus:text-destructive focus:bg-destructive/10'
-                                            disabled={category.isSystem}
-                                            onClick={(e) => { e.stopPropagation(); handleDeleteConfirm(category) }}
-                                        >
-                                            删除
-                                            <DropdownMenuShortcut>
-                                                <Trash2 className='h-4 w-4' />
-                                            </DropdownMenuShortcut>
-                                        </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            <CardDescription className='mb-3 line-clamp-2'>
-                                {category.description}
-                            </CardDescription>
-                            <div className='flex flex-wrap gap-1'>
-                                {category.benefits.slice(0, 3).map((benefit) => (
-                                    <Badge key={benefit} variant='outline' className='text-xs'>
-                                        {benefit === 'all' ? '全部权益' : getBenefitName(benefit)}
-                                    </Badge>
-                                ))}
-                                {category.benefits.length > 3 && (
-                                    <Badge variant='outline' className='text-xs'>
-                                        +{category.benefits.length - 3}
-                                    </Badge>
+                            </CardHeader>
+                            <CardContent>
+                                <CardDescription className='mb-3 line-clamp-2'>
+                                    {category.description}
+                                </CardDescription>
+                                {/* 会员卡显示价格和时长 */}
+                                {isMembershipCard && (
+                                    <div className='mb-3 flex items-center gap-3 text-sm'>
+                                        <span className='text-primary font-medium'>
+                                            ¥{category.price?.toFixed(0) || 0}
+                                        </span>
+                                        <span className='text-muted-foreground'>
+                                            {category.duration}天
+                                        </span>
+                                        {category.discount && category.discount < 100 && (
+                                            <Badge variant='secondary' className='text-xs'>
+                                                {category.discount / 10}折
+                                            </Badge>
+                                        )}
+                                    </div>
                                 )}
-                            </div>
-                        </CardContent>
-                    </Card>
-                )
-            })}
-        </div>
-    )
+                                <div className='flex flex-wrap gap-1'>
+                                    {category.benefits.slice(0, 3).map((benefit) => (
+                                        <Badge key={benefit} variant='outline' className='text-xs'>
+                                            {benefit === 'all' ? '全部权益' : getBenefitName(benefit)}
+                                        </Badge>
+                                    ))}
+                                    {category.benefits.length > 3 && (
+                                        <Badge variant='outline' className='text-xs'>
+                                            +{category.benefits.length - 3}
+                                        </Badge>
+                                    )}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )
+                })}
+            </div>
+        )
+    }
 
     return (
         <>
@@ -589,12 +611,10 @@ export function Roles() {
                 <div className='flex items-center justify-between'>
                     <div>
                         <h1 className='text-2xl font-bold tracking-tight'>用户分类</h1>
-                        <p className='text-muted-foreground'>管理用户分类和分配权益</p>
+                        <p className='text-muted-foreground'>
+                            用户分类与会员卡关联，购买会员卡即进入对应分类
+                        </p>
                     </div>
-                    <Button onClick={openCreateDialog}>
-                        <Plus className='mr-2 h-4 w-4' />
-                        新建分类
-                    </Button>
                 </div>
 
                 {/* 工具栏区域 */}

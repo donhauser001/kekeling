@@ -17,9 +17,9 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Box, Text, Icon } from '../../../ui/primitives'
 import { previewApi } from '../../../api'
-import type { PointsInfo, CheckInStatus } from '../../../api/types'
+import type { PointsInfo, CheckInStatus, PointsTaskItem } from '../../../api/types'
 
-import { wxScale, wxSafeAreaTop, POINTS_TASKS } from './constants'
+import { wxScale, wxSafeAreaTop } from './constants'
 import type { PointsPageProps } from './types'
 import { PointsPageSkeleton } from './PointsPageSkeleton'
 import { PointsCard } from './PointsCard'
@@ -45,11 +45,12 @@ export function PointsPage({
   // ============================================================================
   const [apiPointsInfo, setApiPointsInfo] = useState<PointsInfo | null>(null)
   const [checkInStatus, setCheckInStatus] = useState<CheckInStatus | null>(null)
+  const [pointsTasks, setPointsTasks] = useState<PointsTaskItem[]>([])
   const [isLoading, setIsLoading] = useState(!pointsOverride)
   const [isError, setIsError] = useState(false)
   const [isChecking, setIsChecking] = useState(false)
 
-  // 获取积分信息和签到状态
+  // 获取积分信息、签到状态和任务列表
   useEffect(() => {
     if (pointsOverride) {
       setIsLoading(false)
@@ -62,10 +63,12 @@ export function PointsPage({
     Promise.all([
       previewApi.getMyPoints(),
       previewApi.getCheckInStatus(),
+      previewApi.getPointsTasks(),
     ])
-      .then(([pointsData, statusData]) => {
+      .then(([pointsData, statusData, tasksData]) => {
         setApiPointsInfo(pointsData)
         setCheckInStatus(statusData)
+        setPointsTasks(tasksData || [])
         setIsLoading(false)
       })
       .catch(err => {
@@ -83,10 +86,12 @@ export function PointsPage({
     Promise.all([
       previewApi.getMyPoints(),
       previewApi.getCheckInStatus(),
+      previewApi.getPointsTasks(),
     ])
-      .then(([pointsData, statusData]) => {
+      .then(([pointsData, statusData, tasksData]) => {
         setApiPointsInfo(pointsData)
         setCheckInStatus(statusData)
+        setPointsTasks(tasksData || [])
         setIsLoading(false)
       })
       .catch(err => {
@@ -119,6 +124,14 @@ export function PointsPage({
           totalEarned: apiPointsInfo.totalEarned + result.data.points,
         })
       }
+      // 更新任务列表中的签到状态
+      setPointsTasks(prevTasks => 
+        prevTasks.map(task => 
+          task.code === 'daily_checkin' 
+            ? { ...task, status: 'claimed' as const }
+            : task
+        )
+      )
       wx.showToast({
         title: `签到成功 +${result.data.points}积分`,
         icon: 'success',
@@ -248,8 +261,8 @@ export function PointsPage({
               onViewRecords={() => onNavigate?.('points-records')}
             />
 
-            {/* 签到卡片（非管理后台预览时显示） */}
-            {!pointsOverride && (
+            {/* 签到卡片（非管理后台预览时，且签到功能已启用时显示） */}
+            {!pointsOverride && pointsTasks.some(t => t.code === 'daily_checkin') && (
               <Box style={{ marginTop: 16 * wxScale }}>
                 <CheckInCard
                   themeSettings={themeSettings}
@@ -284,83 +297,64 @@ export function PointsPage({
                     />
                   ))
                 ) : (
-                  // 显示默认积分任务
-                  POINTS_TASKS.map((task) => (
-                    <TaskItem
-                      key={task.id}
-                      task={task}
-                      themeSettings={themeSettings}
-                      isDarkMode={isDarkMode}
-                      onTaskClick={(taskId) => {
-                        // 根据任务 ID 跳转到对应页面
-                        switch (taskId) {
-                          case '1': // 每日签到
-                            handleCheckIn()
-                            break
-                          case '2': // 完善个人信息
-                            onNavigate?.('user-profile-edit')
-                            break
-                          case '3': // 完成首单
-                            onNavigate?.('services')
-                            break
-                          case '4': // 邀请好友
-                            onNavigate?.('referrals')
-                            break
-                        }
-                      }}
-                    />
-                  ))
+                  // 显示从后端获取的积分任务列表
+                  pointsTasks.map((task) => {
+                    // 转换任务状态为 completed 布尔值
+                    // order_complete 是持续性任务，永远显示为未完成
+                    const isCompleted = task.code === 'order_complete'
+                      ? false
+                      : task.status === 'completed' || task.status === 'claimed'
+
+                    // 计算显示的积分数和文本
+                    const rateValue = task.pointsRate || 0
+                    const displayPoints = task.isRateBased
+                      ? Math.round(rateValue)
+                      : task.points
+
+                    // 比例型任务显示 "1元+x积分"
+                    const pointsText = task.isRateBased
+                      ? `1元+${rateValue >= 1 ? Math.round(rateValue) : rateValue}积分`
+                      : undefined
+
+                    return (
+                      <TaskItem
+                        key={task.code}
+                        task={{
+                          id: task.code,
+                          name: task.name,
+                          icon: task.icon,
+                          points: displayPoints,
+                          completed: isCompleted,
+                          pointsText,
+                        }}
+                        themeSettings={themeSettings}
+                        isDarkMode={isDarkMode}
+                        onTaskClick={(taskCode) => {
+                          // 根据任务 code 跳转到对应页面
+                          switch (taskCode) {
+                            case 'daily_checkin': // 每日签到
+                              handleCheckIn()
+                              break
+                            case 'complete_profile': // 完善个人信息
+                              onNavigate?.('user-profile-edit')
+                              break
+                            case 'first_order': // 完成首单
+                            case 'order_complete': // 订单消费积分
+                              onNavigate?.('services')
+                              break
+                            case 'referral': // 邀请好友
+                              onNavigate?.('referrals')
+                              break
+                          }
+                        }}
+                      />
+                    )
+                  })
                 )}
               </Box>
             </Box>
 
-            {/* 积分商城入口 */}
-            <Box style={{ marginTop: 24 * wxScale }}>
-              <Text
-                style={{
-                  fontSize: 14 * wxScale,
-                  fontWeight: 500,
-                  color: textPrimary,
-                  marginBottom: 12 * wxScale,
-                }}
-              >
-                积分兑换
-              </Text>
-              <Box
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: 16 * wxScale,
-                  borderRadius: 8 * wxScale,
-                  backgroundColor: cardBg,
-                }}
-              >
-                <Box style={{ display: 'flex', alignItems: 'center', gap: 12 * wxScale }}>
-                  <Icon name="gift" size={28 * wxScale} color={primaryColor} />
-                  <Box>
-                    <Text
-                      style={{
-                        fontSize: 14 * wxScale,
-                        fontWeight: 500,
-                        color: textPrimary,
-                      }}
-                    >
-                      积分商城
-                    </Text>
-                    <Text
-                      style={{
-                        fontSize: 12 * wxScale,
-                        color: textSecondary,
-                      }}
-                    >
-                      用积分兑换精美礼品
-                    </Text>
-                  </Box>
-                </Box>
-                <Icon name="right" size={16 * wxScale} color={textSecondary} />
-              </Box>
-            </Box>
+            {/* 积分商城入口 - 暂时隐藏，后续开发 */}
           </>
         )}
       </Box>

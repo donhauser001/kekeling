@@ -4,6 +4,13 @@
 import type { UserConfigExport } from '@tarojs/cli'
 
 export default {
+  // 禁用 prebundle，减少主包体积
+  compiler: {
+    type: 'webpack5',
+    prebundle: {
+      enable: false,
+    },
+  },
   mini: {
     // 生产环境禁用 source map，减少分包体积
     enableSourceMap: false,

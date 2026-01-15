@@ -85,6 +85,52 @@ const getStatusText = (status: string): string => {
   return map[status] || status
 }
 
+/** 格式化日期（ISO 格式转为 YYYY-MM-DD） */
+const formatDate = (dateStr: string | null | undefined): string => {
+  if (!dateStr) return '-'
+  // 如果已经是 YYYY-MM-DD 格式，直接返回
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr
+  // 解析 ISO 格式日期
+  try {
+    const date = new Date(dateStr)
+    if (isNaN(date.getTime())) return dateStr
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  } catch {
+    return dateStr
+  }
+}
+
+/** 格式化日期时间（ISO 格式转为 YYYY-MM-DD HH:mm） */
+const formatDateTime = (dateStr: string | null | undefined): string => {
+  if (!dateStr || dateStr === '-') return '-'
+  try {
+    const date = new Date(dateStr)
+    if (isNaN(date.getTime())) return dateStr
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    const hours = String(date.getHours()).padStart(2, '0')
+    const minutes = String(date.getMinutes()).padStart(2, '0')
+    return `${year}-${month}-${day} ${hours}:${minutes}`
+  } catch {
+    return dateStr
+  }
+}
+
+/** 性别翻译 */
+const translateGender = (gender: string | null | undefined): string => {
+  if (!gender || gender === '-') return '-'
+  const map: Record<string, string> = {
+    male: '男',
+    female: '女',
+    unknown: '未知',
+  }
+  return map[gender.toLowerCase()] || gender
+}
+
 /** 状态分组映射（用于颜色） */
 const getStatusGroup = (status: string): string => {
   if (status === 'pending') return 'pending'
@@ -515,7 +561,7 @@ export function UserOrderDetailPage({
           <Box style={{ display: 'flex', alignItems: 'center', gap: 12 * wxScale }}>
             <Icon name="time" size={16 * wxScale} color={textMuted} />
             <Text style={{ fontSize: 14 * wxScale, color: textPrimary }}>
-              {order.appointmentDate} {order.appointmentTime}
+              {formatDate(order.appointmentDate)} {order.appointmentTime || ''}
             </Text>
           </Box>
         </InfoCard>
@@ -524,7 +570,7 @@ export function UserOrderDetailPage({
         <InfoCard cardBg={cardBg}>
           <CardTitle color={textPrimary}>就诊人信息</CardTitle>
           <InfoRow label="姓名" value={order.patientName} labelColor={textMuted} valueColor={textPrimary} />
-          <InfoRow label="性别/年龄" value={`${order.patientGender} / ${order.patientAge}岁`} labelColor={textMuted} valueColor={textPrimary} />
+          <InfoRow label="性别/年龄" value={`${translateGender(order.patientGender)} / ${order.patientAge !== undefined && order.patientAge !== null ? order.patientAge + '岁' : '-'}`} labelColor={textMuted} valueColor={textPrimary} />
           <InfoRow label="联系电话" value={order.patientPhone} labelColor={textMuted} valueColor={textPrimary} />
           <InfoRow label="身份证号" value={order.patientIdCard} labelColor={textMuted} valueColor={textPrimary} />
         </InfoCard>
@@ -533,73 +579,42 @@ export function UserOrderDetailPage({
         {order.escortName && (
           <InfoCard cardBg={cardBg}>
             <CardTitle color={textPrimary}>陪诊员信息</CardTitle>
-            <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              {/* 陪诊员信息（可点击查看详情） */}
+            {/* 陪诊员信息（可点击查看详情） */}
+            <Box
+              onClick={() => order.escortId && onNavigate?.('escort-detail', { id: order.escortId })}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12 * wxScale,
+                cursor: order.escortId ? 'pointer' : 'default',
+              }}
+            >
               <Box
-                onClick={() => order.escortId && onNavigate?.('escort-detail', { id: order.escortId })}
                 style={{
+                  width: 40 * wxScale,
+                  height: 40 * wxScale,
+                  borderRadius: 20 * wxScale,
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 12 * wxScale,
-                  cursor: order.escortId ? 'pointer' : 'default',
+                  justifyContent: 'center',
+                  backgroundColor: `${primaryColor}20`,
                 }}
               >
-                <Box
-                  style={{
-                    width: 40 * wxScale,
-                    height: 40 * wxScale,
-                    borderRadius: 20 * wxScale,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backgroundColor: `${primaryColor}20`,
-                  }}
-                >
-                  <Icon name="user" size={20 * wxScale} color={primaryColor} />
-                </Box>
-                <Box>
-                  <Box style={{ display: 'flex', alignItems: 'center', gap: 4 * wxScale }}>
-                    <Text style={{ fontSize: 14 * wxScale, fontWeight: 500, color: textPrimary }}>
-                      {order.escortName}
-                    </Text>
-                    {order.escortId && (
-                      <Icon name="right" size={14 * wxScale} color={textMuted} />
-                    )}
-                  </Box>
-                  <Box style={{ display: 'flex', alignItems: 'center', gap: 8 * wxScale, marginTop: 4 * wxScale }}>
-                    <Text style={{ fontSize: 12 * wxScale, color: textMuted }}>评分 {order.escortRating}</Text>
-                    <Text style={{ fontSize: 12 * wxScale, color: textMuted }}>|</Text>
-                    <Text style={{ fontSize: 12 * wxScale, color: textMuted }}>服务 {order.escortOrderCount} 单</Text>
-                  </Box>
-                </Box>
+                <Icon name="user" size={20 * wxScale} color={primaryColor} />
               </Box>
-              {/* 操作按钮 */}
-              <Box style={{ display: 'flex', alignItems: 'center', gap: 8 * wxScale }}>
-                <Box
-                  style={{
-                    width: 32 * wxScale,
-                    height: 32 * wxScale,
-                    borderRadius: 16 * wxScale,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backgroundColor: '#52c41a20',
-                  }}
-                >
-                  <Icon name="phone-telephone" size={16 * wxScale} color="#52c41a" />
+              <Box style={{ flex: 1 }}>
+                <Box style={{ display: 'flex', alignItems: 'center', gap: 4 * wxScale }}>
+                  <Text style={{ fontSize: 14 * wxScale, fontWeight: 500, color: textPrimary }}>
+                    {order.escortName}
+                  </Text>
+                  {order.escortId && (
+                    <Icon name="right" size={14 * wxScale} color={textMuted} />
+                  )}
                 </Box>
-                <Box
-                  style={{
-                    width: 32 * wxScale,
-                    height: 32 * wxScale,
-                    borderRadius: 16 * wxScale,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backgroundColor: `${primaryColor}20`,
-                  }}
-                >
-                  <Icon name="comment" size={16 * wxScale} color={primaryColor} />
+                <Box style={{ display: 'flex', alignItems: 'center', gap: 8 * wxScale, marginTop: 4 * wxScale }}>
+                  <Text style={{ fontSize: 12 * wxScale, color: textMuted }}>评分 {order.escortRating}</Text>
+                  <Text style={{ fontSize: 12 * wxScale, color: textMuted }}>|</Text>
+                  <Text style={{ fontSize: 12 * wxScale, color: textMuted }}>服务 {order.escortOrderCount} 单</Text>
                 </Box>
               </Box>
             </Box>
@@ -610,9 +625,9 @@ export function UserOrderDetailPage({
         <InfoCard cardBg={cardBg}>
           <CardTitle color={textPrimary}>订单信息</CardTitle>
           <InfoRow label="订单编号" value={order.orderNo} labelColor={textMuted} valueColor={textPrimary} />
-          <InfoRow label="下单时间" value={order.createTime} labelColor={textMuted} valueColor={textPrimary} />
+          <InfoRow label="下单时间" value={formatDateTime(order.createTime)} labelColor={textMuted} valueColor={textPrimary} />
           <InfoRow label="支付方式" value={order.paymentMethod} labelColor={textMuted} valueColor={textPrimary} />
-          <InfoRow label="支付时间" value={order.paymentTime} labelColor={textMuted} valueColor={textPrimary} />
+          <InfoRow label="支付时间" value={formatDateTime(order.paymentTime)} labelColor={textMuted} valueColor={textPrimary} />
           {order.remark && (
             <Box
               style={{

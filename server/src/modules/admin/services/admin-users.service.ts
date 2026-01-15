@@ -42,6 +42,8 @@ export class AdminUsersService {
       if (endDate) where.createdAt.lte = new Date(endDate + 'T23:59:59');
     }
 
+    const now = new Date();
+    
     const [data, total] = await Promise.all([
       this.prisma.user.findMany({
         where,
@@ -59,6 +61,26 @@ export class AdminUsersService {
               status: true,
             },
           },
+          // 获取当前有效的会员信息
+          memberships: {
+            where: {
+              status: 'active',
+              expireAt: { gt: now },
+            },
+            include: {
+              level: {
+                select: {
+                  id: true,
+                  name: true,
+                  code: true,
+                  color: true,
+                  discount: true,
+                },
+              },
+            },
+            orderBy: { expireAt: 'desc' },
+            take: 1,
+          },
         },
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * pageSize,
@@ -68,20 +90,36 @@ export class AdminUsersService {
     ]);
 
     // 格式化数据
-    const formattedData = data.map(user => ({
-      id: user.id,
-      openid: user.openid,
-      unionid: user.unionid,
-      nickname: user.nickname,
-      avatar: user.avatar,
-      phone: user.phone,
-      orderCount: user._count.orders,
-      patientCount: user._count.patients,
-      isEscort: !!user.escort,
-      escortInfo: user.escort,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-    }));
+    const formattedData = data.map(user => {
+      const activeMembership = user.memberships[0];
+      return {
+        id: user.id,
+        openid: user.openid,
+        unionid: user.unionid,
+        nickname: user.nickname,
+        avatar: user.avatar,
+        phone: user.phone,
+        orderCount: user._count.orders,
+        patientCount: user._count.patients,
+        isEscort: !!user.escort,
+        escortInfo: user.escort,
+        // 会员信息
+        membership: activeMembership ? {
+          id: activeMembership.id,
+          levelId: activeMembership.levelId,
+          levelName: activeMembership.levelName,
+          levelCode: activeMembership.level?.code,
+          levelColor: activeMembership.level?.color,
+          discount: activeMembership.discount,
+          expireAt: activeMembership.expireAt,
+          daysLeft: Math.ceil((activeMembership.expireAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)),
+        } : null,
+        // 用户分类（基于会员状态）
+        category: activeMembership ? activeMembership.levelName : '普通用户',
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      };
+    });
 
     return { data: formattedData, total, page, pageSize };
   }
@@ -90,6 +128,8 @@ export class AdminUsersService {
    * 获取用户详情
    */
   async findById(id: string) {
+    const now = new Date();
+    
     const user = await this.prisma.user.findUnique({
       where: { id },
       include: {
@@ -109,6 +149,28 @@ export class AdminUsersService {
             },
           },
         },
+        // 获取当前有效的会员信息
+        memberships: {
+          where: {
+            status: 'active',
+            expireAt: { gt: now },
+          },
+          include: {
+            level: true,
+          },
+          orderBy: { expireAt: 'desc' },
+          take: 1,
+        },
+        // 获取会员订单历史
+        membershipOrders: {
+          take: 5,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            level: { select: { name: true, code: true } },
+          },
+        },
+        // 获取积分信息
+        userPoints: true,
         _count: {
           select: {
             orders: true,
@@ -129,12 +191,46 @@ export class AdminUsersService {
       _count: true,
     });
 
+    const activeMembership = user.memberships[0];
+
     return {
       ...user,
       orderCount: user._count.orders,
       patientCount: user._count.patients,
       completedOrders: stats._count,
       totalSpent: Number(stats._sum.paidAmount || 0),
+      // 会员信息
+      membership: activeMembership ? {
+        id: activeMembership.id,
+        levelId: activeMembership.levelId,
+        levelName: activeMembership.levelName,
+        levelCode: activeMembership.level?.code,
+        levelColor: activeMembership.level?.color,
+        discount: activeMembership.discount,
+        overtimeFeeWaiver: activeMembership.overtimeFeeWaiver,
+        startAt: activeMembership.startAt,
+        expireAt: activeMembership.expireAt,
+        daysLeft: Math.ceil((activeMembership.expireAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)),
+        source: activeMembership.source,
+      } : null,
+      // 用户分类
+      category: activeMembership ? activeMembership.levelName : '普通用户',
+      // 积分
+      points: user.userPoints ? {
+        current: user.userPoints.currentPoints,
+        total: user.userPoints.totalPoints,
+        used: user.userPoints.usedPoints,
+      } : { current: 0, total: 0, used: 0 },
+      // 会员订单历史
+      membershipOrders: user.membershipOrders.map(mo => ({
+        id: mo.id,
+        orderNo: mo.orderNo,
+        levelName: mo.level?.name || mo.planName,
+        amount: Number(mo.amount),
+        status: mo.status,
+        createdAt: mo.createdAt,
+        paidAt: mo.paidAt,
+      })),
       orders: user.orders.map(order => ({
         ...order,
         totalAmount: Number(order.totalAmount),

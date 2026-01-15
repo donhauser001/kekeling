@@ -70,6 +70,9 @@ export const previewApi = {
   getBanners: userApi.getBanners,
   getStats: userApi.getStats,
 
+  // 营销设置
+  getMarketingSettings: userApi.getMarketingSettings,
+
   // 订单统计
   getOrderStats: userApi.getOrderStats,
   // 用户订单列表
@@ -124,7 +127,10 @@ export const previewApi = {
   getPointsRecords: userApi.getPointsRecords,
   getCheckInStatus: userApi.getCheckInStatus,
   checkIn: userApi.checkIn,
+  getPointsTasks: userApi.getPointsTasks,
+  claimPointsTask: userApi.claimPointsTask,
   getReferralInfo: userApi.getReferralInfo,
+  getReferralRecords: userApi.getReferralRecords,
   getCampaigns: userApi.getCampaigns,
   getCampaignDetail: userApi.getCampaignDetail,
   getAvailableCoupons: userApi.getAvailableCoupons,
@@ -154,9 +160,17 @@ export const previewApi = {
   // 订单创建和支付
   createOrder: userApi.createOrder,
   getPaymentParams: userApi.getPaymentParams,
+  getMembershipPaymentParams: userApi.getMembershipPaymentParams,
   getPaymentStatus: userApi.getPaymentStatus,
   mockPayment: userApi.mockPayment,
   cancelOrder: userApi.cancelOrder,
+
+  // 收藏
+  addFavorite: userApi.addFavorite,
+  removeFavorite: userApi.removeFavorite,
+  getFavorites: userApi.getFavorites,
+  checkFavorite: userApi.checkFavorite,
+  getFavoriteIds: userApi.getFavoriteIds,
 
   // ==========================================================================
   // Escort Channel（陪诊员通道）

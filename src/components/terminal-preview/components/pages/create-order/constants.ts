@@ -95,6 +95,36 @@ export const TIME_OPTIONS = [
   { value: '16:00', label: '16:00-17:00' },
 ]
 
+/**
+ * 根据选择的日期过滤可用时间选项
+ * 如果选择的是今天，过滤掉已过期的时间选项
+ * @param selectedDate 选择的日期 (YYYY-MM-DD 格式)
+ * @returns 过滤后的时间选项
+ */
+export function getAvailableTimeOptions(selectedDate: string | null) {
+  if (!selectedDate) return TIME_OPTIONS
+
+  const today = new Date().toISOString().split('T')[0]
+  
+  // 如果不是今天，返回所有时间选项
+  if (selectedDate !== today) {
+    return TIME_OPTIONS
+  }
+
+  // 如果是今天，过滤掉已过期的时间
+  const now = new Date()
+  const currentHour = now.getHours()
+  const currentMinute = now.getMinutes()
+
+  return TIME_OPTIONS.filter(option => {
+    const [hour, minute] = option.value.split(':').map(Number)
+    // 当前时间之后的时间段才可选（需要提前至少30分钟预约）
+    if (hour > currentHour) return true
+    if (hour === currentHour && minute > currentMinute + 30) return true
+    return false
+  })
+}
+
 /** 获取主题颜色 */
 export function getThemeColors(isDarkMode: boolean) {
   return {

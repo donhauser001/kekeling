@@ -45,6 +45,7 @@ model User {
   feedbacks              Feedback[]
   chatSessions           ChatSession[]           @relation("UserChatSessions")
   escortReviews          EscortReview[]
+  favorites              Favorite[]
 
   @@map("users")
 }
@@ -201,6 +202,7 @@ model Service {
   operationGuides OperationGuideOnService[] // 操作规范关联
   seckillItems    SeckillItem[]
   chatSessions    ChatSession[]
+  favorites       Favorite[]
 
   @@map("services")
 }
@@ -652,6 +654,13 @@ model EscortApplication {
   gender           String  @default("unknown") // male, female, unknown
   emergencyContact String? @map("emergency_contact") // 紧急联系人
   emergencyPhone   String? @map("emergency_phone") // 紧急联系人电话
+
+  // 新增字段（#27 陪诊员注册字段补齐）
+  age          Int?      // 年龄（可从身份证自动计算）
+  hospitals    String[]  @default([]) // 服务医院ID列表
+  departments  String[]  @default([]) // 擅长科室列表
+  specialties  String?   // 擅长病种（文本描述）
+  serviceAreas String?   @map("service_areas") // 服务/产品领域（文本描述）
 
   // 邀请关系
   inviteCode String? @map("invite_code") // 使用的邀请码
@@ -1301,21 +1310,39 @@ model PricingConfig {
 }
 
 // ========== 营销：会员 ==========
+// 会员卡类型（可直接购买的会员卡）
+// 设计说明：
+// - 一个用户只能持有一种会员卡，不可叠加
+// - 升级会员 = 购买新卡，折算剩余时长费用后补差额
+// - name 即卡名称，如"黄金月卡"、"铂金季卡"
 model MembershipLevel {
   id                String   @id @default(uuid())
-  name              String // VIP会员
-  code              String   @unique // vip
-  icon              String? // 等级图标
-  color             String? // #FFD700
-  discount          Int      @default(100) // 90 = 9折
-  overtimeFeeWaiver Int      @default(0) // 50 = 50%减免
-  benefits          Json // 权益详情
-  sort              Int      @default(0)
-  status            String   @default("active")
+  name              String   // 会员卡名称：黄金月卡、铂金季卡等
+  code              String   @unique // 唯一编码：gold_monthly, platinum_quarterly
+  icon              String?  // 图标
+  color             String?  // 主题色 #FFD700
+  
+  // 价格和时长
+  price             Decimal  @db.Decimal(10, 2) // 售价
+  originalPrice     Decimal? @map("original_price") @db.Decimal(10, 2) // 原价（划线价）
+  duration          Int      // 时长（天）
+  
+  // 权益
+  discount          Int      @default(100) // 折扣：90 = 9折
+  overtimeFeeWaiver Int      @default(0)   // 超时费减免：50 = 减免50%
+  benefits          Json?    // 权益详情（JSON数组）
+  description       String?  // 简短描述
+  
+  // 展示
+  recommended       Boolean  @default(false) // 推荐标记
+  sort              Int      @default(0)     // 排序
+  status            String   @default("active") // active/inactive
+  
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
 
-  plans            MembershipPlan[]
+  // 关联（plans 为废弃兼容）
+  plans            MembershipPlan[]   // [废弃] 兼容旧数据
   userMemberships  UserMembership[]
   membershipOrders MembershipOrder[]
   upgradeRules     ConsumeUpgradeRule[]
@@ -1323,28 +1350,30 @@ model MembershipLevel {
   @@map("membership_levels")
 }
 
+// [废弃] MembershipPlan - 已合并到 MembershipLevel
+// 保留表结构用于数据迁移，后续版本删除
 model MembershipPlan {
   id            String   @id @default(uuid())
   levelId       String   @map("level_id")
-  name          String // 月卡/季卡/年卡
-  code          String // monthly/quarterly/yearly
-  price         Decimal  @db.Decimal(10, 2) // 29/69/199
-  originalPrice Decimal? @db.Decimal(10, 2) // 原价（展示用）
-  duration      Int // 30/90/365 天
-  renewalBonus  Int      @default(0) // 续费赠送天数
+  name          String
+  code          String
+  price         Decimal  @db.Decimal(10, 2)
+  originalPrice Decimal? @db.Decimal(10, 2)
+  duration      Int
+  renewalBonus  Int      @default(0)
   description   String?
-  features      String[] // 卖点列表
+  features      String[]
   sort          Int      @default(0)
-  recommended   Boolean  @default(false) // 推荐标记
+  recommended   Boolean  @default(false)
   status        String   @default("active")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
   level           MembershipLevel   @relation(fields: [levelId], references: [id])
-  orders          MembershipOrder[]
-  userMemberships UserMembership[]
+  orders          MembershipOrder[] @relation("DeprecatedPlanOrders")
+  userMemberships UserMembership[]  @relation("DeprecatedPlanMemberships")
 
-  @@unique([levelId, code]) // 同一等级下 code 唯一
+  @@unique([levelId, code])
   @@index([levelId])
   @@map("membership_plans")
 }
@@ -1353,19 +1382,25 @@ model UserMembership {
   id      String  @id @default(uuid())
   userId  String  @map("user_id")
   levelId String  @map("level_id")
-  planId  String? @map("plan_id")
+  planId  String? @map("plan_id") // [废弃] 兼容旧数据
 
   // 来源
   source String @default("purchase")
-  // purchase: 购买套餐
-  // consume: 消费升级
+  // purchase: 购买
+  // upgrade: 升级（折算）
   // gift: 赠送
   // compensate: 补偿
 
   // 快照（下单时记录，不受后续修改影响）
-  levelName         String @map("level_name")
+  levelName         String  @map("level_name")
+  price             Decimal @default(0) @db.Decimal(10, 2) // 购买价格
+  duration          Int     @default(0)  // 购买时长（天）
   discount          Int
-  overtimeFeeWaiver Int    @map("overtime_fee_waiver")
+  overtimeFeeWaiver Int     @map("overtime_fee_waiver")
+
+  // 升级折算信息
+  upgradeFrom       String? @map("upgrade_from") // 原会员ID
+  upgradeCredit     Decimal @default(0) @db.Decimal(10, 2) // 折算金额
 
   // 有效期
   startAt  DateTime @map("start_at")
@@ -1376,12 +1411,13 @@ model UserMembership {
   // active: 生效中
   // expired: 已过期
   // cancelled: 已取消（退款）
+  // replaced: 已被升级替换
 
   createdAt DateTime @default(now()) @map("created_at")
 
   user  User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   level MembershipLevel @relation(fields: [levelId], references: [id])
-  plan  MembershipPlan? @relation(fields: [planId], references: [id])
+  plan  MembershipPlan? @relation("DeprecatedPlanMemberships", fields: [planId], references: [id])
 
   @@index([userId, status])
   @@index([expireAt])
@@ -1389,26 +1425,35 @@ model UserMembership {
 }
 
 model MembershipOrder {
-  id      String @id @default(uuid())
-  orderNo String @unique @map("order_no")
-  userId  String @map("user_id")
-  levelId String @map("level_id")
-  planId  String @map("plan_id")
+  id      String  @id @default(uuid())
+  orderNo String  @unique @map("order_no")
+  userId  String  @map("user_id")
+  levelId String  @map("level_id")
+  planId  String? @map("plan_id") // [废弃] 兼容旧数据
 
   // 订单类型
   type String @default("purchase")
   // purchase: 新购
-  // renew: 续费
-  // upgrade: 升级（预留）
+  // upgrade: 升级（折算旧会员）
 
-  // 快照
-  planName  String  @map("plan_name")
-  planPrice Decimal @map("plan_price") @db.Decimal(10, 2)
-  duration  Int // 购买天数
-  bonusDays Int     @default(0) @map("bonus_days") // 赠送天数
+  // 快照（购买时的会员卡信息）
+  levelName   String  @default("") @map("level_name")   // 会员卡名称
+  levelPrice  Decimal @default(0) @map("level_price") @db.Decimal(10, 2) // 会员卡原价
+  duration    Int     // 购买天数
+  
+  // [废弃字段] 兼容旧数据
+  planName  String?  @map("plan_name")
+  planPrice Decimal? @map("plan_price") @db.Decimal(10, 2)
+  bonusDays Int      @default(0) @map("bonus_days")
+
+  // 升级折算（仅 type=upgrade 时有值）
+  upgradeFromLevelId   String?  @map("upgrade_from_level_id") // 原会员卡ID
+  upgradeFromLevelName String?  @map("upgrade_from_level_name") // 原会员卡名称
+  upgradeCredit        Decimal  @default(0) @map("upgrade_credit") @db.Decimal(10, 2) // 折算金额
+  upgradeRemainingDays Int      @default(0) @map("upgrade_remaining_days") // 原会员剩余天数
 
   // 支付
-  amount        Decimal   @db.Decimal(10, 2) // 实付金额
+  amount        Decimal   @db.Decimal(10, 2) // 实付金额 = levelPrice - upgradeCredit
   paymentMethod String?   @map("payment_method") // wechat/alipay
   paidAt        DateTime? @map("paid_at")
 
@@ -1426,9 +1471,9 @@ model MembershipOrder {
 
   createdAt DateTime @default(now()) @map("created_at")
 
-  user  User            @relation(fields: [userId], references: [id])
-  level MembershipLevel @relation(fields: [levelId], references: [id])
-  plan  MembershipPlan  @relation(fields: [planId], references: [id])
+  user  User             @relation(fields: [userId], references: [id])
+  level MembershipLevel  @relation(fields: [levelId], references: [id])
+  plan  MembershipPlan?  @relation("DeprecatedPlanOrders", fields: [planId], references: [id])
 
   @@index([userId])
   @@map("membership_orders")
@@ -2288,4 +2333,21 @@ model QuickReply {
   @@index([category, status])
   @@index([isAutoGreeting])
   @@map("quick_replies")
+}
+
+// ========== 收藏模块 ==========
+
+model Favorite {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  serviceId String   @map("service_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, serviceId])
+  @@index([userId])
+  @@index([serviceId])
+  @@map("favorites")
 }

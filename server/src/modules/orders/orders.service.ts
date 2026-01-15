@@ -23,6 +23,15 @@ export class OrdersService {
 
   // 创建订单（使用事务保证一致性）
   async create(userId: string, dto: CreateOrderDto) {
+    // 验证预约时间不能是过去的时间
+    const appointmentDateTime = new Date(`${dto.appointmentDate}T${dto.appointmentTime}:00`);
+    const now = new Date();
+    // 允许30分钟的缓冲时间
+    const bufferTime = 30 * 60 * 1000; // 30分钟
+    if (appointmentDateTime.getTime() < now.getTime() + bufferTime) {
+      throw new BadRequestException('预约时间不能早于当前时间30分钟');
+    }
+
     // 验证就诊人是否属于当前用户
     const patient = await this.prisma.patient.findFirst({
       where: { id: dto.patientId, userId },
@@ -244,15 +253,17 @@ export class OrdersService {
     status?: string;
     page?: number;
     pageSize?: number;
+    includeMembership?: boolean;
   }) {
-    const { status, page = 1, pageSize = 10 } = params;
+    const { status, page = 1, pageSize = 10, includeMembership = false } = params;
 
     const where: any = { userId };
     if (status && status !== 'all') {
       where.status = status;
     }
 
-    const [data, total] = await Promise.all([
+    // 查询普通订单
+    const [orders, ordersTotal] = await Promise.all([
       this.prisma.order.findMany({
         where,
         include: {
@@ -262,13 +273,77 @@ export class OrdersService {
           escort: true,
         },
         orderBy: { createdAt: 'desc' },
-        skip: (page - 1) * pageSize,
-        take: pageSize,
+        skip: includeMembership ? 0 : (page - 1) * pageSize,
+        take: includeMembership ? undefined : pageSize,
       }),
       this.prisma.order.count({ where }),
     ]);
 
-    return { data, total, page, pageSize };
+    // 如果不需要会员订单，直接返回普通订单
+    if (!includeMembership) {
+      return { data: orders, total: ordersTotal, page, pageSize };
+    }
+
+    // 查询会员订单
+    const membershipWhere: any = { userId };
+    if (status && status !== 'all') {
+      membershipWhere.status = status;
+    }
+
+    const [membershipOrders, membershipTotal] = await Promise.all([
+      this.prisma.membershipOrder.findMany({
+        where: membershipWhere,
+        include: {
+          plan: true,
+          level: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.membershipOrder.count({ where: membershipWhere }),
+    ]);
+
+    // 转换会员订单为统一格式
+    const transformedMembershipOrders = membershipOrders.map(order => ({
+      id: order.id,
+      orderNo: order.orderNo,
+      orderType: 'membership' as const, // 标记为会员订单
+      userId: order.userId,
+      status: order.status,
+      totalAmount: order.amount,
+      paidAmount: order.amount,
+      discountAmount: 0,
+      paymentMethod: order.paymentMethod,
+      paymentTime: order.paidAt,
+      paidAt: order.paidAt,
+      createdAt: order.createdAt,
+      updatedAt: order.createdAt, // MembershipOrder 没有 updatedAt，使用 createdAt
+      // 会员订单特有字段
+      membershipPlan: order.plan,
+      membershipLevel: order.level,
+      planName: order.planName,
+      duration: order.duration,
+      bonusDays: order.bonusDays,
+      // 普通订单字段设为 null
+      service: null,
+      hospital: null,
+      patient: null,
+      escort: null,
+      appointmentDate: null,
+      appointmentTime: null,
+    }));
+
+    // 合并并按创建时间排序
+    const allOrders = [
+      ...orders.map(o => ({ ...o, orderType: 'service' as const })),
+      ...transformedMembershipOrders,
+    ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    // 分页
+    const total = ordersTotal + membershipTotal;
+    const startIndex = (page - 1) * pageSize;
+    const paginatedData = allOrders.slice(startIndex, startIndex + pageSize);
+
+    return { data: paginatedData, total, page, pageSize };
   }
 
   // 获取订单详情

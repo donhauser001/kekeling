@@ -8,11 +8,13 @@
  * - types.ts - 类型定义
  */
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Box } from '../../../ui/primitives'
 import { isWxEnvironment } from '../../../platform/env'
 import { BannerSection } from '../../BannerSection'
 import { useThemeColors, useServiceDetailData } from './hooks'
+import { previewApi } from '../../../api'
+import { getWxBridge } from '../../../bridge/wx-bridge'
 import {
   ServiceHeader,
   ServiceImageCarousel,
@@ -52,6 +54,37 @@ export function ServiceDetailPage({
 
   // 数据获取
   const { service, isLoading, bannerData, recommendedServices } = useServiceDetailData(serviceId)
+
+  // 检查是否已收藏
+  useEffect(() => {
+    if (serviceId) {
+      previewApi.checkFavorite(serviceId)
+        .then(result => setIsFavorite(result))
+        .catch(err => console.error('[ServiceDetailPage] 检查收藏状态失败:', err))
+    }
+  }, [serviceId])
+
+  // 切换收藏
+  const handleFavoriteToggle = useCallback(async () => {
+    const wxBridge = getWxBridge()
+
+    // 乐观更新
+    setIsFavorite(prev => !prev)
+
+    try {
+      if (isFavorite) {
+        const result = await previewApi.removeFavorite(serviceId)
+        wxBridge.showToast({ title: result.message || '已取消收藏', icon: 'none' })
+      } else {
+        const result = await previewApi.addFavorite(serviceId)
+        wxBridge.showToast({ title: result.message || '收藏成功', icon: 'success' })
+      }
+    } catch (err) {
+      // 失败时回滚
+      setIsFavorite(prev => !prev)
+      wxBridge.showToast({ title: '操作失败', icon: 'none' })
+    }
+  }, [serviceId, isFavorite])
 
   // 主题颜色
   const colors = useThemeColors(isDarkMode)
@@ -106,7 +139,7 @@ export function ServiceDetailPage({
         colors={colors}
         isDarkMode={isDarkMode}
         isFavorite={isFavorite}
-        onFavoriteToggle={() => setIsFavorite(!isFavorite)}
+        onFavoriteToggle={handleFavoriteToggle}
         onBack={onBack}
       />
 

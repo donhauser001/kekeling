@@ -305,6 +305,53 @@ export interface CheckInResult {
 }
 
 /**
+ * 积分任务状态
+ */
+export type PointsTaskStatus = 'pending' | 'completed' | 'claimed'
+
+/**
+ * 积分任务项
+ * 对应接口: GET /points/tasks
+ */
+export interface PointsTaskItem {
+  /** 任务代码 */
+  code: string
+  /** 任务名称 */
+  name: string
+  /** 任务描述 */
+  description: string
+  /** 任务图标 */
+  icon: string
+  /** 奖励积分 */
+  points: number
+  /** 积分比例（按订单金额计算时使用） */
+  pointsRate?: number
+  /** 是否按比例计算积分 */
+  isRateBased?: boolean
+  /** 任务状态 */
+  status: PointsTaskStatus
+  /** 任务进度 */
+  progress?: number
+  /** 任务目标 */
+  target?: number
+}
+
+/**
+ * 领取任务结果
+ * 对应接口: POST /points/tasks/:taskCode/claim
+ */
+export interface ClaimTaskResult {
+  /** 获得积分 */
+  points: number
+  /** 当前总积分 */
+  totalPoints: number
+  /** 任务代码 */
+  taskCode: string
+  /** 任务名称 */
+  taskName: string
+}
+
+/**
  * 邀请信息
  * 对应接口: GET /marketing/referrals/info
  */
@@ -319,6 +366,50 @@ export interface ReferralInfo {
   pendingPoints: number
   /** 每次邀请奖励积分 */
   rewardPoints: number
+}
+
+/**
+ * 邀请记录
+ * 对应接口: GET /referrals/records
+ */
+export interface ReferralRecord {
+  id: string
+  /** 邀请类型: user-用户邀请, patient-就诊人邀请 */
+  type: 'user' | 'patient'
+  /** 状态: pending-待注册, registered-已注册, rewarded-已发放奖励, invalid-无效 */
+  status: 'pending' | 'registered' | 'rewarded' | 'invalid'
+  /** 邀请码 */
+  inviteCode: string
+  /** 被邀请人信息 */
+  invitee?: {
+    id: string
+    nickname: string
+    phone?: string
+    avatar?: string
+  }
+  /** 就诊人手机号（type=patient时） */
+  patientPhone?: string
+  /** 注册时间 */
+  registeredAt?: string
+  /** 奖励发放时间 */
+  rewardedAt?: string
+  /** 邀请人奖励 */
+  inviterReward?: {
+    couponId?: string
+    points?: number
+  }
+  /** 创建时间 */
+  createdAt: string
+}
+
+/**
+ * 邀请记录列表响应
+ */
+export interface ReferralRecordsResponse {
+  data: ReferralRecord[]
+  total: number
+  page: number
+  pageSize: number
 }
 
 /**
@@ -372,6 +463,24 @@ export interface AvailableCoupon {
   claimedCount: number
   /** 每人限领数量 */
   perUserLimit: number
+}
+
+/**
+ * 营销功能设置
+ * 对应接口: GET /config/marketing/settings
+ * 控制小程序端功能入口的显示/隐藏
+ */
+export interface MarketingSettings {
+  /** 会员系统开关 */
+  membershipEnabled: boolean
+  /** 积分系统开关 */
+  pointsEnabled: boolean
+  /** 优惠券系统开关 */
+  couponsEnabled: boolean
+  /** 分销系统开关 */
+  referralsEnabled: boolean
+  /** 营销活动开关 */
+  campaignsEnabled: boolean
 }
 
 // ============================================================================

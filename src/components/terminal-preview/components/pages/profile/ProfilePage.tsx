@@ -2,6 +2,12 @@
  * 个人中心页
  * 按《小程序页面改造规范》改造
  * 已拆分为模块化组件
+ *
+ * 陪诊员视角逻辑：
+ * - effectiveViewerRole 由 escortToken 推导（useViewerRole hook）
+ * - 退出陪诊员模式 = 清除 escortToken → effectiveViewerRole 自动变成 'user'
+ * - 服务详情页等根据 effectiveViewerRole 自动隐藏陪诊员专属内容
+ * - 再次进入工作台需要重新登录获取 escortToken
  */
 
 import { useState, useEffect, useMemo } from 'react'
@@ -9,10 +15,22 @@ import { Box } from '../../../ui/primitives'
 import { isWxEnvironment } from '../../../platform/env'
 import { previewApi } from '../../../api'
 import { BannerSection } from '../../BannerSection'
+import type { MarketingSettings } from '../../../api/types'
 
 // 类型和常量
 import type { ProfilePageProps, UserProfile, ThemeColors, OrderEntry, MenuItem } from './types'
 import { ORDER_ENTRY_CONFIG, MENU_ITEMS, getThemeColors } from './constants'
+
+/**
+ * 菜单项与营销设置的映射关系
+ * key: 菜单项 key
+ * value: 对应的营销设置字段
+ */
+const MENU_FEATURE_MAP: Record<string, keyof MarketingSettings> = {
+  membership: 'membershipEnabled',
+  coupons: 'couponsEnabled',
+  points: 'pointsEnabled',
+}
 
 // 子组件
 import {
@@ -51,6 +69,13 @@ export function ProfilePage({
   const [userProfile, setUserProfile] = useState<UserProfile | undefined>(undefined)
   const [orderStats, setOrderStats] = useState<OrderStats>({ pending: 0, confirmed: 0, inProgress: 0, completed: 0 })
   const [couponCount, setCouponCount] = useState<number>(0)
+  const [marketingSettings, setMarketingSettings] = useState<MarketingSettings>({
+    membershipEnabled: true,
+    pointsEnabled: true,
+    couponsEnabled: true,
+    referralsEnabled: true,
+    campaignsEnabled: true,
+  })
 
   // ============================================================================
   // 数据获取
@@ -71,6 +96,8 @@ export function ProfilePage({
       const availableCount = data.items.filter(c => c.status === 'available').length
       setCouponCount(availableCount)
     }).catch(console.error)
+    // 获取营销设置（控制功能入口显示/隐藏）
+    previewApi.getMarketingSettings().then(setMarketingSettings).catch(console.error)
   }, [])
 
   // ============================================================================
@@ -79,11 +106,12 @@ export function ProfilePage({
 
   const colors: ThemeColors = getThemeColors(isDarkMode)
   const primaryColor = themeSettings.primaryColor
-  // 是否有有效的 escortToken（用于决定是否需要登录）
-  const hasEscortToken = effectiveViewerRole === 'escort'
-  // 是否是陪诊员（用于决定显示"进入工作台"还是"成为陪诊员"）
-  // 优先看 userProfile.isEscort（后端返回），如果后端说是陪诊员就显示工作台入口
-  const isEscort = userProfile?.isEscort === true || hasEscortToken
+
+  // 是否处于陪诊员视角（由 escortToken 推导）
+  const isEscortMode = effectiveViewerRole === 'escort'
+
+  // 是否有陪诊员资质（后端返回，审核通过）
+  const hasEscortQualification = userProfile?.isEscort === true
 
   // 优先使用覆盖数据
   const effectiveBannerData = bannerDataOverride !== undefined ? bannerDataOverride : bannerData
@@ -102,15 +130,25 @@ export function ProfilePage({
     }))
   }, [orderStats])
 
-  // 动态设置菜单项 badge（优惠券数量）
+  // 根据营销设置过滤菜单项，并动态设置 badge（优惠券数量）
   const menuItemsWithBadge: MenuItem[] = useMemo(() => {
-    return MENU_ITEMS.map(item => {
-      if (item.key === 'coupons' && couponCount > 0) {
-        return { ...item, badge: couponCount > 99 ? '99+' : String(couponCount) }
-      }
-      return item
-    })
-  }, [couponCount])
+    return MENU_ITEMS
+      // 根据营销设置过滤菜单项
+      .filter(item => {
+        const featureKey = MENU_FEATURE_MAP[item.key]
+        // 如果没有映射关系，说明不受营销设置控制，始终显示
+        if (!featureKey) return true
+        // 根据营销设置决定是否显示
+        return marketingSettings[featureKey] !== false
+      })
+      // 动态设置 badge
+      .map(item => {
+        if (item.key === 'coupons' && couponCount > 0) {
+          return { ...item, badge: couponCount > 99 ? '99+' : String(couponCount) }
+        }
+        return item
+      })
+  }, [couponCount, marketingSettings])
 
   // ============================================================================
   // 事件处理
@@ -118,6 +156,9 @@ export function ProfilePage({
 
   const handleMenuItemClick = (key: string) => {
     switch (key) {
+      case 'favorites':
+        onNavigate?.('favorites')
+        break
       case 'patients':
         onNavigate?.('patients')
         break
@@ -163,7 +204,8 @@ export function ProfilePage({
       {/* 用户头部 */}
       <UserHeader
         userProfile={userProfile}
-        isEscort={isEscort}
+        isEscortMode={isEscortMode}
+        hasEscortQualification={hasEscortQualification}
         primaryColor={primaryColor}
         onSettingsClick={() => onNavigate?.('user-profile-edit')}
         onExitEscortMode={onExitEscortMode}
@@ -197,7 +239,7 @@ export function ProfilePage({
 
       {/* 陪诊员入口卡片 */}
       <EscortCard
-        isEscort={isEscort}
+        hasEscortQualification={hasEscortQualification}
         colors={colors}
         primaryColor={primaryColor}
         onEscortEntryClick={onEscortEntryClick}
@@ -209,4 +251,3 @@ export function ProfilePage({
     </Box>
   )
 }
-

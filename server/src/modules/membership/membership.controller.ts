@@ -95,5 +95,13 @@ export class MembershipController {
     const data = await this.membershipService.refund(id, userId, dto.reason);
     return ApiResponse.success(data, '退款申请成功');
   }
+
+  @Post('test-pay/:orderNo')
+  @ApiOperation({ summary: '【测试】模拟支付成功' })
+  @ApiParam({ name: 'orderNo', description: '订单号' })
+  async testPay(@Param('orderNo') orderNo: string) {
+    const data = await this.membershipService.paymentSuccess(orderNo, `TEST_${Date.now()}`);
+    return ApiResponse.success(data, '模拟支付成功');
+  }
 }
 

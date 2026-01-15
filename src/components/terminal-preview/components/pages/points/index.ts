@@ -26,5 +26,5 @@ export type {
 } from './types'
 
 // 常量
-export { wxScale, wxSafeAreaTop, POINTS_TASKS, adjustColor, getSourceLabel } from './constants'
+export { wxScale, wxSafeAreaTop, adjustColor, getSourceLabel } from './constants'
 

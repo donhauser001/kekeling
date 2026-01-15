@@ -193,14 +193,29 @@ function WorkbenchPageContent() {
 
   /**
    * 退出陪诊员模式
+   * 清除 escortToken 并跳转到"我的"页面
+   * 再次进入工作台时需要重新登录
    */
   const handleExitEscortMode = useCallback(() => {
     console.log('[WorkbenchPage] 退出陪诊员模式')
+
     // 清除 escortToken
     clearPreviewEscortToken()
     setLocalEscortToken(null)
-    // 返回到我的页面
-    Taro.navigateBack()
+
+    // 提示用户
+    Taro.showToast({
+      title: '已退出陪诊员模式',
+      icon: 'success',
+      duration: 1500,
+    })
+
+    // 跳转到"我的"页面（使用 reLaunch 清空页面栈）
+    setTimeout(() => {
+      Taro.reLaunch({
+        url: '/packageB/pages/profile/index',
+      })
+    }, 1500)
   }, [])
 
   /**

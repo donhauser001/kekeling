@@ -108,7 +108,7 @@ export function getMockOrdersPool(): OrdersPoolResponse {
       {
         id: 'pool-order-3',
         orderNo: 'ORD-2024-003',
-        serviceType: '跑腿服务',
+        serviceType: '代办服务',
         serviceName: '取药代办',
         hospitalName: '北京大学第一医院',
         appointmentTime: '2024-12-14 14:00',

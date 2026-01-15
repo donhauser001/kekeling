@@ -156,5 +156,28 @@ export class AdminCouponsController {
     });
     return ApiResponse.success(result);
   }
+
+  // ========== 用户优惠券 ==========
+
+  @Get('user-coupons')
+  @ApiOperation({ summary: '获取用户优惠券列表' })
+  @ApiQuery({ name: 'userId', required: false })
+  @ApiQuery({ name: 'status', required: false })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'pageSize', required: false })
+  async getUserCoupons(
+    @Query('userId') userId?: string,
+    @Query('status') status?: string,
+    @Query('page') page?: number,
+    @Query('pageSize') pageSize?: number,
+  ) {
+    const result = await this.couponsService.getUserCouponsForAdmin({
+      userId,
+      status,
+      page: page ? Number(page) : 1,
+      pageSize: pageSize ? Number(pageSize) : 10,
+    });
+    return ApiResponse.success(result);
+  }
 }
 

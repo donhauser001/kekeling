@@ -32,14 +32,14 @@ import { membershipApi, type MembershipLevel } from '@/lib/api'
 import { TerminalPreview, type MarketingDataOverride } from '@/components/terminal-preview'
 
 const formSchema = z.object({
-  name: z.string().min(1, '请输入等级名称'),
-  level: z.coerce.number().min(1, '等级必须大于0'),
-  discount: z.coerce.number().min(0).max(100, '折扣不能超过100%'),
+  name: z.string().min(1, '请输入会员卡名称'),
   price: z.coerce.number().min(0, '价格不能为负'),
+  originalPrice: z.coerce.number().min(0).optional(), // 原价（划线价）
   duration: z.coerce.number().min(1, '时长必须大于0天'),
-  bonusDays: z.coerce.number().min(0).default(0),
+  discount: z.coerce.number().min(0).max(100, '折扣不能超过100%'),
   description: z.string().optional(),
   benefits: z.string().optional(),
+  recommended: z.boolean().default(false),
   status: z.string().default('active'),
 })
 
@@ -66,13 +66,13 @@ export function MembershipActionDialog({
     resolver: zodResolver(formSchema) as any,
     defaultValues: {
       name: '',
-      level: 1,
-      discount: 0,
       price: 0,
+      originalPrice: undefined,
       duration: 30,
-      bonusDays: 0,
+      discount: 100, // 默认无折扣
       description: '',
       benefits: '',
+      recommended: false,
       status: 'active',
     },
   })
@@ -81,25 +81,29 @@ export function MembershipActionDialog({
     if (open && currentRow) {
       form.reset({
         name: currentRow.name,
-        level: currentRow.level,
-        discount: currentRow.discount,
-        price: currentRow.price,
-        duration: currentRow.duration,
-        bonusDays: currentRow.bonusDays || 0,
+        price: Number(currentRow.price) || 0,
+        originalPrice: currentRow.originalPrice ? Number(currentRow.originalPrice) : undefined,
+        duration: currentRow.duration || 30,
+        discount: currentRow.discount || 100,
         description: currentRow.description || '',
-        benefits: Array.isArray(currentRow.benefits) ? currentRow.benefits.join('\n') : '',
+        benefits: Array.isArray(currentRow.benefits) 
+          ? currentRow.benefits.join('\n') 
+          : (typeof currentRow.benefits === 'object' && currentRow.benefits?.list 
+              ? (currentRow.benefits as any).list.join('\n') 
+              : ''),
+        recommended: currentRow.recommended || false,
         status: currentRow.status || 'active',
       })
     } else if (open) {
       form.reset({
         name: '',
-        level: 1,
-        discount: 0,
         price: 0,
+        originalPrice: undefined,
         duration: 30,
-        bonusDays: 0,
+        discount: 100,
         description: '',
         benefits: '',
+        recommended: false,
         status: 'active',
       })
     }
@@ -134,9 +138,15 @@ export function MembershipActionDialog({
 
   const onSubmit = (values: FormValues) => {
     const payload = {
-      ...values,
-      benefits: values.benefits ? values.benefits.split('\n').filter(Boolean) : [],
+      name: values.name,
+      price: values.price,
+      originalPrice: values.originalPrice || undefined,
+      duration: values.duration,
+      discount: values.discount,
       description: values.description || undefined,
+      benefits: values.benefits ? { list: values.benefits.split('\n').filter(Boolean) } : undefined,
+      recommended: values.recommended,
+      status: values.status,
     }
 
     if (isEdit && currentRow) {
@@ -153,34 +163,35 @@ export function MembershipActionDialog({
 
   // 将表单数据映射为预览器 marketingData
   const marketingData = useMemo<MarketingDataOverride>(() => {
-    const { name, price, duration, description } = watchedValues
+    const { name, price, originalPrice, duration, description, recommended } = watchedValues
     // 计算过期时间（从今天算起）
     const expireDate = new Date()
     expireDate.setDate(expireDate.getDate() + (duration || 30))
     const expireAt = expireDate.toISOString().split('T')[0]
 
     return {
-      // 模拟已开通会员，显示当前编辑的等级
+      // 模拟已开通会员，显示当前编辑的会员卡
       membership: {
         id: currentRow?.id ?? 'preview-membership',
-        level: String(watchedValues.level || 1),
-        levelName: name || '会员等级',
+        level: currentRow?.code ?? 'preview',
+        levelName: name || '会员卡',
         expireAt,
         points: 1000, // 默认积分
       },
-      // 会员套餐预览（单个套餐）
+      // 会员卡预览（单个卡）
       membershipPlans: [
         {
           id: currentRow?.id ?? 'preview-plan',
-          name: name || '会员套餐',
+          name: name || '会员卡',
           description: description || '',
           price: price || 0,
+          originalPrice: originalPrice,
           durationDays: duration || 30,
-          isRecommended: true,
+          isRecommended: recommended || false,
         },
       ],
     }
-  }, [watchedValues, currentRow?.id])
+  }, [watchedValues, currentRow?.id, currentRow?.code])
 
   // 脏表单关闭拦截
   const onOpenChangeWrapper = (open: boolean) => {
@@ -198,9 +209,9 @@ export function MembershipActionDialog({
       <Dialog open={open} onOpenChange={onOpenChangeWrapper}>
         <DialogContent className='sm:max-w-[900px]'>
           <DialogHeader className='text-start'>
-            <DialogTitle>{isEdit ? '编辑会员等级' : '新建会员等级'}</DialogTitle>
+            <DialogTitle>{isEdit ? '编辑会员卡' : '新建会员卡'}</DialogTitle>
             <DialogDescription>
-              {isEdit ? '修改会员等级信息' : '创建一个新的会员等级'}，右侧预览器实时显示效果
+              {isEdit ? '修改会员卡信息' : '创建一个新的会员卡'}，右侧预览器实时显示效果
             </DialogDescription>
           </DialogHeader>
 
@@ -209,57 +220,50 @@ export function MembershipActionDialog({
             <div className='flex-1 max-h-[60vh] min-h-[300px] overflow-y-auto py-1 px-1'>
               <Form {...form}>
                 <form id='membership-form' onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>
-                  <div className='grid grid-cols-2 items-start gap-4'>
-                    <FormField
-                      control={form.control}
-                      name='name'
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>等级名称 *</FormLabel>
-                          <FormControl>
-                            <Input placeholder='如：黄金会员' {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name='level'
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>等级 *</FormLabel>
-                          <FormControl>
-                            <Input type='number' placeholder='数值越大等级越高' {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                  {/* 会员卡名称 */}
+                  <FormField
+                    control={form.control}
+                    name='name'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>会员卡名称 *</FormLabel>
+                        <FormControl>
+                          <Input placeholder='如：黄金月卡、铂金季卡' {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
+                  {/* 价格和原价 */}
                   <div className='grid grid-cols-2 items-start gap-4'>
-                    <FormField
-                      control={form.control}
-                      name='discount'
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>折扣 (%) *</FormLabel>
-                          <FormControl>
-                            <Input type='number' placeholder='如：90 表示 9 折' {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
                     <FormField
                       control={form.control}
                       name='price'
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>价格 (元) *</FormLabel>
+                          <FormLabel>售价 (元) *</FormLabel>
                           <FormControl>
-                            <Input type='number' {...field} />
+                            <Input type='number' placeholder='实际售价' {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name='originalPrice'
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>原价 (元)</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type='number' 
+                              placeholder='可选，划线价' 
+                              {...field}
+                              value={field.value ?? ''}
+                              onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -267,15 +271,16 @@ export function MembershipActionDialog({
                     />
                   </div>
 
+                  {/* 时长和折扣 */}
                   <div className='grid grid-cols-2 items-start gap-4'>
                     <FormField
                       control={form.control}
                       name='duration'
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>时长 (天) *</FormLabel>
+                          <FormLabel>有效期 (天) *</FormLabel>
                           <FormControl>
-                            <Input type='number' {...field} />
+                            <Input type='number' placeholder='如：30、90、365' {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -283,12 +288,12 @@ export function MembershipActionDialog({
                     />
                     <FormField
                       control={form.control}
-                      name='bonusDays'
+                      name='discount'
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>赠送天数</FormLabel>
+                          <FormLabel>服务折扣 (%)</FormLabel>
                           <FormControl>
-                            <Input type='number' {...field} />
+                            <Input type='number' placeholder='100=无折扣，90=9折' {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

@@ -16,6 +16,8 @@ type BaseNavItem = {
   title: string
   badge?: string
   icon?: React.ElementType
+  /** 关联的功能开关键名（用于根据营销配置动态隐藏菜单） */
+  featureKey?: string
 }
 
 type NavLink = BaseNavItem & {
@@ -24,7 +26,7 @@ type NavLink = BaseNavItem & {
 }
 
 type NavCollapsible = BaseNavItem & {
-  items: (BaseNavItem & { url: LinkProps['to'] | (string & {}) })[]
+  items: (BaseNavItem & { url: LinkProps['to'] | (string & {}); featureKey?: string })[]
   url?: never
 }
 

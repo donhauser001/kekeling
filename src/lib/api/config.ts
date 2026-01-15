@@ -64,6 +64,7 @@ export interface ThemeSettings {
   // 显示开关
   headerShowName: boolean       // 顶部显示名称
   headerShowSlogan: boolean     // 顶部显示标语
+  footerShowLogo: boolean       // 页脚显示 Logo
   footerShowName: boolean       // 页脚显示名称
   footerShowSlogan: boolean     // 页脚显示标语
   // 组合模式

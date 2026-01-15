@@ -81,6 +81,24 @@ const getStatusText = (status: string): string => {
   return map[status] || status
 }
 
+/** 格式化日期（ISO 格式转为 YYYY-MM-DD） */
+const formatDate = (dateStr: string | null | undefined): string => {
+  if (!dateStr) return '-'
+  // 如果已经是 YYYY-MM-DD 格式，直接返回
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr
+  // 解析 ISO 格式日期
+  try {
+    const date = new Date(dateStr)
+    if (isNaN(date.getTime())) return dateStr
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  } catch {
+    return dateStr
+  }
+}
+
 // 状态颜色映射
 const statusColors: Record<string, { bg: string; text: string }> = {
   pending: { bg: '#fff7e6', text: '#fa8c16' },
@@ -122,6 +140,9 @@ export function UserOrdersPage({
   const borderColor = isDarkMode ? '#3a3a3a' : '#e5e7eb'
   const primaryColor = themeSettings.primaryColor
 
+  // 是否包含会员订单
+  const includeMembership = pageParams?.includeMembership === 'true'
+
   // 获取订单数据的函数
   const fetchOrders = async () => {
     setIsLoading(true)
@@ -136,6 +157,7 @@ export function UserOrdersPage({
       const response = await previewApi.getUserOrders({
         // 暂时不传 status，在前端过滤（因为后端只支持单状态筛选）
         pageSize: 100, // 获取足够多的数据用于前端过滤
+        includeMembership, // 如果需要包含会员订单
       })
       setOrders(response.data || [])
     } catch (error) {
@@ -149,7 +171,7 @@ export function UserOrdersPage({
   // 初始加载和刷新时获取订单数据
   useEffect(() => {
     fetchOrders()
-  }, [refreshKey])
+  }, [refreshKey, includeMembership])
 
   // 根据 Tab 过滤订单（前端过滤，因为后端只支持单状态筛选）
   const filteredOrders = activeTab === 'all'
@@ -406,7 +428,7 @@ export function UserOrdersPage({
                       color: textSecondary,
                     }}
                   >
-                    {order.appointmentDate} {order.appointmentTime}
+                    {formatDate(order.appointmentDate)} {order.appointmentTime || ''}
                   </Text>
                 </Box>
 

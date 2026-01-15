@@ -1,6 +1,10 @@
 /**
  * 陪诊员入口卡片组件
  * 按《小程序页面改造规范》改造
+ *
+ * 显示逻辑：
+ * - hasEscortQualification 为 true: 显示"陪诊员工作台"，点击进入工作台（可能需要登录）
+ * - hasEscortQualification 为 false: 显示"成为陪诊员"，点击跳转申请页
  */
 
 import { Box, Text, Icon } from '../../../../ui/primitives'
@@ -10,7 +14,7 @@ import type { EscortCardProps } from '../types'
 const wxScale = isWxEnvironment() ? 1.1 : 1
 
 export function EscortCard({
-  isEscort,
+  hasEscortQualification,
   colors,
   primaryColor,
   onEscortEntryClick,
@@ -20,7 +24,7 @@ export function EscortCard({
 
   return (
     <Box
-      onClick={isEscort ? onWorkbenchClick : onEscortEntryClick}
+      onClick={hasEscortQualification ? onWorkbenchClick : onEscortEntryClick}
       style={{
         marginLeft: 12 * wxScale,
         marginRight: 12 * wxScale,
@@ -34,9 +38,9 @@ export function EscortCard({
         paddingTop: 12 * wxScale,
         paddingBottom: 12 * wxScale,
         backgroundColor: cardBg,
-        borderWidth: isEscort ? 1 : 0,
+        borderWidth: hasEscortQualification ? 1 : 0,
         borderStyle: 'solid',
-        borderColor: isEscort ? `${primaryColor}40` : 'transparent',
+        borderColor: hasEscortQualification ? `${primaryColor}40` : 'transparent',
       }}
     >
       {/* 图标 */}
@@ -48,20 +52,20 @@ export function EscortCard({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: isEscort ? primaryColor : `${primaryColor}20`,
+          backgroundColor: hasEscortQualification ? primaryColor : `${primaryColor}20`,
         }}
       >
         <Icon
           name="workbench"
           size={20 * wxScale}
-          color={isEscort ? '#fff' : primaryColor}
+          color={hasEscortQualification ? '#fff' : primaryColor}
         />
       </Box>
 
       {/* 文字 */}
       <Box style={{ flex: 1 }}>
         <Text style={{ fontSize: 14 * wxScale, fontWeight: 500, color: textPrimary }}>
-          {isEscort ? '陪诊员工作台' : '成为陪诊员'}
+          {hasEscortQualification ? '陪诊员工作台' : '成为陪诊员'}
         </Text>
         <Text
           style={{
@@ -71,7 +75,7 @@ export function EscortCard({
             color: textMuted,
           }}
         >
-          {isEscort ? '管理订单、查看收入' : '加入我们，开启陪诊服务'}
+          {hasEscortQualification ? '管理订单、查看收入' : '加入我们，开启陪诊服务'}
         </Text>
       </Box>
 
@@ -87,10 +91,9 @@ export function EscortCard({
         }}
       >
         <Text style={{ fontSize: 12 * wxScale, color: '#fff' }}>
-          {isEscort ? '进入工作台' : '立即加入'}
+          {hasEscortQualification ? '进入工作台' : '立即加入'}
         </Text>
       </Box>
     </Box>
   )
 }
-

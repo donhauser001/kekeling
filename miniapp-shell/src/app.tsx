@@ -5,6 +5,7 @@
  * 1. 环境检测
  * 2. 注入 WxBridge runtime
  * 3. 加载图标字体（Iconfont）
+ * 4. 预加载主题设置（避免页面闪烁）
  *
  * 说明：
  * - Taro 的页面渲染与 App 的 children 是分离的
@@ -34,6 +35,11 @@ const SERVER_BASE_URL = 'https://kkl.top'
 const ICONFONT_URL = `${SERVER_BASE_URL}/uploads/fonts/iconfont.ttf`
 
 /**
+ * 主题缓存 key
+ */
+const THEME_CACHE_KEY = 'kekeling_theme_settings'
+
+/**
  * 加载图标字体
  *
  * 使用 iconfont 统一图标系统（775 个图标）
@@ -55,6 +61,28 @@ function loadIconFonts() {
   })
 }
 
+/**
+ * 预加载主题设置
+ * 在 App 启动时立即加载主题，缓存到本地存储
+ * 解决页面切换时主题色闪烁问题（#2）
+ */
+function preloadThemeSettings() {
+  Taro.request({
+    url: `${SERVER_BASE_URL}/api/config/theme`,
+    method: 'GET',
+    success: (res) => {
+      if (res.statusCode === 200 && res.data) {
+        // 缓存主题设置
+        Taro.setStorageSync(THEME_CACHE_KEY, JSON.stringify(res.data))
+        console.log('[Theme] 主题预加载成功:', res.data.primaryColor)
+      }
+    },
+    fail: (err) => {
+      console.warn('[Theme] 主题预加载失败:', err)
+    },
+  })
+}
+
 // 使用 Class 组件以确保 Taro 的生命周期正确触发
 class App extends Component<PropsWithChildren> {
   componentDidMount() {
@@ -63,6 +91,8 @@ class App extends Component<PropsWithChildren> {
     injectWxBridgeRuntime()
     // 加载图标字体（统一 Iconfont 系统）
     loadIconFonts()
+    // 预加载主题设置（避免页面切换时闪烁）
+    preloadThemeSettings()
   }
 
   render() {

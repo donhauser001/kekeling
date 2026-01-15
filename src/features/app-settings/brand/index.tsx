@@ -296,6 +296,7 @@ const defaultSettings: ThemeSettings = {
   footerLogoDark: '',
   headerShowName: true,
   headerShowSlogan: false,
+  footerShowLogo: true,
   footerShowName: true,
   footerShowSlogan: true,
   headerLayout: 'logo-name',
@@ -666,22 +667,57 @@ export default function AppSettingsBrand() {
                   </CardContent>
                 </Card>
 
-                {/* 页脚布局 */}
+                {/* 页脚显示元素（#34 改为独立开关） */}
                 <Card>
                   <CardHeader className='pb-3'>
-                    <CardTitle className='text-base'>页脚布局</CardTitle>
+                    <CardTitle className='text-base'>页脚显示元素</CardTitle>
                     <CardDescription>
-                      选择页脚品牌信息的展示组合
+                      自由选择页脚区域显示的内容
                     </CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <LayoutSelector
-                      value={formData.footerLayout}
-                      onChange={(layout) => updateField('footerLayout', layout)}
-                      brandName={formData.brandName}
-                      brandSlogan={formData.brandSlogan}
-                      logo={formData.footerLogo || formData.headerLogo}
-                    />
+                  <CardContent className='space-y-4'>
+                    {/* Logo 开关 */}
+                    <div className='flex items-center justify-between'>
+                      <div className='flex items-center gap-2'>
+                        <ImageIcon className='h-4 w-4 text-muted-foreground' />
+                        <div>
+                          <Label className='text-sm'>显示 Logo</Label>
+                          <p className='text-xs text-muted-foreground'>在页脚显示品牌 Logo</p>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={formData.footerShowLogo}
+                        onCheckedChange={(checked) => updateField('footerShowLogo', checked)}
+                      />
+                    </div>
+                    {/* 品牌名开关 */}
+                    <div className='flex items-center justify-between'>
+                      <div className='flex items-center gap-2'>
+                        <Type className='h-4 w-4 text-muted-foreground' />
+                        <div>
+                          <Label className='text-sm'>显示品牌名称</Label>
+                          <p className='text-xs text-muted-foreground'>"{formData.brandName || '品牌名称'}"</p>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={formData.footerShowName}
+                        onCheckedChange={(checked) => updateField('footerShowName', checked)}
+                      />
+                    </div>
+                    {/* 标语开关 */}
+                    <div className='flex items-center justify-between'>
+                      <div className='flex items-center gap-2'>
+                        <Sparkles className='h-4 w-4 text-muted-foreground' />
+                        <div>
+                          <Label className='text-sm'>显示品牌标语</Label>
+                          <p className='text-xs text-muted-foreground'>"{formData.brandSlogan || '品牌标语'}"</p>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={formData.footerShowSlogan}
+                        onCheckedChange={(checked) => updateField('footerShowSlogan', checked)}
+                      />
+                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -719,6 +755,9 @@ export default function AppSettingsBrand() {
                   footerLogoDark: formData.footerLogoDark,
                   headerLayout: formData.headerLayout,
                   footerLayout: formData.footerLayout,
+                  footerShowLogo: formData.footerShowLogo,
+                  footerShowName: formData.footerShowName,
+                  footerShowSlogan: formData.footerShowSlogan,
                   footerEnabled: formData.footerEnabled,
                   footerVisiblePages: formData.footerVisiblePages,
                   servicePhone: formData.servicePhone,
