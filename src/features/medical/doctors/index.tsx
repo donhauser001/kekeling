@@ -30,6 +30,7 @@ import {
     useUpdateDoctor,
     useDeleteDoctor,
     useHospitals,
+    useDepartmentTemplates,
 } from '@/hooks/use-api'
 import type { Doctor } from '@/lib/api'
 import {
@@ -162,6 +163,25 @@ export function Doctors() {
     const { data: hospitalsData } = useHospitals({ pageSize: 100 })
     const hospitals = hospitalsData?.data ?? []
 
+    // 获取科室库（科室模板）
+    const { data: departmentTemplates } = useDepartmentTemplates()
+
+    // 展平科室模板为可选列表
+    const availableDepartments = useMemo(() => {
+        const result: Array<{ id: string; name: string; category: string }> = []
+        ;(departmentTemplates || []).forEach(parent => {
+            // 添加一级科室
+            result.push({ id: parent.id, name: parent.name, category: parent.category })
+            // 添加二级科室
+            if (parent.children && parent.children.length > 0) {
+                parent.children.forEach(child => {
+                    result.push({ id: child.id, name: `${parent.name} - ${child.name}`, category: parent.category })
+                })
+            }
+        })
+        return result
+    }, [departmentTemplates])
+
     // 表单对话框状态
     const [dialogOpen, setDialogOpen] = useState(false)
     const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create')
@@ -177,8 +197,6 @@ export function Doctors() {
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
     const [deletingDoctor, setDeletingDoctor] = useState<Doctor | null>(null)
 
-    // 选中医院的科室列表
-    const [availableDepartments, setAvailableDepartments] = useState<Array<{ id: string; name: string }>>([])
 
     // 获取编辑中的医生详情
     const { data: editingDoctor } = useDoctor(editingDoctorId || '')
@@ -203,31 +221,12 @@ export function Doctors() {
                 experience: editingDoctor.experience || '',
                 phone: editingDoctor.phone || '',
             })
-            loadDepartments(editingDoctor.hospitalId)
         }
     }, [editingDoctor, dialogMode])
 
-    // 加载医院科室
-    const loadDepartments = async (hospitalId: string) => {
-        if (!hospitalId) {
-            setAvailableDepartments([])
-            return
-        }
-        try {
-            const res = await fetch(`/api/hospitals/${hospitalId}`)
-            const json = await res.json()
-            if (json.code === 0 && json.data?.departments) {
-                setAvailableDepartments(json.data.departments.map((d: any) => ({ id: d.id, name: d.name })))
-            }
-        } catch (err) {
-            console.error('加载科室失败:', err)
-        }
-    }
-
-    // 当选择医院变化时，加载科室
+    // 当选择医院变化时，清空科室选择
     const handleHospitalChange = (hospitalId: string) => {
         setFormData(prev => ({ ...prev, hospitalId, departmentId: '' }))
-        loadDepartments(hospitalId)
     }
 
     // 打开新建对话框
@@ -235,7 +234,6 @@ export function Doctors() {
         setDialogMode('create')
         setEditingDoctorId(null)
         setFormData(defaultFormData)
-        setAvailableDepartments([])
         setFormErrors({})
         setDialogOpen(true)
     }
@@ -646,10 +644,9 @@ export function Doctors() {
                                 <Select
                                     value={formData.departmentId}
                                     onValueChange={(v) => setFormData({ ...formData, departmentId: v })}
-                                    disabled={!formData.hospitalId}
                                 >
                                     <SelectTrigger className={formErrors.departmentId ? 'border-destructive' : ''}>
-                                        <SelectValue placeholder={formData.hospitalId ? '请选择科室' : '请先选择医院'} />
+                                        <SelectValue placeholder='请选择科室' />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {availableDepartments.map(d => (

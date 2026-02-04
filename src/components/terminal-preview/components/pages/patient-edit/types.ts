@@ -22,6 +22,9 @@ export interface PatientEditPageProps {
 // 数据类型
 // ============================================================================
 
+/** 就诊人关系类型 */
+export type PatientRelation = 'self' | 'parent' | 'child' | 'spouse' | 'other'
+
 /** 就诊人表单数据 */
 export interface PatientForm {
   name: string
@@ -29,7 +32,7 @@ export interface PatientForm {
   age: string
   phone: string
   idCard: string
-  relation: string
+  relation: PatientRelation
 }
 
 // ============================================================================

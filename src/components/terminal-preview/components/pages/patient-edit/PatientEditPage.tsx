@@ -26,6 +26,7 @@ import {
   wxScale,
   wxSafeAreaTop,
   defaultPatientForm,
+  relationLabelMap,
 } from './constants'
 import { previewApi } from '../../../api'
 import type { PatientEditPageProps, PatientForm, ThemeColors } from './types'
@@ -252,184 +253,184 @@ export function PatientEditPage({
               backgroundColor: cardBg,
             }}
           >
-          {/* 姓名 */}
-          <FormRow
-            icon="user"
-            label="姓名"
-            required
-            borderColor={borderColor}
-            textMuted={textMuted}
-            textSecondary={textSecondary}
-          >
-            <Input
-              type="text"
-              value={form.name}
-              onChange={(value) => updateField('name', value)}
-              placeholder="请输入真实姓名"
-              style={{
-                flex: 1,
-                fontSize: 14 * wxScale,
-                color: textPrimary,
-                backgroundColor: 'transparent',
-                textAlign: 'right',
-                border: 'none',
-                outline: 'none',
-              }}
-            />
-          </FormRow>
-
-          {/* 性别 */}
-          <FormRow
-            icon="peoples"
-            label="性别"
-            required
-            borderColor={borderColor}
-            textMuted={textMuted}
-            textSecondary={textSecondary}
-          >
-            <Box
-              style={{
-                flex: 1,
-                display: 'flex',
-                justifyContent: 'flex-end',
-                gap: 16 * wxScale,
-              }}
+            {/* 姓名 */}
+            <FormRow
+              icon="user"
+              label="姓名"
+              required
+              borderColor={borderColor}
+              textMuted={textMuted}
+              textSecondary={textSecondary}
             >
-              <GenderButton
-                selected={form.gender === 'male'}
-                label="男"
-                onClick={() => updateField('gender', 'male')}
-                primaryColor={primaryColor}
-                inputBg={inputBg}
-                textSecondary={textSecondary}
-                borderColor={borderColor}
-              />
-              <GenderButton
-                selected={form.gender === 'female'}
-                label="女"
-                onClick={() => updateField('gender', 'female')}
-                primaryColor={primaryColor}
-                inputBg={inputBg}
-                textSecondary={textSecondary}
-                borderColor={borderColor}
-              />
-            </Box>
-          </FormRow>
-
-          {/* 年龄 */}
-          <FormRow
-            icon="date-comes-back"
-            label="年龄"
-            required
-            borderColor={borderColor}
-            textMuted={textMuted}
-            textSecondary={textSecondary}
-          >
-            <Input
-              type="number"
-              value={form.age}
-              onChange={(value) => updateField('age', value)}
-              placeholder="请输入年龄"
-              style={{
-                flex: 1,
-                fontSize: 14 * wxScale,
-                color: textPrimary,
-                backgroundColor: 'transparent',
-                textAlign: 'right',
-                border: 'none',
-                outline: 'none',
-              }}
-            />
-            <Text style={{ marginLeft: 4 * wxScale, fontSize: 14 * wxScale, color: textMuted }}>
-              岁
-            </Text>
-          </FormRow>
-
-          {/* 手机号 */}
-          <FormRow
-            icon="phone-telephone"
-            label="手机号"
-            required
-            borderColor={borderColor}
-            textMuted={textMuted}
-            textSecondary={textSecondary}
-          >
-            <Input
-              type="tel"
-              value={form.phone}
-              onChange={(value) => updateField('phone', value)}
-              placeholder="请输入手机号"
-              maxLength={11}
-              style={{
-                flex: 1,
-                fontSize: 14 * wxScale,
-                color: textPrimary,
-                backgroundColor: 'transparent',
-                textAlign: 'right',
-                border: 'none',
-                outline: 'none',
-              }}
-            />
-          </FormRow>
-
-          {/* 身份证号 */}
-          <FormRow
-            icon="id-card-h"
-            label="身份证号"
-            borderColor={borderColor}
-            textMuted={textMuted}
-            textSecondary={textSecondary}
-          >
-            <Input
-              type="text"
-              value={form.idCard}
-              onChange={(value) => updateField('idCard', value.toUpperCase())}
-              placeholder="选填"
-              maxLength={18}
-              style={{
-                flex: 1,
-                fontSize: 14 * wxScale,
-                color: textPrimary,
-                backgroundColor: 'transparent',
-                textAlign: 'right',
-                border: 'none',
-                outline: 'none',
-              }}
-            />
-          </FormRow>
-
-          {/* 与本人关系 */}
-          <FormRow
-            icon="peoples"
-            label="关系"
-            required
-            borderColor={borderColor}
-            textMuted={textMuted}
-            textSecondary={textSecondary}
-            showBorder={false}
-            onClick={() => setShowRelationPicker(true)}
-          >
-            <Box
-              style={{
-                flex: 1,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'flex-end',
-                gap: 4,
-              }}
-            >
-              <Text
+              <Input
+                type="text"
+                value={form.name}
+                onChange={(value) => updateField('name', value)}
+                placeholder="请输入真实姓名"
                 style={{
+                  flex: 1,
                   fontSize: 14 * wxScale,
-                  color: form.relation ? textPrimary : textMuted,
+                  color: textPrimary,
+                  backgroundColor: 'transparent',
+                  textAlign: 'right',
+                  border: 'none',
+                  outline: 'none',
+                }}
+              />
+            </FormRow>
+
+            {/* 性别 */}
+            <FormRow
+              icon="peoples"
+              label="性别"
+              required
+              borderColor={borderColor}
+              textMuted={textMuted}
+              textSecondary={textSecondary}
+            >
+              <Box
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  justifyContent: 'flex-end',
+                  gap: 16 * wxScale,
                 }}
               >
-                {form.relation || '请选择'}
+                <GenderButton
+                  selected={form.gender === 'male'}
+                  label="男"
+                  onClick={() => updateField('gender', 'male')}
+                  primaryColor={primaryColor}
+                  inputBg={inputBg}
+                  textSecondary={textSecondary}
+                  borderColor={borderColor}
+                />
+                <GenderButton
+                  selected={form.gender === 'female'}
+                  label="女"
+                  onClick={() => updateField('gender', 'female')}
+                  primaryColor={primaryColor}
+                  inputBg={inputBg}
+                  textSecondary={textSecondary}
+                  borderColor={borderColor}
+                />
+              </Box>
+            </FormRow>
+
+            {/* 年龄 */}
+            <FormRow
+              icon="date-comes-back"
+              label="年龄"
+              required
+              borderColor={borderColor}
+              textMuted={textMuted}
+              textSecondary={textSecondary}
+            >
+              <Input
+                type="number"
+                value={form.age}
+                onChange={(value) => updateField('age', value)}
+                placeholder="请输入年龄"
+                style={{
+                  flex: 1,
+                  fontSize: 14 * wxScale,
+                  color: textPrimary,
+                  backgroundColor: 'transparent',
+                  textAlign: 'right',
+                  border: 'none',
+                  outline: 'none',
+                }}
+              />
+              <Text style={{ marginLeft: 4 * wxScale, fontSize: 14 * wxScale, color: textMuted }}>
+                岁
               </Text>
-              <Icon name="down" size={16 * wxScale} color={textMuted} />
-            </Box>
-          </FormRow>
-        </Box>
+            </FormRow>
+
+            {/* 手机号 */}
+            <FormRow
+              icon="phone-telephone"
+              label="手机号"
+              required
+              borderColor={borderColor}
+              textMuted={textMuted}
+              textSecondary={textSecondary}
+            >
+              <Input
+                type="tel"
+                value={form.phone}
+                onChange={(value) => updateField('phone', value)}
+                placeholder="请输入手机号"
+                maxLength={11}
+                style={{
+                  flex: 1,
+                  fontSize: 14 * wxScale,
+                  color: textPrimary,
+                  backgroundColor: 'transparent',
+                  textAlign: 'right',
+                  border: 'none',
+                  outline: 'none',
+                }}
+              />
+            </FormRow>
+
+            {/* 身份证号 */}
+            <FormRow
+              icon="id-card-h"
+              label="身份证号"
+              borderColor={borderColor}
+              textMuted={textMuted}
+              textSecondary={textSecondary}
+            >
+              <Input
+                type="text"
+                value={form.idCard}
+                onChange={(value) => updateField('idCard', value.toUpperCase())}
+                placeholder="选填"
+                maxLength={18}
+                style={{
+                  flex: 1,
+                  fontSize: 14 * wxScale,
+                  color: textPrimary,
+                  backgroundColor: 'transparent',
+                  textAlign: 'right',
+                  border: 'none',
+                  outline: 'none',
+                }}
+              />
+            </FormRow>
+
+            {/* 与本人关系 */}
+            <FormRow
+              icon="peoples"
+              label="关系"
+              required
+              borderColor={borderColor}
+              textMuted={textMuted}
+              textSecondary={textSecondary}
+              showBorder={false}
+              onClick={() => setShowRelationPicker(true)}
+            >
+              <Box
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'flex-end',
+                  gap: 4,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 14 * wxScale,
+                    color: form.relation ? textPrimary : textMuted,
+                  }}
+                >
+                  {form.relation ? relationLabelMap[form.relation] : '请选择'}
+                </Text>
+                <Icon name="down" size={16 * wxScale} color={textMuted} />
+              </Box>
+            </FormRow>
+          </Box>
 
           {/* 提示信息 */}
           <Box style={{ paddingLeft: 8 * wxScale, paddingRight: 8 * wxScale, marginTop: 12 * wxScale }}>
@@ -452,7 +453,7 @@ export function PatientEditPage({
         }}
       >
         <Box
-          onClick={!validateForm() || isSubmitting ? undefined : handleSubmit}
+          onClick={handleSubmit}
           style={{
             width: '100%',
             paddingTop: 12 * wxScale,

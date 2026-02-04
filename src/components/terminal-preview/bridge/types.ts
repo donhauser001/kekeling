@@ -317,4 +317,12 @@ export interface WxBridge {
     cancelText?: string
     confirmText?: string
   }): Promise<{ confirm: boolean; cancel: boolean }>
+
+  // ==================== 剪贴板 ====================
+
+  /**
+   * 设置剪贴板内容
+   * @see https://developers.weixin.qq.com/miniprogram/dev/api/device/clipboard/wx.setClipboardData.html
+   */
+  setClipboardData(params: { data: string }): Promise<void>
 }

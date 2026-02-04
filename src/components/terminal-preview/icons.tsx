@@ -31,7 +31,6 @@ const iconNameMap: Record<string, IconName> = {
   '代办挂号': 'appointment',
   '代取报告': 'checklist',
   '代办病历': 'medical-files',
-  '代办服务': 'clipboard-list',
   '特色服务': 'lightning',
 
   // === Lucide 图标名称映射 ===
@@ -150,7 +149,7 @@ export function getIconName(name: string): IconName {
 
   // 如果名称本身就是有效的 iconfont 名称，直接返回
   // 这里我们假设传入的名称可能已经是 iconfont 名称
-    return name as IconName
+  return name as IconName
 }
 
 type IconComponentType = React.ComponentType<{

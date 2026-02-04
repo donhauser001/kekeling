@@ -15,6 +15,7 @@ interface PatientPickerProps {
   selectedPatient?: Patient
   onSelect: (patient: Patient) => void
   onClose: () => void
+  onAddPatient?: () => void
   colors: ThemeColors
   primaryColor: string
 }
@@ -35,6 +36,7 @@ export function PatientPicker({
   selectedPatient,
   onSelect,
   onClose,
+  onAddPatient,
   colors,
   primaryColor,
 }: PatientPickerProps) {
@@ -102,6 +104,7 @@ export function PatientPicker({
         ))}
         {/* 添加就诊人 */}
         <Box
+          onClick={onAddPatient}
           style={{
             display: 'flex',
             alignItems: 'center',

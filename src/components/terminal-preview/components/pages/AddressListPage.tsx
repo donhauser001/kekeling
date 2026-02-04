@@ -20,6 +20,7 @@ import {
   Star,
 } from '../../ui/lucide-compat'
 import { isWxEnvironment } from '../../platform/env'
+import { getWxBridge } from '../../bridge'
 import type { ThemeSettings } from '../../types'
 import { previewApi, type Address } from '../../api'
 
@@ -70,7 +71,12 @@ export function AddressListPage({
 
   // 删除地址
   const handleDelete = async (id: string) => {
-    if (!confirm('确定要删除这个地址吗？')) return
+    const wxBridge = getWxBridge()
+    const { confirm } = await wxBridge.showModal({
+      title: '提示',
+      content: '确定要删除这个地址吗？',
+    })
+    if (!confirm) return
 
     setActionLoading(id)
     try {

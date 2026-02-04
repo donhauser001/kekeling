@@ -8,15 +8,15 @@
 
 import { Box, Text, ScrollView, Icon } from '../../../../ui/primitives'
 import { wxScale, relationOptions } from '../constants'
-import type { ThemeColors } from '../types'
+import type { ThemeColors, PatientRelation } from '../types'
 
 export interface RelationPickerProps {
   /** 是否显示 */
   visible: boolean
   /** 当前选中值 */
-  value: string
+  value: PatientRelation
   /** 选择回调 */
-  onSelect: (value: string) => void
+  onSelect: (value: PatientRelation) => void
   /** 关闭回调 */
   onClose: () => void
   /** 主题颜色 */
@@ -95,9 +95,9 @@ export function RelationPicker({
         <ScrollView style={{ maxHeight: '50vh' }}>
           {relationOptions.map(option => (
             <Box
-              key={option}
+              key={option.value}
               onClick={() => {
-                onSelect(option)
+                onSelect(option.value)
                 onClose()
               }}
               style={{
@@ -113,8 +113,8 @@ export function RelationPicker({
                 borderBottomStyle: 'solid',
               }}
             >
-              <Text style={{ fontSize: 14 * wxScale, color: textPrimary }}>{option}</Text>
-              {value === option && (
+              <Text style={{ fontSize: 14 * wxScale, color: textPrimary }}>{option.label}</Text>
+              {value === option.value && (
                 <Icon name="check" size={16 * wxScale} color={primaryColor} />
               )}
             </Box>

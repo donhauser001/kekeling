@@ -197,6 +197,15 @@ export function Departments() {
         }).filter(g => g.departments.length > 0)
     }, [allDepartments])
 
+    // 获取所有一级科室（用于父级选择器）
+    const parentDepartments = useMemo(() => {
+        return (templates || []).map(t => ({
+            id: t.id,
+            name: t.name,
+            category: t.category,
+        }))
+    }, [templates])
+
     // 表单对话框状态
     const [dialogOpen, setDialogOpen] = useState(false)
     const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create')
@@ -273,6 +282,7 @@ export function Departments() {
         const errors: Record<string, string> = {}
         if (!formData.name.trim()) errors.name = '请输入科室名称'
         if (!formData.category) errors.category = '请选择科室分类'
+        if (!formData.parentId) errors.parentId = '请选择父级科室'
         setFormErrors(errors)
         return Object.keys(errors).length === 0
     }
@@ -601,13 +611,31 @@ export function Departments() {
                                 <select
                                     className='border-input bg-background w-full rounded-md border px-3 py-2 text-sm'
                                     value={formData.category}
-                                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                                    onChange={(e) => setFormData({ ...formData, category: e.target.value, parentId: '' })}
                                 >
                                     {categoryOptions.map(c => (
                                         <option key={c} value={c}>{c}</option>
                                     ))}
                                 </select>
                             </div>
+                        </div>
+
+                        <div className='space-y-2'>
+                            <Label>父级科室 <span className='text-destructive'>*</span></Label>
+                            <select
+                                className='border-input bg-background w-full rounded-md border px-3 py-2 text-sm'
+                                value={formData.parentId}
+                                onChange={(e) => setFormData({ ...formData, parentId: e.target.value })}
+                            >
+                                <option value=''>请选择父级科室</option>
+                                {parentDepartments
+                                    .filter(p => p.category === formData.category)
+                                    .map(p => (
+                                        <option key={p.id} value={p.id}>{p.name}</option>
+                                    ))
+                                }
+                            </select>
+                            <p className='text-xs text-muted-foreground'>选择父级科室后，新科室将作为其子科室显示</p>
                         </div>
 
                         <div className='space-y-2'>

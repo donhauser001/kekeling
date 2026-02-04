@@ -12,15 +12,21 @@
  * - 规则 9: emoji → Icon 组件
  * - 规则 4.1: 添加骨架屏
  * - 规则 12: 拆分为模块化组件
+ *
+ * 积分任务功能：
+ * - 从 API 获取任务列表及状态
+ * - 支持三种状态：pending/completed/claimed
+ * - 可领取状态显示"领取"按钮，点击领取积分
  */
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Box, Text, Icon } from '../../../ui/primitives'
+import { isWxEnvironment } from '../../../platform/env'
 import { previewApi } from '../../../api'
 import type { PointsInfo, CheckInStatus, PointsTaskItem } from '../../../api/types'
 
 import { wxScale, wxSafeAreaTop } from './constants'
-import type { PointsPageProps } from './types'
+import type { PointsPageProps, PointsTask } from './types'
 import { PointsPageSkeleton } from './PointsPageSkeleton'
 import { PointsCard } from './PointsCard'
 import { CheckInCard } from './CheckInCard'
@@ -49,6 +55,8 @@ export function PointsPage({
   const [isLoading, setIsLoading] = useState(!pointsOverride)
   const [isError, setIsError] = useState(false)
   const [isChecking, setIsChecking] = useState(false)
+  // 领取中的任务代码
+  const [claimingTaskCode, setClaimingTaskCode] = useState<string | null>(null)
 
   // 获取积分信息、签到状态和任务列表
   useEffect(() => {
@@ -125,9 +133,9 @@ export function PointsPage({
         })
       }
       // 更新任务列表中的签到状态
-      setPointsTasks(prevTasks => 
-        prevTasks.map(task => 
-          task.code === 'daily_checkin' 
+      setPointsTasks(prevTasks =>
+        prevTasks.map(task =>
+          task.code === 'daily_checkin'
             ? { ...task, status: 'claimed' as const }
             : task
         )
@@ -143,6 +151,121 @@ export function PointsPage({
       })
     }
   }
+
+  // 去完成任务
+  const handleGoComplete = useCallback((taskCode: string) => {
+    switch (taskCode) {
+      case 'daily_checkin':
+        // 签到任务：直接调用签到接口
+        handleCheckIn()
+        break
+      case 'complete_profile':
+        onNavigate?.('user-profile-edit')
+        break
+      case 'first_order':
+      case 'order_complete':
+        onNavigate?.('services')
+        break
+      case 'referral':
+        onNavigate?.('referrals')
+        break
+      default:
+        break
+    }
+  }, [onNavigate])
+
+  // 领取任务奖励
+  const handleClaimTask = useCallback(async (taskCode: string) => {
+    if (claimingTaskCode) return
+
+    setClaimingTaskCode(taskCode)
+
+    try {
+      // 签到任务使用签到接口
+      if (taskCode === 'daily_checkin') {
+        const result = await previewApi.checkIn()
+        if (result.success && result.data) {
+          // 更新积分余额
+          if (apiPointsInfo) {
+            setApiPointsInfo({
+              ...apiPointsInfo,
+              balance: result.data.totalPoints,
+              totalEarned: apiPointsInfo.totalEarned + result.data.points,
+            })
+          }
+          // 更新任务状态
+          setPointsTasks((prev) =>
+            prev.map((t) =>
+              t.code === taskCode ? { ...t, status: 'claimed' as const } : t
+            )
+          )
+          // 更新签到状态
+          setCheckInStatus({
+            checkedIn: true,
+            consecutiveDays: result.data.consecutiveDays,
+            todayPoints: result.data.points,
+          })
+          // 显示提示
+          if (isWxEnvironment()) {
+            wx.showToast({
+              title: `签到成功 +${result.data.points}积分`,
+              icon: 'success',
+            })
+          }
+        } else {
+          if (isWxEnvironment()) {
+            wx.showToast({
+              title: result.message || '签到失败',
+              icon: 'none',
+            })
+          }
+        }
+      } else {
+        // 其他任务使用领取接口
+        const result = await previewApi.claimPointsTask(taskCode)
+        if (result.success && result.data) {
+          // 更新积分余额
+          if (apiPointsInfo) {
+            setApiPointsInfo({
+              ...apiPointsInfo,
+              balance: result.data.totalPoints,
+              totalEarned: apiPointsInfo.totalEarned + result.data.points,
+            })
+          }
+          // 更新任务状态
+          setPointsTasks((prev) =>
+            prev.map((t) =>
+              t.code === taskCode ? { ...t, status: 'claimed' as const } : t
+            )
+          )
+          // 显示提示
+          if (isWxEnvironment()) {
+            wx.showToast({
+              title: `领取成功 +${result.data.points}积分`,
+              icon: 'success',
+            })
+          }
+        } else {
+          if (isWxEnvironment()) {
+            wx.showToast({
+              title: result.message || '领取失败',
+              icon: 'none',
+            })
+          }
+        }
+      }
+    } catch (error) {
+      console.error('[PointsPage] 领取任务失败:', error)
+      if (isWxEnvironment()) {
+        wx.showToast({
+          title: '领取失败，请重试',
+          icon: 'none',
+        })
+      }
+    } finally {
+      setClaimingTaskCode(null)
+    }
+  }, [claimingTaskCode, apiPointsInfo])
 
   // 合并数据：覆盖优先
   const pointsInfo = useMemo<PointsInfo | null>(() => {
@@ -162,9 +285,7 @@ export function PointsPage({
 
   // 颜色定义
   const bgColor = isDarkMode ? '#1a1a1a' : '#f5f7fa'
-  const cardBg = isDarkMode ? '#2a2a2a' : '#ffffff'
   const textPrimary = isDarkMode ? '#f3f4f6' : '#111827'
-  const textSecondary = isDarkMode ? '#9ca3af' : '#6b7280'
   const primaryColor = themeSettings.primaryColor
 
   // 加载中显示骨架屏
@@ -299,12 +420,6 @@ export function PointsPage({
                 ) : (
                   // 显示从后端获取的积分任务列表
                   pointsTasks.map((task) => {
-                    // 转换任务状态为 completed 布尔值
-                    // order_complete 是持续性任务，永远显示为未完成
-                    const isCompleted = task.code === 'order_complete'
-                      ? false
-                      : task.status === 'completed' || task.status === 'claimed'
-
                     // 计算显示的积分数和文本
                     const rateValue = task.pointsRate || 0
                     const displayPoints = task.isRateBased
@@ -316,37 +431,26 @@ export function PointsPage({
                       ? `1元+${rateValue >= 1 ? Math.round(rateValue) : rateValue}积分`
                       : undefined
 
+                    // 转换为 PointsTask 格式
+                    // order_complete 是持续性任务，永远显示为 pending
+                    const taskForDisplay: PointsTask = {
+                      code: task.code,
+                      name: task.name,
+                      icon: task.icon,
+                      points: displayPoints,
+                      status: task.code === 'order_complete' ? 'pending' : task.status,
+                      pointsText,
+                    }
+
                     return (
                       <TaskItem
                         key={task.code}
-                        task={{
-                          id: task.code,
-                          name: task.name,
-                          icon: task.icon,
-                          points: displayPoints,
-                          completed: isCompleted,
-                          pointsText,
-                        }}
+                        task={taskForDisplay}
                         themeSettings={themeSettings}
                         isDarkMode={isDarkMode}
-                        onTaskClick={(taskCode) => {
-                          // 根据任务 code 跳转到对应页面
-                          switch (taskCode) {
-                            case 'daily_checkin': // 每日签到
-                              handleCheckIn()
-                              break
-                            case 'complete_profile': // 完善个人信息
-                              onNavigate?.('user-profile-edit')
-                              break
-                            case 'first_order': // 完成首单
-                            case 'order_complete': // 订单消费积分
-                              onNavigate?.('services')
-                              break
-                            case 'referral': // 邀请好友
-                              onNavigate?.('referrals')
-                              break
-                          }
-                        }}
+                        isClaiming={claimingTaskCode === task.code}
+                        onGoComplete={handleGoComplete}
+                        onClaim={handleClaimTask}
                       />
                     )
                   })

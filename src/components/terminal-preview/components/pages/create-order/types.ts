@@ -53,13 +53,19 @@ export interface Hospital {
 export interface Department {
   id: string
   name: string
+  parentId?: string
+  children?: Department[]
 }
 
 export interface Doctor {
   id: string
   name: string
   title: string
-  department: string
+  department?: string
+  departmentId?: string
+  avatar?: string
+  hospitalId?: string
+  specialty?: string
 }
 
 export interface Coupon {

@@ -273,27 +273,13 @@ export function EscortProfileEditPage({
           <Text style={{ fontSize: 17 * wxScale, fontWeight: 600, color: '#fff', textAlign: 'center' }}>
             编辑资料
           </Text>
-          {/* 保存按钮 */}
-          <Box
-            onClick={isSaving ? undefined : handleSave}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              minWidth: 50 * wxScale,
-              height: 36 * wxScale,
-              opacity: isSaving ? 0.5 : 1,
-            }}
-          >
-            <Text style={{ fontSize: 14 * wxScale, fontWeight: 500, color: '#fff' }}>
-              {isSaving ? '保存中...' : '保存'}
-            </Text>
-          </Box>
+          {/* 右侧占位 */}
+          <Box style={{ minWidth: 50 * wxScale }} />
         </Box>
       </Box>
 
       {/* 内容区 */}
-      <Box style={{ flex: 1, overflowY: 'auto', paddingBottom: 16 * wxScale }}>
+      <Box style={{ flex: 1, overflowY: 'auto', paddingBottom: 100 * wxScale }}>
         {/* 头像区域 */}
         <Box
           style={{
@@ -604,6 +590,36 @@ export function EscortProfileEditPage({
               />
             </Box>
           </Box>
+        </Box>
+      </Box>
+
+      {/* 底部固定保存按钮 */}
+      <Box
+        style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          padding: 16 * wxScale,
+          paddingBottom: 24 * wxScale,
+          backgroundColor: bgColor,
+        }}
+      >
+        <Box
+          onClick={isSaving ? undefined : handleSave}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: 48 * wxScale,
+            borderRadius: 12 * wxScale,
+            backgroundColor: primaryColor,
+            opacity: isSaving ? 0.5 : 1,
+          }}
+        >
+          <Text style={{ fontSize: 16 * wxScale, fontWeight: 600, color: '#fff' }}>
+            {isSaving ? '保存中...' : '保存'}
+          </Text>
         </Box>
       </Box>
 

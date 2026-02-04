@@ -23,6 +23,7 @@ export type {
   ErrorStateProps,
   PointsPageSkeletonProps,
   PointsTask,
+  PointsTaskStatus,
 } from './types'
 
 // 常量

@@ -18,6 +18,7 @@
 import { useState, useEffect } from 'react'
 import { Box, Text, Icon, Image } from '../../../../ui/primitives'
 import { isWxEnvironment } from '../../../../platform/env'
+import { getWxBridge } from '../../../../bridge'
 import { previewApi } from '../../../../api'
 import { PermissionPrompt } from '../../../PermissionPrompt'
 import { formatMoney } from '../../../../utils'
@@ -78,20 +79,12 @@ export function DistributionInvitePage({
 
   // 复制到剪贴板
   const handleCopy = async (text: string, label: string) => {
+    const wxBridge = getWxBridge()
     try {
-      if (isWxEnvironment()) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const wx = (window as any).wx
-        wx?.setClipboardData?.({
-          data: text,
-          success: () => wx.showToast?.({ title: `${label}已复制`, icon: 'success' }),
-        })
-      } else {
-        await navigator.clipboard.writeText(text)
-        alert(`${label}已复制`)
-      }
+      await wxBridge.setClipboardData({ data: text })
+      wxBridge.showToast({ title: `${label}已复制`, icon: 'success' })
     } catch {
-      alert('复制失败，请手动复制')
+      wxBridge.showToast({ title: '复制失败，请手动复制', icon: 'none' })
     }
   }
 

@@ -5,7 +5,7 @@
  */
 
 import { isWxEnvironment } from '../../../platform/env'
-import type { PatientForm } from './types'
+import type { PatientForm, PatientRelation } from './types'
 
 // ============================================================================
 // 布局常量
@@ -18,17 +18,23 @@ export const wxSafeAreaTop = isWxEnvironment() ? 44 : 0
 // 表单选项
 // ============================================================================
 
-/** 关系选项 */
-export const relationOptions = [
-  '本人',
-  '配偶',
-  '父母',
-  '子女',
-  '兄弟姐妹',
-  '其他亲属',
-  '朋友',
-  '其他',
+/** 关系选项（value: API 使用的英文值, label: UI 显示的中文） */
+export const relationOptions: Array<{ value: PatientRelation; label: string }> = [
+  { value: 'self', label: '本人' },
+  { value: 'spouse', label: '配偶' },
+  { value: 'parent', label: '父母' },
+  { value: 'child', label: '子女' },
+  { value: 'other', label: '其他' },
 ]
+
+/** 关系值到中文标签的映射 */
+export const relationLabelMap: Record<PatientRelation, string> = {
+  self: '本人',
+  spouse: '配偶',
+  parent: '父母',
+  child: '子女',
+  other: '其他',
+}
 
 /** 默认表单值 */
 export const defaultPatientForm: PatientForm = {
@@ -37,5 +43,5 @@ export const defaultPatientForm: PatientForm = {
   age: '',
   phone: '',
   idCard: '',
-  relation: '本人',
+  relation: 'self',
 }

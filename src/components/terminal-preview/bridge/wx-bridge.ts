@@ -364,6 +364,25 @@ export const mockWxBridge: WxBridge = {
       return { confirm: confirmed, cancel: !confirmed }
     }
   },
+
+  // ==================== 剪贴板 ====================
+
+  async setClipboardData(params: { data: string }): Promise<void> {
+    console.log('[mockWxBridge] setClipboardData:', params.data)
+    try {
+      await navigator.clipboard.writeText(params.data)
+    } catch {
+      // fallback: 使用 document.execCommand
+      const textarea = document.createElement('textarea')
+      textarea.value = params.data
+      textarea.style.position = 'fixed'
+      textarea.style.opacity = '0'
+      document.body.appendChild(textarea)
+      textarea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textarea)
+    }
+  },
 }
 
 // ============================================================================
@@ -535,6 +554,16 @@ export const realWxBridge: WxBridge = {
         cancelText: params.cancelText || '取消',
         confirmText: params.confirmText || '确定',
         success: (res: { confirm: boolean; cancel: boolean }) => resolve(res),
+      })
+    })
+  },
+
+  async setClipboardData(params: { data: string }): Promise<void> {
+    return new Promise((resolve, reject) => {
+      wx!.setClipboardData({
+        data: params.data,
+        success: () => resolve(),
+        fail: (err: Error) => reject(err),
       })
     })
   },

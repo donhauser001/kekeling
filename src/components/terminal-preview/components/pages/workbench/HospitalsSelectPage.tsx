@@ -408,31 +408,8 @@ export function HospitalsSelectPage({
           >
             服务医院
           </Text>
-          {/* 保存按钮 */}
-          <Box
-            onClick={saving ? undefined : handleSave}
-            style={{
-              position: 'absolute',
-              right: 12 * wxScale,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              paddingLeft: 8 * wxScale,
-              paddingRight: 8 * wxScale,
-              height: 36 * wxScale,
-              opacity: saving ? 0.6 : 1,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 14 * wxScale,
-                fontWeight: 500,
-                color: '#fff',
-              }}
-            >
-              {saving ? '保存中...' : '保存'}
-            </Text>
-          </Box>
+          {/* 右侧占位 */}
+          <Box style={{ width: 36 * wxScale }} />
         </Box>
       </Box>
 
@@ -593,8 +570,39 @@ export function HospitalsSelectPage({
         </Text>
       </Box>
 
-      {/* 底部留白 */}
-      <Box style={{ height: 64 * wxScale }} />
+      {/* 底部留白（为固定按钮预留空间） */}
+      <Box style={{ height: 100 * wxScale }} />
+
+      {/* 底部固定保存按钮 */}
+      <Box
+        style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          padding: 16 * wxScale,
+          paddingBottom: 24 * wxScale,
+          backgroundColor: bgColor,
+          borderTop: `1px solid ${borderColor}`,
+        }}
+      >
+        <Box
+          onClick={saving ? undefined : handleSave}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: 48 * wxScale,
+            borderRadius: 12 * wxScale,
+            backgroundColor: primaryColor,
+            opacity: saving ? 0.6 : 1,
+          }}
+        >
+          <Text style={{ fontSize: 16 * wxScale, fontWeight: 600, color: '#fff' }}>
+            {saving ? '保存中...' : '保存'}
+          </Text>
+        </Box>
+      </Box>
     </Box>
   )
 }

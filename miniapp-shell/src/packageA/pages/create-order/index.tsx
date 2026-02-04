@@ -54,6 +54,8 @@ function CreateOrderPageContent() {
       Taro.navigateTo({ url: '/packageA/pages/services/index' })
     } else if (page === 'user-orders') {
       Taro.reLaunch({ url: '/packageB/pages/user-orders/index' })
+    } else if (page === 'patients') {
+      Taro.navigateTo({ url: '/packageB/pages/patients/index' })
     } else {
       Taro.switchTab({ url: '/pages/main/index' })
     }

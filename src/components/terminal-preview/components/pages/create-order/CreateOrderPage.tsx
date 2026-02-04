@@ -61,9 +61,8 @@ export function CreateOrderPage({
   themeSettings,
   isDarkMode = false,
   onBack,
-  onNavigate: _onNavigate,
+  onNavigate,
 }: CreateOrderPageProps) {
-  void _onNavigate // 保留参数以保持接口兼容
   // ============================================================================
   // 状态管理
   // ============================================================================
@@ -335,7 +334,7 @@ export function CreateOrderPage({
 
         // 跳转到订单详情页
         setTimeout(() => {
-          _onNavigate?.('user-order-detail', { id: orderResult.id })
+          onNavigate?.('user-order-detail', { id: orderResult.id })
         }, 1500)
       } else {
         // 支付取消或失败
@@ -347,7 +346,7 @@ export function CreateOrderPage({
         }
         // 跳转到待支付订单详情
         setTimeout(() => {
-          _onNavigate?.('user-order-detail', { id: orderResult.id })
+          onNavigate?.('user-order-detail', { id: orderResult.id })
         }, 1500)
       }
     } catch (error: any) {
@@ -549,6 +548,10 @@ export function CreateOrderPage({
           selectedPatient={selectedPatient}
           onSelect={(patient) => setSelectedPatientId(patient.id)}
           onClose={() => setShowPatientPicker(false)}
+          onAddPatient={() => {
+            setShowPatientPicker(false)
+            onNavigate?.('patients')
+          }}
           colors={colors}
           primaryColor={primaryColor}
         />
