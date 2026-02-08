@@ -419,12 +419,12 @@ export function DistributionInvitePage({
                 backgroundColor: `${primaryColor}15`,
               }}
             >
-              <Icon name="copy" size={20 * wxScale} color={primaryColor} />
+              <Icon name="clipboard" size={20 * wxScale} color={primaryColor} />
             </Box>
           </Box>
         </Box>
 
-        {/* 邀请链接 */}
+        {/* 分享好友按钮 */}
         <Box
           style={{
             padding: 16 * wxScale,
@@ -442,86 +442,66 @@ export function DistributionInvitePage({
               color: textPrimary,
             }}
           >
-            邀请链接
+            邀请好友
           </Text>
-          <Box
+          <Text
             style={{
-              padding: 12 * wxScale,
-              borderRadius: 8 * wxScale,
-              backgroundColor: isDarkMode ? '#3a3a3a' : '#f3f4f6',
+              display: 'block',
+              fontSize: 12 * wxScale,
+              color: textSecondary,
+              marginBottom: 12 * wxScale,
             }}
           >
-            <Text style={{ fontSize: 14 * wxScale, color: textSecondary, wordBreak: 'break-all' }}>
-              {inviteData.inviteLink}
-            </Text>
-          </Box>
-          <Box style={{ display: 'flex', gap: 12 * wxScale, marginTop: 12 * wxScale }}>
-            <Box
-              onClick={() => handleCopy(inviteData.inviteLink, '邀请链接')}
-              style={{
-                flex: 1,
+            点击下方按钮，将邀请分享给微信好友
+          </Text>
+          {/* 分享按钮：小程序需要使用原生 Button openType="share" */}
+          {renderShareButton ? (
+            renderShareButton({
+              children: (
+                <>
+                  <Icon name="share-three" size={18 * wxScale} color="#fff" />
+                  <Text style={{ fontSize: 16 * wxScale, fontWeight: 500, color: '#fff' }}>分享给好友</Text>
+                </>
+              ),
+              style: {
+                width: '100%',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: 8 * wxScale,
-                paddingTop: 10 * wxScale,
-                paddingBottom: 10 * wxScale,
-                borderRadius: 8 * wxScale,
-                backgroundColor: `${primaryColor}15`,
+                paddingTop: 14 * wxScale,
+                paddingBottom: 14 * wxScale,
+                borderRadius: 12 * wxScale,
+                backgroundColor: primaryColor,
+              },
+            })
+          ) : (
+            <Box
+              onClick={() => {
+                if (isWxEnvironment()) {
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  const wx = (window as any).wx
+                  wx?.showToast?.({ title: '请点击右上角分享', icon: 'none' })
+                } else {
+                  alert('分享功能需要在终端环境中使用')
+                }
+              }}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8 * wxScale,
+                paddingTop: 14 * wxScale,
+                paddingBottom: 14 * wxScale,
+                borderRadius: 12 * wxScale,
+                backgroundColor: primaryColor,
               }}
             >
-              <Icon name="copy" size={16 * wxScale} color={primaryColor} />
-              <Text style={{ fontSize: 14 * wxScale, color: primaryColor }}>复制链接</Text>
+              <Icon name="share-three" size={18 * wxScale} color="#fff" />
+              <Text style={{ fontSize: 16 * wxScale, fontWeight: 500, color: '#fff' }}>分享给好友</Text>
             </Box>
-            {/* 分享按钮：小程序需要使用原生 Button openType="share" */}
-            {renderShareButton ? (
-              renderShareButton({
-                children: (
-                  <>
-                    <Icon name="share-three" size={16 * wxScale} color="#fff" />
-                    <Text style={{ fontSize: 14 * wxScale, color: '#fff' }}>分享好友</Text>
-                  </>
-                ),
-                style: {
-                  flex: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 8 * wxScale,
-                  paddingTop: 10 * wxScale,
-                  paddingBottom: 10 * wxScale,
-                  borderRadius: 8 * wxScale,
-                  backgroundColor: primaryColor,
-                },
-              })
-            ) : (
-              <Box
-                onClick={() => {
-                  if (isWxEnvironment()) {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const wx = (window as any).wx
-                    wx?.showToast?.({ title: '请点击右上角分享', icon: 'none' })
-                  } else {
-                    alert('分享功能需要在终端环境中使用')
-                  }
-                }}
-                style={{
-                  flex: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 8 * wxScale,
-                  paddingTop: 10 * wxScale,
-                  paddingBottom: 10 * wxScale,
-                  borderRadius: 8 * wxScale,
-                  backgroundColor: primaryColor,
-                }}
-              >
-                <Icon name="share-three" size={16 * wxScale} color="#fff" />
-                <Text style={{ fontSize: 14 * wxScale, color: '#fff' }}>分享好友</Text>
-              </Box>
-            )}
-          </Box>
+          )}
         </Box>
 
         {/* 二维码（如有） */}
@@ -598,37 +578,34 @@ export function DistributionInvitePage({
         )}
 
         {/* 邀请规则说明 */}
-        <Box
-          style={{
-            padding: 16 * wxScale,
-            borderRadius: 12 * wxScale,
-            backgroundColor: cardBg,
-          }}
-        >
-          <Text
+        {inviteData.inviteRules && inviteData.inviteRules.length > 0 && (
+          <Box
             style={{
-              display: 'block',
-              fontSize: 14 * wxScale,
-              fontWeight: 500,
-              marginBottom: 12 * wxScale,
-              color: textPrimary,
+              padding: 16 * wxScale,
+              borderRadius: 12 * wxScale,
+              backgroundColor: cardBg,
             }}
           >
-            邀请规则
-          </Text>
-          <Box style={{ display: 'flex', flexDirection: 'column', gap: 8 * wxScale }}>
-            {[
-              '好友通过您的邀请码或链接注册成为陪诊员',
-              `好友完成首单后，您将获得 ¥${formatMoney(inviteData.rewardPerInvite)} 奖励`,
-              '奖励将在好友首单完成后 7 个工作日内发放',
-              '邀请无上限，多邀多得',
-            ].map((rule, idx) => (
-              <Text key={idx} style={{ fontSize: 12 * wxScale, color: textSecondary }}>
-                • {rule}
-              </Text>
-            ))}
+            <Text
+              style={{
+                display: 'block',
+                fontSize: 14 * wxScale,
+                fontWeight: 500,
+                marginBottom: 12 * wxScale,
+                color: textPrimary,
+              }}
+            >
+              邀请规则
+            </Text>
+            <Box style={{ display: 'flex', flexDirection: 'column', gap: 8 * wxScale }}>
+              {inviteData.inviteRules.map((rule, idx) => (
+                <Text key={idx} style={{ fontSize: 12 * wxScale, color: textSecondary }}>
+                  • {rule}
+                </Text>
+              ))}
+            </Box>
           </Box>
-        </Box>
+        )}
       </Box>
 
       {/* 底部留白 */}

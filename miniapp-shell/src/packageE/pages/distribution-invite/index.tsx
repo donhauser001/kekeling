@@ -21,6 +21,7 @@ interface InviteData {
   qrCodeUrl?: string
   totalInvited: number
   rewardPerInvite: number
+  inviteRules?: string[]
 }
 
 const queryClient = new QueryClient({
@@ -60,9 +61,12 @@ function DistributionInvitePageContent() {
         if (settings) {
           setThemeSettings({ ...defaultThemeSettings, ...settings })
         }
+        setIsLoading(false)
       })
-      .catch(console.error)
-      .finally(() => setIsLoading(false))
+      .catch((err) => {
+        console.error(err)
+        setIsLoading(false)
+      })
 
     if (!localEscortToken) {
       setShowLoginDialog(true)
@@ -82,7 +86,7 @@ function DistributionInvitePageContent() {
   useShareAppMessage(() => {
     const inviteCode = inviteDataRef.current?.inviteCode || ''
     return {
-      title: '加入科科灵陪诊员，一起赚钱！',
+      title: '邀请好友一起加入科科灵！',
       path: `/packageB/pages/escort-apply/index?inviteCode=${inviteCode}`,
       imageUrl: inviteDataRef.current?.qrCodeUrl,
     }
@@ -91,15 +95,12 @@ function DistributionInvitePageContent() {
   useShareTimeline(() => {
     const inviteCode = inviteDataRef.current?.inviteCode || ''
     return {
-      title: `加入科科灵陪诊员，邀请码: ${inviteCode}`,
+      title: `邀请好友一起加入科科灵，邀请码: ${inviteCode}`,
     }
   })
 
-  const handleBack = useCallback(() => {
-    Taro.navigateBack()
-  }, [])
-
-  const handleNavigate = useCallback((page: string, params?: Record<string, string>) => {
+  const handleNavigate = useCallback((page: string, _params?: Record<string, string>) => {
+    void _params // 忽略未使用参数
     // 返回分销中心首页
     if (page === 'distribution') {
       Taro.navigateBack()
@@ -118,20 +119,7 @@ function DistributionInvitePageContent() {
   // 渲染分享按钮（使用小程序原生 openType="share"）
   const renderShareButton = useCallback((props: { children: ReactNode; style?: React.CSSProperties }) => {
     return (
-      <Button
-        openType="share"
-        style={{
-          ...props.style,
-          // 重置小程序 Button 默认样式
-          margin: 0,
-          padding: 0,
-          border: 'none',
-          lineHeight: 'inherit',
-          fontSize: 'inherit',
-          backgroundColor: props.style?.backgroundColor || 'transparent',
-        }}
-        className="share-button-reset"
-      >
+      <Button openType="share" className="share-button-reset">
         <View style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
           {props.children}
         </View>
@@ -191,7 +179,6 @@ function DistributionInvitePageContent() {
         themeSettings={themeSettings}
         isDarkMode={false}
         effectiveViewerRole={effectiveViewerRole}
-        onBack={handleBack}
         onNavigate={handleNavigate}
         onLogin={() => setShowLoginDialog(true)}
         renderShareButton={renderShareButton}

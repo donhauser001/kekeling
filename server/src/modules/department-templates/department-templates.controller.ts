@@ -73,8 +73,12 @@ export class DepartmentTemplatesController {
       icon?: string;
     },
   ) {
-    const data = await this.service.create(body);
-    return ApiResponse.success(data, '创建成功');
+    try {
+      const data = await this.service.create(body);
+      return ApiResponse.success(data, '创建成功');
+    } catch (error) {
+      return ApiResponse.error(error.message || '创建失败');
+    }
   }
 
   // 更新科室模板

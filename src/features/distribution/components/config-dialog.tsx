@@ -30,17 +30,21 @@ import { Switch } from '@/components/ui/switch'
 import { distributionApi } from '@/lib/api'
 
 const configSchema = z.object({
+  // 各等级分润比例
   l1CommissionRate: z.number().min(0).max(100),
   l2CommissionRate: z.number().min(0).max(100),
   l3CommissionRate: z.number().min(0).max(100),
+  // 直推奖励和上限
   directInviteBonus: z.number().min(0),
   maxMonthlyDistribution: z.number().min(0).nullable(),
+  // L2 晋升条件（L3 → L2）
   l2PromotionConfig: z.object({
     minOrders: z.number().min(0),
     minRating: z.number().min(0).max(5),
     minDirectInvites: z.number().min(0),
     minActiveMonths: z.number().min(0),
   }),
+  // L1 晋升条件（L2 → L1）
   l1PromotionConfig: z.object({
     minTeamSize: z.number().min(0),
     minTeamMonthlyOrders: z.number().min(0),
@@ -98,8 +102,19 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
         l3CommissionRate: config.l3CommissionRate,
         directInviteBonus: config.directInviteBonus,
         maxMonthlyDistribution: config.maxMonthlyDistribution,
-        l2PromotionConfig: config.l2PromotionConfig,
-        l1PromotionConfig: config.l1PromotionConfig,
+        l2PromotionConfig: config.l2PromotionConfig || {
+          minOrders: 50,
+          minRating: 4.5,
+          minDirectInvites: 3,
+          minActiveMonths: 3,
+        },
+        l1PromotionConfig: config.l1PromotionConfig || {
+          minTeamSize: 10,
+          minTeamMonthlyOrders: 100,
+          minPersonalMonthlyOrders: 30,
+          requireTraining: true,
+          byInvitation: true,
+        },
       })
     }
   }, [config, form])
@@ -122,10 +137,10 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>分销配置</DialogTitle>
-          <DialogDescription>配置三级分销的分润比例和晋升条件</DialogDescription>
+          <DialogTitle>分润配置</DialogTitle>
+          <DialogDescription>配置分润比例、奖励金额和晋升条件</DialogDescription>
         </DialogHeader>
 
         {isLoading ? (
@@ -134,7 +149,7 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
           </div>
         ) : (
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <Tabs defaultValue="commission" className="w-full">
                 <TabsList className="grid w-full grid-cols-3">
                   <TabsTrigger value="commission">分润设置</TabsTrigger>
@@ -145,10 +160,10 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
                 {/* 分润设置 */}
                 <TabsContent value="commission" className="space-y-4 mt-4">
                   <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base">各级分润比例</CardTitle>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base">各等级分润比例</CardTitle>
                       <CardDescription>
-                        设置各分销等级从下级订单中获取的分润比例（基于订单实付金额）
+                        设置各等级从下级订单中获取的分润比例（基于订单实付金额）
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="grid gap-4 md:grid-cols-3">
@@ -159,9 +174,15 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
                           <FormItem>
                             <FormLabel>城市合伙人 (%)</FormLabel>
                             <FormControl>
-                              <Input type="number" {...field} onChange={(e) => field.onChange(Number(e.target.value))} />
+                              <Input
+                                type="number"
+                                min={0}
+                                max={100}
+                                {...field}
+                                onChange={(e) => field.onChange(Number(e.target.value))}
+                              />
                             </FormControl>
-                            <FormDescription>L1 分润比例</FormDescription>
+                            <FormDescription>L1 分润</FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -173,9 +194,15 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
                           <FormItem>
                             <FormLabel>团队长 (%)</FormLabel>
                             <FormControl>
-                              <Input type="number" {...field} onChange={(e) => field.onChange(Number(e.target.value))} />
+                              <Input
+                                type="number"
+                                min={0}
+                                max={100}
+                                {...field}
+                                onChange={(e) => field.onChange(Number(e.target.value))}
+                              />
                             </FormControl>
-                            <FormDescription>L2 分润比例</FormDescription>
+                            <FormDescription>L2 分润</FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -187,7 +214,13 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
                           <FormItem>
                             <FormLabel>普通成员 (%)</FormLabel>
                             <FormControl>
-                              <Input type="number" {...field} />
+                              <Input
+                                type="number"
+                                min={0}
+                                max={100}
+                                {...field}
+                                onChange={(e) => field.onChange(Number(e.target.value))}
+                              />
                             </FormControl>
                             <FormDescription>仅直推奖励</FormDescription>
                             <FormMessage />
@@ -198,11 +231,8 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
                   </Card>
 
                   <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base">直推奖励</CardTitle>
-                      <CardDescription>
-                        邀请新陪诊员并完成首单后发放的一次性奖励
-                      </CardDescription>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base">奖励与限制</CardTitle>
                     </CardHeader>
                     <CardContent className="grid gap-4 md:grid-cols-2">
                       <FormField
@@ -212,8 +242,15 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
                           <FormItem>
                             <FormLabel>直推奖励金额 (元)</FormLabel>
                             <FormControl>
-                              <Input type="number" {...field} />
+                              <Input
+                                type="number"
+                                min={0}
+                                step={0.01}
+                                {...field}
+                                onChange={(e) => field.onChange(Number(e.target.value))}
+                              />
                             </FormControl>
+                            <FormDescription>邀请新成员完成首单后发放</FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -227,6 +264,7 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
                             <FormControl>
                               <Input
                                 type="number"
+                                min={0}
                                 placeholder="不限制"
                                 value={field.value ?? ''}
                                 onChange={(e) =>
@@ -243,13 +281,13 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
                   </Card>
                 </TabsContent>
 
-                {/* 团队长晋升条件 */}
+                {/* L2 晋升条件（L3 → L2） */}
                 <TabsContent value="l2-promotion" className="space-y-4 mt-4">
                   <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base">L3 → L2 晋升条件</CardTitle>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base">普通成员 → 团队长</CardTitle>
                       <CardDescription>
-                        普通成员晋升为团队长需要满足的条件（自动晋升）
+                        L3 晋升 L2 条件（满足条件自动晋升）
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="grid gap-4 md:grid-cols-2">
@@ -260,7 +298,12 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
                           <FormItem>
                             <FormLabel>最低完成订单数</FormLabel>
                             <FormControl>
-                              <Input type="number" {...field} />
+                              <Input
+                                type="number"
+                                min={0}
+                                {...field}
+                                onChange={(e) => field.onChange(Number(e.target.value))}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -273,7 +316,14 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
                           <FormItem>
                             <FormLabel>最低评分</FormLabel>
                             <FormControl>
-                              <Input type="number" step="0.1" {...field} />
+                              <Input
+                                type="number"
+                                min={0}
+                                max={5}
+                                step={0.1}
+                                {...field}
+                                onChange={(e) => field.onChange(Number(e.target.value))}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -286,7 +336,12 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
                           <FormItem>
                             <FormLabel>最低直推人数</FormLabel>
                             <FormControl>
-                              <Input type="number" {...field} />
+                              <Input
+                                type="number"
+                                min={0}
+                                {...field}
+                                onChange={(e) => field.onChange(Number(e.target.value))}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -299,7 +354,12 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
                           <FormItem>
                             <FormLabel>最低活跃月数</FormLabel>
                             <FormControl>
-                              <Input type="number" {...field} />
+                              <Input
+                                type="number"
+                                min={0}
+                                {...field}
+                                onChange={(e) => field.onChange(Number(e.target.value))}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -309,56 +369,74 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
                   </Card>
                 </TabsContent>
 
-                {/* 城市合伙人晋升条件 */}
+                {/* L1 晋升条件（L2 → L1） */}
                 <TabsContent value="l1-promotion" className="space-y-4 mt-4">
                   <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base">L2 → L1 晋升条件</CardTitle>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base">团队长 → 城市合伙人</CardTitle>
                       <CardDescription>
-                        团队长晋升为城市合伙人需要满足的条件（需平台审核）
+                        L2 晋升 L1 条件（需要平台审核）
                       </CardDescription>
                     </CardHeader>
-                    <CardContent className="grid gap-4 md:grid-cols-2">
-                      <FormField
-                        control={form.control}
-                        name="l1PromotionConfig.minTeamSize"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>最低团队人数</FormLabel>
-                            <FormControl>
-                              <Input type="number" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="l1PromotionConfig.minTeamMonthlyOrders"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>团队月订单数</FormLabel>
-                            <FormControl>
-                              <Input type="number" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="l1PromotionConfig.minPersonalMonthlyOrders"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>个人月订单数</FormLabel>
-                            <FormControl>
-                              <Input type="number" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <div className="space-y-4">
+                    <CardContent className="space-y-4">
+                      <div className="grid gap-4 md:grid-cols-3">
+                        <FormField
+                          control={form.control}
+                          name="l1PromotionConfig.minTeamSize"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>最低团队人数</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  min={0}
+                                  {...field}
+                                  onChange={(e) => field.onChange(Number(e.target.value))}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="l1PromotionConfig.minTeamMonthlyOrders"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>团队月订单数</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  min={0}
+                                  {...field}
+                                  onChange={(e) => field.onChange(Number(e.target.value))}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="l1PromotionConfig.minPersonalMonthlyOrders"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>个人月订单数</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  min={0}
+                                  {...field}
+                                  onChange={(e) => field.onChange(Number(e.target.value))}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <div className="grid gap-4 md:grid-cols-2 pt-2">
                         <FormField
                           control={form.control}
                           name="l1PromotionConfig.requireTraining"
@@ -366,6 +444,9 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
                             <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
                               <div className="space-y-0.5">
                                 <FormLabel>需要培训考核</FormLabel>
+                                <FormDescription className="text-xs">
+                                  晋升前需完成培训
+                                </FormDescription>
                               </div>
                               <FormControl>
                                 <Switch checked={field.value} onCheckedChange={field.onChange} />
@@ -380,6 +461,9 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
                             <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
                               <div className="space-y-0.5">
                                 <FormLabel>平台邀请制</FormLabel>
+                                <FormDescription className="text-xs">
+                                  仅限平台主动邀请
+                                </FormDescription>
                               </div>
                               <FormControl>
                                 <Switch checked={field.value} onCheckedChange={field.onChange} />
@@ -393,7 +477,7 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
                 </TabsContent>
               </Tabs>
 
-              <DialogFooter>
+              <DialogFooter className="pt-4">
                 <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                   取消
                 </Button>

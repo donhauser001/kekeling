@@ -5,7 +5,7 @@
  */
 import { useState, useEffect, useCallback } from 'react'
 import { View } from '@tarojs/components'
-import Taro, { useShareAppMessage, useShareTimeline } from '@tarojs/taro'
+import Taro, { useShareAppMessage, useShareTimeline, useDidShow } from '@tarojs/taro'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { PatientsPage as PatientsPageComponent } from '@terminal-preview/components/pages/PatientsPage'
 import { previewApi } from '@terminal-preview/api'
@@ -26,6 +26,13 @@ const queryClient = new QueryClient({
 function PatientsPageContent() {
   const [themeSettings, setThemeSettings] = useState<ThemeSettings>(defaultThemeSettings)
   const [isLoading, setIsLoading] = useState(true)
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
+
+  // 页面显示时刷新数据（从编辑页返回时触发）
+  useDidShow(() => {
+    console.log('[PatientsPage] 页面显示，触发刷新')
+    setRefreshTrigger(prev => prev + 1)
+  })
 
   useEffect(() => {
     console.log('[PatientsPage] 页面加载')
@@ -81,6 +88,7 @@ function PatientsPageContent() {
         isDarkMode={false}
         onBack={handleBack}
         onNavigate={handleNavigate}
+        refreshTrigger={refreshTrigger}
       />
     </View>
   )

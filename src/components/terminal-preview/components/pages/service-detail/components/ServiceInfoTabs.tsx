@@ -31,31 +31,25 @@ export function ServiceInfoTabs({
     '贴心关怀照顾',
   ]
 
-  // 服务流程
-  const defaultWorkflowSteps: WorkflowStep[] = [
-    { id: '1', name: '下单预约', type: 'start' },
-    { id: '2', name: '陪诊员接单', type: 'action' },
-    { id: '3', name: '到达医院', type: 'action' },
-    { id: '4', name: '全程陪诊', type: 'action' },
-    { id: '5', name: '服务完成', type: 'end' },
-  ]
-  const workflowSteps: WorkflowStep[] = service?.workflow?.steps?.length
+  // 服务流程（仅当服务关联了流程时显示）
+  const hasWorkflow = !!(service?.workflow?.steps?.length)
+  const workflowSteps: WorkflowStep[] = hasWorkflow
     ? service.workflow.steps.map(step => ({
       id: step.id,
       name: step.name,
       type: step.type as 'start' | 'action' | 'end',
     }))
-    : defaultWorkflowSteps
+    : []
 
-  // 服务须知
-  const defaultNotices = [
-    '请提前一天预约服务',
-    '服务当天请携带有效身份证件',
-    '如需取消请提前4小时通知',
-    '服务时间以实际就诊时长为准',
+  // 服务须知（保持原始结构，不合并 title 和 content）
+  const defaultNotices: Array<{ title: string; content: string }> = [
+    { title: '预约时间', content: '请提前一天预约服务' },
+    { title: '所需证件', content: '服务当天请携带有效身份证件' },
+    { title: '取消政策', content: '如需取消请提前4小时通知' },
+    { title: '服务时长', content: '服务时间以实际就诊时长为准' },
   ]
   const notices = service?.serviceNotes?.length
-    ? service.serviceNotes.map(item => `${item.title}：${item.content}`)
+    ? service.serviceNotes.map(item => ({ title: item.title, content: item.content }))
     : defaultNotices
 
   // 流程步骤类型颜色
@@ -65,10 +59,10 @@ export function ServiceInfoTabs({
     end: { bg: isDarkMode ? '#6b21a8' : '#f3e8ff', text: isDarkMode ? '#d8b4fe' : '#6b21a8' },
   }
 
-  // 选项卡配置
+  // 选项卡配置（仅当有流程时显示流程选项卡）
   const tabs: { key: InfoTabType; label: string; icon: React.ReactNode }[] = [
     { key: 'highlights', label: '服务亮点', icon: <Sparkles size={14 * wxScale} color={activeTab === 'highlights' ? themeSettings.primaryColor : textMuted} /> },
-    { key: 'workflow', label: '服务流程', icon: <GitBranch size={14 * wxScale} color={activeTab === 'workflow' ? themeSettings.primaryColor : textMuted} /> },
+    ...(hasWorkflow ? [{ key: 'workflow' as const, label: '服务流程', icon: <GitBranch size={14 * wxScale} color={activeTab === 'workflow' ? themeSettings.primaryColor : textMuted} /> }] : []),
     { key: 'notice', label: '服务须知', icon: <AlertCircle size={14 * wxScale} color={activeTab === 'notice' ? themeSettings.primaryColor : textMuted} /> },
   ]
 
@@ -239,29 +233,56 @@ export function ServiceInfoTabs({
 
         {/* 服务须知 */}
         {activeTab === 'notice' && (
-          <Box style={{ display: 'flex', flexDirection: 'column', gap: 8 * wxScale }}>
+          <Box style={{ display: 'flex', flexDirection: 'column', gap: 12 * wxScale }}>
             {notices.map((item, index) => (
               <Box
                 key={index}
-                className='flex items-start gap-2'
                 style={{
                   display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: 8 * wxScale,
+                  flexDirection: 'column',
+                  gap: 4 * wxScale,
+                  padding: 12 * wxScale,
+                  borderRadius: 8 * wxScale,
+                  backgroundColor: isDarkMode ? '#3a3a3a' : '#f9fafb',
                 }}
               >
                 <Box
-                  className='mt-1.5 h-1.5 w-1.5 rounded-full flex-shrink-0'
                   style={{
-                    marginTop: 6 * wxScale,
-                    width: 6 * wxScale,
-                    height: 6 * wxScale,
-                    borderRadius: 9999,
-                    flexShrink: 0,
-                    backgroundColor: themeSettings.primaryColor,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6 * wxScale,
                   }}
-                />
-                <Text style={{ fontSize: 12 * wxScale, color: textSecondary }}>{item}</Text>
+                >
+                  <Box
+                    style={{
+                      width: 4 * wxScale,
+                      height: 16 * wxScale,
+                      borderRadius: 2 * wxScale,
+                      backgroundColor: themeSettings.primaryColor,
+                    }}
+                  />
+                  <Text
+                    style={{
+                      fontSize: 13 * wxScale,
+                      fontWeight: 600,
+                      color: isDarkMode ? '#f3f4f6' : '#374151',
+                    }}
+                  >
+                    {item.title}
+                  </Text>
+                </Box>
+                <Text
+                  style={{
+                    fontSize: 12 * wxScale,
+                    color: textSecondary,
+                    paddingLeft: 10 * wxScale,
+                    lineHeight: 1.6,
+                    whiteSpace: 'pre-wrap',
+                    textAlign: 'justify',
+                  }}
+                >
+                  {item.content}
+                </Text>
               </Box>
             ))}
           </Box>

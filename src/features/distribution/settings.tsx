@@ -58,13 +58,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   distributionApi,
   type DistributionLevelWithStats,
   type CreateDistributionLevelData,
   type UpdateDistributionLevelData,
 } from '@/lib/api'
+import { ConfigDialog } from './components/config-dialog'
 
 // 可用的图标列表
 const iconOptions = [
@@ -107,10 +107,11 @@ export function DistributionSettings() {
   // 对话框状态
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [configDialogOpen, setConfigDialogOpen] = useState(false)
   const [selectedLevel, setSelectedLevel] = useState<DistributionLevelWithStats | null>(null)
   const [isCreating, setIsCreating] = useState(false)
 
-  // 表单状态
+  // 表单状态（仅显示配置，分润比例和晋升条件在"分润配置"中统一管理）
   const [formData, setFormData] = useState<CreateDistributionLevelData>({
     level: 1,
     name: '',
@@ -119,8 +120,7 @@ export function DistributionSettings() {
     color: '#6b7280',
     bgColor: '#f3f4f6',
     description: '',
-    commissionRate: 0,
-    promotionConfig: {},
+    commissionRate: 0, // 保留字段但不在UI中编辑
     isDefault: false,
   })
 
@@ -196,7 +196,6 @@ export function DistributionSettings() {
       bgColor: '#f3f4f6',
       description: '',
       commissionRate: 0,
-      promotionConfig: {},
       isDefault: false,
     })
     setEditDialogOpen(true)
@@ -215,7 +214,6 @@ export function DistributionSettings() {
       bgColor: level.bgColor || '#f3f4f6',
       description: level.description || '',
       commissionRate: level.commissionRate,
-      promotionConfig: level.promotionConfig || {},
       isDefault: level.isDefault,
     })
     setEditDialogOpen(true)
@@ -228,19 +226,8 @@ export function DistributionSettings() {
       return
     }
 
-    // 清理空的 promotionConfig 字段
-    const cleanedPromotionConfig = formData.promotionConfig
-      ? Object.fromEntries(
-        Object.entries(formData.promotionConfig).filter(([, v]) => v !== undefined && v !== null)
-      ) as typeof formData.promotionConfig
-      : undefined
-    const hasPromotionConfig = cleanedPromotionConfig && Object.keys(cleanedPromotionConfig).length > 0
-
     if (isCreating) {
-      createMutation.mutate({
-        ...formData,
-        promotionConfig: hasPromotionConfig ? cleanedPromotionConfig : undefined,
-      })
+      createMutation.mutate(formData)
     } else if (selectedLevel) {
       updateMutation.mutate({
         id: selectedLevel.id,
@@ -250,8 +237,6 @@ export function DistributionSettings() {
           color: formData.color,
           bgColor: formData.bgColor,
           description: formData.description,
-          commissionRate: formData.commissionRate,
-          promotionConfig: hasPromotionConfig ? cleanedPromotionConfig : undefined,
           isDefault: formData.isDefault,
         },
       })
@@ -282,7 +267,7 @@ export function DistributionSettings() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight">分销设置</h1>
             <p className="text-muted-foreground">
-              自定义分销等级的名称、图标、颜色和分润比例
+              管理分销等级的显示配置，分润比例和晋升条件请在「分润配置」中设置
             </p>
           </div>
           <div className="flex gap-2">
@@ -297,6 +282,10 @@ export function DistributionSettings() {
                 初始化默认等级
               </Button>
             )}
+            <Button variant="outline" onClick={() => setConfigDialogOpen(true)}>
+              <Settings className="mr-2 h-4 w-4" />
+              分润配置
+            </Button>
             <Button onClick={handleCreate}>
               <Plus className="mr-2 h-4 w-4" />
               添加等级
@@ -391,9 +380,6 @@ export function DistributionSettings() {
                       )}
 
                       <div className="flex flex-wrap gap-2">
-                        <Badge variant="secondary">
-                          分润 {level.commissionRate}%
-                        </Badge>
                         <Badge variant="outline">
                           {level.memberCount} 名成员
                         </Badge>
@@ -404,42 +390,6 @@ export function DistributionSettings() {
                           <Badge variant="destructive">已禁用</Badge>
                         )}
                       </div>
-
-                      {level.promotionConfig && (
-                        <div className="mt-3 rounded-md bg-muted/50 p-2 text-xs text-muted-foreground">
-                          <p className="font-medium mb-1">晋升条件：</p>
-                          <ul className="space-y-0.5">
-                            {level.promotionConfig.minOrders && (
-                              <li>• 完成 {level.promotionConfig.minOrders} 单</li>
-                            )}
-                            {level.promotionConfig.minRating && (
-                              <li>• 评分 ≥ {level.promotionConfig.minRating}</li>
-                            )}
-                            {level.promotionConfig.minDirectInvites && (
-                              <li>• 直推 ≥ {level.promotionConfig.minDirectInvites} 人（仅注册）</li>
-                            )}
-                            {level.promotionConfig.minValidDirectInvites && (
-                              <li>• 有效直推 ≥ {level.promotionConfig.minValidDirectInvites} 人
-                                {level.promotionConfig.directInviteMinOrders && level.promotionConfig.directInviteMinOrders > 1
-                                  ? `（每人≥${level.promotionConfig.directInviteMinOrders}单）`
-                                  : '（每人≥1单）'}
-                              </li>
-                            )}
-                            {level.promotionConfig.minActiveMonths && (
-                              <li>• 活跃 ≥ {level.promotionConfig.minActiveMonths} 个月</li>
-                            )}
-                            {level.promotionConfig.minTeamSize && (
-                              <li>• 团队 ≥ {level.promotionConfig.minTeamSize} 人</li>
-                            )}
-                            {level.promotionConfig.minTeamMonthlyOrders && (
-                              <li>• 团队月订单 ≥ {level.promotionConfig.minTeamMonthlyOrders} 单</li>
-                            )}
-                            {level.promotionConfig.requireReview && (
-                              <li>• 需要平台审核</li>
-                            )}
-                          </ul>
-                        </div>
-                      )}
                     </CardContent>
                   </Card>
                 ))}
@@ -459,333 +409,128 @@ export function DistributionSettings() {
 
       {/* 编辑/创建对话框 */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>{isCreating ? '添加分销等级' : '编辑分销等级'}</DialogTitle>
             <DialogDescription>
-              {isCreating ? '创建一个新的分销等级' : '修改分销等级信息'}
+              {isCreating ? '创建一个新的分销等级' : '修改分销等级的显示信息'}
             </DialogDescription>
           </DialogHeader>
 
-          <Tabs defaultValue="basic" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="basic">基本设置</TabsTrigger>
-              <TabsTrigger value="promotion">晋升条件</TabsTrigger>
-            </TabsList>
-
-            {/* 基本设置 Tab */}
-            <TabsContent value="basic" className="space-y-4 mt-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="level">等级数值</Label>
-                  <Input
-                    id="level"
-                    type="number"
-                    min={1}
-                    value={formData.level}
-                    onChange={(e) => setFormData({ ...formData, level: parseInt(e.target.value) || 1 })}
-                    disabled={!isCreating}
-                  />
-                  <p className="text-xs text-muted-foreground">数值越小等级越高</p>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="code">等级代码</Label>
-                  <Input
-                    id="code"
-                    placeholder="如: partner"
-                    value={formData.code}
-                    onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                    disabled={!isCreating}
-                  />
-                </div>
-              </div>
-
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="name">等级名称</Label>
+                <Label htmlFor="level">等级数值</Label>
                 <Input
-                  id="name"
-                  placeholder="如: 城市合伙人"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  id="level"
+                  type="number"
+                  min={1}
+                  value={formData.level}
+                  onChange={(e) => setFormData({ ...formData, level: parseInt(e.target.value) || 1 })}
+                  disabled={!isCreating}
+                />
+                <p className="text-xs text-muted-foreground">数值越小等级越高</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="code">等级代码</Label>
+                <Input
+                  id="code"
+                  placeholder="如: partner"
+                  value={formData.code}
+                  onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                  disabled={!isCreating}
                 />
               </div>
+            </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>图标</Label>
-                  <Select
-                    value={formData.icon || 'Users'}
-                    onValueChange={(value) => setFormData({ ...formData, icon: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {iconOptions.map((opt) => {
-                        const IconComp = opt.icon
-                        return (
-                          <SelectItem key={opt.value} value={opt.value}>
-                            <div className="flex items-center gap-2">
-                              <IconComp className="h-4 w-4" />
-                              {opt.label}
-                            </div>
-                          </SelectItem>
-                        )
-                      })}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>颜色</Label>
-                  <Select
-                    value={formData.color}
-                    onValueChange={(value) => setFormData({ ...formData, color: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {colorPresets.map((color) => (
-                        <SelectItem key={color.value} value={color.value}>
+            <div className="space-y-2">
+              <Label htmlFor="name">等级名称</Label>
+              <Input
+                id="name"
+                placeholder="如: 城市合伙人"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>图标</Label>
+                <Select
+                  value={formData.icon || 'Users'}
+                  onValueChange={(value) => setFormData({ ...formData, icon: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {iconOptions.map((opt) => {
+                      const IconComp = opt.icon
+                      return (
+                        <SelectItem key={opt.value} value={opt.value}>
                           <div className="flex items-center gap-2">
-                            <div
-                              className="h-4 w-4 rounded-full"
-                              style={{ backgroundColor: color.value }}
-                            />
-                            {color.label}
+                            <IconComp className="h-4 w-4" />
+                            {opt.label}
                           </div>
                         </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                      )
+                    })}
+                  </SelectContent>
+                </Select>
               </div>
-
               <div className="space-y-2">
-                <Label htmlFor="commissionRate">分润比例 (%)</Label>
-                <Input
-                  id="commissionRate"
-                  type="number"
-                  min={0}
-                  max={100}
-                  value={formData.commissionRate}
-                  onChange={(e) => setFormData({ ...formData, commissionRate: parseInt(e.target.value) || 0 })}
-                />
+                <Label>颜色</Label>
+                <Select
+                  value={formData.color}
+                  onValueChange={(value) => setFormData({ ...formData, color: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {colorPresets.map((color) => (
+                      <SelectItem key={color.value} value={color.value}>
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="h-4 w-4 rounded-full"
+                            style={{ backgroundColor: color.value }}
+                          />
+                          {color.label}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="description">等级描述</Label>
-                <Textarea
-                  id="description"
-                  placeholder="描述该等级的特点和权益"
-                  value={formData.description || ''}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                />
+            <div className="space-y-2">
+              <Label htmlFor="description">等级描述</Label>
+              <Textarea
+                id="description"
+                placeholder="描述该等级的特点和权益"
+                value={formData.description || ''}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              />
+            </div>
+
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <div className="space-y-0.5">
+                <Label>设为默认等级</Label>
+                <p className="text-sm text-muted-foreground">
+                  新成员将自动分配到此等级
+                </p>
               </div>
+              <Switch
+                checked={formData.isDefault}
+                onCheckedChange={(checked) => setFormData({ ...formData, isDefault: checked })}
+              />
+            </div>
 
-              <div className="flex items-center justify-between rounded-lg border p-3">
-                <div className="space-y-0.5">
-                  <Label>设为默认等级</Label>
-                  <p className="text-sm text-muted-foreground">
-                    新成员将自动分配到此等级
-                  </p>
-                </div>
-                <Switch
-                  checked={formData.isDefault}
-                  onCheckedChange={(checked) => setFormData({ ...formData, isDefault: checked })}
-                />
-              </div>
-            </TabsContent>
-
-            {/* 晋升条件 Tab */}
-            <TabsContent value="promotion" className="space-y-4 mt-4">
-              <p className="text-sm text-muted-foreground">
-                设置晋升到此等级需要满足的条件，留空表示不限制
-              </p>
-
-              {/* 个人业绩 */}
-              <div className="space-y-3">
-                <Label className="text-sm font-medium text-muted-foreground">个人业绩要求</Label>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label htmlFor="minOrders" className="text-sm">最低完成订单</Label>
-                    <Input
-                      id="minOrders"
-                      type="number"
-                      min={0}
-                      placeholder="不限制"
-                      value={formData.promotionConfig?.minOrders || ''}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        promotionConfig: {
-                          ...formData.promotionConfig,
-                          minOrders: e.target.value ? parseInt(e.target.value) : undefined,
-                        },
-                      })}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="minRating" className="text-sm">最低评分</Label>
-                    <Input
-                      id="minRating"
-                      type="number"
-                      min={0}
-                      max={5}
-                      step={0.1}
-                      placeholder="不限制"
-                      value={formData.promotionConfig?.minRating || ''}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        promotionConfig: {
-                          ...formData.promotionConfig,
-                          minRating: e.target.value ? parseFloat(e.target.value) : undefined,
-                        },
-                      })}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="minActiveMonths" className="text-sm">最低活跃月数</Label>
-                    <Input
-                      id="minActiveMonths"
-                      type="number"
-                      min={0}
-                      placeholder="不限制"
-                      value={formData.promotionConfig?.minActiveMonths || ''}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        promotionConfig: {
-                          ...formData.promotionConfig,
-                          minActiveMonths: e.target.value ? parseInt(e.target.value) : undefined,
-                        },
-                      })}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* 直推要求 */}
-              <div className="space-y-3 pt-3 border-t">
-                <Label className="text-sm font-medium text-muted-foreground">直推要求</Label>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label htmlFor="minDirectInvites" className="text-sm">直推人数（仅注册）</Label>
-                    <Input
-                      id="minDirectInvites"
-                      type="number"
-                      min={0}
-                      placeholder="不限制"
-                      value={formData.promotionConfig?.minDirectInvites || ''}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        promotionConfig: {
-                          ...formData.promotionConfig,
-                          minDirectInvites: e.target.value ? parseInt(e.target.value) : undefined,
-                        },
-                      })}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="minValidDirectInvites" className="text-sm">有效直推人数</Label>
-                    <Input
-                      id="minValidDirectInvites"
-                      type="number"
-                      min={0}
-                      placeholder="不限制"
-                      value={formData.promotionConfig?.minValidDirectInvites || ''}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        promotionConfig: {
-                          ...formData.promotionConfig,
-                          minValidDirectInvites: e.target.value ? parseInt(e.target.value) : undefined,
-                        },
-                      })}
-                    />
-                  </div>
-                  <div className="space-y-1 col-span-2">
-                    <Label htmlFor="directInviteMinOrders" className="text-sm">有效直推最低订单数</Label>
-                    <Input
-                      id="directInviteMinOrders"
-                      type="number"
-                      min={1}
-                      placeholder="默认1单"
-                      value={formData.promotionConfig?.directInviteMinOrders || ''}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        promotionConfig: {
-                          ...formData.promotionConfig,
-                          directInviteMinOrders: e.target.value ? parseInt(e.target.value) : undefined,
-                        },
-                      })}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      被邀请人完成此订单数后才算"有效直推"
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* 团队要求 */}
-              <div className="space-y-3 pt-3 border-t">
-                <Label className="text-sm font-medium text-muted-foreground">团队要求</Label>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label htmlFor="minTeamSize" className="text-sm">最低团队人数</Label>
-                    <Input
-                      id="minTeamSize"
-                      type="number"
-                      min={0}
-                      placeholder="不限制"
-                      value={formData.promotionConfig?.minTeamSize || ''}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        promotionConfig: {
-                          ...formData.promotionConfig,
-                          minTeamSize: e.target.value ? parseInt(e.target.value) : undefined,
-                        },
-                      })}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="minTeamMonthlyOrders" className="text-sm">团队月订单数</Label>
-                    <Input
-                      id="minTeamMonthlyOrders"
-                      type="number"
-                      min={0}
-                      placeholder="不限制"
-                      value={formData.promotionConfig?.minTeamMonthlyOrders || ''}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        promotionConfig: {
-                          ...formData.promotionConfig,
-                          minTeamMonthlyOrders: e.target.value ? parseInt(e.target.value) : undefined,
-                        },
-                      })}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* 审核设置 */}
-              <div className="flex items-center justify-between pt-3 border-t">
-                <div className="space-y-0.5">
-                  <Label className="text-sm">需要平台审核</Label>
-                  <p className="text-xs text-muted-foreground">
-                    满足条件后需管理员审核通过才能晋升
-                  </p>
-                </div>
-                <Switch
-                  checked={formData.promotionConfig?.requireReview || false}
-                  onCheckedChange={(checked) => setFormData({
-                    ...formData,
-                    promotionConfig: {
-                      ...formData.promotionConfig,
-                      requireReview: checked,
-                    },
-                  })}
-                />
-              </div>
-            </TabsContent>
-          </Tabs>
+            <p className="text-xs text-muted-foreground rounded-md bg-muted/50 p-2">
+              💡 分润比例和晋升条件请在「分润配置」中统一管理
+            </p>
+          </div>
 
           <DialogFooter className="mt-4">
             <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
@@ -831,6 +576,9 @@ export function DistributionSettings() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* 分润配置对话框 */}
+      <ConfigDialog open={configDialogOpen} onOpenChange={setConfigDialogOpen} />
     </>
   )
 }

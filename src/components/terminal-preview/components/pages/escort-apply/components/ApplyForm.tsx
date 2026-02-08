@@ -18,6 +18,8 @@ interface ApplyFormProps {
   userPhone?: string
   userAvatar?: string
   userGender?: 'male' | 'female' | 'unknown'
+  /** 初始邀请码（从分享链接传入） */
+  initialInviteCode?: string
   onSubmit: (data: ApplyFormData) => Promise<void>
   onValidateInviteCode: (code: string) => Promise<{ valid: boolean; inviter?: InviterInfo; message?: string }>
 }
@@ -28,6 +30,7 @@ export function ApplyForm({
   userPhone,
   userAvatar,
   userGender,
+  initialInviteCode,
   onSubmit,
   onValidateInviteCode,
 }: ApplyFormProps) {
@@ -39,7 +42,7 @@ export function ApplyForm({
     gender: userGender || 'male',
     emergencyContact: '',
     emergencyPhone: '',
-    inviteCode: '',
+    inviteCode: initialInviteCode || '',
     // 新增字段
     age: '',
     hospitals: [],

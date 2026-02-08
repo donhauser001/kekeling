@@ -316,7 +316,7 @@ export function ReferralsPage({
                       marginTop: 12 * wxScale,
                     }}
                   >
-                    <Icon name="copy" size={14 * wxScale} color="#9ca3af" />
+                    <Icon name="clipboard" size={14 * wxScale} color="#9ca3af" />
                     <Text style={{ fontSize: 12 * wxScale, color: '#9ca3af' }}>
                       点击复制
                     </Text>

@@ -33,3 +33,6 @@ dist-ssr
 
 # 数据库备份
 backups/
+
+# pnpm store
+.pnpm-store/

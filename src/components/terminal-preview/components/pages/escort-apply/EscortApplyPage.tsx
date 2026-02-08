@@ -17,6 +17,7 @@ const wxSafeAreaTop = isWxEnvironment() ? 44 : 0
 export function EscortApplyPage({
   themeSettings,
   isDarkMode = false,
+  initialInviteCode,
   onBack,
   onNavigate,
 }: EscortApplyPageProps) {
@@ -202,6 +203,7 @@ export function EscortApplyPage({
             userPhone={userPhone}
             userAvatar={userAvatar}
             userGender={userGender}
+            initialInviteCode={initialInviteCode}
             onSubmit={handleSubmit}
             onValidateInviteCode={handleValidateInviteCode}
           />
@@ -220,6 +222,7 @@ export function EscortApplyPage({
             userPhone={userPhone}
             userAvatar={userAvatar}
             userGender={userGender}
+            initialInviteCode={initialInviteCode}
             onSubmit={handleSubmit}
             onValidateInviteCode={handleValidateInviteCode}
           />

@@ -6,6 +6,7 @@
  */
 
 import { Controller, Get, Query, UseGuards, Request, Logger, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { IsOptional, IsIn, IsInt, Min, Max } from 'class-validator';
 import { Type } from 'class-transformer';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -61,12 +62,17 @@ class QueryRecordsDto {
 @UseGuards(JwtAuthGuard)
 export class EscortAppDistributionController {
   private readonly logger = new Logger(EscortAppDistributionController.name);
+  // 小程序码缓存
+  private qrCodeCache = new Map<string, { url: string; expiresAt: number }>();
+  // access_token 缓存
+  private accessTokenCache: { token: string; expiresAt: number } | null = null;
 
   constructor(
     private prisma: PrismaService,
     private teamService: TeamService,
     private distributionService: DistributionService,
     private promotionService: PromotionService,
+    private configService: ConfigService,
   ) {}
 
   /**
@@ -302,19 +308,132 @@ export class EscortAppDistributionController {
     });
     const rewardPerInvite = config ? Number(config.directInviteBonus) : 50;
 
-    // 生成邀请链接（使用小程序页面路径）
-    const inviteLink = `pages/invite/index?code=${inviteCode}`;
+    // 小程序页面路径（用于微信分享和二维码）
+    const miniappPath = `packageB/pages/escort-apply/index`;
 
-    // 生成二维码 URL（使用公共 API）
-    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(inviteCode)}`;
+    // 生成微信小程序码（扫码直接进入小程序）
+    let qrCodeUrl: string | undefined = undefined;
+    try {
+      qrCodeUrl = await this.generateMiniappQRCode(miniappPath, inviteCode);
+    } catch (error) {
+      this.logger.error(`[getInviteCode] 生成小程序码失败: ${error.message}`);
+      // 小程序码生成失败时不提供二维码
+      qrCodeUrl = undefined;
+    }
+    
+    // 邀请链接（小程序内部路径，仅供参考）
+    const inviteLink = `/${miniappPath}?inviteCode=${inviteCode}`;
+
+    // 邀请规则（暂不显示，后续可从配置读取）
+    const inviteRules: string[] = [];
 
     return {
       inviteCode,
       inviteLink,
+      miniappPath,
       qrCodeUrl,
       totalInvited,
       rewardPerInvite,
+      inviteRules,
     };
+  }
+
+  /**
+   * 生成微信小程序码
+   * 使用 wxacode.getUnlimited 接口
+   */
+  private async generateMiniappQRCode(page: string, scene: string): Promise<string> {
+    // 检查缓存（缓存1小时）
+    const cacheKey = `${page}:${scene}`;
+    const cached = this.qrCodeCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.url;
+    }
+
+    const accessToken = await this.getWechatAccessToken();
+    if (!accessToken) {
+      throw new Error('获取微信 access_token 失败');
+    }
+
+    // 调用微信接口生成小程序码
+    const response = await fetch(
+      `https://api.weixin.qq.com/wxa/getwxacodeunlimit?access_token=${accessToken}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          scene: scene, // 最多32个字符
+          page: page.startsWith('/') ? page.slice(1) : page, // 去掉开头的斜杠
+          width: 430,
+          auto_color: false,
+          line_color: { r: 0, g: 0, b: 0 },
+          is_hyaline: false,
+        }),
+      },
+    );
+
+    const contentType = response.headers.get('content-type');
+    
+    // 如果返回的是图片（小程序码）
+    if (contentType && contentType.includes('image')) {
+      // 将图片转为 base64 data URL
+      const buffer = await response.arrayBuffer();
+      const base64 = Buffer.from(buffer).toString('base64');
+      const dataUrl = `data:image/png;base64,${base64}`;
+      
+      // 缓存1小时
+      this.qrCodeCache.set(cacheKey, {
+        url: dataUrl,
+        expiresAt: Date.now() + 3600 * 1000,
+      });
+      
+      return dataUrl;
+    }
+
+    // 如果返回的是 JSON（错误信息）
+    const result = await response.json();
+    this.logger.error(`[generateMiniappQRCode] 微信返回错误: ${JSON.stringify(result)}`);
+    throw new Error(result.errmsg || '生成小程序码失败');
+  }
+
+  /**
+   * 获取微信 access_token（带缓存）
+   */
+  private async getWechatAccessToken(): Promise<string | null> {
+    // 检查缓存
+    if (this.accessTokenCache && this.accessTokenCache.expiresAt > Date.now()) {
+      return this.accessTokenCache.token;
+    }
+
+    const appId = this.configService.get<string>('WECHAT_APPID');
+    const appSecret = this.configService.get<string>('WECHAT_SECRET');
+
+    if (!appId || !appSecret) {
+      this.logger.error('[getWechatAccessToken] 缺少微信配置');
+      return null;
+    }
+
+    try {
+      const response = await fetch(
+        `https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=${appId}&secret=${appSecret}`,
+      );
+      const result = await response.json();
+
+      if (result.access_token) {
+        // 缓存 token（提前5分钟过期）
+        this.accessTokenCache = {
+          token: result.access_token,
+          expiresAt: Date.now() + (result.expires_in - 300) * 1000,
+        };
+        return result.access_token;
+      } else {
+        this.logger.error(`[getWechatAccessToken] 获取失败: ${result.errmsg || result.errcode}`);
+        return null;
+      }
+    } catch (error) {
+      this.logger.error('[getWechatAccessToken] API 调用失败:', error);
+      return null;
+    }
   }
 
   /**

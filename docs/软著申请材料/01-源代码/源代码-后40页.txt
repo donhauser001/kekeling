@@ -1,0 +1,2540 @@
+================================================================================
+                    科科灵陪诊服务管理系统 源代码（后40页）
+================================================================================
+
+【第41页】
+================================================================================
+文件：server/src/modules/distribution/distribution.service.ts
+说明：分销服务 - 多级分润计算引擎
+================================================================================
+
+import { Injectable, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { PrismaService } from '../../prisma/prisma.service';
+import { Decimal as PrismaDecimal } from '@prisma/client/runtime/library';
+import Decimal from 'decimal.js';
+import {
+  DistributionStrategyFactory,
+  DistributionStrategyType,
+  DistributionRateConfig,
+} from './strategies';
+import {
+  ESCORT_RELATION_EVENTS,
+  EscortRelationCreatedEvent,
+} from './events/escort-relation.events';
+
+Decimal.set({ precision: 20, rounding: Decimal.ROUND_HALF_UP });
+
+export interface DistributionResult {
+  records: Array<{
+    beneficiaryId: string;
+    beneficiaryLevel: number;
+    relationLevel: number;
+    rate: number;
+    amountCents: number;
+    type: string;
+  }>;
+  totalDistributionCents: number;
+}
+
+export function yuanToCents(yuan: number): number {
+  return Math.round(yuan * 100);
+}
+
+export function centsToYuan(cents: number): number {
+  return cents / 100;
+}
+
+export function centsToDecimalString(cents: number): string {
+  return (cents / 100).toFixed(2);
+}
+
+export interface L2PromotionConfig {
+  minOrders: number;
+  minRating: number;
+  minDirectInvites: number;
+  minActiveMonths: number;
+}
+
+【第42页】
+================================================================================
+
+export interface L1PromotionConfig {
+  minTeamSize: number;
+  minTeamMonthlyOrders: number;
+  minPersonalMonthlyOrders: number;
+  requireTraining: boolean;
+  byInvitation: boolean;
+}
+
+@Injectable()
+export class DistributionService {
+  private readonly logger = new Logger(DistributionService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly eventEmitter: EventEmitter2,
+    private readonly strategyFactory: DistributionStrategyFactory,
+  ) { }
+
+  async generateInviteCode(escortId: string): Promise<string> {
+    const escort = await this.prisma.escort.findUnique({
+      where: { id: escortId },
+    });
+
+    if (!escort) {
+      throw new NotFoundException('陪诊员不存在');
+    }
+
+    if (escort.inviteCode) {
+      return escort.inviteCode;
+    }
+
+    const MAX_ATTEMPTS = 20;
+    let code: string;
+    let attempts = 0;
+
+    const prefix = this.hashToCode(escortId, 4);
+
+    do {
+      const suffix = this.generateRandomCode(2);
+      code = prefix + suffix;
+
+      const existing = await this.prisma.escort.findUnique({
+        where: { inviteCode: code },
+      });
+      if (!existing) break;
+
+      attempts++;
+      this.logger.warn(`邀请码碰撞 (attempt ${attempts}): ${code}`);
+    } while (attempts < MAX_ATTEMPTS);
+
+    if (attempts >= MAX_ATTEMPTS) {
+      code = this.generateRandomCode(8);
+      this.logger.warn(`邀请码生成退化为全随机 8 位: ${code}`);
+    }
+
+    await this.prisma.escort.update({
+      where: { id: escortId },
+      data: { inviteCode: code },
+    });
+
+    return code;
+  }
+
+【第43页】
+================================================================================
+
+  private hashToCode(input: string, length: number): string {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let hash = 0;
+
+    for (let i = 0; i < input.length; i++) {
+      const char = input.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash;
+    }
+
+    let result = '';
+    let absHash = Math.abs(hash);
+    for (let i = 0; i < length; i++) {
+      result += chars[absHash % chars.length];
+      absHash = Math.floor(absHash / chars.length);
+    }
+
+    return result;
+  }
+
+  private generateRandomCode(length: number): string {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  }
+
+  async processInvitation(inviteeId: string, inviteCode: string): Promise<void> {
+    const inviter = await this.prisma.escort.findUnique({
+      where: { inviteCode },
+    });
+
+    if (!inviter || inviter.status !== 'active') {
+      throw new BadRequestException('邀请码无效');
+    }
+
+    const invitee = await this.prisma.escort.findUnique({
+      where: { id: inviteeId },
+    });
+
+    if (!invitee) {
+      throw new NotFoundException('陪诊员不存在');
+    }
+
+    if (invitee.parentId) {
+      throw new BadRequestException('您已有邀请人');
+    }
+
+    if (await this.isInAncestorChain(inviter.id, inviteeId)) {
+      throw new BadRequestException('邀请关系异常');
+    }
+
+【第44页】
+================================================================================
+
+    const ancestorPath = inviter.ancestorPath
+      ? [...JSON.parse(inviter.ancestorPath), inviter.id]
+      : [inviter.id];
+
+    const trimmedPath = ancestorPath.slice(-3);
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.escort.update({
+        where: { id: inviteeId },
+        data: {
+          parentId: inviter.id,
+          ancestorPath: JSON.stringify(trimmedPath),
+        },
+      });
+
+      await tx.escortInvitation.create({
+        data: {
+          inviterId: inviter.id,
+          inviterLevel: inviter.distributionLevel,
+          inviteeId,
+          inviteCode,
+          status: 'active',
+          activatedAt: new Date(),
+        },
+      });
+    });
+
+    this.eventEmitter.emit(
+      ESCORT_RELATION_EVENTS.CREATED,
+      new EscortRelationCreatedEvent({
+        inviterId: inviter.id,
+        inviteeId,
+        inviteCode,
+      }),
+    );
+
+    this.logger.log(
+      `[Invitation] 邀请关系建立成功: inviter=${inviter.id}, invitee=${inviteeId}`,
+    );
+  }
+
+  private async isInAncestorChain(escortId: string, targetId: string): Promise<boolean> {
+    const escort = await this.prisma.escort.findUnique({
+      where: { id: escortId },
+    });
+
+    if (!escort) return false;
+    if (escort.id === targetId) return true;
+
+    const ancestorPath = escort.ancestorPath ? JSON.parse(escort.ancestorPath) : [];
+    return ancestorPath.includes(targetId);
+  }
+
+【第45页】
+================================================================================
+
+  async calculateDistribution(
+    orderId: string,
+    escortId: string,
+    orderAmountCents: number,
+  ): Promise<DistributionResult> {
+    const config = await this.prisma.distributionConfig.findFirst({
+      where: { status: 'active' },
+    });
+
+    if (!config) {
+      this.logger.warn('未找到激活的分润配置，跳过分润计算');
+      return { records: [], totalDistributionCents: 0 };
+    }
+
+    const escort = await this.prisma.escort.findUnique({
+      where: { id: escortId },
+    });
+
+    if (!escort) {
+      throw new NotFoundException('陪诊员不存在');
+    }
+
+    const records: DistributionResult['records'] = [];
+    let totalDistributionCents = 0;
+
+    const ancestors = escort.ancestorPath
+      ? JSON.parse(escort.ancestorPath) as string[]
+      : [];
+
+    for (let i = 0; i < Math.min(ancestors.length, 3); i++) {
+      const ancestorId = ancestors[ancestors.length - 1 - i];
+      const ancestor = await this.prisma.escort.findUnique({
+        where: { id: ancestorId },
+      });
+
+      if (!ancestor || ancestor.status !== 'active' || !ancestor.distributionActive) {
+        continue;
+      }
+
+      const relationLevel = i + 1;
+
+      const strategyType = (config as any).strategyType || DistributionStrategyType.STANDARD;
+      const strategy = this.strategyFactory.getStrategy(strategyType);
+
+      const rateConfig: DistributionRateConfig = {
+        l1CommissionRate: config.l1CommissionRate,
+        l2CommissionRate: config.l2CommissionRate,
+        l3CommissionRate: config.l3CommissionRate,
+      };
+
+【第46页】
+================================================================================
+
+      const rateResult = strategy.calculateRate({
+        orderAmountCents,
+        beneficiaryLevel: ancestor.distributionLevel,
+        relationLevel,
+        config: rateConfig,
+      });
+
+      if (rateResult.shouldDistribute && rateResult.rate > 0) {
+        const rate = rateResult.rate;
+        const amountCents = new Decimal(orderAmountCents)
+          .times(rate)
+          .dividedBy(100)
+          .toDecimalPlaces(0, Decimal.ROUND_HALF_UP)
+          .toNumber();
+
+        records.push({
+          beneficiaryId: ancestorId,
+          beneficiaryLevel: ancestor.distributionLevel,
+          relationLevel,
+          rate,
+          amountCents,
+          type: 'order',
+        });
+        totalDistributionCents += amountCents;
+      }
+    }
+
+    return { records, totalDistributionCents };
+  }
+
+  async createDistributionRecords(
+    orderId: string,
+    orderAmountCents: number,
+    sourceEscortId: string,
+    distributionResult: DistributionResult,
+  ): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      for (const record of distributionResult.records) {
+        await tx.distributionRecord.create({
+          data: {
+            orderId,
+            orderAmount: new PrismaDecimal(centsToDecimalString(orderAmountCents)),
+            beneficiaryId: record.beneficiaryId,
+            beneficiaryLevel: record.beneficiaryLevel,
+            sourceEscortId,
+            relationLevel: record.relationLevel,
+            rate: record.rate,
+            amount: new PrismaDecimal(centsToDecimalString(record.amountCents)),
+            type: record.type,
+            status: 'pending',
+          },
+        });
+      }
+    });
+  }
+
+【第47页】
+================================================================================
+
+  async grantDirectInviteBonus(
+    inviterId: string,
+    inviteeId: string,
+    firstOrderId: string,
+  ): Promise<void> {
+    const config = await this.prisma.distributionConfig.findFirst({
+      where: { status: 'active' },
+    });
+
+    if (!config) {
+      this.logger.warn('未找到激活的分润配置，跳过直推奖励');
+      return;
+    }
+
+    const existing = await this.prisma.distributionRecord.findFirst({
+      where: {
+        beneficiaryId: inviterId,
+        sourceEscortId: inviteeId,
+        type: 'bonus',
+      },
+    });
+
+    if (existing) {
+      return;
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      const inviter = await tx.escort.findUnique({
+        where: { id: inviterId },
+      });
+
+      await tx.distributionRecord.create({
+        data: {
+          orderId: firstOrderId,
+          orderAmount: new PrismaDecimal(0),
+          beneficiaryId: inviterId,
+          beneficiaryLevel: inviter?.distributionLevel ?? 3,
+          sourceEscortId: inviteeId,
+          relationLevel: 1,
+          rate: 0,
+          amount: config.directInviteBonus,
+          type: 'bonus',
+          status: 'settled',
+          settledAt: new Date(),
+        },
+      });
+
+      const wallet = await tx.escortWallet.findUnique({
+        where: { escortId: inviterId },
+      });
+
+      if (wallet) {
+        await tx.escortWallet.update({
+          where: { escortId: inviterId },
+          data: {
+            balance: { increment: config.directInviteBonus },
+            totalEarned: { increment: config.directInviteBonus },
+          },
+        });
+
+【第48页】
+================================================================================
+
+        const newBalance = new Decimal(wallet.balance.toString())
+          .plus(config.directInviteBonus.toString())
+          .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
+
+        await tx.walletTransaction.create({
+          data: {
+            walletId: wallet.id,
+            type: 'distribution',
+            amount: config.directInviteBonus,
+            balanceAfter: new PrismaDecimal(newBalance.toString()),
+            orderId: firstOrderId,
+            title: '直推奖励',
+            remark: '邀请新陪诊员首单奖励',
+          },
+        });
+      }
+    });
+  }
+
+  async settleDistributionRecords(orderId: string): Promise<void> {
+    const records = await this.prisma.distributionRecord.findMany({
+      where: {
+        orderId,
+        status: 'pending',
+      },
+    });
+
+    if (records.length === 0) {
+      return;
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      for (const record of records) {
+        const wallet = await tx.escortWallet.findUnique({
+          where: { escortId: record.beneficiaryId },
+        });
+
+        if (wallet) {
+          await tx.escortWallet.update({
+            where: { escortId: record.beneficiaryId },
+            data: {
+              balance: { increment: record.amount },
+              totalEarned: { increment: record.amount },
+            },
+          });
+
+          const newBalance = new Decimal(wallet.balance.toString())
+            .plus(record.amount.toString())
+            .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
+
+          await tx.walletTransaction.create({
+            data: {
+              walletId: wallet.id,
+              type: 'distribution',
+              amount: record.amount,
+              balanceAfter: new PrismaDecimal(newBalance.toString()),
+              orderId: record.orderId,
+              title: '分润收入',
+              remark: `来自订单 ${record.orderId} 的分润`,
+            },
+          });
+        }
+
+【第49页】
+================================================================================
+
+        await tx.distributionRecord.update({
+          where: { id: record.id },
+          data: {
+            status: 'settled',
+            settledAt: new Date(),
+          },
+        });
+      }
+    });
+  }
+
+  async cancelDistributionRecords(orderId: string): Promise<void> {
+    const records = await this.prisma.distributionRecord.findMany({
+      where: {
+        orderId,
+        status: { in: ['pending', 'settled'] },
+      },
+    });
+
+    if (records.length === 0) {
+      return;
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      for (const record of records) {
+        if (record.status === 'settled') {
+          const wallet = await tx.escortWallet.findUnique({
+            where: { escortId: record.beneficiaryId },
+          });
+
+          if (wallet) {
+            await tx.escortWallet.update({
+              where: { escortId: record.beneficiaryId },
+              data: {
+                balance: { decrement: record.amount },
+              },
+            });
+
+            const refundAmount = new Decimal(record.amount.toString()).negated();
+            const newBalance = new Decimal(wallet.balance.toString())
+              .minus(record.amount.toString())
+              .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
+
+            await tx.walletTransaction.create({
+              data: {
+                walletId: wallet.id,
+                type: 'refund',
+                amount: new PrismaDecimal(refundAmount.toString()),
+                balanceAfter: new PrismaDecimal(newBalance.toString()),
+                orderId: record.orderId,
+                title: '分润扣回',
+                remark: `订单退款，分润已扣回`,
+              },
+            });
+          }
+        }
+
+        await tx.distributionRecord.update({
+          where: { id: record.id },
+          data: {
+            status: 'cancelled',
+          },
+        });
+      }
+    });
+  }
+}
+
+【第50页】
+================================================================================
+文件：server/src/modules/escort-app/dispatch.service.ts
+说明：智能派单服务 - 多维度评分匹配
+================================================================================
+
+import { Injectable, Logger } from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service';
+import { ConfigService } from '../config/config.service';
+
+export interface DispatchScore {
+  escortId: string;
+  escortName: string;
+  totalScore: number;
+  factors: {
+    distance: number;
+    hospitalFamiliarity: number;
+    rating: number;
+    levelWeight: number;
+    availability: number;
+  };
+}
+
+interface DispatchConfig {
+  weights: {
+    distance: number;
+    hospitalFamiliarity: number;
+    rating: number;
+    levelWeight: number;
+    availability: number;
+  };
+  maxDistanceKm: number;
+  minRating: number;
+}
+
+@Injectable()
+export class DispatchService {
+  private readonly logger = new Logger(DispatchService.name);
+
+  private readonly defaultConfig: DispatchConfig = {
+    weights: {
+      distance: 0.30,
+      hospitalFamiliarity: 0.25,
+      rating: 0.20,
+      levelWeight: 0.15,
+      availability: 0.10,
+    },
+    maxDistanceKm: 30,
+    minRating: 4.0,
+  };
+
+  constructor(
+    private prisma: PrismaService,
+    private configService: ConfigService,
+  ) { }
+
+【第51页】
+================================================================================
+
+  private async getDispatchConfig(): Promise<DispatchConfig> {
+    try {
+      const orderSettings = await this.configService.getOrderSettings();
+      if (orderSettings.dispatchWeights) {
+        return {
+          weights: orderSettings.dispatchWeights,
+          maxDistanceKm: 30,
+          minRating: 4.0,
+        };
+      }
+    } catch (error) {
+      this.logger.warn('获取派单配置失败，使用默认配置:', error);
+    }
+    return this.defaultConfig;
+  }
+
+  async smartDispatch(orderId: string, config?: Partial<DispatchConfig>): Promise<DispatchScore | null> {
+    const dbConfig = await this.getDispatchConfig();
+    const cfg = { ...dbConfig, ...config };
+
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        hospital: true,
+        service: true,
+        user: true,
+      },
+    });
+
+    if (!order) {
+      this.logger.warn(`订单 ${orderId} 不存在`);
+      return null;
+    }
+
+    if (order.status !== 'paid' || order.escortId) {
+      this.logger.warn(`订单 ${orderId} 状态不允许派单`);
+      return null;
+    }
+
+    const membershipPriority = await this.getMembershipPriority(order.userId);
+
+    const candidates = await this.getAvailableEscorts(order);
+
+    if (candidates.length === 0) {
+      this.logger.warn(`订单 ${orderId} 没有可用的陪诊员`);
+      return null;
+    }
+
+    const scored: DispatchScore[] = [];
+
+    for (const escort of candidates) {
+      const factors = await this.calculateDispatchFactors(escort, order);
+
+      if (escort.rating < cfg.minRating) {
+        continue;
+      }
+
+【第52页】
+================================================================================
+
+      const totalScore =
+        factors.distance * cfg.weights.distance +
+        factors.hospitalFamiliarity * cfg.weights.hospitalFamiliarity +
+        factors.rating * cfg.weights.rating +
+        factors.levelWeight * cfg.weights.levelWeight +
+        factors.availability * cfg.weights.availability +
+        membershipPriority;
+
+      scored.push({
+        escortId: escort.id,
+        escortName: escort.name,
+        totalScore,
+        factors,
+      });
+    }
+
+    if (scored.length === 0) {
+      this.logger.warn(`订单 ${orderId} 没有符合条件的陪诊员`);
+      return null;
+    }
+
+    scored.sort((a, b) => b.totalScore - a.totalScore);
+
+    return scored[0];
+  }
+
+  async autoAssign(orderId: string): Promise<boolean> {
+    const result = await this.smartDispatch(orderId);
+
+    if (!result) {
+      return false;
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const { count } = await tx.order.updateMany({
+        where: {
+          id: orderId,
+          status: 'paid',
+          escortId: null,
+        },
+        data: {
+          status: 'assigned',
+          escortId: result.escortId,
+          assignMethod: 'auto',
+          assignedAt: new Date(),
+        },
+      });
+
+      if (count !== 1) {
+        return false;
+      }
+
+      const escort = await tx.escort.update({
+        where: { id: result.escortId },
+        data: {
+          orderCount: { increment: 1 },
+          currentDailyOrders: { increment: 1 },
+          lastActiveAt: new Date(),
+        },
+      });
+
+【第53页】
+================================================================================
+
+      await tx.orderLog.create({
+        data: {
+          orderId,
+          action: 'auto_assign',
+          fromStatus: 'paid',
+          toStatus: 'assigned',
+          operatorType: 'system',
+          remark: `系统自动派单给 ${escort.name} (得分: ${result.totalScore.toFixed(2)})`,
+          extra: JSON.stringify(result),
+        },
+      });
+
+      this.logger.log(
+        `订单 ${orderId} 自动派单成功: ${result.escortName} (得分: ${result.totalScore.toFixed(2)})`,
+      );
+
+      return true;
+    });
+  }
+
+  async autoDispatchPendingOrders(): Promise<{ processed: number; assigned: number }> {
+    const startTime = Date.now();
+
+    const dispatchMode = await this.configService.get('order.dispatch_mode');
+
+    if (dispatchMode === 'assign') {
+      this.logger.log('当前为指派模式，跳过自动派单');
+      return { processed: 0, assigned: 0 };
+    }
+
+    const orderSettings = await this.configService.getOrderSettings();
+    const autoDispatchTimeout = orderSettings.autoDispatchTimeout || 30;
+
+    this.logger.log(`开始批量自动派单...（当前模式: ${dispatchMode || '默认'}，超时: ${autoDispatchTimeout}分钟）`);
+
+    const timeoutAgo = new Date(Date.now() - autoDispatchTimeout * 60 * 1000);
+
+    const pendingOrders = await this.prisma.order.findMany({
+      where: {
+        status: 'paid',
+        escortId: null,
+        paidAt: { lt: timeoutAgo },
+      },
+      orderBy: { paidAt: 'asc' },
+      take: 50,
+    });
+
+    let assigned = 0;
+
+    for (const order of pendingOrders) {
+      try {
+        const success = await this.autoAssign(order.id);
+        if (success) {
+          assigned++;
+        }
+      } catch (error) {
+        this.logger.error(`订单 ${order.id} 自动派单失败:`, error);
+      }
+    }
+
+【第54页】
+================================================================================
+
+    const duration = Date.now() - startTime;
+    this.logger.log(
+      `批量自动派单完成: 处理 ${pendingOrders.length} 个, 成功 ${assigned} 个, 耗时 ${duration}ms`,
+    );
+
+    return { processed: pendingOrders.length, assigned };
+  }
+
+  private async getAvailableEscorts(order: any) {
+    const escorts = await this.prisma.escort.findMany({
+      where: {
+        status: 'active',
+        workStatus: 'working',
+        currentDailyOrders: {
+          lt: this.prisma.escort.fields.maxDailyOrders as any,
+        },
+      },
+      include: {
+        hospitals: true,
+      },
+    });
+
+    const filtered = escorts.filter(
+      (escort) => escort.currentDailyOrders < escort.maxDailyOrders,
+    );
+
+    if (order.hospitalId) {
+      const familiarEscorts = filtered.filter((escort) =>
+        escort.hospitals.some((h) => h.hospitalId === order.hospitalId),
+      );
+
+      if (familiarEscorts.length > 0) {
+        return familiarEscorts;
+      }
+    }
+
+    return filtered;
+  }
+
+  private async getMembershipPriority(userId: string): Promise<number> {
+    try {
+      const membership = await this.prisma.userMembership.findFirst({
+        where: {
+          userId,
+          status: 'active',
+          expireAt: { gt: new Date() },
+        },
+      });
+
+      if (membership) {
+        this.logger.debug(`用户 ${userId} 是会员，享有优先接单权益，优先级+10`);
+        return 10;
+      }
+
+      return 0;
+    } catch (error) {
+      this.logger.error(`获取会员优先级失败: ${error.message}`);
+      return 0;
+    }
+  }
+
+【第55页】
+================================================================================
+
+  private async calculateDispatchFactors(escort: any, order: any) {
+    const distanceScore = 80;
+
+    const isFamiliar = escort.hospitals?.some(
+      (h: any) => h.hospitalId === order.hospitalId,
+    );
+    const hospitalScore = isFamiliar ? 100 : 50;
+
+    const ratingScore = (escort.rating / 5) * 100;
+
+    const levelScores: Record<string, number> = {
+      senior: 100,
+      intermediate: 75,
+      junior: 50,
+      trainee: 25,
+    };
+    const levelScore = levelScores[escort.level] || 50;
+
+    const maxDaily = escort.maxDailyOrders || 5;
+    const currentDaily = escort.currentDailyOrders || 0;
+    const availabilityScore = ((maxDaily - currentDaily) / maxDaily) * 100;
+
+    return {
+      distance: distanceScore,
+      hospitalFamiliarity: hospitalScore,
+      rating: ratingScore,
+      levelWeight: levelScore,
+      availability: availabilityScore,
+    };
+  }
+
+  async getDispatchRecommendations(orderId: string, limit: number = 5): Promise<DispatchScore[]> {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: { hospital: true },
+    });
+
+    if (!order) {
+      return [];
+    }
+
+    const candidates = await this.getAvailableEscorts(order);
+    const scored: DispatchScore[] = [];
+
+    for (const escort of candidates) {
+      const factors = await this.calculateDispatchFactors(escort, order);
+
+      const totalScore =
+        factors.distance * 0.30 +
+        factors.hospitalFamiliarity * 0.25 +
+        factors.rating * 0.20 +
+        factors.levelWeight * 0.15 +
+        factors.availability * 0.10;
+
+      scored.push({
+        escortId: escort.id,
+        escortName: escort.name,
+        totalScore,
+        factors,
+      });
+    }
+
+    scored.sort((a, b) => b.totalScore - a.totalScore);
+
+    return scored.slice(0, limit);
+  }
+}
+
+【第56页】
+================================================================================
+文件：server/src/modules/points/points.service.ts
+说明：积分服务 - 签到、任务、积分计算
+================================================================================
+
+import {
+    Injectable,
+    NotFoundException,
+    BadRequestException,
+} from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service';
+import { ConfigService } from '../config/config.service';
+import { Prisma } from '@prisma/client';
+import {
+    CreatePointRuleDto,
+    UpdatePointRuleDto,
+    AdjustPointsDto,
+} from './dto/points.dto';
+
+@Injectable()
+export class PointsService {
+    constructor(
+        private prisma: PrismaService,
+        private configService?: ConfigService,
+    ) { }
+
+    private async isPointsEnabled(): Promise<boolean> {
+        if (this.configService) {
+            const settings = await this.configService.getMarketingSettings();
+            return settings.pointsEnabled !== false;
+        }
+
+        try {
+            const { ConfigService: ConfigSvc } = await import('../config/config.service');
+            const configService = new ConfigSvc(this.prisma);
+            const settings = await configService.getMarketingSettings();
+            return settings.pointsEnabled !== false;
+        } catch (error) {
+            console.warn('[PointsService] 获取营销设置失败，默认启用积分功能:', error);
+            return true;
+        }
+    }
+
+    async getPointsOverview(userId: string) {
+        let userPoint = await this.prisma.userPoint.findUnique({
+            where: { userId },
+        });
+
+        if (!userPoint) {
+            userPoint = await this.prisma.userPoint.create({
+                data: {
+                    userId,
+                    totalPoints: 0,
+                    usedPoints: 0,
+                    expiredPoints: 0,
+                    currentPoints: 0,
+                },
+            });
+        }
+
+【第57页】
+================================================================================
+
+        const sevenDaysLater = new Date();
+        sevenDaysLater.setDate(sevenDaysLater.getDate() + 7);
+
+        const expiringPoints = await this.prisma.pointRecord.aggregate({
+            where: {
+                userId,
+                type: 'earn',
+                expireAt: {
+                    gte: new Date(),
+                    lte: sevenDaysLater,
+                },
+            },
+            _sum: {
+                points: true,
+            },
+        });
+
+        return {
+            totalPoints: userPoint.totalPoints,
+            usedPoints: userPoint.usedPoints,
+            expiredPoints: userPoint.expiredPoints,
+            currentPoints: userPoint.currentPoints,
+            expiringPoints: expiringPoints._sum.points || 0,
+        };
+    }
+
+    async getPointsRecords(
+        userId: string,
+        params: {
+            type?: string;
+            page?: number;
+            pageSize?: number;
+        },
+    ) {
+        const { type, page = 1, pageSize = 20 } = params;
+
+        const where: Prisma.PointRecordWhereInput = { userId };
+        if (type) {
+            where.type = type;
+        }
+
+        const [data, total] = await Promise.all([
+            this.prisma.pointRecord.findMany({
+                where,
+                orderBy: { createdAt: 'desc' },
+                skip: (page - 1) * pageSize,
+                take: pageSize,
+            }),
+            this.prisma.pointRecord.count({ where }),
+        ]);
+
+        return { data, total, page, pageSize };
+    }
+
+    async checkIn(userId: string) {
+        if (!(await this.isPointsEnabled())) {
+            throw new BadRequestException('积分功能暂未开放');
+        }
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+【第58页】
+================================================================================
+
+        const todayCheckIn = await this.prisma.pointRecord.findFirst({
+            where: {
+                userId,
+                source: 'daily_checkin',
+                createdAt: {
+                    gte: today,
+                    lt: tomorrow,
+                },
+            },
+        });
+
+        if (todayCheckIn) {
+            throw new BadRequestException('今日已签到');
+        }
+
+        const rule = await this.prisma.pointRule.findFirst({
+            where: {
+                code: 'daily_checkin',
+                status: 'active',
+            },
+        });
+
+        if (!rule) {
+            throw new BadRequestException('签到功能暂未开放');
+        }
+
+        if (rule.dailyLimit) {
+            const todayEarned = await this.prisma.pointRecord.aggregate({
+                where: {
+                    userId,
+                    source: 'daily_checkin',
+                    createdAt: {
+                        gte: today,
+                        lt: tomorrow,
+                    },
+                },
+                _sum: {
+                    points: true,
+                },
+            });
+
+            const earned = todayEarned._sum.points || 0;
+            if (earned >= rule.dailyLimit) {
+                throw new BadRequestException('今日签到积分已达上限');
+            }
+        }
+
+        const consecutiveDays = await this.getConsecutiveCheckInDays(userId);
+
+        let points = rule.points || 0;
+        if (consecutiveDays > 0) {
+            const bonus = Math.min(consecutiveDays, 10);
+            points += bonus;
+        }
+
+        const expireAt = new Date();
+        expireAt.setFullYear(expireAt.getFullYear() + 1);
+
+【第59页】
+================================================================================
+
+        return this.prisma.$transaction(async (tx) => {
+            let userPoint = await tx.userPoint.findUnique({
+                where: { userId },
+            });
+
+            if (!userPoint) {
+                userPoint = await tx.userPoint.create({
+                    data: {
+                        userId,
+                        totalPoints: 0,
+                        usedPoints: 0,
+                        expiredPoints: 0,
+                        currentPoints: 0,
+                    },
+                });
+            }
+
+            const newBalance = userPoint.currentPoints + points;
+
+            await tx.userPoint.update({
+                where: { userId },
+                data: {
+                    totalPoints: { increment: points },
+                    currentPoints: { increment: points },
+                },
+            });
+
+            const record = await tx.pointRecord.create({
+                data: {
+                    userId,
+                    type: 'earn',
+                    points,
+                    balance: newBalance,
+                    source: 'daily_checkin',
+                    description: `每日签到${consecutiveDays > 0 ? `（连续${consecutiveDays + 1}天）` : ''}`,
+                    expireAt,
+                },
+            });
+
+            return {
+                points,
+                consecutiveDays: consecutiveDays + 1,
+                totalPoints: newBalance,
+            };
+        });
+    }
+
+    private async getConsecutiveCheckInDays(userId: string): Promise<number> {
+        const records = await this.prisma.pointRecord.findMany({
+            where: {
+                userId,
+                source: 'daily_checkin',
+            },
+            orderBy: { createdAt: 'desc' },
+            take: 30,
+        });
+
+        if (records.length === 0) {
+            return 0;
+        }
+
+【第60页】
+================================================================================
+
+        let consecutiveDays = 0;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        for (let i = 0; i < records.length; i++) {
+            const recordDate = new Date(records[i].createdAt);
+            recordDate.setHours(0, 0, 0, 0);
+
+            const expectedDate = new Date(today);
+            expectedDate.setDate(expectedDate.getDate() - (i + 1));
+
+            if (recordDate.getTime() === expectedDate.getTime()) {
+                consecutiveDays++;
+            } else {
+                break;
+            }
+        }
+
+        return consecutiveDays;
+    }
+
+    async getCheckInStatus(userId: string) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        const todayCheckIn = await this.prisma.pointRecord.findFirst({
+            where: {
+                userId,
+                source: 'daily_checkin',
+                createdAt: {
+                    gte: today,
+                    lt: tomorrow,
+                },
+            },
+        });
+
+        const consecutiveDays = await this.getConsecutiveCheckInDays(userId);
+
+        return {
+            checkedIn: !!todayCheckIn,
+            consecutiveDays: todayCheckIn ? consecutiveDays + 1 : consecutiveDays,
+            todayPoints: todayCheckIn?.points || 0,
+        };
+    }
+
+    private readonly TASKS_CONFIG = [
+        {
+            code: 'daily_checkin',
+            name: '每日签到',
+            description: '每日签到可获得积分',
+            icon: 'time',
+            defaultPoints: 10,
+            isRateBased: false,
+        },
+        {
+            code: 'complete_profile',
+            name: '完善个人信息',
+            description: '完善个人资料可获得积分',
+            icon: 'user',
+            defaultPoints: 50,
+            isRateBased: false,
+        },
+
+【第61页】
+================================================================================
+
+        {
+            code: 'first_order',
+            name: '完成首单',
+            description: '完成第一笔订单可获得积分',
+            icon: 'shopping-cart-one',
+            defaultPoints: 100,
+            isRateBased: false,
+        },
+        {
+            code: 'order_complete',
+            name: '订单积分',
+            description: '每笔订单完成后按金额比例获得积分',
+            icon: 'shopping-bag',
+            defaultPoints: 0,
+            defaultRate: 0.01,
+            isRateBased: true,
+        },
+        {
+            code: 'referral',
+            name: '邀请好友',
+            description: '邀请好友注册可获得积分',
+            icon: 'peoples',
+            defaultPoints: 200,
+            isRateBased: false,
+        },
+    ];
+
+    async earnPoints(
+        userId: string,
+        source: string,
+        amount: number,
+        description: string,
+        sourceId?: string,
+        expireDays: number = 365,
+    ) {
+        if (!(await this.isPointsEnabled())) {
+            return 0;
+        }
+
+        const rule = await this.prisma.pointRule.findFirst({
+            where: {
+                code: source,
+                status: 'active',
+            },
+        });
+
+        if (!rule) {
+            return 0;
+        }
+
+        if (rule.dailyLimit) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+
+            const todayEarned = await this.prisma.pointRecord.aggregate({
+                where: {
+                    userId,
+                    source,
+                    createdAt: {
+                        gte: today,
+                        lt: tomorrow,
+                    },
+                },
+                _sum: {
+                    points: true,
+                },
+            });
+
+【第62页】
+================================================================================
+
+            const earned = todayEarned._sum.points || 0;
+            if (earned >= rule.dailyLimit) {
+                return 0;
+            }
+        }
+
+        let points = 0;
+        if (rule.points) {
+            points = rule.points;
+        } else if (rule.pointsRate && amount) {
+            points = Math.floor(amount * Number(rule.pointsRate));
+        }
+
+        if (points <= 0) {
+            return 0;
+        }
+
+        const expireAt = new Date();
+        expireAt.setDate(expireAt.getDate() + expireDays);
+
+        await this.prisma.$transaction(async (tx) => {
+            let userPoint = await tx.userPoint.findUnique({
+                where: { userId },
+            });
+
+            if (!userPoint) {
+                userPoint = await tx.userPoint.create({
+                    data: {
+                        userId,
+                        totalPoints: 0,
+                        usedPoints: 0,
+                        expiredPoints: 0,
+                        currentPoints: 0,
+                    },
+                });
+            }
+
+            const newBalance = userPoint.currentPoints + points;
+
+            await tx.userPoint.update({
+                where: { userId },
+                data: {
+                    totalPoints: { increment: points },
+                    currentPoints: { increment: points },
+                },
+            });
+
+            await tx.pointRecord.create({
+                data: {
+                    userId,
+                    type: 'earn',
+                    points,
+                    balance: newBalance,
+                    source,
+                    sourceId,
+                    description,
+                    expireAt,
+                },
+            });
+        });
+
+        return points;
+    }
+}
+
+【第63页】
+================================================================================
+文件：server/src/modules/coupons/coupons.service.ts
+说明：优惠券服务 - 模板管理和发放逻辑
+================================================================================
+
+import {
+    Injectable,
+    NotFoundException,
+    BadRequestException,
+} from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service';
+import { RedisService } from '../redis/redis.service';
+import { Prisma } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/library';
+import {
+    CreateCouponTemplateDto,
+    UpdateCouponTemplateDto,
+    CreateCouponGrantRuleDto,
+    BatchGrantCouponDto,
+} from './dto/coupon.dto';
+
+@Injectable()
+export class CouponsService {
+    constructor(
+        private prisma: PrismaService,
+        private redis: RedisService,
+    ) { }
+
+    async getAvailableTemplates(userId?: string) {
+        const now = new Date();
+        const where: Prisma.CouponTemplateWhereInput = {
+            status: 'active',
+        };
+
+        if (userId) {
+            const membership = await this.prisma.userMembership.findFirst({
+                where: {
+                    userId,
+                    status: 'active',
+                    expireAt: { gt: now },
+                },
+            });
+
+            if (!membership) {
+                where.memberOnly = false;
+            }
+        } else {
+            where.memberOnly = false;
+        }
+
+        const templates = await this.prisma.couponTemplate.findMany({
+            where,
+            orderBy: { createdAt: 'desc' },
+        });
+
+【第64页】
+================================================================================
+
+        const result = await Promise.all(
+            templates.map(async (template) => {
+                let canClaim = true;
+                let claimedCount = 0;
+
+                if (userId) {
+                    const userCoupons = await this.prisma.userCoupon.count({
+                        where: {
+                            userId,
+                            templateId: template.id,
+                        },
+                    });
+                    claimedCount = userCoupons;
+                    canClaim = userCoupons < template.perUserLimit;
+                }
+
+                if (template.totalQuantity !== null) {
+                    const issued = await this.prisma.userCoupon.count({
+                        where: { templateId: template.id },
+                    });
+                    if (issued >= template.totalQuantity) {
+                        canClaim = false;
+                    }
+                }
+
+                return {
+                    ...template,
+                    value: Number(template.value),
+                    maxDiscount: template.maxDiscount ? Number(template.maxDiscount) : null,
+                    minAmount: Number(template.minAmount),
+                    canClaim,
+                    claimedCount,
+                };
+            }),
+        );
+
+        return result;
+    }
+
+    async claimCoupon(userId: string, templateId: string, ip?: string) {
+        const template = await this.prisma.couponTemplate.findUnique({
+            where: { id: templateId },
+        });
+
+        if (!template || template.status !== 'active') {
+            throw new NotFoundException('优惠券不存在或已下架');
+        }
+
+        const rateLimitKey = `coupon:claim:rate_limit:${userId}`;
+        const allowed = await this.redis.checkRateLimit(rateLimitKey, 3, 60);
+
+        if (!allowed) {
+            throw new BadRequestException('领取过于频繁，请稍后再试');
+        }
+
+【第65页】
+================================================================================
+
+        if (template.totalQuantity !== null) {
+            const issued = await this.prisma.userCoupon.count({
+                where: { templateId },
+            });
+            if (issued >= template.totalQuantity) {
+                throw new BadRequestException('优惠券已领完');
+            }
+        }
+
+        const userCount = await this.prisma.userCoupon.count({
+            where: { userId, templateId },
+        });
+        if (userCount >= template.perUserLimit) {
+            throw new BadRequestException('已达领取上限');
+        }
+
+        if (template.memberOnly) {
+            const membership = await this.prisma.userMembership.findFirst({
+                where: {
+                    userId,
+                    status: 'active',
+                    expireAt: { gt: new Date() },
+                },
+            });
+
+            if (!membership) {
+                throw new BadRequestException('仅限会员领取');
+            }
+
+            if (template.memberLevelIds.length > 0) {
+                if (!template.memberLevelIds.includes(membership.levelId)) {
+                    throw new BadRequestException('您的会员等级无法领取');
+                }
+            }
+        }
+
+        let startAt: Date;
+        let expireAt: Date;
+
+        if (template.validityType === 'fixed') {
+            startAt = template.startAt || new Date();
+            expireAt = template.endAt!;
+        } else {
+            startAt = new Date();
+            expireAt = new Date();
+            expireAt.setDate(expireAt.getDate() + (template.validDays || 30));
+        }
+
+        const userCoupon = await this.prisma.userCoupon.create({
+            data: {
+                userId,
+                templateId,
+                name: template.name,
+                type: template.type,
+                value: template.value,
+                maxDiscount: template.maxDiscount,
+                minAmount: template.minAmount,
+                applicableScope: template.applicableScope,
+                applicableIds: template.applicableIds,
+                stackWithMember: template.stackWithMember,
+                stackWithCampaign: template.stackWithCampaign,
+                startAt,
+                expireAt,
+                source: 'claim',
+                status: 'unused',
+            },
+            include: {
+                template: true,
+            },
+        });
+
+        return userCoupon;
+    }
+
+【第66页】
+================================================================================
+
+    async getMyCoupons(
+        userId: string,
+        params: { status?: string; page?: number; pageSize?: number },
+    ) {
+        const { status, page = 1, pageSize = 10 } = params;
+
+        const where: Prisma.UserCouponWhereInput = { userId };
+        if (status) {
+            where.status = status;
+        }
+
+        const [data, total] = await Promise.all([
+            this.prisma.userCoupon.findMany({
+                where,
+                include: {
+                    template: true,
+                    order: {
+                        select: {
+                            id: true,
+                            orderNo: true,
+                            createdAt: true,
+                        },
+                    },
+                },
+                orderBy: { createdAt: 'desc' },
+                skip: (page - 1) * pageSize,
+                take: pageSize,
+            }),
+            this.prisma.userCoupon.count({ where }),
+        ]);
+
+        return {
+            data: data.map((item) => ({
+                ...item,
+                value: Number(item.value),
+                maxDiscount: item.maxDiscount ? Number(item.maxDiscount) : null,
+                minAmount: Number(item.minAmount),
+            })),
+            total,
+            page,
+            pageSize,
+        };
+    }
+
+    async getAvailableCoupons(userId: string, serviceId: string, amount: number) {
+        const now = new Date();
+        const service = await this.prisma.service.findUnique({
+            where: { id: serviceId },
+            include: { category: true },
+        });
+
+        if (!service) {
+            return [];
+        }
+
+        const coupons = await this.prisma.userCoupon.findMany({
+            where: {
+                userId,
+                status: 'unused',
+                startAt: { lte: now },
+                expireAt: { gte: now },
+                minAmount: { lte: new Decimal(amount) },
+            },
+        });
+
+【第67页】
+================================================================================
+
+        const applicable = coupons.filter((coupon) => {
+            if (coupon.applicableScope === 'category') {
+                return coupon.applicableIds.includes(service.categoryId);
+            }
+            if (coupon.applicableScope === 'service') {
+                return coupon.applicableIds.includes(serviceId);
+            }
+            return true;
+        });
+
+        return applicable.map((item) => ({
+            ...item,
+            value: Number(item.value),
+            maxDiscount: item.maxDiscount ? Number(item.maxDiscount) : null,
+            minAmount: Number(item.minAmount),
+        }));
+    }
+
+    async createTemplate(dto: CreateCouponTemplateDto) {
+        if (dto.code) {
+            const existing = await this.prisma.couponTemplate.findUnique({
+                where: { code: dto.code },
+            });
+            if (existing) {
+                throw new BadRequestException('兑换码已存在');
+            }
+        }
+
+        return this.prisma.couponTemplate.create({
+            data: {
+                ...dto,
+                value: new Decimal(dto.value),
+                maxDiscount: dto.maxDiscount ? new Decimal(dto.maxDiscount) : null,
+                minAmount: new Decimal(dto.minAmount || 0),
+                applicableIds: dto.applicableIds || [],
+                memberLevelIds: dto.memberLevelIds || [],
+                perUserLimit: dto.perUserLimit || 1,
+                validityType: dto.validityType || 'fixed',
+                stackWithMember: dto.stackWithMember !== false,
+                stackWithCampaign: dto.stackWithCampaign !== false,
+                status: dto.status || 'active',
+            },
+        });
+    }
+
+    async batchGrant(dto: BatchGrantCouponDto) {
+        const template = await this.prisma.couponTemplate.findUnique({
+            where: { id: dto.templateId },
+        });
+
+        if (!template) {
+            throw new NotFoundException('优惠券模板不存在');
+        }
+
+        const now = new Date();
+        let startAt: Date;
+        let expireAt: Date;
+
+【第68页】
+================================================================================
+
+        if (template.validityType === 'fixed') {
+            startAt = template.startAt || now;
+            expireAt = template.endAt!;
+        } else {
+            startAt = now;
+            expireAt = new Date();
+            expireAt.setDate(expireAt.getDate() + (template.validDays || 30));
+        }
+
+        const userCoupons = await Promise.all(
+            dto.userIds.map((userId) =>
+                this.prisma.userCoupon.create({
+                    data: {
+                        userId,
+                        templateId: dto.templateId,
+                        name: template.name,
+                        type: template.type,
+                        value: template.value,
+                        maxDiscount: template.maxDiscount,
+                        minAmount: template.minAmount,
+                        applicableScope: template.applicableScope,
+                        applicableIds: template.applicableIds,
+                        stackWithMember: template.stackWithMember,
+                        stackWithCampaign: template.stackWithCampaign,
+                        startAt,
+                        expireAt,
+                        source: dto.source || 'manual',
+                        status: 'unused',
+                    },
+                }),
+            ),
+        );
+
+        return { count: userCoupons.length };
+    }
+
+    async triggerAutoGrant(trigger: string, userId: string, config?: any) {
+        const rules = await this.prisma.couponGrantRule.findMany({
+            where: {
+                trigger,
+                status: 'active',
+            },
+            include: {
+                template: true,
+            },
+        });
+
+        for (const rule of rules) {
+            if (rule.triggerConfig) {
+                const triggerConfig = rule.triggerConfig as any;
+
+                if (trigger === 'member_monthly' && triggerConfig.memberLevelIds) {
+                    const membership = await this.prisma.userMembership.findFirst({
+                        where: {
+                            userId,
+                            status: 'active',
+                            expireAt: { gt: new Date() },
+                        },
+                    });
+                    if (!membership || !triggerConfig.memberLevelIds.includes(membership.levelId)) {
+                        continue;
+                    }
+                }
+
+【第69页】
+================================================================================
+
+                if (trigger === 'order_complete' && triggerConfig.minOrderAmount) {
+                    if (!config?.orderAmount || config.orderAmount < triggerConfig.minOrderAmount) {
+                        continue;
+                    }
+                }
+
+                if (trigger === 'consume_milestone' && triggerConfig.consumeThreshold) {
+                    const totalConsume = await this.getUserTotalConsume(userId);
+                    if (totalConsume < triggerConfig.consumeThreshold) {
+                        continue;
+                    }
+                }
+
+                if (trigger === 'birthday') {
+                    const patient = await this.prisma.patient.findFirst({
+                        where: {
+                            userId,
+                            relation: '本人',
+                            isDefault: true,
+                        },
+                        select: { birthday: true },
+                    });
+                    if (!patient || !patient.birthday) {
+                        continue;
+                    }
+                    const today = new Date();
+                    const birthday = new Date(patient.birthday);
+                    if (birthday.getMonth() !== today.getMonth() || birthday.getDate() !== today.getDate()) {
+                        continue;
+                    }
+                    const todayStart = new Date(today);
+                    todayStart.setHours(0, 0, 0, 0);
+                    const todayEnd = new Date(today);
+                    todayEnd.setHours(23, 59, 59, 999);
+                    const existing = await this.prisma.userCoupon.findFirst({
+                        where: {
+                            userId,
+                            templateId: rule.templateId,
+                            source: 'auto_grant',
+                            sourceId: rule.id,
+                            createdAt: {
+                                gte: todayStart,
+                                lte: todayEnd,
+                            },
+                        },
+                    });
+                    if (existing) {
+                        continue;
+                    }
+                }
+            }
+
+            await this.grantCouponByRule(userId, rule);
+        }
+    }
+
+【第70页】
+================================================================================
+
+    private async grantCouponByRule(userId: string, rule: any) {
+        const template = rule.template;
+        const now = new Date();
+
+        if (rule.trigger === 'register') {
+            const existing = await this.prisma.userCoupon.findFirst({
+                where: {
+                    userId,
+                    templateId: template.id,
+                    source: 'auto_grant',
+                    sourceId: rule.id,
+                },
+            });
+            if (existing) {
+                return;
+            }
+        }
+
+        let startAt: Date;
+        let expireAt: Date;
+
+        if (template.validityType === 'fixed') {
+            startAt = template.startAt || now;
+            expireAt = template.endAt!;
+        } else {
+            startAt = now;
+            expireAt = new Date();
+            expireAt.setDate(expireAt.getDate() + (template.validDays || 30));
+        }
+
+        for (let i = 0; i < rule.grantQuantity; i++) {
+            await this.prisma.userCoupon.create({
+                data: {
+                    userId,
+                    templateId: template.id,
+                    name: template.name,
+                    type: template.type,
+                    value: template.value,
+                    maxDiscount: template.maxDiscount,
+                    minAmount: template.minAmount,
+                    applicableScope: template.applicableScope,
+                    applicableIds: template.applicableIds,
+                    stackWithMember: template.stackWithMember,
+                    stackWithCampaign: template.stackWithCampaign,
+                    startAt,
+                    expireAt,
+                    source: 'auto_grant',
+                    sourceId: rule.id,
+                    status: 'unused',
+                },
+            });
+        }
+    }
+
+    private async getUserTotalConsume(userId: string): Promise<number> {
+        const result = await this.prisma.order.aggregate({
+            where: {
+                userId,
+                status: { in: ['paid', 'confirmed', 'assigned', 'in_progress', 'completed'] },
+            },
+            _sum: {
+                paidAmount: true,
+            },
+        });
+
+        return Number(result._sum.paidAmount || 0);
+    }
+
+【第71页】
+================================================================================
+
+    async returnCoupon(orderId: string) {
+        const coupon = await this.prisma.userCoupon.findFirst({
+            where: { orderId, status: 'used' },
+        });
+
+        if (!coupon) {
+            return null;
+        }
+
+        const now = new Date();
+        if (coupon.expireAt < now) {
+            return this.prisma.userCoupon.update({
+                where: { id: coupon.id },
+                data: { status: 'expired' },
+            });
+        }
+
+        return this.prisma.userCoupon.update({
+            where: { id: coupon.id },
+            data: {
+                status: 'unused',
+                usedAt: null,
+                orderId: null,
+            },
+        });
+    }
+
+    async markExpiredCoupons() {
+        const now = new Date();
+        const result = await this.prisma.userCoupon.updateMany({
+            where: {
+                status: 'unused',
+                expireAt: { lt: now },
+            },
+            data: {
+                status: 'expired',
+            },
+        });
+
+        return { count: result.count };
+    }
+
+    async grantBirthdayCoupons() {
+        const today = new Date();
+        const month = today.getMonth();
+        const date = today.getDate();
+
+        const patients = await this.prisma.patient.findMany({
+            where: {
+                relation: '本人',
+                isDefault: true,
+                birthday: {
+                    not: null,
+                },
+            },
+            select: {
+                userId: true,
+                birthday: true,
+            },
+        });
+
+【第72页】
+================================================================================
+
+        const birthdayUsers = patients
+            .filter((patient) => {
+                if (!patient.birthday) return false;
+                const birthday = new Date(patient.birthday);
+                return birthday.getMonth() === month && birthday.getDate() === date;
+            })
+            .map((patient) => ({ id: patient.userId }));
+
+        let grantedCount = 0;
+
+        for (const user of birthdayUsers) {
+            try {
+                await this.triggerAutoGrant('birthday', user.id);
+                grantedCount++;
+            } catch (error) {
+                console.error(`用户 ${user.id} 生日优惠券发放失败:`, error);
+            }
+        }
+
+        return { total: birthdayUsers.length, granted: grantedCount };
+    }
+
+    async getTemplates(params: {
+        status?: string;
+        page?: number;
+        pageSize?: number;
+    }) {
+        const { status, page = 1, pageSize = 10 } = params;
+
+        const where: Prisma.CouponTemplateWhereInput = {};
+        if (status) {
+            where.status = status;
+        }
+
+        const [data, total] = await Promise.all([
+            this.prisma.couponTemplate.findMany({
+                where,
+                include: {
+                    _count: {
+                        select: {
+                            userCoupons: true,
+                        },
+                    },
+                },
+                orderBy: { createdAt: 'desc' },
+                skip: (page - 1) * pageSize,
+                take: pageSize,
+            }),
+            this.prisma.couponTemplate.count({ where }),
+        ]);
+
+        return {
+            data: data.map((item) => ({
+                ...item,
+                value: Number(item.value),
+                maxDiscount: item.maxDiscount ? Number(item.maxDiscount) : null,
+                minAmount: Number(item.minAmount),
+                issuedCount: item._count.userCoupons,
+                _count: undefined,
+            })),
+            total,
+            page,
+            pageSize,
+        };
+    }
+}
+
+【第73页】
+================================================================================
+文件：server/src/modules/referrals/referrals.service.ts (节选)
+说明：邀请系统服务 - 邀请奖励处理
+================================================================================
+
+import { Injectable, BadRequestException } from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service';
+import { Prisma } from '@prisma/client';
+
+@Injectable()
+export class ReferralsService {
+    constructor(private prisma: PrismaService) { }
+
+    async handleFirstOrder(userId: string, orderId: string) {
+        const referralRecord = await this.prisma.referralRecord.findFirst({
+            where: {
+                inviteeId: userId,
+                status: 'registered',
+            },
+        });
+
+        if (!referralRecord) {
+            return;
+        }
+
+        const rule = await this.prisma.referralRule.findFirst({
+            where: { status: 'active' },
+        });
+
+        if (!rule || rule.requireFirstOrder === false) {
+            return;
+        }
+
+        await this.prisma.$transaction(async (tx) => {
+            await tx.referralRecord.update({
+                where: { id: referralRecord.id },
+                data: {
+                    status: 'rewarded',
+                    firstOrderAt: new Date(),
+                    firstOrderId: orderId,
+                },
+            });
+
+            if (rule.inviterPoints && rule.inviterPoints > 0) {
+                let inviterPoint = await tx.userPoint.findUnique({
+                    where: { userId: referralRecord.inviterId },
+                });
+
+                if (!inviterPoint) {
+                    inviterPoint = await tx.userPoint.create({
+                        data: {
+                            userId: referralRecord.inviterId,
+                            totalPoints: 0,
+                            usedPoints: 0,
+                            expiredPoints: 0,
+                            currentPoints: 0,
+                        },
+                    });
+                }
+
+【第74页】
+================================================================================
+
+                const expireAt = new Date();
+                expireAt.setFullYear(expireAt.getFullYear() + 1);
+
+                await tx.userPoint.update({
+                    where: { userId: referralRecord.inviterId },
+                    data: {
+                        totalPoints: { increment: rule.inviterPoints },
+                        currentPoints: { increment: rule.inviterPoints },
+                    },
+                });
+
+                await tx.pointRecord.create({
+                    data: {
+                        userId: referralRecord.inviterId,
+                        type: 'earn',
+                        points: rule.inviterPoints,
+                        balance: inviterPoint.currentPoints + rule.inviterPoints,
+                        source: 'referral',
+                        sourceId: referralRecord.id,
+                        description: `邀请好友 ${referralRecord.inviteeName} 完成首单奖励`,
+                        expireAt,
+                    },
+                });
+            }
+
+            if (rule.inviteePoints && rule.inviteePoints > 0) {
+                let inviteePoint = await tx.userPoint.findUnique({
+                    where: { userId },
+                });
+
+                if (!inviteePoint) {
+                    inviteePoint = await tx.userPoint.create({
+                        data: {
+                            userId,
+                            totalPoints: 0,
+                            usedPoints: 0,
+                            expiredPoints: 0,
+                            currentPoints: 0,
+                        },
+                    });
+                }
+
+                const expireAt = new Date();
+                expireAt.setFullYear(expireAt.getFullYear() + 1);
+
+                await tx.userPoint.update({
+                    where: { userId },
+                    data: {
+                        totalPoints: { increment: rule.inviteePoints },
+                        currentPoints: { increment: rule.inviteePoints },
+                    },
+                });
+
+                await tx.pointRecord.create({
+                    data: {
+                        userId,
+                        type: 'earn',
+                        points: rule.inviteePoints,
+                        balance: inviteePoint.currentPoints + rule.inviteePoints,
+                        source: 'referral',
+                        sourceId: referralRecord.id,
+                        description: '首单完成奖励（被邀请人）',
+                        expireAt,
+                    },
+                });
+            }
+
+【第75页】
+================================================================================
+
+            if (rule.inviterCouponId) {
+                const couponTemplate = await tx.couponTemplate.findUnique({
+                    where: { id: rule.inviterCouponId },
+                });
+
+                if (couponTemplate && couponTemplate.status === 'active') {
+                    let startAt: Date;
+                    let expireAt: Date;
+
+                    if (couponTemplate.validityType === 'fixed') {
+                        startAt = couponTemplate.startAt || new Date();
+                        expireAt = couponTemplate.endAt!;
+                    } else {
+                        startAt = new Date();
+                        expireAt = new Date();
+                        expireAt.setDate(expireAt.getDate() + (couponTemplate.validDays || 30));
+                    }
+
+                    await tx.userCoupon.create({
+                        data: {
+                            userId: referralRecord.inviterId,
+                            templateId: couponTemplate.id,
+                            name: couponTemplate.name,
+                            type: couponTemplate.type,
+                            value: couponTemplate.value,
+                            maxDiscount: couponTemplate.maxDiscount,
+                            minAmount: couponTemplate.minAmount,
+                            applicableScope: couponTemplate.applicableScope,
+                            applicableIds: couponTemplate.applicableIds,
+                            stackWithMember: couponTemplate.stackWithMember,
+                            stackWithCampaign: couponTemplate.stackWithCampaign,
+                            startAt,
+                            expireAt,
+                            source: 'referral',
+                            sourceId: referralRecord.id,
+                            status: 'unused',
+                        },
+                    });
+                }
+            }
+        });
+    }
+
+    async getMyInvites(userId: string, page = 1, pageSize = 10) {
+        const where: Prisma.ReferralRecordWhereInput = { inviterId: userId };
+
+        const [data, total] = await Promise.all([
+            this.prisma.referralRecord.findMany({
+                where,
+                orderBy: { createdAt: 'desc' },
+                skip: (page - 1) * pageSize,
+                take: pageSize,
+            }),
+            this.prisma.referralRecord.count({ where }),
+        ]);
+
+        return { data, total, page, pageSize };
+    }
+
+【第76页】
+================================================================================
+
+    async getInviteStats(userId: string) {
+        const [totalInvites, successInvites, pendingInvites] = await Promise.all([
+            this.prisma.referralRecord.count({
+                where: { inviterId: userId },
+            }),
+            this.prisma.referralRecord.count({
+                where: { inviterId: userId, status: 'rewarded' },
+            }),
+            this.prisma.referralRecord.count({
+                where: { inviterId: userId, status: 'registered' },
+            }),
+        ]);
+
+        return {
+            totalInvites,
+            successInvites,
+            pendingInvites,
+        };
+    }
+
+    async createReferralRecord(inviterId: string, inviteeId: string, inviteeName: string) {
+        const existing = await this.prisma.referralRecord.findFirst({
+            where: { inviteeId },
+        });
+
+        if (existing) {
+            throw new BadRequestException('该用户已被邀请');
+        }
+
+        return this.prisma.referralRecord.create({
+            data: {
+                inviterId,
+                inviteeId,
+                inviteeName,
+                status: 'registered',
+            },
+        });
+    }
+
+    async getReferralRules(params: { page?: number; pageSize?: number }) {
+        const { page = 1, pageSize = 10 } = params;
+
+        const [data, total] = await Promise.all([
+            this.prisma.referralRule.findMany({
+                orderBy: { createdAt: 'desc' },
+                skip: (page - 1) * pageSize,
+                take: pageSize,
+            }),
+            this.prisma.referralRule.count(),
+        ]);
+
+        return { data, total, page, pageSize };
+    }
+
+    async getActiveRule() {
+        return this.prisma.referralRule.findFirst({
+            where: { status: 'active' },
+        });
+    }
+}
+
+【第77页】
+================================================================================
+文件：server/src/modules/membership/membership.service.ts (节选)
+说明：会员系统服务 - 等级管理和权益计算
+================================================================================
+
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service';
+import { Prisma, Decimal } from '@prisma/client/runtime/library';
+
+@Injectable()
+export class MembershipService {
+    constructor(private prisma: PrismaService) { }
+
+    async checkConsumeUpgrade(userId: string, orderAmount: number) {
+        const membership = await this.prisma.userMembership.findFirst({
+            where: {
+                userId,
+                status: 'active',
+                expireAt: { gt: new Date() },
+            },
+            include: { level: true },
+        });
+
+        if (!membership) {
+            return;
+        }
+
+        const totalConsume = await this.prisma.order.aggregate({
+            where: {
+                userId,
+                status: 'completed',
+            },
+            _sum: {
+                paidAmount: true,
+            },
+        });
+
+        const totalAmount = Number(totalConsume._sum.paidAmount || 0);
+
+        const currentLevel = membership.level;
+        const levels = await this.prisma.membershipLevel.findMany({
+            where: { status: 'active' },
+            orderBy: { level: 'asc' },
+        });
+
+        let targetLevel = currentLevel;
+        for (const level of levels) {
+            if (level.upgradeThreshold && totalAmount >= level.upgradeThreshold) {
+                if (level.level > currentLevel.level) {
+                    targetLevel = level;
+                }
+            }
+        }
+
+        if (targetLevel.id !== currentLevel.id) {
+            await this.prisma.userMembership.update({
+                where: { id: membership.id },
+                data: {
+                    levelId: targetLevel.id,
+                    levelName: targetLevel.name,
+                    discount: targetLevel.discount,
+                    upgradeFrom: currentLevel.level,
+                    upgradedAt: new Date(),
+                },
+            });
+        }
+    }
+
+【第78页】
+================================================================================
+
+    async getMembershipOverview(userId: string) {
+        const membership = await this.prisma.userMembership.findFirst({
+            where: {
+                userId,
+                status: 'active',
+                expireAt: { gt: new Date() },
+            },
+            include: { level: true },
+        });
+
+        if (!membership) {
+            return {
+                isMember: false,
+                level: null,
+                expireAt: null,
+                discount: 100,
+                benefits: [],
+            };
+        }
+
+        return {
+            isMember: true,
+            level: membership.level,
+            expireAt: membership.expireAt,
+            discount: membership.discount,
+            benefits: membership.level.benefits || [],
+        };
+    }
+
+    async getMembershipLevels() {
+        return this.prisma.membershipLevel.findMany({
+            where: { status: 'active' },
+            orderBy: { level: 'asc' },
+        });
+    }
+
+    async getMembershipPlans() {
+        const plans = await this.prisma.membershipPlan.findMany({
+            where: { status: 'active' },
+            include: { level: true },
+            orderBy: [{ levelId: 'asc' }, { duration: 'asc' }],
+        });
+
+        return plans.map((plan) => ({
+            ...plan,
+            price: Number(plan.price),
+            originalPrice: plan.originalPrice ? Number(plan.originalPrice) : null,
+        }));
+    }
+
+    async createMembershipOrder(userId: string, planId: string) {
+        const plan = await this.prisma.membershipPlan.findUnique({
+            where: { id: planId },
+            include: { level: true },
+        });
+
+        if (!plan || plan.status !== 'active') {
+            throw new NotFoundException('会员套餐不存在');
+        }
+
+【第79页】
+================================================================================
+
+        const orderNo = `MEM${Date.now()}${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+
+        const order = await this.prisma.membershipOrder.create({
+            data: {
+                orderNo,
+                userId,
+                planId,
+                levelId: plan.levelId,
+                planName: plan.name,
+                duration: plan.duration,
+                bonusDays: plan.bonusDays || 0,
+                amount: plan.price,
+                status: 'pending',
+            },
+            include: {
+                plan: true,
+                level: true,
+            },
+        });
+
+        return order;
+    }
+
+    async activateMembership(orderId: string) {
+        const order = await this.prisma.membershipOrder.findUnique({
+            where: { id: orderId },
+            include: { plan: true, level: true },
+        });
+
+        if (!order) {
+            throw new NotFoundException('订单不存在');
+        }
+
+        if (order.status !== 'paid') {
+            throw new BadRequestException('订单状态异常');
+        }
+
+        const existingMembership = await this.prisma.userMembership.findFirst({
+            where: {
+                userId: order.userId,
+                status: 'active',
+            },
+        });
+
+        const totalDays = order.duration + (order.bonusDays || 0);
+        let startAt: Date;
+        let expireAt: Date;
+
+        if (existingMembership && existingMembership.expireAt > new Date()) {
+            startAt = existingMembership.startAt;
+            expireAt = new Date(existingMembership.expireAt);
+            expireAt.setDate(expireAt.getDate() + totalDays);
+        } else {
+            startAt = new Date();
+            expireAt = new Date();
+            expireAt.setDate(expireAt.getDate() + totalDays);
+        }
+
+【第80页】
+================================================================================
+
+        return this.prisma.$transaction(async (tx) => {
+            if (existingMembership) {
+                await tx.userMembership.update({
+                    where: { id: existingMembership.id },
+                    data: {
+                        expireAt,
+                        levelId: order.levelId,
+                        levelName: order.level.name,
+                        discount: order.level.discount,
+                    },
+                });
+            } else {
+                await tx.userMembership.create({
+                    data: {
+                        userId: order.userId,
+                        levelId: order.levelId,
+                        levelName: order.level.name,
+                        discount: order.level.discount,
+                        startAt,
+                        expireAt,
+                        status: 'active',
+                    },
+                });
+            }
+
+            await tx.membershipOrder.update({
+                where: { id: orderId },
+                data: {
+                    status: 'completed',
+                    activatedAt: new Date(),
+                },
+            });
+
+            const { CouponsService } = await import('../coupons/coupons.service');
+            const { RedisService } = await import('../redis/redis.service');
+            const redisService = new RedisService();
+            const couponsService = new CouponsService(this.prisma, redisService);
+            await couponsService.triggerAutoGrant('member_join', order.userId);
+
+            return { success: true, expireAt };
+        });
+    }
+}
+
+================================================================================
+                              源代码后40页 结束
+================================================================================

@@ -24,10 +24,19 @@ export class PatientsService {
       });
     }
 
+    // 转换 birthday 为 ISO-8601 DateTime 格式
+    const data = { ...dto };
+    if (data.birthday && typeof data.birthday === 'string') {
+      // 如果是 YYYY-MM-DD 格式，转换为完整的 ISO DateTime
+      if (/^\d{4}-\d{2}-\d{2}$/.test(data.birthday)) {
+        data.birthday = new Date(data.birthday + 'T00:00:00.000Z').toISOString();
+      }
+    }
+
     return this.prisma.patient.create({
       data: {
         userId,
-        ...dto,
+        ...data,
       },
     });
   }
@@ -50,9 +59,18 @@ export class PatientsService {
       });
     }
 
+    // 转换 birthday 为 ISO-8601 DateTime 格式
+    const data = { ...dto };
+    if (data.birthday && typeof data.birthday === 'string') {
+      // 如果是 YYYY-MM-DD 格式，转换为完整的 ISO DateTime
+      if (/^\d{4}-\d{2}-\d{2}$/.test(data.birthday)) {
+        data.birthday = new Date(data.birthday + 'T00:00:00.000Z').toISOString();
+      }
+    }
+
     return this.prisma.patient.update({
       where: { id },
-      data: dto,
+      data,
     });
   }
 

@@ -1,0 +1,2372 @@
+================================================================================
+                    科科灵陪诊服务管理系统 源代码（前40页）
+================================================================================
+
+【第1页】
+================================================================================
+文件：src/main.tsx
+说明：管理后台前端应用入口
+================================================================================
+
+import { StrictMode } from 'react'
+import ReactDOM from 'react-dom/client'
+import { AxiosError } from 'axios'
+import {
+  QueryCache,
+  QueryClient,
+  QueryClientProvider,
+} from '@tanstack/react-query'
+import { RouterProvider, createRouter } from '@tanstack/react-router'
+import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/auth-store'
+import { handleServerError } from '@/lib/handle-server-error'
+import { AccentProvider } from './context/accent-provider'
+import { DirectionProvider } from './context/direction-provider'
+import { FontProvider } from './context/font-provider'
+import { ThemeProvider } from './context/theme-provider'
+import { routeTree } from './routeTree.gen'
+import './styles/index.css'
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: (failureCount, error) => {
+        if (import.meta.env.DEV) console.log({ failureCount, error })
+        if (failureCount >= 0 && import.meta.env.DEV) return false
+        if (failureCount > 3 && import.meta.env.PROD) return false
+        return !(
+          error instanceof AxiosError &&
+          [401, 403].includes(error.response?.status ?? 0)
+        )
+      },
+      refetchOnWindowFocus: import.meta.env.PROD,
+      staleTime: 10 * 1000,
+    },
+    mutations: {
+      onError: (error) => {
+        handleServerError(error)
+        if (error instanceof AxiosError) {
+          if (error.response?.status === 304) {
+            toast.error('Content not modified!')
+          }
+        }
+      },
+    },
+  },
+
+【第2页】
+================================================================================
+
+  queryCache: new QueryCache({
+    onError: (error) => {
+      if (error instanceof AxiosError) {
+        if (error.response?.status === 401) {
+          toast.error('Session expired!')
+          useAuthStore.getState().auth.reset()
+          const redirect = `${router.history.location.href}`
+          router.navigate({ to: '/sign-in', search: { redirect } })
+        }
+        if (error.response?.status === 500) {
+          toast.error('Internal Server Error!')
+          if (import.meta.env.PROD) {
+            router.navigate({ to: '/500' })
+          }
+        }
+        if (error.response?.status === 403) {
+        }
+      }
+    },
+  }),
+})
+
+const router = createRouter({
+  routeTree,
+  context: { queryClient },
+  defaultPreload: 'intent',
+  defaultPreloadStaleTime: 0,
+  basepath: '/admin',
+})
+
+declare module '@tanstack/react-router' {
+  interface Register {
+    router: typeof router
+  }
+}
+
+const rootElement = document.getElementById('root')!
+if (!rootElement.innerHTML) {
+  const root = ReactDOM.createRoot(rootElement)
+  root.render(
+    <StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <AccentProvider>
+            <FontProvider>
+              <DirectionProvider>
+                <RouterProvider router={router} />
+              </DirectionProvider>
+            </FontProvider>
+          </AccentProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </StrictMode>
+  )
+}
+
+【第3页】
+================================================================================
+文件：server/src/main.ts
+说明：后端服务入口 - NestJS 应用启动配置
+================================================================================
+
+import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
+import { readFileSync, existsSync } from 'fs';
+import * as cookieParser from 'cookie-parser';
+import { AppModule } from './app.module';
+import { TransformInterceptor } from './common/interceptors/transform.interceptor';
+
+async function bootstrap() {
+  const sslKeyPath = join(process.cwd(), 'ssl', 'key.pem');
+  const sslCertPath = join(process.cwd(), 'ssl', 'cert.pem');
+  const httpsOptions = existsSync(sslKeyPath) && existsSync(sslCertPath)
+    ? {
+      key: readFileSync(sslKeyPath),
+      cert: readFileSync(sslCertPath),
+    }
+    : undefined;
+
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    httpsOptions,
+    rawBody: true,
+  });
+
+  app.enableCors({
+    origin: true,
+    credentials: true,
+  });
+
+  app.use(cookieParser());
+
+  app.useStaticAssets(join(process.cwd(), 'uploads'), {
+    prefix: '/uploads/',
+  });
+
+  app.setGlobalPrefix('api');
+
+  app.useGlobalInterceptors(new TransformInterceptor());
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+      forbidNonWhitelisted: true,
+    }),
+  );
+
+【第4页】
+================================================================================
+
+  const config = new DocumentBuilder()
+    .setTitle('科科灵陪诊 API')
+    .setDescription('科科灵陪诊服务后端 API 文档')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, document);
+
+  const port = process.env.PORT || 3456;
+  await app.listen(port, '0.0.0.0');
+
+  const protocol = httpsOptions ? 'https' : 'http';
+  console.log(`科科灵 API 服务已启动: ${protocol}://0.0.0.0:${port}`);
+  console.log(`API 文档: ${protocol}://localhost:${port}/api/docs`);
+  if (httpsOptions) {
+    console.log(`HTTPS 已启用`);
+  }
+}
+
+bootstrap();
+
+================================================================================
+文件：server/src/app.module.ts
+说明：后端根模块 - 导入所有业务模块
+================================================================================
+
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { PrismaModule } from './prisma/prisma.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { UsersModule } from './modules/users/users.module';
+import { ServiceCategoriesModule } from './modules/service-categories/service-categories.module';
+import { ServicesModule } from './modules/services/services.module';
+import { HospitalsModule } from './modules/hospitals/hospitals.module';
+import { DepartmentsModule } from './modules/departments/departments.module';
+import { DepartmentTemplatesModule } from './modules/department-templates/department-templates.module';
+import { DoctorsModule } from './modules/doctors/doctors.module';
+import { EscortsModule } from './modules/escorts/escorts.module';
+import { OrdersModule } from './modules/orders/orders.module';
+import { PatientsModule } from './modules/patients/patients.module';
+import { AdminModule } from './modules/admin/admin.module';
+
+【第5页】
+================================================================================
+
+import { UploadModule } from './modules/upload/upload.module';
+import { HomeModule } from './modules/home/home.module';
+import { PaymentModule } from './modules/payment/payment.module';
+import { SystemConfigModule } from './modules/config/config.module';
+import { TestModule } from './modules/test/test.module';
+import { EscortAppModule } from './modules/escort-app/escort-app.module';
+import { EscortAuthModule } from './modules/escort-auth/escort-auth.module';
+import { EscortApplyModule } from './modules/escort-apply/escort-apply.module';
+import { WorkflowsModule } from './modules/workflows/workflows.module';
+import { ServiceGuaranteesModule } from './modules/service-guarantees/service-guarantees.module';
+import { OperationGuideCategoriesModule } from './modules/operation-guide-categories/operation-guide-categories.module';
+import { OperationGuidesModule } from './modules/operation-guides/operation-guides.module';
+import { TasksModule } from './modules/tasks/tasks.module';
+import { MembershipModule } from './modules/membership/membership.module';
+import { PricingModule } from './modules/pricing/pricing.module';
+import { CouponsModule } from './modules/coupons/coupons.module';
+import { PointsModule } from './modules/points/points.module';
+import { ReferralsModule } from './modules/referrals/referrals.module';
+import { CampaignsModule } from './modules/campaigns/campaigns.module';
+import { FeedbackModule } from './modules/feedback/feedback.module';
+import { DistributionModule } from './modules/distribution/distribution.module';
+import { ChatModule } from './modules/chat/chat.module';
+import { RedisModule } from './modules/redis/redis.module';
+import { PagesModule } from './modules/cms/pages/pages.module';
+import { ArticleCategoriesModule } from './modules/cms/article-categories/article-categories.module';
+import { ArticlesModule } from './modules/cms/articles/articles.module';
+import { MenusModule } from './modules/cms/menus/menus.module';
+import { SettingsModule } from './modules/cms/settings/settings.module';
+import { SidebarsModule } from './modules/cms/sidebars/sidebars.module';
+import { UserAddressesModule } from './modules/user-addresses/user-addresses.module';
+import { ReviewsModule } from './modules/reviews/reviews.module';
+import { FavoritesModule } from './modules/favorites/favorites.module';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    EventEmitterModule.forRoot({
+      wildcard: false,
+      delimiter: '.',
+      newListener: false,
+      removeListener: false,
+      maxListeners: 10,
+      verboseMemoryLeak: true,
+      ignoreErrors: false,
+    }),
+
+【第6页】
+================================================================================
+
+    PrismaModule,
+    RedisModule,
+    AuthModule,
+    UsersModule,
+    ServiceCategoriesModule,
+    ServicesModule,
+    ServiceGuaranteesModule,
+    OperationGuideCategoriesModule,
+    OperationGuidesModule,
+    HospitalsModule,
+    DepartmentsModule,
+    DepartmentTemplatesModule,
+    DoctorsModule,
+    EscortsModule,
+    OrdersModule,
+    PatientsModule,
+    AdminModule,
+    UploadModule,
+    HomeModule,
+    PaymentModule,
+    SystemConfigModule,
+    WorkflowsModule,
+    EscortAppModule,
+    EscortAuthModule,
+    EscortApplyModule,
+    TasksModule,
+    PricingModule,
+    MembershipModule,
+    CouponsModule,
+    PointsModule,
+    ReferralsModule,
+    CampaignsModule,
+    FeedbackModule,
+    DistributionModule,
+    ChatModule,
+    PagesModule,
+    ArticleCategoriesModule,
+    ArticlesModule,
+    MenusModule,
+    SettingsModule,
+    SidebarsModule,
+    UserAddressesModule,
+    ReviewsModule,
+    FavoritesModule,
+    TestModule,
+  ],
+})
+export class AppModule { }
+
+【第7页】
+================================================================================
+文件：miniapp-shell/src/app.tsx
+说明：小程序入口 - Taro 应用启动配置
+================================================================================
+
+import { Component, PropsWithChildren } from 'react'
+import Taro from '@tarojs/taro'
+import { injectWxBridgeRuntime } from './runtime'
+import './app.scss'
+
+const SERVER_BASE_URL = 'https://kkl.top'
+const ICONFONT_URL = `${SERVER_BASE_URL}/uploads/fonts/iconfont.ttf`
+const THEME_CACHE_KEY = 'kekeling_theme_settings'
+
+function loadIconFonts() {
+  Taro.loadFontFace({
+    global: true,
+    family: 'iconfont',
+    source: `url("${ICONFONT_URL}")`,
+    success: () => {
+      console.log('[Iconfont] 字体加载成功')
+    },
+    fail: (err) => {
+      console.warn('[Iconfont] 字体加载失败:', err)
+    },
+  })
+}
+
+function preloadThemeSettings() {
+  Taro.request({
+    url: `${SERVER_BASE_URL}/api/config/theme`,
+    method: 'GET',
+    success: (res) => {
+      if (res.statusCode === 200 && res.data) {
+        Taro.setStorageSync(THEME_CACHE_KEY, JSON.stringify(res.data))
+        console.log('[Theme] 主题预加载成功:', res.data.primaryColor)
+      }
+    },
+    fail: (err) => {
+      console.warn('[Theme] 主题预加载失败:', err)
+    },
+  })
+}
+
+class App extends Component<PropsWithChildren> {
+  componentDidMount() {
+    console.log('[miniapp-shell] App launched')
+    injectWxBridgeRuntime()
+    loadIconFonts()
+    preloadThemeSettings()
+  }
+
+  render() {
+    return this.props.children
+  }
+}
+
+export default App
+
+【第8页】
+================================================================================
+文件：server/src/modules/orders/orders.service.ts
+说明：订单服务 - 核心业务逻辑
+================================================================================
+
+import { Injectable, BadRequestException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
+import { PrismaService } from '../../prisma/prisma.service';
+import { RedisService } from '../redis/redis.service';
+import { CreateOrderDto } from './dto/create-order.dto';
+import { PricingService } from '../pricing/pricing.service';
+
+@Injectable()
+export class OrdersService {
+  constructor(
+    private prisma: PrismaService,
+    private readonly pricingService: PricingService,
+    private redis: RedisService,
+  ) { }
+
+  private generateOrderNo(): string {
+    const date = new Date();
+    const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
+    const random = Math.random().toString(36).substring(2, 8).toUpperCase();
+    return `KKL${dateStr}${random}`;
+  }
+
+  async create(userId: string, dto: CreateOrderDto) {
+    const appointmentDateTime = new Date(`${dto.appointmentDate}T${dto.appointmentTime}:00`);
+    const now = new Date();
+    const bufferTime = 30 * 60 * 1000;
+    if (appointmentDateTime.getTime() < now.getTime() + bufferTime) {
+      throw new BadRequestException('预约时间不能早于当前时间30分钟');
+    }
+
+    const patient = await this.prisma.patient.findFirst({
+      where: { id: dto.patientId, userId },
+    });
+
+    if (!patient) {
+      throw new BadRequestException('就诊人不存在');
+    }
+
+    const pricing = await this.pricingService.calculate({
+      serviceId: dto.serviceId,
+      quantity: 1,
+      userId,
+      couponId: dto.couponId,
+      campaignId: dto.campaignId,
+      pointsToUse: dto.pointsToUse,
+    });
+
+【第9页】
+================================================================================
+
+    const order = await this.prisma.$transaction(async (tx) => {
+      let assignedEscortId: string | null = null;
+      if (dto.escortId) {
+        const escort = await tx.escort.findUnique({
+          where: { id: dto.escortId },
+        });
+
+        if (!escort) {
+          throw new BadRequestException('指定的陪诊员不存在');
+        }
+
+        if (escort.status !== 'active') {
+          throw new BadRequestException('指定的陪诊员未激活');
+        }
+
+        if (escort.workStatus !== 'working') {
+          throw new BadRequestException('指定的陪诊员当前不在接单状态');
+        }
+
+        const appointmentDateTime = new Date(dto.appointmentDate);
+        const existingOrder = await tx.order.findFirst({
+          where: {
+            escortId: dto.escortId,
+            status: { in: ['assigned', 'arrived', 'in_progress'] },
+            appointmentDate: appointmentDateTime,
+            appointmentTime: dto.appointmentTime,
+          },
+        });
+
+        if (existingOrder) {
+          throw new BadRequestException('指定的陪诊员在该时段已有订单');
+        }
+
+        assignedEscortId = dto.escortId;
+      }
+
+      const newOrder = await tx.order.create({
+        data: {
+          orderNo: this.generateOrderNo(),
+          userId,
+          patientId: dto.patientId,
+          serviceId: dto.serviceId,
+          hospitalId: dto.hospitalId,
+          appointmentDate: new Date(dto.appointmentDate),
+          appointmentTime: dto.appointmentTime,
+          departmentName: dto.departmentName,
+          totalAmount: new Prisma.Decimal(pricing.originalPrice),
+          discountAmount: new Prisma.Decimal(pricing.totalSavings),
+          paidAmount: new Prisma.Decimal(pricing.finalPrice),
+          couponId: pricing.couponId || null,
+
+【第10页】
+================================================================================
+
+          campaignId: pricing.campaignId || null,
+          pointsUsed: pricing.pointsUsed || 0,
+          userRemark: dto.remark,
+          escortId: assignedEscortId,
+          status: assignedEscortId ? 'assigned' : 'pending',
+          assignMethod: assignedEscortId ? 'user_select' : null,
+        },
+        include: {
+          service: true,
+          hospital: true,
+          patient: true,
+        },
+      });
+
+      await tx.orderPriceSnapshot.create({
+        data: {
+          orderId: newOrder.id,
+          snapshot: pricing.snapshot,
+        },
+      });
+
+      if (pricing.couponId) {
+        await tx.userCoupon.update({
+          where: { id: pricing.couponId },
+          data: {
+            status: 'used',
+            usedAt: new Date(),
+            orderId: newOrder.id,
+          },
+        });
+      }
+
+      if (pricing.pointsUsed > 0) {
+        const userPoint = await tx.userPoint.findUnique({
+          where: { userId },
+        });
+
+        if (!userPoint || userPoint.currentPoints < pricing.pointsUsed) {
+          throw new BadRequestException('积分余额不足');
+        }
+
+        const newBalance = userPoint.currentPoints - pricing.pointsUsed;
+        await tx.userPoint.update({
+          where: { userId },
+          data: {
+            currentPoints: newBalance,
+            usedPoints: { increment: pricing.pointsUsed },
+          },
+        });
+
+【第11页】
+================================================================================
+
+        await tx.pointRecord.create({
+          data: {
+            userId,
+            type: 'use',
+            points: -pricing.pointsUsed,
+            balance: newBalance,
+            source: 'order_consume',
+            sourceId: newOrder.id,
+            description: `订单 ${newOrder.orderNo} 使用积分`,
+          },
+        });
+      }
+
+      if (pricing.campaignId) {
+        await tx.campaignParticipation.create({
+          data: {
+            campaignId: pricing.campaignId,
+            userId,
+            orderId: newOrder.id,
+            discountAmount: new Prisma.Decimal(pricing.campaignDiscount),
+          },
+        });
+      }
+
+      await tx.service.update({
+        where: { id: dto.serviceId },
+        data: { orderCount: { increment: 1 } },
+      });
+
+      if (assignedEscortId) {
+        await tx.escort.update({
+          where: { id: assignedEscortId },
+          data: {
+            orderCount: { increment: 1 },
+            currentDailyOrders: { increment: 1 },
+            lastActiveAt: new Date(),
+          },
+        });
+
+        await tx.orderLog.create({
+          data: {
+            orderId: newOrder.id,
+            action: 'assign',
+            fromStatus: 'pending',
+            toStatus: 'assigned',
+            operatorType: 'user',
+            operatorId: userId,
+            remark: '用户指定陪诊员下单',
+          },
+        });
+      }
+
+      return newOrder;
+    });
+
+【第12页】
+================================================================================
+
+    console.log(`[Order] New Order Created!`);
+    console.log(`   ID: ${order.id}`);
+    console.log(`   No: ${order.orderNo}`);
+    console.log(`   Amount: ¥${Number(order.paidAmount)}`);
+    console.log(`   Service: ${order.service.name}`);
+
+    return order;
+  }
+
+  async getStatsByUser(userId: string) {
+    const [pending, confirmed, inProgress, completed] = await Promise.all([
+      this.prisma.order.count({ where: { userId, status: 'pending' } }),
+      this.prisma.order.count({ where: { userId, status: { in: ['paid', 'confirmed', 'assigned'] } } }),
+      this.prisma.order.count({ where: { userId, status: { in: ['arrived', 'in_progress'] } } }),
+      this.prisma.order.count({ where: { userId, status: 'completed' } }),
+    ]);
+
+    return {
+      pending,
+      confirmed,
+      inProgress,
+      completed,
+    };
+  }
+
+  async findByUser(userId: string, params: {
+    status?: string;
+    page?: number;
+    pageSize?: number;
+    includeMembership?: boolean;
+  }) {
+    const { status, page = 1, pageSize = 10, includeMembership = false } = params;
+
+    const where: any = { userId };
+    if (status && status !== 'all') {
+      where.status = status;
+    }
+
+    const [orders, ordersTotal] = await Promise.all([
+      this.prisma.order.findMany({
+        where,
+        include: {
+          service: true,
+          hospital: true,
+          patient: true,
+          escort: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: includeMembership ? 0 : (page - 1) * pageSize,
+        take: includeMembership ? undefined : pageSize,
+      }),
+      this.prisma.order.count({ where }),
+    ]);
+
+【第13页】
+================================================================================
+
+    if (!includeMembership) {
+      return { data: orders, total: ordersTotal, page, pageSize };
+    }
+
+    const membershipWhere: any = { userId };
+    if (status && status !== 'all') {
+      membershipWhere.status = status;
+    }
+
+    const [membershipOrders, membershipTotal] = await Promise.all([
+      this.prisma.membershipOrder.findMany({
+        where: membershipWhere,
+        include: {
+          plan: true,
+          level: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.membershipOrder.count({ where: membershipWhere }),
+    ]);
+
+    const transformedMembershipOrders = membershipOrders.map(order => ({
+      id: order.id,
+      orderNo: order.orderNo,
+      orderType: 'membership' as const,
+      userId: order.userId,
+      status: order.status,
+      totalAmount: order.amount,
+      paidAmount: order.amount,
+      discountAmount: 0,
+      paymentMethod: order.paymentMethod,
+      paymentTime: order.paidAt,
+      paidAt: order.paidAt,
+      createdAt: order.createdAt,
+      updatedAt: order.createdAt,
+      membershipPlan: order.plan,
+      membershipLevel: order.level,
+      planName: order.planName,
+      duration: order.duration,
+      bonusDays: order.bonusDays,
+      service: null,
+      hospital: null,
+      patient: null,
+      escort: null,
+      appointmentDate: null,
+      appointmentTime: null,
+    }));
+
+    const allOrders = [
+      ...orders.map(o => ({ ...o, orderType: 'service' as const })),
+      ...transformedMembershipOrders,
+    ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+【第14页】
+================================================================================
+
+    const total = ordersTotal + membershipTotal;
+    const startIndex = (page - 1) * pageSize;
+    const paginatedData = allOrders.slice(startIndex, startIndex + pageSize);
+
+    return { data: paginatedData, total, page, pageSize };
+  }
+
+  async findById(id: string, userId?: string) {
+    const where: any = { id };
+    if (userId) where.userId = userId;
+
+    return this.prisma.order.findFirst({
+      where,
+      include: {
+        service: true,
+        hospital: true,
+        patient: true,
+        escort: true,
+        user: {
+          select: { id: true, nickname: true, phone: true },
+        },
+      },
+    });
+  }
+
+  async cancel(id: string, userId: string, reason?: string) {
+    const order = await this.prisma.order.findFirst({
+      where: { id, userId },
+    });
+
+    if (!order) {
+      throw new BadRequestException('订单不存在');
+    }
+
+    if (!['pending', 'paid', 'confirmed'].includes(order.status)) {
+      throw new BadRequestException('当前状态无法取消');
+    }
+
+    const updatedOrder = await this.prisma.order.update({
+      where: { id },
+      data: {
+        status: 'cancelled',
+        cancelReason: reason,
+      },
+    });
+
+    if (order.campaignId && order.serviceId) {
+      try {
+        const { CampaignsService } = await import('../campaigns/campaigns.service');
+        const campaignsService = new CampaignsService(this.prisma, this.redis);
+        await campaignsService.releaseSeckillStock(order.campaignId, order.serviceId);
+      } catch (error) {
+        console.error('[Order] 秒杀库存释放失败:', error);
+      }
+    }
+
+    return updatedOrder;
+  }
+
+【第15页】
+================================================================================
+
+  async paymentSuccess(orderNo: string, transactionId: string) {
+    const order = await this.prisma.order.findUnique({
+      where: { orderNo },
+    });
+
+    if (!order) {
+      console.warn(`[Payment] Order not found: ${orderNo}`);
+      return null;
+    }
+
+    if (order.status !== 'pending') {
+      console.log(`[Payment] Order ${orderNo} already processed, status: ${order.status}`);
+      return order;
+    }
+
+    const now = new Date();
+    const updatedOrder = await this.prisma.order.update({
+      where: { orderNo },
+      data: {
+        status: 'paid',
+        paymentMethod: 'wechat',
+        paymentTime: now,
+        paidAt: now,
+        transactionId,
+      },
+    });
+
+    console.log(`[Payment] Order ${orderNo} paid successfully`);
+    return updatedOrder;
+  }
+
+  async reviewEscort(
+    userId: string,
+    orderId: string,
+    data: {
+      rating: number;
+      content?: string;
+      tags?: string[];
+      images?: string[];
+      isAnonymous?: boolean;
+    },
+  ) {
+    const order = await this.prisma.order.findFirst({
+      where: { id: orderId, userId },
+      include: { escort: true },
+    });
+
+    if (!order) {
+      throw new BadRequestException('订单不存在');
+    }
+
+    if (order.status !== 'completed') {
+      throw new BadRequestException('只能评价已完成的订单');
+    }
+
+【第16页】
+================================================================================
+
+    if (!order.escortId) {
+      throw new BadRequestException('该订单没有陪诊员');
+    }
+
+    const existingReview = await this.prisma.escortReview.findUnique({
+      where: { orderId },
+    });
+
+    if (existingReview) {
+      throw new BadRequestException('该订单已评价');
+    }
+
+    const review = await this.prisma.$transaction(async (tx) => {
+      const newReview = await tx.escortReview.create({
+        data: {
+          orderId,
+          escortId: order.escortId!,
+          userId,
+          rating: data.rating,
+          content: data.content,
+          tags: data.tags || [],
+          images: data.images || [],
+          isAnonymous: data.isAnonymous || false,
+        },
+      });
+
+      const escort = order.escort!;
+      const oldCount = escort.ratingCount || 0;
+      const oldRating = escort.rating || 5.0;
+      const newRating = (oldRating * oldCount + data.rating) / (oldCount + 1);
+
+      await tx.escort.update({
+        where: { id: order.escortId! },
+        data: {
+          rating: Math.round(newRating * 10) / 10,
+          ratingCount: { increment: 1 },
+        },
+      });
+
+      return newReview;
+    });
+
+    try {
+      const { PointsService } = await import('../points/points.service');
+      const pointsService = new PointsService(this.prisma);
+      await pointsService.earnPoints(
+        userId,
+        'review',
+        0,
+        `评价订单 ${order.orderNo}`,
+        orderId,
+      );
+    } catch (error) {
+      console.error('[Order] 评价积分发放失败:', error);
+    }
+
+    return review;
+  }
+
+【第17页】
+================================================================================
+
+  async checkReviewed(orderId: string) {
+    const review = await this.prisma.escortReview.findUnique({
+      where: { orderId },
+      select: { id: true, rating: true, createdAt: true },
+    });
+
+    return {
+      reviewed: !!review,
+      review,
+    };
+  }
+
+  async onOrderCompleted(orderId: string) {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      select: {
+        id: true,
+        orderNo: true,
+        userId: true,
+        paidAmount: true,
+      },
+    });
+
+    if (!order) {
+      return;
+    }
+
+    try {
+      const { MembershipService } = await import('../membership/membership.service');
+      const membershipService = new MembershipService(this.prisma);
+      await membershipService.checkConsumeUpgrade(
+        order.userId,
+        Number(order.paidAmount),
+      );
+    } catch (error) {
+      console.error('[Order] 消费升级检查失败:', error);
+    }
+
+    try {
+      const { CouponsService } = await import('../coupons/coupons.service');
+      const couponsService = new CouponsService(this.prisma, this.redis);
+      await couponsService.triggerAutoGrant('order_complete', order.userId, {
+        orderAmount: Number(order.paidAmount),
+      });
+      await couponsService.triggerAutoGrant('consume_milestone', order.userId);
+    } catch (error) {
+      console.error('[Order] 订单完成优惠券发放失败:', error);
+    }
+
+    const orderCount = await this.prisma.order.count({
+      where: {
+        userId: order.userId,
+        status: 'completed',
+      },
+    });
+
+【第18页】
+================================================================================
+
+    const isFirstOrder = orderCount === 1;
+
+    if (isFirstOrder) {
+      try {
+        const { ReferralsService } = await import('../referrals/referrals.service');
+        const referralsService = new ReferralsService(this.prisma);
+        await referralsService.handleFirstOrder(order.userId, order.id);
+      } catch (error) {
+        console.error('[Order] 首单邀请奖励处理失败:', error);
+      }
+    }
+
+    try {
+      const { PointsService } = await import('../points/points.service');
+      const pointsService = new PointsService(this.prisma);
+
+      await pointsService.earnPoints(
+        order.userId,
+        'order_consume',
+        Number(order.paidAmount),
+        `订单 ${order.orderNo} 消费`,
+        order.id,
+      );
+
+      if (isFirstOrder) {
+        await pointsService.earnPoints(
+          order.userId,
+          'first_order',
+          0,
+          `首次下单奖励`,
+          order.id,
+        );
+      }
+    } catch (error) {
+      console.error('[Order] 订单完成积分发放失败:', error);
+    }
+  }
+
+  async submitComplaint(
+    userId: string,
+    orderId: string,
+    data: {
+      type: string;
+      content: string;
+      evidence?: string[];
+    },
+  ) {
+    const order = await this.prisma.order.findFirst({
+      where: {
+        id: orderId,
+        userId,
+      },
+      select: {
+        id: true,
+        escortId: true,
+        status: true,
+      },
+    });
+
+【第19页】
+================================================================================
+
+    if (!order) {
+      throw new BadRequestException('订单不存在');
+    }
+
+    const complaint = await this.prisma.complaint.create({
+      data: {
+        orderId,
+        userId,
+        escortId: order.escortId,
+        type: data.type,
+        content: data.content,
+        images: data.evidence || [],
+        status: 'pending',
+      },
+    });
+
+    return complaint;
+  }
+}
+
+================================================================================
+文件：server/src/modules/orders/orders.controller.ts
+说明：订单控制器 - RESTful API 接口定义
+================================================================================
+
+import { Controller, Get, Post, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { OrdersService } from './orders.service';
+import { CreateOrderDto } from './dto/create-order.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { ApiResponse } from '../../common/response/api-response';
+
+@ApiTags('订单')
+@Controller('orders')
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
+export class OrdersController {
+  constructor(private readonly ordersService: OrdersService) { }
+
+  @Post()
+  @ApiOperation({ summary: '创建订单' })
+  async create(
+    @CurrentUser('sub') userId: string,
+    @Body() dto: CreateOrderDto,
+  ) {
+    const data = await this.ordersService.create(userId, dto);
+    return ApiResponse.success(data);
+  }
+
+【第20页】
+================================================================================
+
+  @Get('stats')
+  @ApiOperation({ summary: '获取订单统计' })
+  async getStats(@CurrentUser('sub') userId: string) {
+    const data = await this.ordersService.getStatsByUser(userId);
+    return ApiResponse.success(data);
+  }
+
+  @Get()
+  @ApiOperation({ summary: '获取我的订单列表' })
+  @ApiQuery({ name: 'status', required: false })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'pageSize', required: false })
+  @ApiQuery({ name: 'includeMembership', required: false, description: '是否包含会员订单' })
+  async findAll(
+    @CurrentUser('sub') userId: string,
+    @Query('status') status?: string,
+    @Query('page') page?: number,
+    @Query('pageSize') pageSize?: number,
+    @Query('includeMembership') includeMembership?: string,
+  ) {
+    const result = await this.ordersService.findByUser(userId, {
+      status,
+      page: page ? Number(page) : 1,
+      pageSize: pageSize ? Number(pageSize) : 10,
+      includeMembership: includeMembership === 'true',
+    });
+    return ApiResponse.success(result);
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: '获取订单详情' })
+  async findOne(
+    @CurrentUser('sub') userId: string,
+    @Param('id') id: string,
+  ) {
+    const data = await this.ordersService.findById(id, userId);
+    return ApiResponse.success(data);
+  }
+
+  @Post(':id/cancel')
+  @ApiOperation({ summary: '取消订单' })
+  async cancel(
+    @CurrentUser('sub') userId: string,
+    @Param('id') id: string,
+    @Body('reason') reason?: string,
+  ) {
+    const data = await this.ordersService.cancel(id, userId, reason);
+    return ApiResponse.success(data);
+  }
+
+【第21页】
+================================================================================
+
+  @Post(':id/review')
+  @ApiOperation({ summary: '评价陪诊员' })
+  async reviewEscort(
+    @CurrentUser('sub') userId: string,
+    @Param('id') id: string,
+    @Body() body: {
+      rating: number;
+      content?: string;
+      tags?: string[];
+      images?: string[];
+      isAnonymous?: boolean;
+    },
+  ) {
+    const data = await this.ordersService.reviewEscort(userId, id, body);
+    return ApiResponse.success(data, '评价成功');
+  }
+
+  @Get(':id/review/status')
+  @ApiOperation({ summary: '检查订单是否已评价' })
+  async checkReviewed(@Param('id') id: string) {
+    const data = await this.ordersService.checkReviewed(id);
+    return ApiResponse.success(data);
+  }
+
+  @Post(':id/complaint')
+  @ApiOperation({ summary: '提交投诉' })
+  async submitComplaint(
+    @CurrentUser('sub') userId: string,
+    @Param('id') id: string,
+    @Body() body: {
+      type: string;
+      content: string;
+      evidence?: string[];
+    },
+  ) {
+    const data = await this.ordersService.submitComplaint(userId, id, body);
+    return ApiResponse.success(data, '投诉已提交');
+  }
+}
+
+================================================================================
+文件：server/src/modules/services/services.service.ts
+说明：服务管理 - 服务 CRUD 和搜索功能
+================================================================================
+
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service';
+import { Prisma } from '@prisma/client';
+import { CreateServiceDto, UpdateServiceDto, QueryServiceDto } from './dto/service.dto';
+
+【第22页】
+================================================================================
+
+@Injectable()
+export class ServicesService {
+  constructor(private prisma: PrismaService) { }
+
+  async getCategories() {
+    const categories = await this.prisma.serviceCategory.findMany({
+      where: { status: 'active' },
+      orderBy: [{ isPinned: 'desc' }, { sort: 'asc' }],
+      include: {
+        _count: {
+          select: { services: true },
+        },
+      },
+    });
+
+    return categories.map((cat) => ({
+      ...cat,
+      serviceCount: cat._count.services,
+      _count: undefined,
+    }));
+  }
+
+  async findAll(query: QueryServiceDto) {
+    const { categoryId, keyword, status, page = 1, pageSize = 10 } = query;
+
+    const where: Prisma.ServiceWhereInput = {};
+
+    if (categoryId) {
+      where.categoryId = categoryId;
+    }
+
+    if (status) {
+      where.status = status;
+    }
+
+    if (keyword) {
+      const searchTerms = keyword.trim().split(/\s+/).filter(Boolean);
+      
+      if (searchTerms.length === 1) {
+        const term = searchTerms[0];
+        where.OR = [
+          { name: { contains: term, mode: 'insensitive' } },
+          { description: { contains: term, mode: 'insensitive' } },
+          { content: { contains: term, mode: 'insensitive' } },
+          { category: { name: { contains: term, mode: 'insensitive' } } },
+        ];
+      } else {
+        where.AND = searchTerms.map((term) => ({
+          OR: [
+            { name: { contains: term, mode: 'insensitive' } },
+            { description: { contains: term, mode: 'insensitive' } },
+            { content: { contains: term, mode: 'insensitive' } },
+            { category: { name: { contains: term, mode: 'insensitive' } } },
+          ],
+        }));
+      }
+    }
+
+【第23页】
+================================================================================
+
+    const [data, total] = await Promise.all([
+      this.prisma.service.findMany({
+        where,
+        include: {
+          category: {
+            select: {
+              id: true,
+              name: true,
+              icon: true,
+              color: true,
+            },
+          },
+          guarantees: {
+            include: {
+              guarantee: true,
+            },
+            orderBy: { sort: 'asc' },
+          },
+          _count: {
+            select: { orders: true },
+          },
+        },
+        orderBy: [{ sort: 'asc' }, { orderCount: 'desc' }],
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      this.prisma.service.count({ where }),
+    ]);
+
+    const formattedData = data.map((item) => ({
+      ...item,
+      price: Number(item.price),
+      originalPrice: item.originalPrice ? Number(item.originalPrice) : null,
+      rating: Number(item.rating),
+      orderCount: item._count.orders,
+      _count: undefined,
+      guarantees: item.guarantees.map((g) => g.guarantee),
+    }));
+
+    return { data: formattedData, total, page, pageSize };
+  }
+
+  async findById(id: string) {
+    const service = await this.prisma.service.findUnique({
+      where: { id },
+      include: {
+        category: {
+          select: {
+            id: true,
+            name: true,
+            icon: true,
+            color: true,
+          },
+        },
+        workflow: {
+          include: {
+            steps: {
+              orderBy: { sort: 'asc' },
+            },
+          },
+        },
+
+【第24页】
+================================================================================
+
+        guarantees: {
+          include: {
+            guarantee: true,
+          },
+          orderBy: { sort: 'asc' },
+        },
+        operationGuides: {
+          include: {
+            guide: {
+              include: {
+                category: {
+                  select: {
+                    id: true,
+                    name: true,
+                    icon: true,
+                  },
+                },
+              },
+            },
+          },
+          orderBy: { sort: 'asc' },
+        },
+      },
+    });
+
+    if (!service) {
+      throw new NotFoundException('服务不存在');
+    }
+
+    return {
+      ...service,
+      price: Number(service.price),
+      originalPrice: service.originalPrice ? Number(service.originalPrice) : null,
+      rating: Number(service.rating),
+      guarantees: service.guarantees.map((g) => g.guarantee),
+      operationGuides: service.operationGuides.map((og) => og.guide),
+    };
+  }
+
+  async getHotServices(limit = 6) {
+    const services = await this.prisma.service.findMany({
+      where: { status: 'active' },
+      orderBy: { orderCount: 'desc' },
+      take: limit,
+      include: {
+        guarantees: {
+          include: {
+            guarantee: true,
+          },
+          orderBy: { sort: 'asc' },
+        },
+      },
+    });
+
+    return services.map((item) => ({
+      ...item,
+      price: Number(item.price),
+      originalPrice: item.originalPrice ? Number(item.originalPrice) : null,
+      rating: Number(item.rating),
+      guarantees: item.guarantees.map((g) => g.guarantee),
+    }));
+  }
+
+【第25页】
+================================================================================
+
+  async create(dto: CreateServiceDto) {
+    const category = await this.prisma.serviceCategory.findUnique({
+      where: { id: dto.categoryId },
+    });
+
+    if (!category) {
+      throw new BadRequestException('服务分类不存在');
+    }
+
+    const service = await this.prisma.$transaction(async (tx) => {
+      const newService = await tx.service.create({
+        data: {
+          name: dto.name,
+          categoryId: dto.categoryId,
+          description: dto.description,
+          content: dto.content,
+          price: dto.price,
+          originalPrice: dto.originalPrice,
+          unit: dto.unit ?? '次',
+          duration: dto.duration,
+          coverImage: dto.coverImage,
+          detailImages: dto.detailImages ?? [],
+          serviceIncludes: dto.serviceIncludes ? JSON.parse(JSON.stringify(dto.serviceIncludes)) : [],
+          serviceNotes: dto.serviceNotes ? JSON.parse(JSON.stringify(dto.serviceNotes)) : [],
+          minQuantity: dto.minQuantity ?? 1,
+          maxQuantity: dto.maxQuantity ?? 99,
+          needPatient: dto.needPatient ?? true,
+          needHospital: dto.needHospital ?? true,
+          needDepartment: dto.needDepartment ?? false,
+          needDoctor: dto.needDoctor ?? false,
+          needAppointment: dto.needAppointment ?? true,
+          tags: dto.tags ?? [],
+          sort: dto.sort ?? 0,
+          status: dto.status ?? 'draft',
+          workflowId: dto.workflowId,
+          commissionRate: dto.commissionRate ?? 70,
+          commissionNote: dto.commissionNote,
+        },
+      });
+
+      if (dto.guaranteeIds?.length) {
+        await tx.serviceGuaranteeOnService.createMany({
+          data: dto.guaranteeIds.map((guaranteeId, index) => ({
+            serviceId: newService.id,
+            guaranteeId,
+            sort: index,
+          })),
+        });
+      }
+
+      if (dto.operationGuideIds?.length) {
+        await tx.operationGuideOnService.createMany({
+          data: dto.operationGuideIds.map((guideId, index) => ({
+            serviceId: newService.id,
+            guideId,
+            sort: index,
+          })),
+        });
+      }
+
+      return newService;
+    });
+
+    return this.findById(service.id);
+  }
+
+【第26页】
+================================================================================
+
+  async update(id: string, dto: UpdateServiceDto) {
+    const existing = await this.prisma.service.findUnique({
+      where: { id },
+    });
+
+    if (!existing) {
+      throw new NotFoundException('服务不存在');
+    }
+
+    if (dto.categoryId) {
+      const category = await this.prisma.serviceCategory.findUnique({
+        where: { id: dto.categoryId },
+      });
+
+      if (!category) {
+        throw new BadRequestException('服务分类不存在');
+      }
+    }
+
+    const { guaranteeIds, operationGuideIds, ...updateFields } = dto;
+    const updateData: any = { ...updateFields };
+
+    if (dto.serviceIncludes !== undefined) {
+      updateData.serviceIncludes = dto.serviceIncludes;
+    }
+    if (dto.serviceNotes !== undefined) {
+      updateData.serviceNotes = dto.serviceNotes;
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.service.update({
+        where: { id },
+        data: updateData,
+      });
+
+      if (guaranteeIds !== undefined) {
+        await tx.serviceGuaranteeOnService.deleteMany({
+          where: { serviceId: id },
+        });
+
+        if (guaranteeIds.length > 0) {
+          await tx.serviceGuaranteeOnService.createMany({
+            data: guaranteeIds.map((guaranteeId, index) => ({
+              serviceId: id,
+              guaranteeId,
+              sort: index,
+            })),
+          });
+        }
+      }
+
+      if (operationGuideIds !== undefined) {
+        await tx.operationGuideOnService.deleteMany({
+          where: { serviceId: id },
+        });
+
+        if (operationGuideIds.length > 0) {
+          await tx.operationGuideOnService.createMany({
+            data: operationGuideIds.map((guideId, index) => ({
+              serviceId: id,
+              guideId,
+              sort: index,
+            })),
+          });
+        }
+      }
+    });
+
+    return this.findById(id);
+  }
+
+【第27页】
+================================================================================
+
+  async remove(id: string) {
+    const existing = await this.prisma.service.findUnique({
+      where: { id },
+      include: {
+        _count: {
+          select: { orders: true },
+        },
+      },
+    });
+
+    if (!existing) {
+      throw new NotFoundException('服务不存在');
+    }
+
+    if (existing._count.orders > 0) {
+      throw new BadRequestException(
+        `该服务已有 ${existing._count.orders} 个订单，无法删除。建议将状态改为"停用"`,
+      );
+    }
+
+    return this.prisma.service.delete({
+      where: { id },
+    });
+  }
+
+  async getHotKeywords(type?: 'hot' | 'guess', limit = 10) {
+    const where: { status: string; type?: string } = { status: 'active' };
+    if (type) {
+      where.type = type;
+    }
+
+    const configuredKeywords = await this.prisma.hotKeyword.findMany({
+      where,
+      orderBy: [{ isHot: 'desc' }, { sort: 'asc' }, { createdAt: 'desc' }],
+      take: limit,
+    });
+
+    if (configuredKeywords.length > 0) {
+      return configuredKeywords.map((item) => ({
+        keyword: item.keyword,
+        hot: item.isHot,
+        type: item.type,
+      }));
+    }
+
+    const hotServices = await this.prisma.service.findMany({
+      where: { status: 'active' },
+      orderBy: { orderCount: 'desc' },
+      take: limit,
+      select: {
+        name: true,
+        orderCount: true,
+        category: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
+
+【第28页】
+================================================================================
+
+    const categories = await this.prisma.serviceCategory.findMany({
+      where: { status: 'active' },
+      orderBy: { sort: 'asc' },
+      select: {
+        name: true,
+        _count: {
+          select: { services: true },
+        },
+      },
+    });
+
+    const keywordsMap = new Map<string, { keyword: string; weight: number }>();
+
+    hotServices.forEach((service, index) => {
+      const weight = (limit - index) * 10 + (service.orderCount || 0);
+      if (!keywordsMap.has(service.name)) {
+        keywordsMap.set(service.name, { keyword: service.name, weight });
+      }
+    });
+
+    categories.forEach((cat, index) => {
+      const weight = (categories.length - index) * 5 + (cat._count.services || 0);
+      if (!keywordsMap.has(cat.name)) {
+        keywordsMap.set(cat.name, { keyword: cat.name, weight });
+      }
+    });
+
+    const sortedKeywords = Array.from(keywordsMap.values())
+      .sort((a, b) => b.weight - a.weight)
+      .slice(0, limit)
+      .map((item, index) => ({
+        keyword: item.keyword,
+        hot: index < 2,
+      }));
+
+    return sortedKeywords;
+  }
+
+  async batchUpdateStatus(ids: string[], status: 'active' | 'inactive' | 'draft') {
+    await this.prisma.service.updateMany({
+      where: { id: { in: ids } },
+      data: { status },
+    });
+
+    return { success: true, count: ids.length };
+  }
+
+  async updateStats(id: string, orderCount?: number, rating?: number) {
+    const data: any = {};
+    if (orderCount !== undefined) data.orderCount = orderCount;
+    if (rating !== undefined) data.rating = rating;
+
+    return this.prisma.service.update({
+      where: { id },
+      data,
+    });
+  }
+
+【第29页】
+================================================================================
+
+  async search(keyword: string, limit = 10) {
+    if (!keyword || !keyword.trim()) {
+      return { services: [], hospitals: [], doctors: [] };
+    }
+
+    const searchTerm = keyword.trim();
+
+    const [services, hospitals, doctors] = await Promise.all([
+      this.prisma.service.findMany({
+        where: {
+          status: 'active',
+          OR: [
+            { name: { contains: searchTerm, mode: 'insensitive' } },
+            { description: { contains: searchTerm, mode: 'insensitive' } },
+            { content: { contains: searchTerm, mode: 'insensitive' } },
+            { category: { name: { contains: searchTerm, mode: 'insensitive' } } },
+          ],
+        },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          price: true,
+          originalPrice: true,
+          coverImage: true,
+          category: {
+            select: {
+              id: true,
+              name: true,
+              icon: true,
+              color: true,
+            },
+          },
+        },
+        take: limit,
+        orderBy: [{ orderCount: 'desc' }, { sort: 'asc' }],
+      }),
+
+      this.prisma.hospital.findMany({
+        where: {
+          status: 'active',
+          OR: [
+            { name: { contains: searchTerm, mode: 'insensitive' } },
+            { shortName: { contains: searchTerm, mode: 'insensitive' } },
+            { address: { contains: searchTerm, mode: 'insensitive' } },
+          ],
+        },
+        select: {
+          id: true,
+          name: true,
+          shortName: true,
+          level: true,
+          levelDetail: true,
+          address: true,
+          coverImage: true,
+        },
+        take: limit,
+        orderBy: { name: 'asc' },
+      }),
+
+【第30页】
+================================================================================
+
+      this.prisma.doctor.findMany({
+        where: {
+          status: 'active',
+          OR: [
+            { name: { contains: searchTerm, mode: 'insensitive' } },
+            { specialties: { has: searchTerm } },
+            { hospital: { name: { contains: searchTerm, mode: 'insensitive' } } },
+            { department: { name: { contains: searchTerm, mode: 'insensitive' } } },
+          ],
+        },
+        select: {
+          id: true,
+          name: true,
+          title: true,
+          avatar: true,
+          specialties: true,
+          hospital: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          department: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+        take: limit,
+        orderBy: { name: 'asc' },
+      }),
+    ]);
+
+    return {
+      services: services.map((s) => ({
+        ...s,
+        type: 'service' as const,
+        price: Number(s.price),
+        originalPrice: s.originalPrice ? Number(s.originalPrice) : null,
+      })),
+      hospitals: hospitals.map((h) => ({
+        ...h,
+        type: 'hospital' as const,
+      })),
+      doctors: doctors.map((d) => ({
+        ...d,
+        type: 'doctor' as const,
+      })),
+    };
+  }
+}
+
+【第31页】
+================================================================================
+文件：server/src/modules/auth/auth.controller.ts
+说明：认证控制器 - 微信登录和管理员认证
+================================================================================
+
+import { Controller, Post, Body, UseGuards, Res } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { Response } from 'express';
+import { AuthService } from './auth.service';
+import { WechatLoginDto } from './dto/wechat-login.dto';
+import { BindPhoneDto } from './dto/bind-phone.dto';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { ApiResponse } from '../../common/response/api-response';
+import {
+  setTokenCookie,
+  clearTokenCookie,
+} from '../../common/utils/cookie';
+
+@ApiTags('认证')
+@Controller('auth')
+export class AuthController {
+  constructor(private readonly authService: AuthService) { }
+
+  @Post('weixin')
+  @ApiOperation({ summary: '微信登录' })
+  async wechatLogin(
+    @Body() dto: WechatLoginDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.wechatLogin(dto);
+    setTokenCookie(res, result.token, false);
+    return ApiResponse.success(result);
+  }
+
+  @Post('bind-phone')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '绑定手机号' })
+  async bindPhone(
+    @CurrentUser('sub') userId: string,
+    @Body() dto: BindPhoneDto,
+  ) {
+    const result = await this.authService.bindPhone(userId, dto.code);
+    return ApiResponse.success(result);
+  }
+
+  @Post('logout')
+  @ApiOperation({ summary: '退出登录' })
+  async logout(@Res({ passthrough: true }) res: Response) {
+    clearTokenCookie(res, false);
+    return ApiResponse.success({ message: '退出成功' });
+  }
+
+【第32页】
+================================================================================
+
+  @Post('admin/login')
+  @ApiOperation({ summary: '管理员登录' })
+  async adminLogin(
+    @Body() body: { username: string; password: string },
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.adminLogin(body.username, body.password);
+    setTokenCookie(res, result.token, true);
+    return ApiResponse.success(result);
+  }
+
+  @Post('admin/logout')
+  @ApiOperation({ summary: '管理员退出登录' })
+  async adminLogout(@Res({ passthrough: true }) res: Response) {
+    clearTokenCookie(res, true);
+    return ApiResponse.success({ message: '退出成功' });
+  }
+
+  @Post('admin/create')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '创建管理员账号' })
+  async createAdmin(
+    @CurrentUser() currentUser: any,
+    @Body() body: {
+      username: string;
+      password: string;
+      name: string;
+      email?: string;
+      phone?: string;
+      role?: string;
+    },
+  ) {
+    if (currentUser.type !== 'admin' || currentUser.role !== 'superadmin') {
+      throw new Error('没有权限创建管理员');
+    }
+    const result = await this.authService.createAdmin(body);
+    return ApiResponse.success(result);
+  }
+}
+
+================================================================================
+文件：src/lib/api/request.ts
+说明：前端 API 请求封装
+================================================================================
+
+import { getCookie } from '../cookies'
+
+const API_BASE_URL = '/api'
+const ACCESS_TOKEN_KEY = 'thisisjustarandomstring'
+
+interface ApiResponse<T> {
+  code: number
+  message: string
+  data: T
+}
+
+【第33页】
+================================================================================
+
+export interface PaginatedData<T> {
+  data: T[]
+  total: number
+  page: number
+  pageSize: number
+}
+
+export interface RequestConfig extends RequestInit {
+  params?: Record<string, any>
+  data?: unknown
+}
+
+const getToken = (): string | null => {
+  const cookieValue = getCookie(ACCESS_TOKEN_KEY)
+  if (cookieValue) {
+    try {
+      return JSON.parse(cookieValue)
+    } catch {
+      return cookieValue
+    }
+  }
+  return null
+}
+
+export async function request<T>(endpoint: string, config: RequestConfig = {}): Promise<T> {
+  const { params, data, ...init } = config
+
+  let url = `${API_BASE_URL}${endpoint}`
+  if (params) {
+    const searchParams = new URLSearchParams()
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== '') {
+        searchParams.append(key, String(value))
+      }
+    })
+    const queryString = searchParams.toString()
+    if (queryString) {
+      url += `?${queryString}`
+    }
+  }
+
+  let body = init.body
+  if (data !== undefined && body === undefined) {
+    body = JSON.stringify(data)
+  }
+
+  const headers = new Headers(init.headers)
+  if (!headers.has('Content-Type') && body) {
+    headers.set('Content-Type', 'application/json')
+  }
+
+  const token = getToken()
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`)
+  }
+
+【第34页】
+================================================================================
+
+  const response = await fetch(url, {
+    ...init,
+    headers,
+    body,
+  })
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: '请求失败' }))
+    throw new Error(error.message || `HTTP ${response.status}`)
+  }
+
+  const result: ApiResponse<T> = await response.json()
+
+  if (result.code !== 0) {
+    throw new Error(result.message || '请求失败')
+  }
+
+  return result.data
+}
+
+================================================================================
+文件：server/src/modules/pricing/pricing.service.ts
+说明：价格引擎 - 多维度价格计算
+================================================================================
+
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { Decimal } from '@prisma/client/runtime/library';
+import { PrismaService } from '../../prisma/prisma.service';
+import { PricingPreviewDto } from './dto/pricing-preview.dto';
+
+export interface PriceCalculationResult {
+  originalPrice: number;
+  campaignPrice: number | null;
+  memberPrice: number | null;
+  couponPrice: number | null;
+  finalPrice: number;
+  campaignDiscount: number;
+  campaignName: string | null;
+  campaignId: string | null;
+  memberDiscount: number;
+  memberLevelName: string | null;
+  couponDiscount: number;
+  couponName: string | null;
+  couponId: string | null;
+  pointsDiscount: number;
+  pointsUsed: number;
+  totalSavings: number;
+  isMember: boolean;
+  membershipExpireAt: Date | null;
+  overtimeWaiverRate: number;
+  snapshot: any;
+}
+
+【第35页】
+================================================================================
+
+@Injectable()
+export class PricingService {
+  constructor(private readonly prisma: PrismaService) { }
+
+  async calculate(input: PricingPreviewDto): Promise<PriceCalculationResult> {
+    const { serviceId, quantity = 1, userId, couponId, campaignId, pointsToUse } = input;
+
+    const service = await this.prisma.service.findUnique({
+      where: { id: serviceId },
+    });
+
+    if (!service) {
+      throw new BadRequestException('服务不存在');
+    }
+
+    const config = await this.prisma.pricingConfig.findFirst({
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const membership = userId
+      ? await this.prisma.userMembership.findFirst({
+        where: {
+          userId,
+          status: 'active',
+          expireAt: { gt: new Date() },
+        },
+        include: { level: true },
+      })
+      : null;
+
+    if (service.membershipPolicy === 'exclusive' && !membership) {
+      throw new BadRequestException('该服务仅限会员购买');
+    }
+
+    let campaign: any = null;
+    if (campaignId) {
+      campaign = await this.prisma.campaign.findUnique({
+        where: { id: campaignId },
+      });
+    } else {
+      campaign = await this.findActiveCampaign(serviceId);
+    }
+
+    let coupon: any = null;
+    if (couponId && userId) {
+      coupon = await this.prisma.userCoupon.findFirst({
+        where: {
+          id: couponId,
+          userId,
+          status: 'unused',
+          startAt: { lte: new Date() },
+          expireAt: { gte: new Date() },
+        },
+      });
+    }
+
+【第36页】
+================================================================================
+
+    let userPoints = 0;
+    if (userId && pointsToUse && pointsToUse > 0) {
+      const userPoint = await this.prisma.userPoint.findUnique({
+        where: { userId },
+      });
+      userPoints = userPoint?.currentPoints || 0;
+    }
+
+    const originalPrice = new Decimal(service.price).mul(quantity);
+    let currentPrice = originalPrice;
+
+    let campaignPrice: Decimal | null = null;
+    let campaignDiscount = new Decimal(0);
+    let appliedCampaign: any = null;
+
+    if (campaign && this.isCampaignApplicable(campaign, service)) {
+      campaignPrice = this.applyCampaignDiscount(originalPrice, campaign);
+      campaignDiscount = originalPrice.minus(campaignPrice);
+
+      if (config?.discountStackMode === 'multiply') {
+        currentPrice = campaignPrice;
+        appliedCampaign = campaign;
+      } else {
+        if (campaignPrice.lessThan(originalPrice)) {
+          currentPrice = campaignPrice;
+          appliedCampaign = campaign;
+        }
+      }
+    }
+
+    let memberPrice: Decimal | null = null;
+    let memberDiscount = new Decimal(0);
+
+    if (membership && service.membershipPolicy !== 'fixed') {
+      const discountRate = service.membershipDiscount ?? membership.discount;
+
+      if (config?.discountStackMode === 'multiply') {
+        memberPrice = currentPrice.mul(new Decimal(discountRate).div(100));
+        memberDiscount = currentPrice.minus(memberPrice);
+        currentPrice = memberPrice;
+      } else {
+        const memberPriceFromOriginal = originalPrice.mul(new Decimal(discountRate).div(100));
+        if (!campaignPrice || memberPriceFromOriginal.lessThan(campaignPrice)) {
+          memberPrice = memberPriceFromOriginal;
+          memberDiscount = originalPrice.minus(memberPrice);
+          currentPrice = memberPrice;
+          campaignDiscount = new Decimal(0);
+          campaignPrice = null;
+          appliedCampaign = null;
+        } else {
+          currentPrice = campaignPrice;
+        }
+      }
+    }
+
+【第37页】
+================================================================================
+
+    let couponDiscount = new Decimal(0);
+    let appliedCoupon: any = null;
+
+    if (coupon && this.canUseCoupon(coupon, currentPrice, config, membership, service)) {
+      couponDiscount = this.calculateCouponDiscount(coupon, currentPrice);
+      currentPrice = currentPrice.minus(couponDiscount);
+      appliedCoupon = coupon;
+    }
+
+    let pointsDiscount = new Decimal(0);
+    let pointsUsed = 0;
+
+    if (config?.pointsEnabled && pointsToUse && pointsToUse > 0 && userPoints > 0) {
+      const pointsRate = config.pointsRate || 100;
+      const maxPointsDiscount = currentPrice
+        .mul(new Decimal(config.pointsMaxRate || 10).div(100))
+        .toDecimalPlaces(2, Decimal.ROUND_DOWN);
+      const requestedDiscount = new Decimal(pointsToUse).div(pointsRate).toDecimalPlaces(2, Decimal.ROUND_DOWN);
+      const minPayAmount = config.minPayAmount || new Decimal(0.01);
+
+      const availableDiscount = Decimal.min(
+        maxPointsDiscount,
+        requestedDiscount,
+        currentPrice.minus(minPayAmount),
+        new Decimal(userPoints).div(pointsRate).toDecimalPlaces(2, Decimal.ROUND_DOWN),
+      );
+
+      if (availableDiscount.greaterThan(0)) {
+        pointsDiscount = availableDiscount;
+        pointsUsed = Math.ceil(Number(pointsDiscount.mul(pointsRate)));
+        currentPrice = currentPrice.minus(pointsDiscount);
+      }
+    }
+
+    const minPayAmount = config?.minPayAmount || new Decimal(0.01);
+    const finalPrice = Decimal.max(currentPrice, minPayAmount);
+
+    const overtimeWaiverRate = this.calculateOvertimeWaiver(service, membership);
+
+    const snapshot = {
+      serviceId: service.id,
+      serviceName: service.name,
+      quantity,
+      originalPrice: Number(originalPrice.toFixed(2)),
+      campaignPrice: campaignPrice ? Number(campaignPrice.toFixed(2)) : null,
+      campaignDiscount: Number(campaignDiscount.toFixed(2)),
+      campaignId: appliedCampaign?.id || null,
+      campaignName: appliedCampaign?.name || null,
+      memberPrice: memberPrice ? Number(memberPrice.toFixed(2)) : null,
+      memberDiscount: Number(memberDiscount.toFixed(2)),
+      memberLevelName: membership?.levelName || null,
+
+【第38页】
+================================================================================
+
+      couponPrice: appliedCoupon ? Number(currentPrice.plus(pointsDiscount).toFixed(2)) : null,
+      couponDiscount: Number(couponDiscount.toFixed(2)),
+      couponId: appliedCoupon?.id || null,
+      couponName: appliedCoupon?.name || null,
+      pointsDiscount: Number(pointsDiscount.toFixed(2)),
+      pointsUsed,
+      finalPrice: Number(finalPrice.toFixed(2)),
+      totalSavings: Number(originalPrice.minus(finalPrice).toFixed(2)),
+      overtimeWaiverRate,
+      calculatedAt: new Date().toISOString(),
+    };
+
+    return {
+      originalPrice: Number(originalPrice.toFixed(2)),
+      campaignPrice: campaignPrice ? Number(campaignPrice.toFixed(2)) : null,
+      memberPrice: memberPrice ? Number(memberPrice.toFixed(2)) : null,
+      couponPrice: appliedCoupon ? Number(currentPrice.plus(pointsDiscount).toFixed(2)) : null,
+      finalPrice: Number(finalPrice.toFixed(2)),
+      campaignDiscount: Number(campaignDiscount.toFixed(2)),
+      campaignName: appliedCampaign?.name || null,
+      campaignId: appliedCampaign?.id || null,
+      memberDiscount: Number(memberDiscount.toFixed(2)),
+      memberLevelName: membership?.levelName || null,
+      couponDiscount: Number(couponDiscount.toFixed(2)),
+      couponName: appliedCoupon?.name || null,
+      couponId: appliedCoupon?.id || null,
+      pointsDiscount: Number(pointsDiscount.toFixed(2)),
+      pointsUsed,
+      totalSavings: Number(originalPrice.minus(finalPrice).toFixed(2)),
+      isMember: !!membership,
+      membershipExpireAt: membership?.expireAt || null,
+      overtimeWaiverRate,
+      snapshot,
+    };
+  }
+
+  async getConfig() {
+    let config = await this.prisma.pricingConfig.findFirst({
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (!config) {
+      config = await this.prisma.pricingConfig.create({
+        data: {
+          discountStackMode: 'multiply',
+          couponStackWithMember: true,
+          couponStackWithCampaign: true,
+          pointsEnabled: true,
+          pointsRate: 100,
+          pointsMaxRate: 10,
+          minPayAmount: 0.01,
+          showOriginalPrice: true,
+          showMemberPrice: true,
+          showSavings: true,
+        },
+      });
+    }
+
+    return {
+      ...config,
+      minPayAmount: Number(config.minPayAmount),
+    };
+  }
+
+【第39页】
+================================================================================
+
+  async updateConfig(dto: any) {
+    let config = await this.prisma.pricingConfig.findFirst({
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (config) {
+      config = await this.prisma.pricingConfig.update({
+        where: { id: config.id },
+        data: dto,
+      });
+    } else {
+      config = await this.prisma.pricingConfig.create({
+        data: {
+          discountStackMode: dto.discountStackMode || 'multiply',
+          couponStackWithMember: dto.couponStackWithMember ?? true,
+          couponStackWithCampaign: dto.couponStackWithCampaign ?? true,
+          pointsEnabled: dto.pointsEnabled ?? true,
+          pointsRate: dto.pointsRate || 100,
+          pointsMaxRate: dto.pointsMaxRate || 10,
+          minPayAmount: dto.minPayAmount || 0.01,
+          showOriginalPrice: dto.showOriginalPrice ?? true,
+          showMemberPrice: dto.showMemberPrice ?? true,
+          showSavings: dto.showSavings ?? true,
+        },
+      });
+    }
+
+    return {
+      ...config,
+      minPayAmount: Number(config.minPayAmount),
+    };
+  }
+
+  private async findActiveCampaign(serviceId: string) {
+    const now = new Date();
+    const service = await this.prisma.service.findUnique({
+      where: { id: serviceId },
+      include: { category: true },
+    });
+
+    if (!service) {
+      return null;
+    }
+
+    const campaigns = await this.prisma.campaign.findMany({
+      where: {
+        status: 'active',
+        startAt: { lte: now },
+        endAt: { gte: now },
+        OR: [
+          { applicableScope: 'all' },
+          {
+            applicableScope: 'category',
+            applicableIds: { has: service.categoryId },
+          },
+          {
+            applicableScope: 'service',
+            applicableIds: { has: serviceId },
+          },
+        ],
+      },
+      orderBy: { sort: 'desc' },
+      take: 1,
+    });
+
+    return campaigns[0] || null;
+  }
+
+【第40页】
+================================================================================
+
+  private isCampaignApplicable(campaign: any, service: any): boolean {
+    const now = new Date();
+    if (campaign.status !== 'active' || campaign.startAt > now || campaign.endAt < now) {
+      return false;
+    }
+
+    if (campaign.applicableScope === 'all') {
+      return true;
+    }
+
+    if (campaign.applicableScope === 'category') {
+      return campaign.applicableIds.includes(service.categoryId);
+    }
+
+    if (campaign.applicableScope === 'service') {
+      return campaign.applicableIds.includes(service.id);
+    }
+
+    return false;
+  }
+
+  private applyCampaignDiscount(price: Decimal, campaign: any): Decimal {
+    const discountType = campaign.discountType;
+    const discountValue = new Decimal(campaign.discountValue);
+
+    if (discountType === 'amount') {
+      return Decimal.max(price.minus(discountValue), new Decimal(0));
+    } else if (discountType === 'percent') {
+      const discountAmount = price.mul(new Decimal(100).minus(discountValue).div(100));
+      if (campaign.maxDiscount) {
+        const maxDiscount = new Decimal(campaign.maxDiscount);
+        return Decimal.max(price.minus(maxDiscount), discountAmount);
+      }
+      return discountAmount;
+    }
+
+    return price;
+  }
+
+  private canUseCoupon(
+    coupon: any,
+    currentPrice: Decimal,
+    config: any,
+    membership: any,
+    service: any,
+  ): boolean {
+    if (new Decimal(coupon.minAmount).greaterThan(currentPrice)) {
+      return false;
+    }
+
+    if (coupon.applicableScope === 'category') {
+      if (!coupon.applicableIds.includes(service.categoryId)) {
+        return false;
+      }
+    } else if (coupon.applicableScope === 'service') {
+      if (!coupon.applicableIds.includes(service.id)) {
+        return false;
+      }
+    }
+
+    if (coupon.memberOnly && !membership) {
+      return false;
+    }
+
+    if (!coupon.stackWithMember && membership) {
+      return false;
+    }
+
+    if (!coupon.stackWithCampaign && config?.discountStackMode === 'multiply') {
+      return false;
+    }
+
+    return true;
+  }
+}
+
+================================================================================
+                              源代码前40页 结束
+================================================================================

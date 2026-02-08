@@ -229,10 +229,9 @@ export class CreateServiceDto {
   @IsEnum(['active', 'inactive', 'draft'])
   status?: 'active' | 'inactive' | 'draft';
 
-  @ApiPropertyOptional({ description: '关联流程ID' })
+  @ApiPropertyOptional({ description: '关联流程ID（传 null 或空字符串表示取消关联）' })
   @IsOptional()
-  @IsString()
-  workflowId?: string;
+  workflowId?: string | null;
 
   // 陪诊员配置
   @ApiPropertyOptional({ description: '分成比例（0-100）', default: 70 })
@@ -445,10 +444,9 @@ export class UpdateServiceDto {
   @IsEnum(['active', 'inactive', 'draft'])
   status?: 'active' | 'inactive' | 'draft';
 
-  @ApiPropertyOptional({ description: '关联流程ID' })
+  @ApiPropertyOptional({ description: '关联流程ID（传 null 或空字符串表示取消关联）' })
   @IsOptional()
-  @IsString()
-  workflowId?: string;
+  workflowId?: string | null;
 
   // 陪诊员配置
   @ApiPropertyOptional({ description: '分成比例（0-100）' })

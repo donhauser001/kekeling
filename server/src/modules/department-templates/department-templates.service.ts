@@ -17,10 +17,32 @@ export class DepartmentTemplatesService {
       where.category = category;
     }
 
+    // 构建子科室的搜索条件
+    const childrenWhere: any = {};
     if (keyword) {
-      where.OR = [
+      childrenWhere.OR = [
         { name: { contains: keyword, mode: 'insensitive' } },
         { description: { contains: keyword, mode: 'insensitive' } },
+      ];
+    }
+
+    // 如果有关键词，搜索一级科室或其子科室匹配的
+    if (keyword) {
+      where.OR = [
+        // 一级科室名称匹配
+        { name: { contains: keyword, mode: 'insensitive' } },
+        { description: { contains: keyword, mode: 'insensitive' } },
+        // 或者有子科室名称匹配
+        {
+          children: {
+            some: {
+              OR: [
+                { name: { contains: keyword, mode: 'insensitive' } },
+                { description: { contains: keyword, mode: 'insensitive' } },
+              ],
+            },
+          },
+        },
       ];
     }
 
@@ -28,6 +50,7 @@ export class DepartmentTemplatesService {
       where,
       include: {
         children: {
+          where: keyword ? childrenWhere : undefined,
           orderBy: { sort: 'asc' },
         },
       },
@@ -134,6 +157,14 @@ export class DepartmentTemplatesService {
     color?: string;
     icon?: string;
   }) {
+    // 检查名称是否已存在
+    const existing = await this.prisma.departmentTemplate.findUnique({
+      where: { name: data.name },
+    });
+    if (existing) {
+      throw new Error(`科室名称"${data.name}"已存在`);
+    }
+
     return this.prisma.departmentTemplate.create({
       data: {
         name: data.name,

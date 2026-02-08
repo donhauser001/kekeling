@@ -30,7 +30,7 @@ import {
     useUpdateDoctor,
     useDeleteDoctor,
     useHospitals,
-    useDepartmentTemplates,
+    useHospital,
 } from '@/hooks/use-api'
 import type { Doctor } from '@/lib/api'
 import {
@@ -163,31 +163,24 @@ export function Doctors() {
     const { data: hospitalsData } = useHospitals({ pageSize: 100 })
     const hospitals = hospitalsData?.data ?? []
 
-    // 获取科室库（科室模板）
-    const { data: departmentTemplates } = useDepartmentTemplates()
-
-    // 展平科室模板为可选列表
-    const availableDepartments = useMemo(() => {
-        const result: Array<{ id: string; name: string; category: string }> = []
-        ;(departmentTemplates || []).forEach(parent => {
-            // 添加一级科室
-            result.push({ id: parent.id, name: parent.name, category: parent.category })
-            // 添加二级科室
-            if (parent.children && parent.children.length > 0) {
-                parent.children.forEach(child => {
-                    result.push({ id: child.id, name: `${parent.name} - ${child.name}`, category: parent.category })
-                })
-            }
-        })
-        return result
-    }, [departmentTemplates])
-
     // 表单对话框状态
     const [dialogOpen, setDialogOpen] = useState(false)
     const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create')
     const [editingDoctorId, setEditingDoctorId] = useState<string | null>(null)
     const [formData, setFormData] = useState<DoctorFormData>(defaultFormData)
     const [formErrors, setFormErrors] = useState<Record<string, string>>({})
+
+    // 获取选中医院的详情（包含科室列表）- 必须在 formData 之后
+    const { data: selectedHospitalData } = useHospital(formData.hospitalId)
+
+    // 从医院详情中提取科室列表
+    const availableDepartments = useMemo(() => {
+        if (!selectedHospitalData?.departments) return []
+        return selectedHospitalData.departments.map(d => ({
+            id: d.id,
+            name: d.name,
+        }))
+    }, [selectedHospitalData])
 
     // 详情抽屉状态
     const [detailOpen, setDetailOpen] = useState(false)
@@ -644,9 +637,16 @@ export function Doctors() {
                                 <Select
                                     value={formData.departmentId}
                                     onValueChange={(v) => setFormData({ ...formData, departmentId: v })}
+                                    disabled={!formData.hospitalId || availableDepartments.length === 0}
                                 >
                                     <SelectTrigger className={formErrors.departmentId ? 'border-destructive' : ''}>
-                                        <SelectValue placeholder='请选择科室' />
+                                        <SelectValue placeholder={
+                                            !formData.hospitalId 
+                                                ? '请先选择医院' 
+                                                : availableDepartments.length === 0 
+                                                    ? '该医院暂无科室' 
+                                                    : '请选择科室'
+                                        } />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {availableDepartments.map(d => (
@@ -655,6 +655,9 @@ export function Doctors() {
                                     </SelectContent>
                                 </Select>
                                 {formErrors.departmentId && <p className='text-destructive text-sm'>{formErrors.departmentId}</p>}
+                                {formData.hospitalId && availableDepartments.length === 0 && (
+                                    <p className='text-muted-foreground text-sm'>提示：请先在医院管理中为该医院添加科室</p>
+                                )}
                             </div>
                             <div className='space-y-2'>
                                 <Label>职称</Label>

@@ -7,15 +7,21 @@
 
 // 重置小程序 Button 默认样式（用于分享按钮）
 .share-button-reset {
+  // 重置所有默认样式
   margin: 0 !important;
-  padding: 0 !important;
+  padding: 14px 16px !important;
   border: none !important;
-  line-height: inherit !important;
-  font-size: inherit !important;
-  background: transparent !important;
+  border-radius: 12px !important;
+  line-height: 1.2 !important;
+  font-size: 16px !important;
+  font-weight: 500 !important;
+  color: #fff !important;
+  background-color: #10b981 !important;
   
+  // 移除默认边框和伪元素
   &::after {
     display: none !important;
+    border: none !important;
   }
 }
 

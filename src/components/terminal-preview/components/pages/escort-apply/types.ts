@@ -7,6 +7,8 @@ import type { ThemeSettings } from '../../../types'
 export interface EscortApplyPageProps {
   themeSettings: ThemeSettings
   isDarkMode?: boolean
+  /** 初始邀请码（从分享链接传入） */
+  initialInviteCode?: string
   onBack?: () => void
   onNavigate?: (page: string, params?: Record<string, any>) => void
 }

@@ -32,6 +32,8 @@ export interface PatientsPageProps {
   isDarkMode: boolean
   onBack?: () => void
   onNavigate?: (page: string, params?: Record<string, string>) => void
+  /** 刷新触发器，值变化时重新加载数据 */
+  refreshTrigger?: number
 }
 
 /** 就诊人信息（页面展示用） */
@@ -345,6 +347,7 @@ export function PatientsPage({
   isDarkMode,
   onBack,
   onNavigate,
+  refreshTrigger,
 }: PatientsPageProps) {
   // 操作菜单状态
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null)
@@ -385,10 +388,10 @@ export function PatientsPage({
     }
   }, [])
 
-  // 初始加载
+  // 初始加载 & refreshTrigger 变化时刷新
   useEffect(() => {
     loadPatients()
-  }, [loadPatients])
+  }, [loadPatients, refreshTrigger])
 
   // 加载中显示骨架屏
   if (isLoading) {
