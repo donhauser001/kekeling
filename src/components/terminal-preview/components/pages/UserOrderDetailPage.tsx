@@ -392,6 +392,33 @@ export function UserOrderDetailPage({
   // 获取状态颜色
   const statusGroup = getStatusGroup(order.status)
 
+  const handleDeleteOrder = async () => {
+    const wxBridge = getWxBridge()
+    const { confirm } = await wxBridge.showModal({
+      title: '删除订单',
+      content: '删除后该订单将不再在用户端显示，确认删除吗？',
+      confirmText: '删除',
+      cancelText: '取消',
+    })
+
+    if (!confirm) return
+
+    wxBridge.showLoading('删除中...')
+    try {
+      const result = await previewApi.deleteOrder(order.id)
+      wxBridge.hideLoading()
+      if (result.success) {
+        wxBridge.showToast({ title: '删除成功', icon: 'success' })
+        setTimeout(() => onNavigate?.('user-orders'), 1200)
+      } else {
+        wxBridge.showToast({ title: result.message || '删除失败', icon: 'none' })
+      }
+    } catch (error: any) {
+      wxBridge.hideLoading()
+      wxBridge.showToast({ title: error?.message || '删除失败', icon: 'none' })
+    }
+  }
+
   return (
     <Box
       style={{
@@ -709,20 +736,11 @@ export function UserOrderDetailPage({
                 textColor={textSecondary}
                 onClick={async () => {
                   const wxBridge = getWxBridge()
-                  // 确认取消
-                  const confirmed = await new Promise<boolean>((resolve) => {
-                    if (isWxEnvironment() && typeof wx !== 'undefined') {
-                      wx.showModal({
-                        title: '确认取消',
-                        content: '确定要取消此订单吗？',
-                        success: (res: { confirm: boolean }) => resolve(res.confirm),
-                        fail: () => resolve(false),
-                      })
-                    } else {
-                      resolve(window.confirm('确定要取消此订单吗？'))
-                    }
+                  const { confirm } = await wxBridge.showModal({
+                    title: '确认取消',
+                    content: '确定要取消此订单吗？',
                   })
-                  if (!confirmed) return
+                  if (!confirm) return
 
                   wxBridge.showLoading('取消中...')
                   try {
@@ -808,6 +826,16 @@ export function UserOrderDetailPage({
               />
               <ActionButton label="再次预约" borderColor={borderColor} textColor={textSecondary} />
               <ActionButton label="去评价" backgroundColor={primaryColor} textColor="#fff" />
+            </>
+          )}
+          {order.status === 'cancelled' && (
+            <>
+              <ActionButton
+                label="删除订单"
+                borderColor="#ff4d4f"
+                textColor="#ff4d4f"
+                onClick={handleDeleteOrder}
+              />
             </>
           )}
         </Box>

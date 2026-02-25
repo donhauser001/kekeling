@@ -166,4 +166,17 @@ export const orderApi = {
       method: 'PUT',
       body: JSON.stringify({ remark }),
     }),
+
+  // 删除订单
+  deleteOrder: (id: string) =>
+    request<{ success: boolean }>(`/admin/orders/${id}`, {
+      method: 'DELETE',
+    }),
+
+  // 批量删除订单
+  batchDelete: (ids: string[]) =>
+    request<{ deleted: number }>('/admin/orders/batch/delete', {
+      method: 'POST',
+      body: JSON.stringify({ ids }),
+    }),
 }

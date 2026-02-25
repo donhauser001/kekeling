@@ -55,6 +55,7 @@ const wxScale = isWxEnvironment() ? 1.1 : 1
 const wxSafeAreaTop = isWxEnvironment() ? 44 : 0
 // 微信小程序底部安全区域高度（TabBar 约 50px + 底部安全区 34px）
 const wxSafeAreaBottom = isWxEnvironment() ? 84 : 0
+const fallbackDepartment: Department = { id: 'other', name: '其他' }
 
 export function CreateOrderPage({
   serviceId,
@@ -63,6 +64,11 @@ export function CreateOrderPage({
   onBack,
   onNavigate,
 }: CreateOrderPageProps) {
+  const withFallbackDepartment = (items: Department[]) => {
+    const hasOther = items.some((item) => item.id === fallbackDepartment.id || item.name === fallbackDepartment.name)
+    return hasOther ? items : [...items, fallbackDepartment]
+  }
+
   // ============================================================================
   // 状态管理
   // ============================================================================
@@ -200,11 +206,11 @@ export function CreateOrderPage({
           }
           return result
         }
-        setDepartments(flattenDepts(depts))
+        setDepartments(withFallbackDepartment(flattenDepts(depts)))
       })
       .catch((err) => {
         console.error('[CreateOrderPage] 获取科室失败', err)
-        setDepartments([])
+        setDepartments([fallbackDepartment])
       })
   }, [selectedHospitalId])
 
@@ -365,6 +371,14 @@ export function CreateOrderPage({
     }))
   }
 
+  const handleOpenDepartmentPicker = () => {
+    if (!selectedHospitalId) {
+      getWxBridge().showToast({ title: '请先选择就诊医院', icon: 'none' })
+      return
+    }
+    setShowDepartmentPicker(true)
+  }
+
   // ============================================================================
   // 渲染
   // ============================================================================
@@ -500,7 +514,7 @@ export function CreateOrderPage({
         customFieldValues={customFieldValues}
         onOpenPatientPicker={() => setShowPatientPicker(true)}
         onOpenHospitalPicker={() => setShowHospitalPicker(true)}
-        onOpenDepartmentPicker={() => setShowDepartmentPicker(true)}
+        onOpenDepartmentPicker={handleOpenDepartmentPicker}
         onOpenDoctorPicker={() => setShowDoctorPicker(true)}
         onOpenDatePicker={() => setShowDatePicker(true)}
         onOpenTimePicker={() => setShowTimePicker(true)}

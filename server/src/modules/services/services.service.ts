@@ -41,9 +41,8 @@ export class ServicesService {
       where.categoryId = categoryId;
     }
 
-    if (status) {
-      where.status = status;
-    }
+    // 未指定状态时默认只返回上架服务，防止小程序端展示下架/草稿服务
+    where.status = status || 'active';
 
     if (keyword) {
       // 增强模糊搜索：支持多字段匹配和分词搜索

@@ -118,6 +118,32 @@ export class EscortAppService {
     return { hasConflict: false };
   }
 
+  // 是否存在进行中的服务订单（用于校验 busy 状态是否真实）
+  private async hasActiveServiceOrder(escortId: string): Promise<boolean> {
+    const activeCount = await this.prisma.order.count({
+      where: {
+        escortId,
+        status: { in: ['arrived', 'in_progress'] },
+      },
+    });
+    return activeCount > 0;
+  }
+
+  // 自愈 workStatus：若卡在 busy 但无进行中订单，自动恢复为 working
+  private async reconcileWorkStatus(escortId: string, workStatus: string): Promise<string> {
+    if (workStatus !== 'busy') return workStatus;
+
+    const hasActiveOrder = await this.hasActiveServiceOrder(escortId);
+    if (hasActiveOrder) return workStatus;
+
+    await this.prisma.escort.update({
+      where: { id: escortId },
+      data: { workStatus: 'working' },
+    });
+    this.logger.warn(`陪诊员 ${escortId} 状态自愈: busy -> working（无进行中订单）`);
+    return 'working';
+  }
+
   // 获取陪诊员信息（通过用户ID）
   // 头像策略：优先使用陪诊员头像，为空时回退到用户头像
   // 姓名策略：优先使用陪诊员姓名，为空时回退到用户昵称
@@ -144,12 +170,15 @@ export class EscortAppService {
       throw new NotFoundException('您不是陪诊员');
     }
 
+    const resolvedWorkStatus = await this.reconcileWorkStatus(escort.id, escort.workStatus);
+
     // 回退策略：陪诊员数据 > 用户数据
     const userAvatar = escort.user?.avatar || null;
     const userNickname = escort.user?.nickname || null;
 
     return {
       ...escort,
+      workStatus: resolvedWorkStatus,
       // 显示用数据（回退策略）
       name: escort.name || userNickname || null,
       avatar: escort.avatar || userAvatar || null,
@@ -192,12 +221,15 @@ export class EscortAppService {
       throw new NotFoundException('陪诊员不存在');
     }
 
+    const resolvedWorkStatus = await this.reconcileWorkStatus(escort.id, escort.workStatus);
+
     // 回退策略：陪诊员数据 > 用户数据
     const userAvatar = escort.user?.avatar || null;
     const userNickname = escort.user?.nickname || null;
 
     return {
       ...escort,
+      workStatus: resolvedWorkStatus,
       // 显示用数据（回退策略）
       name: escort.name || userNickname || null,
       avatar: escort.avatar || userAvatar || null,
@@ -327,6 +359,8 @@ export class EscortAppService {
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
     // 并发查询统计数据
+    const resolvedWorkStatus = await this.reconcileWorkStatus(escort.id, escort.workStatus);
+
     const [
       todayOrders,
       pendingOrders,
@@ -369,7 +403,7 @@ export class EscortAppService {
         _sum: { amount: true },
       }),
       // 可抢订单数（已支付未分配）
-      escort.workStatus === 'working'
+      resolvedWorkStatus === 'working'
         ? this.prisma.order.count({
           where: {
             status: 'paid',
@@ -422,6 +456,8 @@ export class EscortAppService {
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
     // 并发查询统计数据
+    const resolvedWorkStatus = await this.reconcileWorkStatus(escort.id, escort.workStatus);
+
     const [
       todayOrders,
       pendingOrders,
@@ -464,7 +500,7 @@ export class EscortAppService {
         _sum: { amount: true },
       }),
       // 可抢订单数（已支付未分配）
-      escort.workStatus === 'working'
+      resolvedWorkStatus === 'working'
         ? this.prisma.order.count({
           where: {
             status: 'paid',
@@ -1224,8 +1260,8 @@ export class EscortAppService {
       throw new NotFoundException('您不是陪诊员');
     }
 
-    // 如果正在服务中，不允许切换状态
-    if (escort.workStatus === 'busy') {
+    // 如果正在服务中，不允许切换状态（卡死 busy 的历史脏状态允许切换）
+    if (escort.workStatus === 'busy' && await this.hasActiveServiceOrder(escort.id)) {
       throw new BadRequestException('您正在服务中，无法切换状态');
     }
 
@@ -1600,6 +1636,8 @@ export class EscortAppService {
       throw new NotFoundException('陪诊员不存在');
     }
 
+    const resolvedWorkStatus = await this.reconcileWorkStatus(escort.id, escort.workStatus);
+
     // 解析 serviceHours JSON 字段，它存储了偏好设置和通知设置
     const storedPreferences = escort.serviceHours
       ? JSON.parse(escort.serviceHours)
@@ -1615,7 +1653,7 @@ export class EscortAppService {
         rating: escort.rating || 5.0,
       },
       // 在线状态
-      onlineStatus: escort.workStatus as 'working' | 'resting' | 'busy',
+      onlineStatus: resolvedWorkStatus as 'working' | 'resting' | 'busy',
       autoAcceptOrders: storedPreferences.autoAcceptOrders || false,
       // 接单偏好
       preferences: {
@@ -1672,8 +1710,8 @@ export class EscortAppService {
     if (settings.onlineStatus !== undefined) {
       const mappedStatus = statusMap[settings.onlineStatus] || settings.onlineStatus;
 
-      // 如果正在服务中，不允许切换状态
-      if (escort.workStatus === 'busy') {
+      // 如果正在服务中，不允许切换状态（卡死 busy 的历史脏状态允许切换）
+      if (escort.workStatus === 'busy' && await this.hasActiveServiceOrder(escort.id)) {
         throw new BadRequestException('您正在服务中，无法切换状态');
       }
 

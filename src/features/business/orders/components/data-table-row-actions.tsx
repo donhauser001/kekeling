@@ -1,5 +1,5 @@
-import { type Row } from '@tanstack/react-table'
-import { MoreHorizontal, Eye, Pencil, Phone, Trash2 } from 'lucide-react'
+import { type Row, type Table } from '@tanstack/react-table'
+import { MoreHorizontal, Eye, XCircle, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -12,12 +12,21 @@ import { type Order } from '../data/schema'
 
 type DataTableRowActionsProps<TData> = {
   row: Row<TData>
+  table: Table<TData>
 }
 
 export function DataTableRowActions<TData>({
   row,
+  table,
 }: DataTableRowActionsProps<TData>) {
   const order = row.original as Order
+  const meta = table.options.meta as {
+    onView?: (order: Order) => void
+    onCancel?: (order: Order) => void
+    onDelete?: (order: Order) => void
+  } | undefined
+
+  const canCancel = ['pending', 'paid', 'assigned', 'confirmed'].includes(order.status)
 
   return (
     <div onClick={(e) => e.stopPropagation()}>
@@ -32,24 +41,26 @@ export function DataTableRowActions<TData>({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align='end' className='w-[160px]'>
-          <DropdownMenuItem>
+          <DropdownMenuItem onClick={() => meta?.onView?.(order)}>
             <Eye className='mr-2 h-4 w-4' />
             查看详情
           </DropdownMenuItem>
-          <DropdownMenuItem>
-            <Pencil className='mr-2 h-4 w-4' />
-            编辑订单
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <Phone className='mr-2 h-4 w-4' />
-            联系客户
-          </DropdownMenuItem>
+          {canCancel && (
+            <DropdownMenuItem
+              className='text-destructive focus:text-destructive focus:bg-destructive/10'
+              onClick={() => meta?.onCancel?.(order)}
+            >
+              <XCircle className='mr-2 h-4 w-4' />
+              取消订单
+            </DropdownMenuItem>
+          )}
           <DropdownMenuSeparator />
           <DropdownMenuItem
             className='text-destructive focus:text-destructive focus:bg-destructive/10'
+            onClick={() => meta?.onDelete?.(order)}
           >
             <Trash2 className='mr-2 h-4 w-4' />
-            取消订单
+            删除订单
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

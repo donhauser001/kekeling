@@ -156,6 +156,28 @@ export function useCancelOrder() {
   })
 }
 
+export function useDeleteOrder() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) => orderApi.deleteOrder(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] })
+    },
+  })
+}
+
+export function useBatchDeleteOrders() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (ids: string[]) => orderApi.batchDelete(ids),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] })
+    },
+  })
+}
+
 export function useRequestRefund() {
   const queryClient = useQueryClient()
 

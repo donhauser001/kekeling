@@ -587,6 +587,7 @@ export const setDefaultPatient = async (id: string): Promise<Patient> => {
 export interface Hospital {
   id: string
   name: string
+  shortName?: string | null
   level: string
   type: string
   address: string
@@ -1429,6 +1430,7 @@ export interface MiniappSettings {
   devMode: boolean
   skipWorkbenchLogin: boolean
   devEscortId: string
+  escortWorkbenchEnabled: boolean
 }
 
 /**
@@ -1446,6 +1448,7 @@ export const getMiniappSettings = async (): Promise<MiniappSettings> => {
       devMode: false,
       skipWorkbenchLogin: false,
       devEscortId: '',
+      escortWorkbenchEnabled: true,
     }
   }
 }
@@ -1622,6 +1625,25 @@ export const cancelOrder = async (orderId: string, reason?: string): Promise<{ s
   } catch (error) {
     if (error instanceof ApiError) {
       return { success: false, message: error.message || '取消失败' }
+    }
+    return { success: false, message: '网络错误' }
+  }
+}
+
+/**
+ * 删除订单（用户侧软删除，仅已取消订单可删除）
+ * 接口: DELETE /orders/:id
+ * 通道: userRequest
+ */
+export const deleteOrder = async (orderId: string): Promise<{ success: boolean; message?: string }> => {
+  try {
+    await userRequest(`/orders/${orderId}`, {
+      method: 'DELETE',
+    })
+    return { success: true }
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return { success: false, message: error.message || '删除失败' }
     }
     return { success: false, message: '网络错误' }
   }

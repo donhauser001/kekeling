@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -71,6 +71,16 @@ export class OrdersController {
   ) {
     const data = await this.ordersService.cancel(id, userId, reason);
     return ApiResponse.success(data);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: '用户软删除已取消订单（仅用户不可见）' })
+  async softDeleteByUser(
+    @CurrentUser('sub') userId: string,
+    @Param('id') id: string,
+  ) {
+    const data = await this.ordersService.softDeleteByUser(id, userId);
+    return ApiResponse.success(data, '删除成功');
   }
 
   @Post(':id/review')

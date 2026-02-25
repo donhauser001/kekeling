@@ -65,34 +65,17 @@ function PinnedCategoryCard({
       }}
       onClick={onClick}
     >
-        {/* 左侧内容 */}
+      {/* 左侧内容 */}
         <Box className='flex-1 min-w-0' style={{ flex: 1, minWidth: 0 }}>
-          {/* 标题 + 数量 */}
-          <Box
-            className='flex items-center gap-2 mb-1.5'
-            style={{ display: 'flex', alignItems: 'center', gap: 8 * wxScale, marginBottom: 6 * wxScale }}
-          >
+          {/* 标题 */}
+          <Box className='mb-1.5' style={{ marginBottom: 6 * wxScale }}>
             {/* #20: 增大分类标题字号 18 -> 22 */}
             <Text style={{ fontSize: 22 * wxScale, fontWeight: 600, color }}>{category.name}</Text>
-          <Text
-            style={{
-              borderRadius: 12,
-              paddingLeft: 8 * wxScale,
-              paddingRight: 8 * wxScale,
-              paddingTop: 2,
-              paddingBottom: 2,
-              fontSize: 10 * wxScale,
-              color,
-              backgroundColor: `${color}15`,
-            }}
-          >
-            {category.serviceCount || 0}项
+          </Box>
+          {/* 描述 */}
+          <Text style={{ fontSize: 13 * wxScale, color: isDarkMode ? '#6b7280' : '#9ca3af' }}>
+            {category.description || '专业服务，用心陪伴'}
           </Text>
-        </Box>
-        {/* 描述 */}
-        <Text style={{ fontSize: 13 * wxScale, color: isDarkMode ? '#6b7280' : '#9ca3af' }}>
-          {category.description || '专业服务，用心陪伴'}
-        </Text>
       </Box>
       {/* 右侧图标 */}
       <Box
@@ -160,20 +143,6 @@ function CategoryTag({
       <Text style={{ fontSize: 13 * wxScale, fontWeight: 500, color: isDarkMode ? '#e5e7eb' : '#374151' }}>
         {category.name}
       </Text>
-      <Text
-        style={{
-          borderRadius: 8,
-          paddingLeft: 6 * wxScale,
-          paddingRight: 6 * wxScale,
-          paddingTop: 2,
-          paddingBottom: 2,
-          fontSize: 10 * wxScale,
-          color: baseColor,
-          backgroundColor: `${baseColor}15`,
-        }}
-      >
-        {category.serviceCount || 0}
-      </Text>
     </Box>
   )
 }
@@ -212,23 +181,9 @@ function PlaceholderCategories({
           }}
         >
           <Box style={{ flex: 1 }}>
-            <Box style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+            <Box style={{ marginBottom: 6 }}>
               {/* #20: 增大分类标题字号 18 -> 22 */}
               <Text style={{ fontSize: 22, fontWeight: 600, color: primaryColor }}>陪诊服务</Text>
-              <Text
-                style={{
-                  borderRadius: 12,
-                  paddingLeft: 8,
-                  paddingRight: 8,
-                  paddingTop: 2,
-                  paddingBottom: 2,
-                  fontSize: 10,
-                  color: primaryColor,
-                  backgroundColor: `${primaryColor}15`,
-                }}
-              >
-                6项
-              </Text>
             </Box>
             <Text style={{ fontSize: 13, color: descColor }}>专业陪诊全程服务</Text>
           </Box>
@@ -263,23 +218,9 @@ function PlaceholderCategories({
           }}
         >
           <Box style={{ flex: 1 }}>
-            <Box style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+            <Box style={{ marginBottom: 6 }}>
               {/* #20: 增大分类标题字号 18 -> 22 */}
               <Text style={{ fontSize: 22, fontWeight: 600, color: '#22c55e' }}>代办服务</Text>
-              <Text
-                style={{
-                  borderRadius: 12,
-                  paddingLeft: 8,
-                  paddingRight: 8,
-                  paddingTop: 2,
-                  paddingBottom: 2,
-                  fontSize: 10,
-                  color: '#22c55e',
-                  backgroundColor: 'rgba(34, 197, 94, 0.1)',
-                }}
-              >
-                4项
-              </Text>
             </Box>
             <Text style={{ fontSize: 13, color: descColor }}>快捷代办省时省心</Text>
           </Box>
@@ -334,20 +275,6 @@ function PlaceholderCategories({
                   <Icon name={getIconName(name)} size={12} color={primaryColor} />
                 </Box>
                 <Text style={{ fontSize: 13, fontWeight: 500, color: textColor }}>{name}</Text>
-                <Text
-                  style={{
-                    borderRadius: 8,
-                    paddingLeft: 6,
-                    paddingRight: 6,
-                    paddingTop: 2,
-                    paddingBottom: 2,
-                    fontSize: 10,
-                    color: primaryColor,
-                    backgroundColor: `${primaryColor}15`,
-                  }}
-                >
-                  {3 + i}
-                </Text>
               </Box>
             ))}
           </Box>

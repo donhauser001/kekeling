@@ -1232,6 +1232,7 @@ model Order {
   startedAt   DateTime? @map("started_at") // 服务开始时间
   completedAt DateTime? @map("completed_at") // 服务完成时间
   cancelledAt DateTime? @map("cancelled_at") // 取消时间
+  userDeletedAt DateTime? @map("user_deleted_at") // 用户侧软删除时间（仅用户不可见）
 
   // 关联
   user                User                 @relation(fields: [userId], references: [id])
@@ -1258,6 +1259,7 @@ model Order {
 
   @@index([status, appointmentDate])
   @@index([escortId, status])
+  @@index([userId, userDeletedAt])
   @@map("orders")
 }
 

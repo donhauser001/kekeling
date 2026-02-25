@@ -50,6 +50,7 @@ import {
   useStartOrderService,
   useCompleteOrder,
   useCancelOrder,
+  useDeleteOrder,
   useAvailableEscorts,
 } from '@/hooks/use-api'
 import { type Order } from './data/schema'
@@ -91,6 +92,7 @@ export function Orders() {
   const [detailSheetOpen, setDetailSheetOpen] = useState(false)
   const [assignDialogOpen, setAssignDialogOpen] = useState(false)
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [selectedEscortId, setSelectedEscortId] = useState<string>('')
   const [cancelReason, setCancelReason] = useState('')
@@ -111,6 +113,7 @@ export function Orders() {
   void _startMutation
   void _completeMutation
   const cancelMutation = useCancelOrder()
+  const deleteMutation = useDeleteOrder()
 
   // 转换 API 数据为组件需要的格式
   const allOrders: Order[] = (data?.data || []).map(order => ({
@@ -172,15 +175,32 @@ export function Orders() {
     setSelectedEscortId('')
     setAssignDialogOpen(true)
   }
-  void _openAssignDialog
 
   // 打开取消对话框
-  const _openCancelDialog = (order: Order) => {
+  const openCancelDialog = (order: Order) => {
     setSelectedOrder(order)
     setCancelReason('')
     setCancelDialogOpen(true)
   }
-  void _openCancelDialog
+
+  // 打开删除对话框
+  const openDeleteDialog = (order: Order) => {
+    setSelectedOrder(order)
+    setDeleteDialogOpen(true)
+  }
+
+  // 删除订单
+  const handleDelete = async () => {
+    if (!selectedOrder) return
+    try {
+      await deleteMutation.mutateAsync(selectedOrder.id)
+      toast.success('订单已删除')
+      setDeleteDialogOpen(false)
+    } catch (err: unknown) {
+      const error = err as Error
+      toast.error(error.message || '删除失败')
+    }
+  }
 
   // 派单
   const handleAssign = async () => {
@@ -448,6 +468,8 @@ export function Orders() {
             navigate={(opts) => void navigate({ search: opts.search as unknown as true })}
             isLoading={isLoading}
             onView={handleView}
+            onCancel={openCancelDialog}
+            onDelete={openDeleteDialog}
           />
         )}
       </Main>
@@ -524,6 +546,31 @@ export function Orders() {
             >
               {cancelMutation.isPending && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
               确认取消
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 删除对话框 */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>删除订单</DialogTitle>
+            <DialogDescription>
+              确定要删除订单 {selectedOrder?.orderNo} 吗？此操作不可恢复，订单及其关联的日志记录将被永久删除。
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant='outline' onClick={() => setDeleteDialogOpen(false)}>
+              取消
+            </Button>
+            <Button
+              variant='destructive'
+              onClick={handleDelete}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
+              确认删除
             </Button>
           </DialogFooter>
         </DialogContent>

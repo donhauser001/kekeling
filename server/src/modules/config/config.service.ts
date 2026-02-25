@@ -701,6 +701,9 @@ export class ConfigService {
       devEscortId:
         configs[MINIAPP_CONFIG_KEYS.DEV_ESCORT_ID] ??
         MINIAPP_CONFIG_DEFAULTS[MINIAPP_CONFIG_KEYS.DEV_ESCORT_ID],
+      escortWorkbenchEnabled:
+        configs[MINIAPP_CONFIG_KEYS.ESCORT_WORKBENCH_ENABLED] ??
+        MINIAPP_CONFIG_DEFAULTS[MINIAPP_CONFIG_KEYS.ESCORT_WORKBENCH_ENABLED],
     };
   }
 
@@ -712,6 +715,7 @@ export class ConfigService {
       devMode: MINIAPP_CONFIG_KEYS.DEV_MODE,
       skipWorkbenchLogin: MINIAPP_CONFIG_KEYS.SKIP_WORKBENCH_LOGIN,
       devEscortId: MINIAPP_CONFIG_KEYS.DEV_ESCORT_ID,
+      escortWorkbenchEnabled: MINIAPP_CONFIG_KEYS.ESCORT_WORKBENCH_ENABLED,
     };
 
     const configs: { key: string; value: any }[] = [];

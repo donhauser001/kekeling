@@ -142,22 +142,9 @@ export function ServiceInfoCard({
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: 12 * wxScale,
+            gap: 8 * wxScale,
           }}
         >
-          <Box
-            className='flex items-center gap-1'
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4 * wxScale,
-            }}
-          >
-            <Icon name="good-one" size={14 * wxScale} color="#fbbf24" />
-            <Text style={{ fontSize: 12 * wxScale, color: textMuted }}>
-              {service.rating}%好评
-            </Text>
-          </Box>
           <Box
             className='flex items-center gap-1'
             style={{

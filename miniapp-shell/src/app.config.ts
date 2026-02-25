@@ -18,6 +18,8 @@ export default defineAppConfig({
   pages: [
     'pages/main/index',
   ],
+  // 启用隐私保护弹窗（2023年9月起必须）
+  __usePrivacyCheck__: true,
   // 分包配置
   subPackages: [
     {

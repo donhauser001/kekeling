@@ -543,6 +543,8 @@ export const MINIAPP_CONFIG_KEYS = {
   SKIP_WORKBENCH_LOGIN: 'miniapp.skip_workbench_login',
   // 开发模式下的默认陪诊员ID（用于跳过登录时加载数据）
   DEV_ESCORT_ID: 'miniapp.dev_escort_id',
+  // 陪诊员工作台入口开关
+  ESCORT_WORKBENCH_ENABLED: 'miniapp.escort_workbench_enabled',
 } as const;
 
 // 小程序配置默认值
@@ -550,6 +552,7 @@ export const MINIAPP_CONFIG_DEFAULTS: Record<string, any> = {
   [MINIAPP_CONFIG_KEYS.DEV_MODE]: false,
   [MINIAPP_CONFIG_KEYS.SKIP_WORKBENCH_LOGIN]: false,
   [MINIAPP_CONFIG_KEYS.DEV_ESCORT_ID]: '',
+  [MINIAPP_CONFIG_KEYS.ESCORT_WORKBENCH_ENABLED]: true,
 };
 
 // 小程序设置类型
@@ -560,6 +563,8 @@ export interface MiniappSettings {
   skipWorkbenchLogin: boolean;
   /** 开发模式下的默认陪诊员ID */
   devEscortId: string;
+  /** 陪诊员工作台入口是否显示（关闭后个人页不显示成为陪诊员/工作台按钮） */
+  escortWorkbenchEnabled: boolean;
 }
 
 // ============================================

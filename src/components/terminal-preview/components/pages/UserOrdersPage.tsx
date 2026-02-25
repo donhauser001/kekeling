@@ -173,6 +173,27 @@ export function UserOrdersPage({
     fetchOrders()
   }, [refreshKey, includeMembership])
 
+  const handleDeleteOrder = async (orderId: string) => {
+    const wxBridge = getWxBridge()
+    const { confirm } = await wxBridge.showModal({
+      title: '删除订单',
+      content: '删除后该订单将不再在用户端显示，确认删除吗？',
+      confirmText: '删除',
+      cancelText: '取消',
+    })
+
+    if (!confirm) return
+
+    const result = await previewApi.deleteOrder(orderId)
+    if (!result.success) {
+      wxBridge.showToast({ title: result.message || '删除失败', icon: 'none' })
+      return
+    }
+
+    wxBridge.showToast({ title: '删除成功', icon: 'success' })
+    setRefreshKey((prev) => prev + 1)
+  }
+
   // 根据 Tab 过滤订单（前端过滤，因为后端只支持单状态筛选）
   const filteredOrders = activeTab === 'all'
     ? orders
@@ -566,6 +587,33 @@ export function UserOrdersPage({
                           }}
                         >
                           去评价
+                        </Text>
+                      </Box>
+                    )}
+                    {order.status === 'cancelled' && (
+                      <Box
+                        onClick={(e: React.MouseEvent) => {
+                          e.stopPropagation()
+                          handleDeleteOrder(order.id)
+                        }}
+                        style={{
+                          paddingLeft: 16 * wxScale,
+                          paddingRight: 16 * wxScale,
+                          paddingTop: isWxEnvironment() ? 8 * wxScale : 6,
+                          paddingBottom: isWxEnvironment() ? 8 * wxScale : 6,
+                          borderRadius: 9999,
+                          borderWidth: 1,
+                          borderColor: '#ff4d4f',
+                          borderStyle: 'solid',
+                        }}
+                      >
+                        <Text
+                          style={{
+                            fontSize: 12 * wxScale,
+                            color: '#ff4d4f',
+                          }}
+                        >
+                          删除
                         </Text>
                       </Box>
                     )}

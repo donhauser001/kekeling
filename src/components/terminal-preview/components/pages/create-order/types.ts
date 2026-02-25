@@ -47,6 +47,7 @@ export interface Patient {
 export interface Hospital {
   id: string
   name: string
+  shortName?: string
   address: string
 }
 

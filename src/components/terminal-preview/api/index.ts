@@ -164,6 +164,7 @@ export const previewApi = {
   getPaymentStatus: userApi.getPaymentStatus,
   mockPayment: userApi.mockPayment,
   cancelOrder: userApi.cancelOrder,
+  deleteOrder: userApi.deleteOrder,
 
   // 收藏
   addFavorite: userApi.addFavorite,

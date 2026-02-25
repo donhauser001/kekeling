@@ -22,6 +22,7 @@ import { Loader2, AlertTriangle } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
 const miniappFormSchema = z.object({
+  escortWorkbenchEnabled: z.boolean().default(true),
   devMode: z.boolean().default(false),
   skipWorkbenchLogin: z.boolean().default(false),
   devEscortId: z.string().optional().default(''),
@@ -30,6 +31,7 @@ const miniappFormSchema = z.object({
 type MiniappFormValues = z.infer<typeof miniappFormSchema>
 
 const defaultValues: Partial<MiniappFormValues> = {
+  escortWorkbenchEnabled: true,
   devMode: false,
   skipWorkbenchLogin: false,
   devEscortId: '',
@@ -50,6 +52,7 @@ export function MiniappForm() {
       try {
         const data = await configApi.getMiniappSettings()
         form.reset({
+          escortWorkbenchEnabled: data.escortWorkbenchEnabled ?? true,
           devMode: data.devMode ?? false,
           skipWorkbenchLogin: data.skipWorkbenchLogin ?? false,
           devEscortId: data.devEscortId ?? '',
@@ -89,6 +92,28 @@ export function MiniappForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-8'>
+        {/* 陪诊员工作台开关 */}
+        <FormField
+          control={form.control}
+          name='escortWorkbenchEnabled'
+          render={({ field }) => (
+            <FormItem className='flex flex-row items-center justify-between rounded-lg border p-4'>
+              <div className='space-y-0.5'>
+                <FormLabel className='text-base'>陪诊员工作台</FormLabel>
+                <FormDescription>
+                  关闭后，小程序个人页面将不显示「成为陪诊员」和「陪诊员工作台」入口
+                </FormDescription>
+              </div>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+
         {/* 开发模式开关 */}
         <FormField
           control={form.control}

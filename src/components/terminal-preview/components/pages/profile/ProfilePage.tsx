@@ -76,6 +76,7 @@ export function ProfilePage({
     referralsEnabled: true,
     campaignsEnabled: true,
   })
+  const [escortWorkbenchEnabled, setEscortWorkbenchEnabled] = useState(true)
 
   // ============================================================================
   // 数据获取
@@ -98,6 +99,10 @@ export function ProfilePage({
     }).catch(console.error)
     // 获取营销设置（控制功能入口显示/隐藏）
     previewApi.getMarketingSettings().then(setMarketingSettings).catch(console.error)
+    // 获取小程序设置（控制陪诊员工作台入口）
+    previewApi.getMiniappSettings().then((data) => {
+      setEscortWorkbenchEnabled(data.escortWorkbenchEnabled ?? true)
+    }).catch(console.error)
   }, [])
 
   // ============================================================================
@@ -237,14 +242,16 @@ export function ProfilePage({
         onItemClick={handleMenuItemClick}
       />
 
-      {/* 陪诊员入口卡片 */}
-      <EscortCard
-        hasEscortQualification={hasEscortQualification}
-        colors={colors}
-        primaryColor={primaryColor}
-        onEscortEntryClick={onEscortEntryClick}
-        onWorkbenchClick={onWorkbenchClick}
-      />
+      {/* 陪诊员入口卡片（受后台开关控制） */}
+      {escortWorkbenchEnabled && (
+        <EscortCard
+          hasEscortQualification={hasEscortQualification}
+          colors={colors}
+          primaryColor={primaryColor}
+          onEscortEntryClick={onEscortEntryClick}
+          onWorkbenchClick={onWorkbenchClick}
+        />
+      )}
 
       {/* 客服卡片 */}
       <ServiceCard colors={colors} primaryColor={primaryColor} onClick={() => onNavigate?.('customer-service')} />

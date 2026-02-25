@@ -257,7 +257,7 @@ export class OrdersService {
   }) {
     const { status, page = 1, pageSize = 10, includeMembership = false } = params;
 
-    const where: any = { userId };
+    const where: any = { userId, userDeletedAt: null };
     if (status && status !== 'all') {
       where.status = status;
     }
@@ -349,7 +349,10 @@ export class OrdersService {
   // 获取订单详情
   async findById(id: string, userId?: string) {
     const where: any = { id };
-    if (userId) where.userId = userId;
+    if (userId) {
+      where.userId = userId;
+      where.userDeletedAt = null;
+    }
 
     return this.prisma.order.findFirst({
       where,
@@ -397,6 +400,35 @@ export class OrdersService {
         console.error('[Order] 秒杀库存释放失败:', error);
       }
     }
+
+    return updatedOrder;
+  }
+
+  // 用户软删除订单（仅已取消订单可删除，数据保留）
+  async softDeleteByUser(id: string, userId: string) {
+    const order = await this.prisma.order.findFirst({
+      where: { id, userId, userDeletedAt: null },
+      select: { id: true, status: true, userDeletedAt: true },
+    });
+
+    if (!order) {
+      throw new BadRequestException('订单不存在');
+    }
+
+    if (order.status !== 'cancelled') {
+      throw new BadRequestException('仅已取消订单可删除');
+    }
+
+    const updatedOrder = await this.prisma.order.update({
+      where: { id },
+      data: {
+        userDeletedAt: new Date(),
+      },
+      select: {
+        id: true,
+        userDeletedAt: true,
+      },
+    });
 
     return updatedOrder;
   }

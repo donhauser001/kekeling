@@ -108,8 +108,8 @@ export function UserHeader({
             <Text style={{ fontSize: 18 * wxScale, fontWeight: 600, color: '#fff' }}>
               {userProfile?.nickname || '微信用户'}
             </Text>
-            {/* 陪诊员标签 - 有资质就显示 */}
-            {hasEscortQualification && (
+            {/* 陪诊员标签 - 仅陪诊员视角显示 */}
+            {isEscortMode && hasEscortQualification && (
               <Box
                 style={{
                   paddingLeft: 6 * wxScale,

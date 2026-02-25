@@ -123,11 +123,16 @@ export function ServiceDetailPage({
     setShowGuaranteeDetail(true)
   }
 
+  const pageBottomPadding = isWxEnvironment()
+    ? `calc(${96 * wxScale}px + env(safe-area-inset-bottom))`
+    : 0
+
   return (
     <Box
       className='min-h-full'
       style={{
         minHeight: '100%',
+        paddingBottom: pageBottomPadding,
         backgroundColor: colors.bgColor,
       }}
     >

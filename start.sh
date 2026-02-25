@@ -100,6 +100,14 @@ detect_package_manager() {
 }
 
 # ==========================================
+# 后端健康检查（兼容 HTTPS/HTTP）
+# ==========================================
+is_backend_ready() {
+    curl -sk https://localhost:3456/api/home/stats > /dev/null 2>&1 || \
+    curl -s http://localhost:3456/api/home/stats > /dev/null 2>&1
+}
+
+# ==========================================
 # 启动 Docker 服务
 # ==========================================
 start_docker_services() {
@@ -124,7 +132,7 @@ wait_for_backend() {
     local attempt=0
     
     while [ $attempt -lt $max_attempts ]; do
-        if curl -s http://localhost:3456/api/home/stats > /dev/null 2>&1; then
+        if is_backend_ready; then
             echo -e "${GREEN}   ✅ 后端服务已就绪${NC}"
             return 0
         fi
@@ -177,7 +185,7 @@ start_admin() {
     $PKG_MANAGER run dev &
     ADMIN_PID=$!
     echo -e "${GREEN}   ✅ 管理后台已启动 (PID: $ADMIN_PID)${NC}"
-    echo -e "${GREEN}   📍 访问地址: http://localhost:5173${NC}"
+    echo -e "${GREEN}   📍 访问地址: http://localhost:9527${NC}"
 }
 
 # ==========================================
@@ -186,7 +194,7 @@ start_admin() {
 start_h5() {
     echo ""
     echo -e "${YELLOW}📱 启动小程序 H5...${NC}"
-    cd "$PROJECT_ROOT/miniapp"
+    cd "$PROJECT_ROOT/miniapp-shell"
     
     if [ ! -d "node_modules" ]; then
         echo -e "${YELLOW}   安装依赖中...${NC}"
@@ -249,11 +257,11 @@ main() {
     echo -e "${CYAN}════════════════════════════════════════════${NC}"
     echo -e "${GREEN}🎉 服务启动成功！${NC}"
     echo ""
-    echo -e "   ${MAGENTA}🐘 数据库:${NC}      localhost:5432"
-    echo -e "   ${MAGENTA}🔧 后端 API:${NC}    http://localhost:3456"
-    echo -e "   ${MAGENTA}📖 API 文档:${NC}    http://localhost:3456/api-docs"
+    echo -e "   ${MAGENTA}🐘 数据库:${NC}      localhost:5434"
+    echo -e "   ${MAGENTA}🔧 后端 API:${NC}    https://localhost:3456"
+    echo -e "   ${MAGENTA}📖 API 文档:${NC}    https://localhost:3456/api/docs"
     echo -e "   ${MAGENTA}🗄️  Adminer:${NC}     http://localhost:8080"
-    $WITH_ADMIN && echo -e "   ${MAGENTA}🖥️  管理后台:${NC}   http://localhost:5173"
+    $WITH_ADMIN && echo -e "   ${MAGENTA}🖥️  管理后台:${NC}   http://localhost:9527"
     $WITH_H5 && echo -e "   ${MAGENTA}📱 小程序 H5:${NC}   http://localhost:10086"
     echo ""
     echo -e "${YELLOW}📋 常用命令:${NC}"

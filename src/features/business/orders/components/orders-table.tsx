@@ -34,9 +34,11 @@ type DataTableProps = {
   navigate: NavigateFn
   isLoading?: boolean
   onView?: (order: Order) => void
+  onCancel?: (order: Order) => void
+  onDelete?: (order: Order) => void
 }
 
-export function OrdersTable({ data, search, navigate, isLoading, onView }: DataTableProps) {
+export function OrdersTable({ data, search, navigate, isLoading, onView, onCancel, onDelete }: DataTableProps) {
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
     serviceCategory: false, // 默认隐藏分类列，因为已经在服务列显示
@@ -71,6 +73,11 @@ export function OrdersTable({ data, search, navigate, isLoading, onView }: DataT
       rowSelection,
       columnFilters,
       columnVisibility,
+    },
+    meta: {
+      onView,
+      onCancel,
+      onDelete,
     },
     enableRowSelection: true,
     onPaginationChange,

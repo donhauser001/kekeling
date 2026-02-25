@@ -28,7 +28,9 @@ export default defineConfig<'webpack5'>(async (merge) => {
     plugins: [],
     defineConstants: {},
     copy: {
-      patterns: [],
+      patterns: [
+        { from: 'sitemap.json', to: 'dist/sitemap.json' },
+      ],
       options: {}
     },
     framework: 'react',

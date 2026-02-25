@@ -122,8 +122,9 @@ export function BannerSection({
     startAutoPlay()
   }
 
-  // 空状态
+  // 空状态：轮播图关闭或无数据时，仅在 Web 预览环境显示占位，小程序端不渲染
   if (!bannerData?.enabled || itemCount === 0) {
+    if (!isWeb) return null
     return (
       <Box
         className={cn('relative z-10 px-3', className)}

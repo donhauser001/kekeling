@@ -21,60 +21,77 @@ export function BottomActionBar({
 }: BottomActionBarProps) {
   const { cardBg, borderColor, textMuted } = colors
   const phone = String(servicePhone || themeSettings.servicePhone || '400-888-8888')
+  const isWx = isWxEnvironment()
+  const position = isWx ? 'fixed' : 'sticky'
+  const bottomPadding = isWx
+    ? `calc(${12 * wxScale}px + env(safe-area-inset-bottom))`
+    : 12 * wxScale
+  const sideActionsGap = (isWx ? 18 : 14) * wxScale
 
   return (
     <Box
-      className='sticky bottom-0 left-0 right-0 flex items-center gap-3 px-4 py-3 border-t z-30 mt-3'
+      className='bottom-0 left-0 right-0 flex items-center gap-3 px-4 py-3 border-t z-30'
       style={{
-        position: 'sticky',
+        position,
         bottom: 0,
-        left: 0,
-        right: 0,
+        left: isWx ? 0 : undefined,
+        right: isWx ? 0 : undefined,
         display: 'flex',
         alignItems: 'center',
+        boxSizing: 'border-box',
         gap: 12 * wxScale,
         paddingLeft: 16 * wxScale,
         paddingRight: 16 * wxScale,
         paddingTop: 12 * wxScale,
-        paddingBottom: 12 * wxScale,
+        paddingBottom: bottomPadding,
         borderTopWidth: 1,
         borderTopStyle: 'solid',
         borderTopColor: borderColor,
         zIndex: 30,
-        marginTop: 12 * wxScale,
+        marginTop: isWx ? undefined : 12 * wxScale,
         backgroundColor: cardBg,
       }}
     >
-      {/* 客服按钮 */}
       <Box
-        className='flex flex-col items-center cursor-pointer'
         style={{
           display: 'flex',
-          flexDirection: 'column',
           alignItems: 'center',
+          gap: sideActionsGap,
+          flexShrink: 0,
+          paddingRight: 6 * wxScale,
         }}
-        onClick={onCustomerService}
       >
-        <MessageCircle size={20 * wxScale} color={textMuted} />
-        <Text style={{ fontSize: 10 * wxScale, marginTop: 2 * wxScale, color: textMuted }}>
-          客服
-        </Text>
-      </Box>
+        {/* 客服按钮 */}
+        <Box
+          className='flex flex-col items-center cursor-pointer'
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+          }}
+          onClick={onCustomerService}
+        >
+          <MessageCircle size={20 * wxScale} color={textMuted} />
+          <Text style={{ fontSize: 10 * wxScale, marginTop: 2 * wxScale, color: textMuted }}>
+            客服
+          </Text>
+        </Box>
 
-      {/* 电话按钮 */}
-      <Box
-        className='flex flex-col items-center cursor-pointer'
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-        }}
-        onClick={() => onPhoneCall?.(phone)}
-      >
-        <Phone size={20 * wxScale} color={textMuted} />
-        <Text style={{ fontSize: 10 * wxScale, marginTop: 2 * wxScale, color: textMuted }}>
-          电话
-        </Text>
+        {/* 电话按钮 */}
+        <Box
+          className='flex flex-col items-center cursor-pointer'
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+          }}
+          onClick={() => onPhoneCall?.(phone)}
+        >
+          <Phone size={20 * wxScale} color={textMuted} />
+          <Text style={{ fontSize: 10 * wxScale, marginTop: 2 * wxScale, color: textMuted }}>
+            电话
+          </Text>
+        </Box>
       </Box>
 
       {/* 立即预约按钮 */}
@@ -82,6 +99,7 @@ export function BottomActionBar({
         className='flex-1 py-2.5 rounded-full text-sm font-medium text-white'
         style={{
           flex: 1,
+          minWidth: 0,
           paddingTop: isWxEnvironment() ? 14 * wxScale : 10,
           paddingBottom: isWxEnvironment() ? 14 * wxScale : 10,
           borderRadius: 9999,

@@ -1,7 +1,6 @@
 import { type Table } from '@tanstack/react-table'
-import { Trash2, UserPlus, CheckCircle, XCircle } from 'lucide-react'
+import { Trash2, XCircle } from 'lucide-react'
 import { toast } from 'sonner'
-import { sleep } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
   Tooltip,
@@ -9,6 +8,8 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { DataTableBulkActions as BulkActionsToolbar } from '@/components/data-table'
+import { type Order } from '../data/schema'
+import { useCancelOrder, useBatchDeleteOrders } from '@/hooks/use-api'
 
 type DataTableBulkActionsProps<TData> = {
   table: Table<TData>
@@ -18,49 +19,56 @@ export function DataTableBulkActions<TData>({
   table,
 }: DataTableBulkActionsProps<TData>) {
   const selectedRows = table.getFilteredSelectedRowModel().rows
+  const cancelMutation = useCancelOrder()
+  const batchDeleteMutation = useBatchDeleteOrders()
 
-  const handleBulkAssign = () => {
-    toast.promise(sleep(2000), {
-      loading: '正在批量分配服务人员...',
-      success: () => {
-        table.resetRowSelection()
-        return `已为 ${selectedRows.length} 个订单分配服务人员`
-      },
-      error: '分配失败',
-    })
+  const handleBulkCancel = async () => {
+    const orders = selectedRows.map(row => row.original as Order)
+    const cancellable = orders.filter(o =>
+      ['pending', 'paid', 'assigned', 'confirmed'].includes(o.status)
+    )
+
+    if (cancellable.length === 0) {
+      toast.error('所选订单均无法取消（仅待支付、待接单、已分配、已确认状态可取消）')
+      return
+    }
+
+    try {
+      let successCount = 0
+      let failCount = 0
+
+      for (const order of cancellable) {
+        try {
+          await cancelMutation.mutateAsync({ id: order.id, reason: '管理员批量取消' })
+          successCount++
+        } catch {
+          failCount++
+        }
+      }
+
+      table.resetRowSelection()
+
+      if (failCount === 0) {
+        toast.success(`已成功取消 ${successCount} 个订单`)
+      } else {
+        toast.warning(`成功取消 ${successCount} 个，失败 ${failCount} 个`)
+      }
+    } catch {
+      toast.error('批量取消失败')
+    }
   }
 
-  const handleBulkComplete = () => {
-    toast.promise(sleep(2000), {
-      loading: '正在批量完成订单...',
-      success: () => {
-        table.resetRowSelection()
-        return `已完成 ${selectedRows.length} 个订单`
-      },
-      error: '操作失败',
-    })
-  }
+  const handleBulkDelete = async () => {
+    const orders = selectedRows.map(row => row.original as Order)
+    const ids = orders.map(o => o.id)
 
-  const handleBulkCancel = () => {
-    toast.promise(sleep(2000), {
-      loading: '正在批量取消订单...',
-      success: () => {
-        table.resetRowSelection()
-        return `已取消 ${selectedRows.length} 个订单`
-      },
-      error: '取消失败',
-    })
-  }
-
-  const handleBulkDelete = () => {
-    toast.promise(sleep(2000), {
-      loading: '正在批量删除订单...',
-      success: () => {
-        table.resetRowSelection()
-        return `已删除 ${selectedRows.length} 个订单`
-      },
-      error: '删除失败',
-    })
+    try {
+      const result = await batchDeleteMutation.mutateAsync(ids)
+      table.resetRowSelection()
+      toast.success(`已删除 ${result.deleted} 个订单`)
+    } catch {
+      toast.error('批量删除失败')
+    }
   }
 
   return (
@@ -70,41 +78,8 @@ export function DataTableBulkActions<TData>({
           <Button
             variant='outline'
             size='icon'
-            onClick={handleBulkAssign}
-            className='size-8'
-          >
-            <UserPlus />
-            <span className='sr-only'>批量分配</span>
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>
-          <p>批量分配服务人员</p>
-        </TooltipContent>
-      </Tooltip>
-
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant='outline'
-            size='icon'
-            onClick={handleBulkComplete}
-            className='size-8'
-          >
-            <CheckCircle />
-            <span className='sr-only'>批量完成</span>
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>
-          <p>批量完成订单</p>
-        </TooltipContent>
-      </Tooltip>
-
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant='outline'
-            size='icon'
             onClick={handleBulkCancel}
+            disabled={cancelMutation.isPending}
             className='size-8'
           >
             <XCircle />
@@ -122,6 +97,7 @@ export function DataTableBulkActions<TData>({
             variant='destructive'
             size='icon'
             onClick={handleBulkDelete}
+            disabled={batchDeleteMutation.isPending}
             className='size-8'
           >
             <Trash2 />
@@ -135,4 +111,3 @@ export function DataTableBulkActions<TData>({
     </BulkActionsToolbar>
   )
 }
-

@@ -616,12 +616,14 @@ export function TerminalPreview({
       />
 
       {/* 轮播图 */}
-      <Box style={{ paddingBottom: 12 * wxScale }}>
-        <BannerSection
-          bannerData={bannerData}
-          themeSettings={themeSettings}
-        />
-      </Box>
+      {(bannerData?.enabled && bannerData.items && bannerData.items.length > 0) || isBrowserEnvironment() ? (
+        <Box style={{ paddingBottom: 12 * wxScale }}>
+          <BannerSection
+            bannerData={bannerData}
+            themeSettings={themeSettings}
+          />
+        </Box>
+      ) : null}
 
       {/* 统计卡片 */}
       <StatsCard

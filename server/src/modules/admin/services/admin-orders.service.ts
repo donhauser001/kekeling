@@ -652,6 +652,87 @@ export class AdminOrdersService {
   }
 
   /**
+   * 删除订单（仅管理端）
+   */
+  async deleteOrder(orderId: string) {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+    });
+
+    if (!order) {
+      throw new NotFoundException('订单不存在');
+    }
+
+    // 使用事务删除订单及关联数据
+    await this.prisma.$transaction(async (tx) => {
+      // 删除订单日志（也有 cascade，双重保险）
+      await tx.orderLog.deleteMany({ where: { orderId } });
+      // 删除关联的优惠券使用记录（恢复优惠券状态）
+      await tx.userCoupon.updateMany({
+        where: { orderId },
+        data: { orderId: null, status: 'unused', usedAt: null },
+      });
+      // 删除关联的分润记录
+      await tx.distributionRecord.deleteMany({ where: { orderId } });
+      // 删除关联的评价
+      await tx.escortReview.deleteMany({ where: { orderId } });
+      // 删除关联的投诉
+      await tx.complaint.deleteMany({ where: { orderId } });
+      // 删除关联的聊天消息和会话
+      const chatSessions = await tx.chatSession.findMany({ where: { orderId }, select: { id: true } });
+      if (chatSessions.length > 0) {
+        const sessionIds = chatSessions.map(s => s.id);
+        await tx.chatMessage.deleteMany({ where: { sessionId: { in: sessionIds } } });
+        await tx.chatSession.deleteMany({ where: { orderId } });
+      }
+      // 删除订单（OrderPriceSnapshot 有 cascade 会自动删除）
+      await tx.order.delete({ where: { id: orderId } });
+    });
+
+    return { success: true };
+  }
+
+  /**
+   * 批量删除订单（仅管理端）
+   */
+  async batchDeleteOrders(orderIds: string[]) {
+    const orders = await this.prisma.order.findMany({
+      where: { id: { in: orderIds } },
+      select: { id: true },
+    });
+
+    const existingIds = orders.map(o => o.id);
+
+    if (existingIds.length === 0) {
+      throw new NotFoundException('未找到可删除的订单');
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.orderLog.deleteMany({ where: { orderId: { in: existingIds } } });
+      await tx.userCoupon.updateMany({
+        where: { orderId: { in: existingIds } },
+        data: { orderId: null, status: 'unused', usedAt: null },
+      });
+      await tx.distributionRecord.deleteMany({ where: { orderId: { in: existingIds } } });
+      await tx.escortReview.deleteMany({ where: { orderId: { in: existingIds } } });
+      await tx.complaint.deleteMany({ where: { orderId: { in: existingIds } } });
+      // 删除关联聊天
+      const chatSessions = await tx.chatSession.findMany({
+        where: { orderId: { in: existingIds } },
+        select: { id: true },
+      });
+      if (chatSessions.length > 0) {
+        const sessionIds = chatSessions.map(s => s.id);
+        await tx.chatMessage.deleteMany({ where: { sessionId: { in: sessionIds } } });
+        await tx.chatSession.deleteMany({ where: { orderId: { in: existingIds } } });
+      }
+      await tx.order.deleteMany({ where: { id: { in: existingIds } } });
+    });
+
+    return { deleted: existingIds.length };
+  }
+
+  /**
    * 更新订单备注
    */
   async updateRemark(orderId: string, remark: string) {

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Param, Query, Body } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Query, Body } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiQuery, ApiParam, ApiBody } from '@nestjs/swagger';
 import { AdminOrdersService } from '../services/admin-orders.service';
 import { ApiResponse } from '../../../common/response/api-response';
@@ -182,6 +182,22 @@ export class AdminOrdersController {
   async confirmRefund(@Param('id') id: string) {
     const data = await this.ordersService.confirmRefund(id);
     return ApiResponse.success(data, '退款已确认');
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: '删除订单' })
+  @ApiParam({ name: 'id', description: '订单ID' })
+  async deleteOrder(@Param('id') id: string) {
+    const data = await this.ordersService.deleteOrder(id);
+    return ApiResponse.success(data, '订单已删除');
+  }
+
+  @Post('batch/delete')
+  @ApiOperation({ summary: '批量删除订单' })
+  @ApiBody({ schema: { properties: { ids: { type: 'array', items: { type: 'string' } } } } })
+  async batchDelete(@Body('ids') ids: string[]) {
+    const data = await this.ordersService.batchDeleteOrders(ids);
+    return ApiResponse.success(data, `已删除 ${data.deleted} 个订单`);
   }
 
   @Put(':id/remark')
