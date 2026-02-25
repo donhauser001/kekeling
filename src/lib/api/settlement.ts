@@ -8,6 +8,8 @@ export interface SettlementConfig {
     id: string
     defaultRate: number           // 默认分成比例 (0-100)
     minWithdrawAmount: number     // 最低提现金额
+    maxWithdrawAmount: number     // 单笔最高提现金额
+    withdrawEstimatedHours: number // 预计到账时间（小时）
     withdrawFeeRate: number       // 提现手续费率 (0-1)
     withdrawFeeFixed: number      // 固定手续费
     settlementMode: 'realtime' | 'frozen'  // 结算模式
@@ -20,6 +22,8 @@ export interface SettlementConfig {
 export interface UpdateSettlementConfigDto {
     defaultRate?: number
     minWithdrawAmount?: number
+    maxWithdrawAmount?: number
+    withdrawEstimatedHours?: number
     withdrawFeeRate?: number
     withdrawFeeFixed?: number
     settlementMode?: 'realtime' | 'frozen'
@@ -50,4 +54,3 @@ export const settlementApi = {
     getPendingUnfreeze: () =>
         request<PendingUnfreezeStats>('/admin/settlement/pending-unfreeze'),
 }
-

@@ -1431,6 +1431,9 @@ export interface MiniappSettings {
   skipWorkbenchLogin: boolean
   devEscortId: string
   escortWorkbenchEnabled: boolean
+  withdrawMinAmount: number
+  withdrawMaxAmount: number
+  withdrawEstimatedHours: number
 }
 
 /**
@@ -1449,6 +1452,9 @@ export const getMiniappSettings = async (): Promise<MiniappSettings> => {
       skipWorkbenchLogin: false,
       devEscortId: '',
       escortWorkbenchEnabled: true,
+      withdrawMinAmount: 100,
+      withdrawMaxAmount: 50000,
+      withdrawEstimatedHours: 24,
     }
   }
 }

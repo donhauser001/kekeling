@@ -36,6 +36,7 @@ export interface AdminEscortWithdrawRecord {
   netAmount: number
   method: AdminWithdrawMethod
   accountMasked: string
+  accountName?: string
   bankName?: string
   status: AdminWithdrawStatus
   createdAt: string
@@ -62,7 +63,7 @@ export interface AdminWithdrawReviewRequest {
 }
 
 export interface AdminWithdrawPayoutRequest {
-  payoutMethod: 'manual' | 'channel'
+  payoutMethod: 'manual'
   operatorConfirmText: 'CONFIRM'
   transactionNo?: string
 }
@@ -95,21 +96,21 @@ export interface AdminEscortWithdrawStats {
 export const adminEscortWithdrawApi = {
   // 获取提现记录列表
   getList: (query: AdminEscortWithdrawRecordQuery = {}) =>
-    request<PaginatedData<AdminEscortWithdrawRecord>>('/admin/escorts/withdraw-records', {
+    request<PaginatedData<AdminEscortWithdrawRecord>>('/admin/withdraw-records', {
       params: query as Record<string, string | number | boolean | undefined>,
     }),
 
   // 获取单条提现记录详情
   getById: (id: string) =>
-    request<AdminEscortWithdrawRecord>(`/admin/escorts/withdraw-records/${id}`),
+    request<AdminEscortWithdrawRecord>(`/admin/withdraw-records/${id}`),
 
   // 获取提现记录详情（含操作日志）
   getDetailWithLogs: (id: string) =>
-    request<AdminEscortWithdrawDetail>(`/admin/escorts/withdraw-records/${id}/detail`),
+    request<AdminEscortWithdrawDetail>(`/admin/withdraw-records/${id}/detail`),
 
   // 获取提现操作日志
   getLogs: (id: string) =>
-    request<AdminWithdrawLog[]>(`/admin/escorts/withdraw-records/${id}/logs`),
+    request<AdminWithdrawLog[]>(`/admin/withdraw-records/${id}/logs`),
 
   // 导出提现记录
   export: async (
@@ -130,7 +131,7 @@ export const adminEscortWithdrawApi = {
 
     const token = getToken()
     const response = await fetch(
-      `${API_BASE_URL}/admin/escorts/withdraw-records/export?${params}`,
+      `${API_BASE_URL}/admin/withdraw-records/export?${params}`,
       {
         headers: {
           Authorization: token ? `Bearer ${token}` : '',
@@ -148,14 +149,14 @@ export const adminEscortWithdrawApi = {
 
   // 审核提现（通过/驳回）
   review: (id: string, data: AdminWithdrawReviewRequest) =>
-    request<AdminEscortWithdrawRecord>(`/admin/escorts/withdraw-records/${id}/review`, {
+    request<AdminEscortWithdrawRecord>(`/admin/withdraw-records/${id}/review`, {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
   // 打款（高危）
   payout: (id: string, data: AdminWithdrawPayoutRequest) =>
-    request<AdminEscortWithdrawRecord>(`/admin/escorts/withdraw-records/${id}/payout`, {
+    request<AdminEscortWithdrawRecord>(`/admin/withdraw-records/${id}/payout`, {
       method: 'POST',
       body: JSON.stringify(data),
     }),

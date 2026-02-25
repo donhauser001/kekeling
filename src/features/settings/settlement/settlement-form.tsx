@@ -14,10 +14,15 @@ import { settlementApi, type UpdateSettlementConfigDto } from '@/lib/api'
 
 const formSchema = z.object({
     minWithdrawAmount: z.number().min(0),
+    maxWithdrawAmount: z.number().positive(),
+    withdrawEstimatedHours: z.number().int().min(1),
     withdrawFeeRate: z.number().min(0).max(1),
     withdrawFeeFixed: z.number().min(0),
     settlementMode: z.enum(['realtime', 'frozen']),
     settlementDays: z.number().min(0).max(30),
+}).refine((data) => data.maxWithdrawAmount >= data.minWithdrawAmount, {
+    message: '单笔最高提现金额不能小于最低提现金额',
+    path: ['maxWithdrawAmount'],
 })
 
 type FormData = z.infer<typeof formSchema>
@@ -41,6 +46,8 @@ export function SettlementForm() {
         resolver: zodResolver(formSchema),
         values: {
             minWithdrawAmount: config?.minWithdrawAmount ?? 100,
+            maxWithdrawAmount: config?.maxWithdrawAmount ?? 50000,
+            withdrawEstimatedHours: config?.withdrawEstimatedHours ?? 24,
             withdrawFeeRate: config?.withdrawFeeRate ?? 0,
             withdrawFeeFixed: config?.withdrawFeeFixed ?? 0,
             settlementMode: config?.settlementMode ?? 'realtime',
@@ -196,8 +203,8 @@ export function SettlementForm() {
                         <Wallet className="h-4 w-4" />
                         提现设置
                     </CardTitle>
-                    <CardDescription>
-                        配置提现的最低金额和手续费
+                <CardDescription>
+                        配置提现金额限制、预计到账时间和手续费
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -215,6 +222,44 @@ export function SettlementForm() {
                         </div>
                         <p className="text-xs text-muted-foreground">
                             可用余额达到此金额后才能发起提现申请
+                        </p>
+                    </div>
+
+                    <Separator />
+
+                    <div className="space-y-2">
+                        <Label>单笔最高提现金额</Label>
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm text-muted-foreground">¥</span>
+                            <Input
+                                type="number"
+                                min={1}
+                                step={1}
+                                {...form.register('maxWithdrawAmount', { valueAsNumber: true })}
+                                className="w-32"
+                            />
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                            单次提现不能超过该值
+                        </p>
+                    </div>
+
+                    <Separator />
+
+                    <div className="space-y-2">
+                        <Label>预计到账时间</Label>
+                        <div className="flex items-center gap-2">
+                            <Input
+                                type="number"
+                                min={1}
+                                step={1}
+                                {...form.register('withdrawEstimatedHours', { valueAsNumber: true })}
+                                className="w-24"
+                            />
+                            <span className="text-sm text-muted-foreground">小时</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                            用于提现页提示“预计 X 小时内到账”
                         </p>
                     </div>
 
@@ -266,4 +311,3 @@ export function SettlementForm() {
         </form>
     )
 }
-

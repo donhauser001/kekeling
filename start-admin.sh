@@ -40,11 +40,19 @@ fi
 echo -e "${GREEN}📦 使用包管理器: $PKG_MANAGER${NC}"
 echo ""
 
+# ==========================================
+# 后端健康检查（兼容 HTTPS/HTTP）
+# ==========================================
+is_backend_ready() {
+    curl -sk https://localhost:3456/api/home/stats > /dev/null 2>&1 || \
+    curl -s http://localhost:3456/api/home/stats > /dev/null 2>&1
+}
+
 # 检查后端是否运行
 check_backend() {
     echo -e "${YELLOW}🔍 检查后端服务...${NC}"
     
-    if curl -sk https://localhost:3456/api/home/stats > /dev/null 2>&1; then
+    if is_backend_ready; then
         echo -e "${GREEN}   ✅ 后端服务已运行${NC}"
         return 0
     fi
@@ -66,7 +74,7 @@ check_backend() {
         local attempt=0
         
         while [ $attempt -lt $max_attempts ]; do
-            if curl -sk https://localhost:3456/api/home/stats > /dev/null 2>&1; then
+            if is_backend_ready; then
                 echo -e "${GREEN}   ✅ 后端服务已就绪${NC}"
                 return 0
             fi
@@ -118,9 +126,9 @@ echo ""
 echo -e "${BLUE}================================${NC}"
 echo -e "${GREEN}🎉 管理后台启动成功！${NC}"
 echo ""
-echo -e "   ${BLUE}后端 API:${NC}      http://localhost:3456"
-echo -e "   ${BLUE}管理后台:${NC}      http://localhost:5173"
-echo -e "   ${BLUE}API 文档:${NC}      http://localhost:3456/api-docs"
+echo -e "   ${BLUE}后端 API:${NC}      https://localhost:3456"
+echo -e "   ${BLUE}管理后台:${NC}      http://localhost:9527"
+echo -e "   ${BLUE}API 文档:${NC}      https://localhost:3456/api/docs"
 echo ""
 echo -e "${YELLOW}按 Ctrl+C 停止管理后台${NC}"
 echo -e "${BLUE}================================${NC}"

@@ -169,7 +169,7 @@ kekeling/
 │       ├── schema.prisma # 数据库模型
 │       └── seed.ts       # 种子数据
 │
-├── miniapp/              # 微信小程序 (Taro)
+├── miniapp-shell/        # 微信小程序宿主壳 (Taro)
 │   ├── src/
 │   │   ├── components/   # 公共组件
 │   │   │   ├── Icon/           # Lucide 图标封装
@@ -249,7 +249,7 @@ docker-compose -f docker-compose.dev.yml up -d
 cd server && pnpm dev
 
 # 2. 启动小程序 H5 模式 (新终端)
-cd miniapp
+cd miniapp-shell
 pnpm install
 pnpm dev:h5
 
@@ -270,7 +270,7 @@ pnpm db:seed      # 初始化种子数据
 pnpm db:studio    # 打开 Prisma Studio
 
 # 小程序
-cd miniapp
+cd miniapp-shell
 pnpm dev:h5       # H5 开发模式 (推荐)
 pnpm dev:weapp    # 微信小程序模式
 pnpm build:weapp  # 构建小程序

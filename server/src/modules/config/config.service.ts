@@ -704,6 +704,15 @@ export class ConfigService {
       escortWorkbenchEnabled:
         configs[MINIAPP_CONFIG_KEYS.ESCORT_WORKBENCH_ENABLED] ??
         MINIAPP_CONFIG_DEFAULTS[MINIAPP_CONFIG_KEYS.ESCORT_WORKBENCH_ENABLED],
+      withdrawMinAmount:
+        configs[MINIAPP_CONFIG_KEYS.WITHDRAW_MIN_AMOUNT] ??
+        MINIAPP_CONFIG_DEFAULTS[MINIAPP_CONFIG_KEYS.WITHDRAW_MIN_AMOUNT],
+      withdrawMaxAmount:
+        configs[MINIAPP_CONFIG_KEYS.WITHDRAW_MAX_AMOUNT] ??
+        MINIAPP_CONFIG_DEFAULTS[MINIAPP_CONFIG_KEYS.WITHDRAW_MAX_AMOUNT],
+      withdrawEstimatedHours:
+        configs[MINIAPP_CONFIG_KEYS.WITHDRAW_ESTIMATED_HOURS] ??
+        MINIAPP_CONFIG_DEFAULTS[MINIAPP_CONFIG_KEYS.WITHDRAW_ESTIMATED_HOURS],
     };
   }
 
@@ -716,6 +725,9 @@ export class ConfigService {
       skipWorkbenchLogin: MINIAPP_CONFIG_KEYS.SKIP_WORKBENCH_LOGIN,
       devEscortId: MINIAPP_CONFIG_KEYS.DEV_ESCORT_ID,
       escortWorkbenchEnabled: MINIAPP_CONFIG_KEYS.ESCORT_WORKBENCH_ENABLED,
+      withdrawMinAmount: MINIAPP_CONFIG_KEYS.WITHDRAW_MIN_AMOUNT,
+      withdrawMaxAmount: MINIAPP_CONFIG_KEYS.WITHDRAW_MAX_AMOUNT,
+      withdrawEstimatedHours: MINIAPP_CONFIG_KEYS.WITHDRAW_ESTIMATED_HOURS,
     };
 
     const configs: { key: string; value: any }[] = [];
@@ -958,4 +970,3 @@ export class ConfigService {
     return this.getMarketingSettings();
   }
 }
-

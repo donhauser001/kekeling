@@ -214,7 +214,7 @@ export class EscortAppController {
   @Post('wallet/withdraw')
   async requestWithdrawal(
     @Request() req,
-    @Body() body: { amount: number; method: string; account: string },
+    @Body() body: { amount: number },
   ) {
     return this.escortAppService.requestWithdrawal(req.user.userId, body);
   }
@@ -223,9 +223,15 @@ export class EscortAppController {
   @Post('wallet/account')
   async updateWithdrawAccount(
     @Request() req,
-    @Body() body: { method: string; account: string },
+    @Body() body: { method: string; account: string; accountName?: string; bankName?: string },
   ) {
-    return this.escortAppService.updateWithdrawAccount(req.user.userId, body.method, body.account);
+    return this.escortAppService.updateWithdrawAccount(
+      req.user.userId,
+      body.method,
+      body.account,
+      body.accountName,
+      body.bankName,
+    );
   }
 
   // ============================================
@@ -284,4 +290,3 @@ export class EscortAppController {
     return this.escortAppService.getMyReviewStats(req.user.userId);
   }
 }
-

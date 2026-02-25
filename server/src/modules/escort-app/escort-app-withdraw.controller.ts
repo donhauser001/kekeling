@@ -1,4 +1,4 @@
-import { Controller, Get, Query, UseGuards, Request } from '@nestjs/common';
+import { Body, Controller, Get, Post, Put, Query, UseGuards, Request } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { EscortAppService } from './escort-app.service';
 
@@ -43,5 +43,39 @@ export class EscortAppWithdrawController {
       pageSize: pageSize ? parseInt(pageSize) : undefined,
     });
   }
-}
 
+  /**
+   * 申请提现
+   * 接口: POST /escort-app/withdraw/request
+   */
+  @Post('request')
+  async requestWithdrawal(
+    @Request() req,
+    @Body() body: { amount: number },
+  ) {
+    return this.escortAppService.requestWithdrawal(this.getUserId(req), body);
+  }
+
+  /**
+   * 设置/更新提现账户
+   * 接口: PUT /escort-app/withdraw/account
+   */
+  @Put('account')
+  async updateWithdrawAccount(
+    @Request() req,
+    @Body() body: {
+      method: 'bank' | 'alipay' | 'wechat';
+      account: string;
+      accountName?: string;
+      bankName?: string;
+    },
+  ) {
+    return this.escortAppService.updateWithdrawAccount(
+      this.getUserId(req),
+      body.method,
+      body.account,
+      body.accountName,
+      body.bankName,
+    );
+  }
+}

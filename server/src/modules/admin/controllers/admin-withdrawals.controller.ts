@@ -11,7 +11,7 @@ import { ApiResponse } from '../../../common/response/api-response';
  * @see docs/资金安全提现体系/04-P2审核打款设计.md
  */
 @ApiTags('管理端-提现审核')
-@Controller('admin/escorts/withdraw-records')
+@Controller(['admin/withdraw-records', 'admin/escorts/withdraw-records'])
 export class AdminWithdrawalsController {
   constructor(private readonly withdrawalsService: AdminWithdrawalsService) { }
 
@@ -191,7 +191,7 @@ export class AdminWithdrawalsController {
   @ApiBody({
     schema: {
       properties: {
-        payoutMethod: { type: 'string', enum: ['manual', 'channel'], description: '打款方式' },
+        payoutMethod: { type: 'string', enum: ['manual'], description: '打款方式（当前仅支持 manual）' },
         operatorConfirmText: { type: 'string', description: '确认文本，必须是 CONFIRM' },
         transactionNo: { type: 'string', description: '交易单号（手动打款时填写）' },
       },
@@ -200,7 +200,7 @@ export class AdminWithdrawalsController {
   })
   async payout(
     @Param('id') id: string,
-    @Body('payoutMethod') payoutMethod: 'manual' | 'channel',
+    @Body('payoutMethod') payoutMethod: 'manual',
     @Body('operatorConfirmText') operatorConfirmText: string,
     @Body('transactionNo') transactionNo?: string,
     @Headers('x-admin-id') adminId?: string,

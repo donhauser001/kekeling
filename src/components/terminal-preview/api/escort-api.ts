@@ -28,6 +28,7 @@ import type {
   EarningsResponse,
   EarningsStats,
   WithdrawInfo,
+  WithdrawRecord,
   WithdrawStats,
 } from './types'
 import type {
@@ -550,6 +551,67 @@ export const getWithdrawRecords = async (params?: {
     console.warn('[previewApi.getWithdrawRecords] 请求失败，降级使用 mock 数据:', error)
     return getMockWithdrawRecords()
   }
+}
+
+/**
+ * 设置提现账户
+ * 接口: PUT /escort-app/withdraw/account
+ * 通道: escortRequest（⚠️ 必须 escortToken）
+ */
+export const updateWithdrawAccount = async (params: {
+  method: 'bank' | 'alipay' | 'wechat'
+  account: string
+  accountName?: string
+  bankName?: string
+}): Promise<{ success: boolean }> => {
+  const currentEscortToken = getEscortToken()
+
+  // 无 token 或 mock token，模拟成功
+  if (!currentEscortToken || currentEscortToken.startsWith('mock-')) {
+    console.log('[previewApi.updateWithdrawAccount] mock 模式，模拟更新成功')
+    return { success: true }
+  }
+
+  return await escortRequest<{ success: boolean }>('/escort-app/withdraw/account', {
+    method: 'PUT',
+    body: JSON.stringify(params),
+  })
+}
+
+/**
+ * 申请提现
+ * 接口: POST /escort-app/withdraw/request
+ * 通道: escortRequest（⚠️ 必须 escortToken）
+ */
+export const requestWithdrawal = async (params: {
+  amount: number
+}): Promise<{
+  id: string
+  amount: number
+  fee: number
+  actualAmount: number
+  status: string
+  createdAt: string
+}> => {
+  const currentEscortToken = getEscortToken()
+
+  // 无 token 或 mock token，模拟返回
+  if (!currentEscortToken || currentEscortToken.startsWith('mock-')) {
+    console.log('[previewApi.requestWithdrawal] mock 模式，模拟提现成功')
+    return {
+      id: `mock-withdraw-${Date.now()}`,
+      amount: params.amount,
+      fee: 0,
+      actualAmount: params.amount,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+    }
+  }
+
+  return await escortRequest('/escort-app/withdraw/request', {
+    method: 'POST',
+    body: JSON.stringify({ amount: params.amount }),
+  })
 }
 
 // Mock 提现记录

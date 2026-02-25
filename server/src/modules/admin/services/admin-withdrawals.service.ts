@@ -124,7 +124,8 @@ export class AdminWithdrawalsService {
       netAmount: Number(w.actualAmount),
       method: w.method,
       accountMasked: maskAccount(w.account),
-      bankName: w.method === 'bank' ? '银行卡' : undefined,
+      accountName: w.method === 'bank' ? (w.wallet.withdrawAccountName || null) : null,
+      bankName: w.method === 'bank' ? (w.wallet.withdrawBankName || null) : null,
       status: w.status,
       createdAt: w.createdAt.toISOString(),
       paidAt: w.transferAt?.toISOString(),
@@ -172,7 +173,8 @@ export class AdminWithdrawalsService {
       netAmount: Number(withdrawal.actualAmount),
       method: withdrawal.method,
       accountMasked: maskAccount(withdrawal.account),
-      bankName: withdrawal.method === 'bank' ? '银行卡' : undefined,
+      accountName: withdrawal.method === 'bank' ? (withdrawal.wallet.withdrawAccountName || null) : null,
+      bankName: withdrawal.method === 'bank' ? (withdrawal.wallet.withdrawBankName || null) : null,
       status: withdrawal.status,
       createdAt: withdrawal.createdAt.toISOString(),
       paidAt: withdrawal.transferAt?.toISOString(),
@@ -224,7 +226,8 @@ export class AdminWithdrawalsService {
       netAmount: Number(withdrawal.actualAmount),
       method: withdrawal.method,
       accountMasked: maskAccount(withdrawal.account),
-      bankName: withdrawal.method === 'bank' ? '银行卡' : undefined,
+      accountName: withdrawal.method === 'bank' ? (withdrawal.wallet.withdrawAccountName || null) : null,
+      bankName: withdrawal.method === 'bank' ? (withdrawal.wallet.withdrawBankName || null) : null,
       status: withdrawal.status,
       createdAt: withdrawal.createdAt.toISOString(),
       paidAt: withdrawal.transferAt?.toISOString(),
@@ -309,9 +312,9 @@ export class AdminWithdrawalsService {
     if (action === 'approve') {
       // 批准提现
       await this.prisma.$transaction(async (tx) => {
-        // 更新提现状态
-        await tx.withdrawal.update({
-          where: { id },
+        // 状态条件更新，避免并发重复审核
+        const updated = await tx.withdrawal.updateMany({
+          where: { id, status: withdrawal.status },
           data: {
             status: 'approved',
             reviewedAt: new Date(),
@@ -319,6 +322,9 @@ export class AdminWithdrawalsService {
             reviewNote: rejectReason,
           },
         });
+        if (updated.count !== 1) {
+          throw new ConflictException('提现状态已变更，请刷新后重试');
+        }
 
         // P2: 写入操作日志
         await tx.withdrawLog.create({
@@ -355,9 +361,9 @@ export class AdminWithdrawalsService {
     } else {
       // 拒绝提现，解冻金额
       await this.prisma.$transaction(async (tx) => {
-        // 更新提现状态
-        await tx.withdrawal.update({
-          where: { id },
+        // 状态条件更新，避免并发重复审核
+        const updated = await tx.withdrawal.updateMany({
+          where: { id, status: withdrawal.status },
           data: {
             status: 'rejected',
             reviewedAt: new Date(),
@@ -365,6 +371,9 @@ export class AdminWithdrawalsService {
             reviewNote: rejectReason,
           },
         });
+        if (updated.count !== 1) {
+          throw new ConflictException('提现状态已变更，请刷新后重试');
+        }
 
         // 解冻金额到可用余额
         await tx.escortWallet.update({
@@ -437,12 +446,16 @@ export class AdminWithdrawalsService {
    */
   async payout(
     id: string,
-    payoutMethod: 'manual' | 'channel',
+    payoutMethod: 'manual',
     operatorConfirmText: string,
     transactionNo?: string,
     adminId?: string,
     adminName?: string,
   ) {
+    if (payoutMethod !== 'manual') {
+      throw new BadRequestException('当前仅支持人工打款');
+    }
+
     // 验证确认文本
     if (operatorConfirmText !== 'CONFIRM') {
       throw new BadRequestException('确认文本不匹配，请输入 CONFIRM');
@@ -478,15 +491,18 @@ export class AdminWithdrawalsService {
     }
 
     await this.prisma.$transaction(async (tx) => {
-      // 更新提现状态为处理中，然后立即完成（手动打款场景）
-      await tx.withdrawal.update({
-        where: { id },
+      // 状态条件更新，避免并发重复打款
+      const updated = await tx.withdrawal.updateMany({
+        where: { id, status: 'approved' },
         data: {
           status: 'completed',
           transferNo: transactionNo,
           transferAt: new Date(),
         },
       });
+      if (updated.count !== 1) {
+        throw new ConflictException('提现状态已变更，请刷新后重试');
+      }
 
       // 从冻结余额扣除，更新累计提现
       await tx.escortWallet.update({
@@ -505,7 +521,7 @@ export class AdminWithdrawalsService {
           operator: 'admin',
           operatorId: adminId,
           operatorName: adminName || '管理员',
-          message: `打款方式: ${payoutMethod === 'manual' ? '手动' : '通道'}${transactionNo ? `，交易号: ${transactionNo}` : ''}`,
+          message: `打款方式: 手动${transactionNo ? `，交易号: ${transactionNo}` : ''}`,
           oldStatus: withdrawal.status,
           newStatus: 'processing',
         },
@@ -583,14 +599,17 @@ export class AdminWithdrawalsService {
     }
 
     await this.prisma.$transaction(async (tx) => {
-      // 更新提现状态为失败
-      await tx.withdrawal.update({
-        where: { id },
+      // 状态条件更新，避免并发重复处理
+      const updated = await tx.withdrawal.updateMany({
+        where: { id, status: withdrawal.status },
         data: {
           status: 'failed',
           failReason: reason,
         },
       });
+      if (updated.count !== 1) {
+        throw new ConflictException('提现状态已变更，请刷新后重试');
+      }
 
       // 解冻金额到可用余额
       await tx.escortWallet.update({
@@ -811,7 +830,7 @@ export class AdminWithdrawalsService {
       wechat: '微信',
     };
 
-    const headers = ['提现单号', '陪诊员ID', '陪诊员姓名', '手机号', '提现金额', '手续费', '实际到账', '提现方式', '收款账户', '状态', '申请时间', '打款时间', '失败原因'];
+    const headers = ['提现单号', '陪诊员ID', '陪诊员姓名', '手机号', '提现金额', '手续费', '实际到账', '提现方式', '收款账户', '开户名称', '开户行', '状态', '申请时间', '打款时间', '失败原因'];
     const rows = data.map(w => [
       w.id.slice(0, 8).toUpperCase(),
       w.wallet.escort.id,
@@ -822,6 +841,8 @@ export class AdminWithdrawalsService {
       Number(w.actualAmount).toFixed(2),
       methodMap[w.method] || w.method,
       maskAccount(w.account),
+      w.method === 'bank' ? (w.wallet.withdrawAccountName || '') : '',
+      w.method === 'bank' ? (w.wallet.withdrawBankName || '') : '',
       statusMap[w.status] || w.status,
       w.createdAt.toISOString().slice(0, 19).replace('T', ' '),
       w.transferAt ? w.transferAt.toISOString().slice(0, 19).replace('T', ' ') : '',

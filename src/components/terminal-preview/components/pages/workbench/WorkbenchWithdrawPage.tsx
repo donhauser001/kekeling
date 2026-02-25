@@ -91,6 +91,24 @@ export function WorkbenchWithdrawPage({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
 
+  const refreshData = async () => {
+    setLoading(true)
+    setError(false)
+    try {
+      const data = await previewApi.getWithdrawStats()
+      setWithdrawStats(data)
+      if (data.accounts && data.accounts.length > 0) {
+        const defaultAccount = data.accounts.find(a => a.isDefault) || data.accounts[0]
+        setSelectedAccountId(defaultAccount.id)
+      }
+    } catch (err) {
+      console.error('[WorkbenchWithdrawPage] 加载提现数据失败:', err)
+      setError(true)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   // 加载数据
   useEffect(() => {
     if (!isEscort) {
@@ -98,41 +116,12 @@ export function WorkbenchWithdrawPage({
       return
     }
 
-    setLoading(true)
-    setError(false)
-
-    previewApi.getWithdrawStats()
-      .then((data) => {
-        setWithdrawStats(data)
-        // 自动选择默认账户
-        if (data.accounts && data.accounts.length > 0) {
-          const defaultAccount = data.accounts.find(a => a.isDefault) || data.accounts[0]
-          setSelectedAccountId(defaultAccount.id)
-        }
-      })
-      .catch((err) => {
-        console.error('[WorkbenchWithdrawPage] 加载提现数据失败:', err)
-        setError(true)
-      })
-      .finally(() => {
-        setLoading(false)
-      })
+    void refreshData()
   }, [isEscort])
 
   // 刷新数据
   const handleRefresh = () => {
-    setLoading(true)
-    setError(false)
-    previewApi.getWithdrawStats()
-      .then((data) => {
-        setWithdrawStats(data)
-      })
-      .catch(() => {
-        setError(true)
-      })
-      .finally(() => {
-        setLoading(false)
-      })
+    void refreshData()
   }
 
   // 非 escort 视角：显示统一的 PermissionPrompt
@@ -210,6 +199,7 @@ export function WorkbenchWithdrawPage({
           textSecondary={textSecondary}
           borderColor={borderColor}
           onNavigate={onNavigate}
+          onRefresh={refreshData}
         />
       )}
 
@@ -301,6 +291,7 @@ interface WithdrawContentProps {
   textSecondary: string
   borderColor: string
   onNavigate?: (page: string, params?: Record<string, string>) => void
+  onRefresh?: () => Promise<void> | void
 }
 
 function WithdrawContent({
@@ -316,8 +307,18 @@ function WithdrawContent({
   textSecondary,
   borderColor,
   onNavigate,
+  onRefresh,
 }: WithdrawContentProps) {
   const primaryColor = themeSettings.primaryColor
+  const [savingAccount, setSavingAccount] = useState(false)
+  const [submittingWithdraw, setSubmittingWithdraw] = useState(false)
+  const [showAddAccountForm, setShowAddAccountForm] = useState(false)
+  const [newAccountType, setNewAccountType] = useState<'bank' | 'alipay' | 'wechat'>('bank')
+  const [newAccountName, setNewAccountName] = useState('')
+  const [newBankName, setNewBankName] = useState('')
+  const [newAccountNo, setNewAccountNo] = useState('')
+  const [actionMessage, setActionMessage] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
 
   // 根据金额大小计算自适应字号（#32）
   const getAmountFontSize = (value: number): number => {
@@ -354,6 +355,74 @@ function WithdrawContent({
   const disabledReason = getDisabledReason()
   const accounts = stats.accounts ?? []
   const records = stats.recentRecords ?? []
+  const selectedAccount = accounts.find((account) => account.id === selectedAccountId)
+
+  const handleAddAccount = async () => {
+    const account = newAccountNo.trim()
+    if (!account) {
+      setActionError('请输入提现账户')
+      setActionMessage(null)
+      return
+    }
+    const accountName = newAccountName.trim()
+    const bankName = newBankName.trim()
+    if (newAccountType === 'bank' && !accountName) {
+      setActionError('请输入开户名称')
+      setActionMessage(null)
+      return
+    }
+    if (newAccountType === 'bank' && !bankName) {
+      setActionError('请输入开户行')
+      setActionMessage(null)
+      return
+    }
+
+    try {
+      setSavingAccount(true)
+      setActionError(null)
+      setActionMessage(null)
+      await previewApi.updateWithdrawAccount({
+        method: newAccountType,
+        account,
+        accountName: accountName || undefined,
+        bankName: bankName || undefined,
+      })
+      setActionMessage('提现账户已保存')
+      setNewAccountNo('')
+      setNewAccountName('')
+      setNewBankName('')
+      setShowAddAccountForm(false)
+      await onRefresh?.()
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '保存提现账户失败'
+      setActionError(message)
+      setActionMessage(null)
+    } finally {
+      setSavingAccount(false)
+    }
+  }
+
+  const handleSubmitWithdrawal = async () => {
+    if (!canWithdraw || !selectedAccount) return
+
+    try {
+      setSubmittingWithdraw(true)
+      setActionError(null)
+      setActionMessage(null)
+      await previewApi.requestWithdrawal({
+        amount: inputAmount,
+      })
+      setActionMessage('提现申请已提交')
+      setAmount('')
+      await onRefresh?.()
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '提现申请提交失败'
+      setActionError(message)
+      setActionMessage(null)
+    } finally {
+      setSubmittingWithdraw(false)
+    }
+  }
 
   return (
     <Box style={{ padding: 16 * wxScale }}>
@@ -573,7 +642,11 @@ function WithdrawContent({
               暂无绑定账户
             </Text>
             <Box
-              onClick={() => onNavigate?.('workbench-settings')}
+              onClick={() => {
+                setShowAddAccountForm((prev) => !prev)
+                setActionError(null)
+                setActionMessage(null)
+              }}
               style={{
                 marginTop: 8 * wxScale,
                 cursor: 'pointer',
@@ -607,7 +680,11 @@ function WithdrawContent({
 
         {accounts.length > 0 && (
           <Box
-            onClick={() => onNavigate?.('workbench-settings')}
+            onClick={() => {
+              setShowAddAccountForm((prev) => !prev)
+              setActionError(null)
+              setActionMessage(null)
+            }}
             style={{
               marginTop: 12 * wxScale,
               paddingTop: 10 * wxScale,
@@ -633,7 +710,154 @@ function WithdrawContent({
             </Text>
           </Box>
         )}
+
+        {showAddAccountForm && (
+          <Box
+            style={{
+              marginTop: 12 * wxScale,
+              padding: 12 * wxScale,
+              borderRadius: 8 * wxScale,
+              border: `1px solid ${borderColor}`,
+              backgroundColor: isDarkMode ? '#1f2937' : '#f9fafb',
+            }}
+          >
+            <Text
+              style={{
+                display: 'block',
+                fontSize: 13 * wxScale,
+                color: textSecondary,
+                marginBottom: 8 * wxScale,
+              }}
+            >
+              账户类型
+            </Text>
+            <Box style={{ display: 'flex', gap: 8 * wxScale, marginBottom: 10 * wxScale }}>
+              {(['bank', 'alipay', 'wechat'] as const).map((type) => {
+                const selected = newAccountType === type
+                const label = type === 'bank' ? '银行卡' : type === 'alipay' ? '支付宝' : '微信'
+                return (
+                  <Box
+                    key={type}
+                    onClick={() => setNewAccountType(type)}
+                    style={{
+                      paddingLeft: 10 * wxScale,
+                      paddingRight: 10 * wxScale,
+                      paddingTop: 6 * wxScale,
+                      paddingBottom: 6 * wxScale,
+                      borderRadius: 999,
+                      borderWidth: 1,
+                      borderStyle: 'solid',
+                      borderColor: selected ? primaryColor : borderColor,
+                      backgroundColor: selected ? `${primaryColor}15` : 'transparent',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <Text style={{ fontSize: 12 * wxScale, color: selected ? primaryColor : textSecondary }}>
+                      {label}
+                    </Text>
+                  </Box>
+                )
+              })}
+            </Box>
+
+            <Input
+              value={newAccountNo}
+              onChange={setNewAccountNo}
+              placeholder={newAccountType === 'bank' ? '请输入银行卡号' : newAccountType === 'alipay' ? '请输入支付宝账号' : '请输入微信账号'}
+              style={{
+                width: '100%',
+                paddingTop: 10 * wxScale,
+                paddingBottom: 10 * wxScale,
+                paddingLeft: 10 * wxScale,
+                paddingRight: 10 * wxScale,
+                borderRadius: 8 * wxScale,
+                border: `1px solid ${borderColor}`,
+                backgroundColor: cardBg,
+                color: textPrimary,
+              }}
+            />
+
+            {newAccountType === 'bank' && (
+              <Box style={{ marginTop: 10 * wxScale, display: 'flex', flexDirection: 'column', gap: 10 * wxScale }}>
+                <Input
+                  value={newAccountName}
+                  onChange={setNewAccountName}
+                  placeholder='请输入开户名称'
+                  style={{
+                    width: '100%',
+                    paddingTop: 10 * wxScale,
+                    paddingBottom: 10 * wxScale,
+                    paddingLeft: 10 * wxScale,
+                    paddingRight: 10 * wxScale,
+                    borderRadius: 8 * wxScale,
+                    border: `1px solid ${borderColor}`,
+                    backgroundColor: cardBg,
+                    color: textPrimary,
+                  }}
+                />
+                <Input
+                  value={newBankName}
+                  onChange={setNewBankName}
+                  placeholder='请输入开户行'
+                  style={{
+                    width: '100%',
+                    paddingTop: 10 * wxScale,
+                    paddingBottom: 10 * wxScale,
+                    paddingLeft: 10 * wxScale,
+                    paddingRight: 10 * wxScale,
+                    borderRadius: 8 * wxScale,
+                    border: `1px solid ${borderColor}`,
+                    backgroundColor: cardBg,
+                    color: textPrimary,
+                  }}
+                />
+              </Box>
+            )}
+
+            <Button
+              disabled={savingAccount}
+              onClick={handleAddAccount}
+              style={{
+                marginTop: 10 * wxScale,
+                width: '100%',
+                borderRadius: 8 * wxScale,
+                paddingTop: 10 * wxScale,
+                paddingBottom: 10 * wxScale,
+                backgroundColor: savingAccount ? (isDarkMode ? '#4b5563' : '#d1d5db') : primaryColor,
+                color: '#fff',
+                fontSize: 14 * wxScale,
+                fontWeight: 600,
+              }}
+            >
+              {savingAccount ? '保存中...' : '保存提现账户'}
+            </Button>
+          </Box>
+        )}
       </Box>
+
+      {(actionError || actionMessage) && (
+        <Box
+          style={{
+            marginTop: 12 * wxScale,
+            padding: 10 * wxScale,
+            borderRadius: 8 * wxScale,
+            backgroundColor: actionError
+              ? (isDarkMode ? '#451a1a' : '#fef2f2')
+              : (isDarkMode ? '#052e16' : '#f0fdf4'),
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 12 * wxScale,
+              color: actionError
+                ? (isDarkMode ? '#fca5a5' : '#dc2626')
+                : (isDarkMode ? '#86efac' : '#16a34a'),
+            }}
+          >
+            {actionError || actionMessage}
+          </Text>
+        </Box>
+      )}
 
       {/* 到账金额预览 */}
       {inputAmount > 0 && (
@@ -683,10 +907,8 @@ function WithdrawContent({
 
       {/* 提现按钮 */}
       <Button
-        disabled={!canWithdraw}
-        onClick={() => {
-          console.log('[WorkbenchWithdrawPage] 提现:', { amount: inputAmount, accountId: selectedAccountId })
-        }}
+        disabled={!canWithdraw || submittingWithdraw}
+        onClick={handleSubmitWithdrawal}
         style={{
           width: '100%',
           marginTop: 16 * wxScale,
@@ -695,15 +917,15 @@ function WithdrawContent({
           borderRadius: 9999,
           fontSize: 16 * wxScale,
           fontWeight: 600,
-          backgroundColor: canWithdraw
+          backgroundColor: canWithdraw && !submittingWithdraw
             ? primaryColor
             : (isDarkMode ? '#4b5563' : '#e5e7eb'),
-          color: canWithdraw
+          color: canWithdraw && !submittingWithdraw
             ? '#ffffff'
             : (isDarkMode ? '#9ca3af' : '#6b7280'),
         }}
       >
-        {disabledReason || '确认提现'}
+        {submittingWithdraw ? '提交中...' : (disabledReason || '确认提现')}
       </Button>
 
       {/* 最近提现记录 */}
@@ -818,6 +1040,7 @@ function AccountCard({
 }: AccountCardProps) {
   const primaryColor = themeSettings.primaryColor
   const IconComponent = getAccountIcon(account.type)
+  const tail4 = account.accountNo.slice(-4)
 
   return (
     <Box
@@ -896,7 +1119,7 @@ function AccountCard({
             marginTop: 2 * wxScale,
           }}
         >
-          {account.type === 'bank' ? `尾号 ${account.accountNo.replace(/\*/g, '')}` : account.accountNo}
+          {account.type === 'bank' ? `尾号 ${tail4}` : account.accountNo}
         </Text>
       </Box>
       {isSelected && (

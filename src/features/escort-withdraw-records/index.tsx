@@ -443,6 +443,8 @@ export function EscortWithdrawRecords() {
                       <TableHead className='text-right'>实际到账</TableHead>
                       <TableHead>提现方式</TableHead>
                       <TableHead>账户信息</TableHead>
+                      <TableHead>开户名称</TableHead>
+                      <TableHead>开户行</TableHead>
                       <TableHead>状态</TableHead>
                       <TableHead>申请时间</TableHead>
                       <TableHead>打款时间</TableHead>
@@ -488,12 +490,17 @@ export function EscortWithdrawRecords() {
                           <TableCell>
                             <div className='flex flex-col'>
                               <span className='font-mono text-xs'>{record.accountMasked}</span>
-                              {record.bankName && (
-                                <span className='text-muted-foreground text-xs'>
-                                  {record.bankName}
-                                </span>
-                              )}
                             </div>
+                          </TableCell>
+                          <TableCell className='text-sm'>
+                            {record.method === 'bank'
+                              ? (record.accountName || '--')
+                              : '--'}
+                          </TableCell>
+                          <TableCell className='text-sm'>
+                            {record.method === 'bank'
+                              ? (record.bankName || '--')
+                              : '--'}
                           </TableCell>
                           <TableCell>
                             <Badge className={cn('gap-1', statusInfo?.color)}>
@@ -587,4 +594,3 @@ export function EscortWithdrawRecords() {
     </>
   )
 }
-

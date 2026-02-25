@@ -2,13 +2,15 @@
  * 结算配置服务
  */
 
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { Decimal } from '@prisma/client/runtime/library';
 
 export interface UpdateSettlementConfigDto {
     defaultRate?: number;           // 默认分成比例 (0-100)
     minWithdrawAmount?: number;     // 最低提现金额
+    maxWithdrawAmount?: number;     // 单笔最高提现金额
+    withdrawEstimatedHours?: number; // 预计到账时间（小时）
     withdrawFeeRate?: number;       // 提现手续费率 (0-1)
     withdrawFeeFixed?: number;      // 固定手续费
     settlementMode?: string;        // realtime | frozen
@@ -35,6 +37,8 @@ export class AdminSettlementService {
                 data: {
                     defaultRate: 70,
                     minWithdrawAmount: 100,
+                    maxWithdrawAmount: 50000,
+                    withdrawEstimatedHours: 24,
                     withdrawFeeRate: 0,
                     withdrawFeeFixed: 0,
                     settlementMode: 'realtime',
@@ -47,6 +51,8 @@ export class AdminSettlementService {
             id: config.id,
             defaultRate: config.defaultRate,
             minWithdrawAmount: Number(config.minWithdrawAmount),
+            maxWithdrawAmount: Number(config.maxWithdrawAmount),
+            withdrawEstimatedHours: config.withdrawEstimatedHours,
             withdrawFeeRate: Number(config.withdrawFeeRate),
             withdrawFeeFixed: Number(config.withdrawFeeFixed),
             settlementMode: config.settlementMode,
@@ -75,6 +81,12 @@ export class AdminSettlementService {
         if (dto.minWithdrawAmount !== undefined) {
             updateData.minWithdrawAmount = new Decimal(dto.minWithdrawAmount);
         }
+        if (dto.maxWithdrawAmount !== undefined) {
+            updateData.maxWithdrawAmount = new Decimal(dto.maxWithdrawAmount);
+        }
+        if (dto.withdrawEstimatedHours !== undefined) {
+            updateData.withdrawEstimatedHours = Math.max(1, Math.floor(dto.withdrawEstimatedHours));
+        }
         if (dto.withdrawFeeRate !== undefined) {
             updateData.withdrawFeeRate = new Decimal(dto.withdrawFeeRate);
         }
@@ -94,6 +106,12 @@ export class AdminSettlementService {
             updateData.withdrawTimeRange = JSON.stringify(dto.withdrawTimeRange);
         }
 
+        const currentMin = dto.minWithdrawAmount ?? Number(existingConfig?.minWithdrawAmount ?? 100);
+        const currentMax = dto.maxWithdrawAmount ?? Number(existingConfig?.maxWithdrawAmount ?? 50000);
+        if (currentMax < currentMin) {
+            throw new BadRequestException('单笔最高提现金额不能小于最低提现金额');
+        }
+
         if (existingConfig) {
             await this.prisma.commissionConfig.update({
                 where: { id: existingConfig.id },
@@ -104,6 +122,8 @@ export class AdminSettlementService {
                 data: {
                     defaultRate: dto.defaultRate ?? 70,
                     minWithdrawAmount: dto.minWithdrawAmount ?? 100,
+                    maxWithdrawAmount: dto.maxWithdrawAmount ?? 50000,
+                    withdrawEstimatedHours: dto.withdrawEstimatedHours ?? 24,
                     withdrawFeeRate: dto.withdrawFeeRate ?? 0,
                     withdrawFeeFixed: dto.withdrawFeeFixed ?? 0,
                     settlementMode: dto.settlementMode ?? 'realtime',
@@ -272,4 +292,3 @@ export class AdminSettlementService {
         return { processed: pendingRecords.length, totalAmount };
     }
 }
-

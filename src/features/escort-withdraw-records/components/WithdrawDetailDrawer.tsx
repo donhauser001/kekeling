@@ -287,9 +287,15 @@ export function WithdrawDetailDrawer({
                     <span className='text-muted-foreground'>收款账户</span>
                     <span className='font-mono'>{detail.accountMasked}</span>
                   </div>
+                  {detail.accountName && (
+                    <div className='flex justify-between'>
+                      <span className='text-muted-foreground'>开户名称</span>
+                      <span>{detail.accountName}</span>
+                    </div>
+                  )}
                   {detail.bankName && (
                     <div className='flex justify-between'>
-                      <span className='text-muted-foreground'>银行名称</span>
+                      <span className='text-muted-foreground'>开户行</span>
                       <span>{detail.bankName}</span>
                     </div>
                   )}
@@ -390,7 +396,6 @@ export function WithdrawDetailDrawer({
     </Sheet>
   )
 }
-
 
 
 

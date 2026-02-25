@@ -21,8 +21,6 @@
  */
 
 import { useState } from 'react'
-import { format } from 'date-fns'
-import { zhCN } from 'date-fns/locale'
 import {
   Loader2,
   AlertTriangle,
@@ -43,7 +41,6 @@ import {
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
@@ -84,7 +81,6 @@ export function WithdrawPayoutModal({
   onSuccess,
 }: WithdrawPayoutModalProps) {
   // 表单状态
-  const [payoutMethod, setPayoutMethod] = useState<'manual' | 'channel'>('manual')
   const [transactionNo, setTransactionNo] = useState('')
   const [confirmInput, setConfirmInput] = useState('')
 
@@ -94,22 +90,10 @@ export function WithdrawPayoutModal({
   // 打款 mutation
   const payoutMutation = useAdminWithdrawPayout()
 
-  // 格式化时间 - 保留用于未来时间显示
-  const _formatTime = (dateStr?: string) => {
-    if (!dateStr) return '--'
-    try {
-      return format(new Date(dateStr), 'yyyy-MM-dd HH:mm:ss', { locale: zhCN })
-    } catch {
-      return dateStr
-    }
-  }
-  void _formatTime
-
   const methodInfo = detail ? methodConfig[detail.method] : null
 
   // 重置表单
   const resetForm = () => {
-    setPayoutMethod('manual')
     setTransactionNo('')
     setConfirmInput('')
   }
@@ -131,8 +115,8 @@ export function WithdrawPayoutModal({
       return
     }
 
-    // 手动打款时建议填写交易号
-    if (payoutMethod === 'manual' && !transactionNo.trim()) {
+    // 建议填写交易号，便于人工打款后审计追溯
+    if (!transactionNo.trim()) {
       const confirmed = window.confirm('未填写交易号，确定继续吗？')
       if (!confirmed) return
     }
@@ -141,7 +125,7 @@ export function WithdrawPayoutModal({
       await payoutMutation.mutateAsync({
         id: withdrawId,
         data: {
-          payoutMethod,
+          payoutMethod: 'manual',
           operatorConfirmText: 'CONFIRM',
           transactionNo: transactionNo.trim() || undefined,
         },
@@ -232,8 +216,14 @@ export function WithdrawPayoutModal({
               </div>
               {detail.bankName && (
                 <div className='flex justify-between'>
-                  <span className='text-muted-foreground'>银行名称</span>
+                  <span className='text-muted-foreground'>开户行</span>
                   <span className='font-medium'>{detail.bankName}</span>
+                </div>
+              )}
+              {detail.accountName && (
+                <div className='flex justify-between'>
+                  <span className='text-muted-foreground'>开户名称</span>
+                  <span className='font-medium'>{detail.accountName}</span>
                 </div>
               )}
               <Separator />
@@ -250,41 +240,23 @@ export function WithdrawPayoutModal({
               </div>
             </div>
 
-            {/* ③ 打款方式选择 */}
+            {/* ③ 打款信息 */}
             <div className='space-y-3'>
               <Label>打款方式</Label>
-              <RadioGroup
-                value={payoutMethod}
-                onValueChange={(v) => setPayoutMethod(v as 'manual' | 'channel')}
-                className='space-y-2'
-              >
-                <div className='flex items-center space-x-3'>
-                  <RadioGroupItem value='manual' id='manual' />
-                  <Label htmlFor='manual' className='cursor-pointer'>
-                    手动打款（线下）
-                  </Label>
-                </div>
-                <div className='flex items-center space-x-3'>
-                  <RadioGroupItem value='channel' id='channel' disabled />
-                  <Label htmlFor='channel' className='cursor-pointer text-muted-foreground'>
-                    支付通道打款（预留）
-                  </Label>
-                </div>
-              </RadioGroup>
-
-              {payoutMethod === 'manual' && (
-                <div className='space-y-2'>
-                  <Label htmlFor='transactionNo'>
-                    交易单号 <span className='text-muted-foreground text-xs'>（建议填写）</span>
-                  </Label>
-                  <Input
-                    id='transactionNo'
-                    value={transactionNo}
-                    onChange={(e) => setTransactionNo(e.target.value)}
-                    placeholder='请输入银行/支付宝/微信转账单号...'
-                  />
-                </div>
-              )}
+              <div className='rounded-md border bg-muted/40 p-3 text-sm'>
+                当前模式：人工打款（线下）
+              </div>
+              <div className='space-y-2'>
+                <Label htmlFor='transactionNo'>
+                  交易单号 <span className='text-muted-foreground text-xs'>（建议填写）</span>
+                </Label>
+                <Input
+                  id='transactionNo'
+                  value={transactionNo}
+                  onChange={(e) => setTransactionNo(e.target.value)}
+                  placeholder='请输入银行/支付宝/微信转账单号...'
+                />
+              </div>
             </div>
 
             {/* ④ 二次确认输入 */}
@@ -335,7 +307,6 @@ export function WithdrawPayoutModal({
     </Dialog>
   )
 }
-
 
 
 

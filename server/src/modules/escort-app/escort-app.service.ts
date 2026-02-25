@@ -3,6 +3,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { Decimal } from '@prisma/client/runtime/library';
 import { CommissionService } from './commission.service';
 import { NotificationService } from '../notification/notification.service';
+import { ConfigService } from '../config/config.service';
 
 @Injectable()
 export class EscortAppService {
@@ -12,6 +13,7 @@ export class EscortAppService {
     private prisma: PrismaService,
     private commissionService: CommissionService,
     private notificationService: NotificationService,
+    private configService: ConfigService,
   ) { }
 
   // 获取陪诊员ID（辅助方法）
@@ -30,6 +32,17 @@ export class EscortAppService {
   private parseTimeToMinutes(time: string): number {
     const [hours, minutes] = time.split(':').map(Number);
     return (hours || 0) * 60 + (minutes || 0);
+  }
+
+  // 提现账户脱敏（展示用途）
+  private maskWithdrawAccount(method: string, account: string): string {
+    if (!account) return '';
+    if (method === 'bank') {
+      const last4 = account.slice(-4);
+      return `****${last4}`;
+    }
+    if (account.length <= 7) return account;
+    return `${account.slice(0, 3)}****${account.slice(-4)}`;
   }
 
   /**
@@ -1458,18 +1471,23 @@ export class EscortAppService {
   }
 
   // 申请提现
-  async requestWithdrawal(userId: string, params: { amount: number; method: string; account: string }) {
+  async requestWithdrawal(userId: string, params: { amount: number }) {
     const escortId = await this.getEscortId(userId);
-    const { amount, method, account } = params;
+    const { amount } = params;
 
-    // 获取全局配置
+    // 获取提现配置（以结算配置为准，兼容旧小程序配置兜底）
     const config = await this.prisma.commissionConfig.findFirst();
-    const minAmount = config ? Number(config.minWithdrawAmount) : 100;
+    const miniappSettings = await this.configService.getMiniappSettings();
+    const minAmount = Number(config?.minWithdrawAmount ?? miniappSettings.withdrawMinAmount ?? 100);
+    const maxAmount = Number(config?.maxWithdrawAmount ?? miniappSettings.withdrawMaxAmount ?? 50000);
     const feeRate = config ? Number(config.withdrawFeeRate) : 0;
     const feeFixed = config ? Number(config.withdrawFeeFixed) : 0;
 
     if (amount < minAmount) {
       throw new BadRequestException(`最低提现金额为 ¥${minAmount}`);
+    }
+    if (amount > maxAmount) {
+      throw new BadRequestException(`单笔最高提现金额为 ¥${maxAmount}`);
     }
 
     // 获取钱包
@@ -1484,6 +1502,11 @@ export class EscortAppService {
     if (Number(wallet.balance) < amount) {
       throw new BadRequestException('余额不足');
     }
+    if (!wallet.withdrawMethod || !wallet.withdrawAccount) {
+      throw new BadRequestException('请先绑定提现账户');
+    }
+    const withdrawMethod = wallet.withdrawMethod;
+    const withdrawAccount = wallet.withdrawAccount;
 
     // 检查是否有待处理的提现
     const pendingWithdrawal = await this.prisma.withdrawal.findFirst({
@@ -1509,8 +1532,8 @@ export class EscortAppService {
         data: {
           balance: { decrement: amount },
           frozenBalance: { increment: amount },
-          withdrawMethod: method,
-          withdrawAccount: account,
+          withdrawMethod,
+          withdrawAccount,
         },
       });
 
@@ -1534,8 +1557,8 @@ export class EscortAppService {
           amount,
           fee,
           actualAmount,
-          method,
-          account,
+          method: withdrawMethod,
+          account: withdrawAccount,
           status: 'pending',
         },
       });
@@ -1552,14 +1575,37 @@ export class EscortAppService {
   }
 
   // 更新提现账户
-  async updateWithdrawAccount(userId: string, method: string, account: string) {
+  async updateWithdrawAccount(
+    userId: string,
+    method: string,
+    account: string,
+    accountName?: string,
+    bankName?: string,
+  ) {
     const escortId = await this.getEscortId(userId);
+    const normalizedAccount = (account || '').trim();
+    const normalizedAccountName = (accountName || '').trim();
+    const normalizedBankName = (bankName || '').trim();
+
+    if (!normalizedAccount) {
+      throw new BadRequestException('提现账户不能为空');
+    }
+    if (method === 'bank') {
+      if (!normalizedAccountName) {
+        throw new BadRequestException('银行卡开户名称不能为空');
+      }
+      if (!normalizedBankName) {
+        throw new BadRequestException('银行卡开户行不能为空');
+      }
+    }
 
     await this.prisma.escortWallet.update({
       where: { escortId },
       data: {
         withdrawMethod: method,
-        withdrawAccount: account,
+        withdrawAccount: normalizedAccount,
+        withdrawAccountName: normalizedAccountName || null,
+        withdrawBankName: method === 'bank' ? normalizedBankName : null,
       },
     });
 
@@ -2460,9 +2506,12 @@ export class EscortAppService {
       throw new NotFoundException('钱包不存在');
     }
 
-    // 获取全局配置
+    // 获取提现配置（以结算配置为准，兼容旧小程序配置兜底）
     const config = await this.prisma.commissionConfig.findFirst();
-    const minAmount = config ? Number(config.minWithdrawAmount) : 100;
+    const miniappSettings = await this.configService.getMiniappSettings();
+    const minAmount = Number(config?.minWithdrawAmount ?? miniappSettings.withdrawMinAmount ?? 100);
+    const maxAmount = Number(config?.maxWithdrawAmount ?? miniappSettings.withdrawMaxAmount ?? 50000);
+    const estimatedHours = Number(config?.withdrawEstimatedHours ?? miniappSettings.withdrawEstimatedHours ?? 24);
     const feeRate = config ? Number(config.withdrawFeeRate) : 0;
 
     // 获取待处理提现金额
@@ -2493,14 +2542,19 @@ export class EscortAppService {
       name: string;
       accountNo: string;
       isDefault: boolean;
+      bankName?: string;
     }> = [];
     if (wallet.withdrawMethod && wallet.withdrawAccount) {
       accounts.push({
         id: 'default',
         type: wallet.withdrawMethod as 'bank' | 'alipay' | 'wechat',
-        name: wallet.withdrawMethod === 'bank' ? '储蓄卡' :
-          wallet.withdrawMethod === 'alipay' ? '支付宝' : '微信',
-        accountNo: wallet.withdrawAccount,
+        name: wallet.withdrawMethod === 'bank'
+          ? (wallet.withdrawAccountName || '储蓄卡')
+          : wallet.withdrawMethod === 'alipay'
+            ? '支付宝'
+            : '微信',
+        accountNo: this.maskWithdrawAccount(wallet.withdrawMethod, wallet.withdrawAccount),
+        bankName: wallet.withdrawMethod === 'bank' ? (wallet.withdrawBankName || undefined) : undefined,
         isDefault: true,
       });
     }
@@ -2528,9 +2582,9 @@ export class EscortAppService {
       withdrawable: Number(wallet.balance || 0),
       pendingAmount: Number(pendingWithdrawals._sum.amount || 0),
       minAmount,
-      maxAmount: 50000, // 单笔最高 5 万
+      maxAmount,
       feeRate,
-      estimatedHours: 24, // 预计 24 小时到账
+      estimatedHours,
       remainingTimes,
       accounts,
       recentRecords,
@@ -2729,4 +2783,3 @@ export class EscortAppService {
     };
   }
 }
-

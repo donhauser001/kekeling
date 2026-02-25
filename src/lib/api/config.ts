@@ -112,6 +112,10 @@ export interface MiniappSettings {
   devMode: boolean              // 小程序开发模式
   skipWorkbenchLogin: boolean   // 跳过工作台登录验证
   devEscortId: string           // 开发模式下的默认陪诊员ID
+  escortWorkbenchEnabled: boolean // 陪诊员工作台入口开关
+  withdrawMinAmount: number       // 最低提现金额
+  withdrawMaxAmount: number       // 单笔最高提现金额
+  withdrawEstimatedHours: number  // 预计到账时间（小时）
 }
 
 // ============================================================================

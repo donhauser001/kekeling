@@ -90,6 +90,5 @@
 ## 参考代码
 
 - 预览器主组件：`src/components/terminal-preview/index.tsx`
-- 终端页面源码：`miniapp/src/pages/`
+- 终端页面宿主入口：`miniapp-shell/src/pages/main/`
 - 管理后台页面：`src/features/`
-

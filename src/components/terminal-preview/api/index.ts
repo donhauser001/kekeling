@@ -200,6 +200,8 @@ export const previewApi = {
   getWorkbenchWithdrawInfo: escortApi.getWorkbenchWithdrawInfo,
   getWithdrawStats: escortApi.getWithdrawStats,
   getWithdrawRecords: escortApi.getWithdrawRecords,
+  updateWithdrawAccount: escortApi.updateWithdrawAccount,
+  requestWithdrawal: escortApi.requestWithdrawal,
 
   // 设置与资料
   getWorkbenchSettings: escortApi.getWorkbenchSettings,

@@ -545,6 +545,12 @@ export const MINIAPP_CONFIG_KEYS = {
   DEV_ESCORT_ID: 'miniapp.dev_escort_id',
   // 陪诊员工作台入口开关
   ESCORT_WORKBENCH_ENABLED: 'miniapp.escort_workbench_enabled',
+  // 提现规则：最低提现金额
+  WITHDRAW_MIN_AMOUNT: 'miniapp.withdraw_min_amount',
+  // 提现规则：单笔最高提现金额
+  WITHDRAW_MAX_AMOUNT: 'miniapp.withdraw_max_amount',
+  // 提现规则：预计到账时间（小时）
+  WITHDRAW_ESTIMATED_HOURS: 'miniapp.withdraw_estimated_hours',
 } as const;
 
 // 小程序配置默认值
@@ -553,6 +559,9 @@ export const MINIAPP_CONFIG_DEFAULTS: Record<string, any> = {
   [MINIAPP_CONFIG_KEYS.SKIP_WORKBENCH_LOGIN]: false,
   [MINIAPP_CONFIG_KEYS.DEV_ESCORT_ID]: '',
   [MINIAPP_CONFIG_KEYS.ESCORT_WORKBENCH_ENABLED]: true,
+  [MINIAPP_CONFIG_KEYS.WITHDRAW_MIN_AMOUNT]: 100,
+  [MINIAPP_CONFIG_KEYS.WITHDRAW_MAX_AMOUNT]: 50000,
+  [MINIAPP_CONFIG_KEYS.WITHDRAW_ESTIMATED_HOURS]: 24,
 };
 
 // 小程序设置类型
@@ -565,6 +574,12 @@ export interface MiniappSettings {
   devEscortId: string;
   /** 陪诊员工作台入口是否显示（关闭后个人页不显示成为陪诊员/工作台按钮） */
   escortWorkbenchEnabled: boolean;
+  /** 最低提现金额 */
+  withdrawMinAmount: number;
+  /** 单笔最高提现金额 */
+  withdrawMaxAmount: number;
+  /** 预计到账时间（小时） */
+  withdrawEstimatedHours: number;
 }
 
 // ============================================
