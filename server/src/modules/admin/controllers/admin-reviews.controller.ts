@@ -1,9 +1,11 @@
-import { Controller, Get, Post, Param, Query, Body } from '@nestjs/common'
+import { Controller, Get, Post, Param, Query, Body, UseGuards } from '@nestjs/common'
 import { ApiTags, ApiOperation, ApiQuery, ApiParam, ApiBody } from '@nestjs/swagger'
 import { AdminReviewsService, HideReviewDto } from '../services/admin-reviews.service'
 import { ApiResponse } from '../../../common/response/api-response'
+import { AdminGuard } from '../../auth/guards/admin.guard'
 
 @ApiTags('管理后台 - 评价管理')
+@UseGuards(AdminGuard)
 @Controller('admin/reviews')
 export class AdminReviewsController {
     constructor(private readonly reviewsService: AdminReviewsService) { }

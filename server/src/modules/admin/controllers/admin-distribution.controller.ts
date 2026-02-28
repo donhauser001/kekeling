@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Put, Body, Param, UseGuards, Query, NotFoundException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { AdminGuard } from '../../auth/guards/admin.guard';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { PromotionService } from '../../distribution/promotion.service';
 import { DistributionService } from '../../distribution/distribution.service';
@@ -24,7 +24,7 @@ interface TreeNode {
 
 @ApiTags('管理端-分销管理')
 @Controller('admin/distribution')
-@UseGuards(JwtAuthGuard)
+@UseGuards(AdminGuard)
 @ApiBearerAuth()
 export class AdminDistributionController {
   constructor(

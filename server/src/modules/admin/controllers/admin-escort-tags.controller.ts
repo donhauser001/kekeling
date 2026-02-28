@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, Query , UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam, ApiQuery, ApiBody } from '@nestjs/swagger';
 import {
   AdminEscortTagsService,
@@ -6,8 +6,10 @@ import {
   UpdateEscortTagDto,
 } from '../services/admin-escort-tags.service';
 import { ApiResponse } from '../../../common/response/api-response';
+import { AdminGuard } from '../../auth/guards/admin.guard';
 
 @ApiTags('管理端-陪诊员标签')
+@UseGuards(AdminGuard)
 @Controller('admin/escort-tags')
 export class AdminEscortTagsController {
   constructor(private readonly tagsService: AdminEscortTagsService) { }

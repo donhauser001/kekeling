@@ -1,9 +1,11 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get , UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { AdminDashboardService } from '../services/admin-dashboard.service';
 import { ApiResponse } from '../../../common/response/api-response';
+import { AdminGuard } from '../../auth/guards/admin.guard';
 
 @ApiTags('管理端-仪表盘')
+@UseGuards(AdminGuard)
 @Controller('admin/dashboard')
 export class AdminDashboardController {
   constructor(private readonly dashboardService: AdminDashboardService) {}

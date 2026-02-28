@@ -1,6 +1,7 @@
-import { Controller, Get, Put, Body } from '@nestjs/common';
+import { Controller, Get, Put, Body , UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { ApiResponse } from '../../../common/response/api-response';
+import { AdminGuard } from '../../auth/guards/admin.guard';
 import { CommissionService } from '../../escort-app/commission.service';
 
 class UpdateCommissionConfigDto {
@@ -14,6 +15,7 @@ class UpdateCommissionConfigDto {
 }
 
 @ApiTags('管理后台 - 分成配置')
+@UseGuards(AdminGuard)
 @Controller('admin/commission')
 export class AdminCommissionController {
   constructor(private readonly commissionService: CommissionService) { }

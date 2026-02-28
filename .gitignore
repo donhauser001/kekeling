@@ -36,3 +36,9 @@ backups/
 
 # pnpm store
 .pnpm-store/
+
+# Sensitive TLS certificates and keys (never commit)
+server/ssl/*.key
+server/ssl/*.pem
+ssl_cert/*.key
+ssl_cert/*.pem

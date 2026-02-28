@@ -1,9 +1,11 @@
-import { Controller, Get, Post, Put, Param, Query, Body } from '@nestjs/common';
+import { Controller, Get, Post, Put, Param, Query, Body , UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiQuery, ApiParam, ApiBody } from '@nestjs/swagger';
 import { AdminComplaintsService, HandleComplaintDto } from '../services/admin-complaints.service';
 import { ApiResponse } from '../../../common/response/api-response';
+import { AdminGuard } from '../../auth/guards/admin.guard';
 
 @ApiTags('管理后台 - 投诉管理')
+@UseGuards(AdminGuard)
 @Controller('admin/complaints')
 export class AdminComplaintsController {
   constructor(private readonly complaintsService: AdminComplaintsService) { }

@@ -1,10 +1,12 @@
-import { Controller, Get, Post, Put, Delete, Param, Query, Body } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Query, Body , UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiQuery, ApiParam, ApiBody } from '@nestjs/swagger';
 import { AdminPatientsService } from '../services/admin-patients.service';
 import { CreatePatientDto, UpdatePatientDto } from '../../patients/dto/patient.dto';
 import { ApiResponse } from '../../../common/response/api-response';
+import { AdminGuard } from '../../auth/guards/admin.guard';
 
 @ApiTags('管理端-就诊人')
+@UseGuards(AdminGuard)
 @Controller('admin/patients')
 export class AdminPatientsController {
   constructor(private readonly patientsService: AdminPatientsService) { }
@@ -74,6 +76,7 @@ export class AdminPatientsController {
 }
 
 @ApiTags('管理端-用户就诊人')
+@UseGuards(AdminGuard)
 @Controller('admin/users/:userId/patients')
 export class AdminUserPatientsController {
   constructor(private readonly patientsService: AdminPatientsService) { }

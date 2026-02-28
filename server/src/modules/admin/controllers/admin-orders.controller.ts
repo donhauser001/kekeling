@@ -1,10 +1,12 @@
-import { Controller, Get, Post, Put, Delete, Param, Query, Body } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Query, Body , UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiQuery, ApiParam, ApiBody } from '@nestjs/swagger';
 import { AdminOrdersService } from '../services/admin-orders.service';
 import { ApiResponse } from '../../../common/response/api-response';
+import { AdminGuard } from '../../auth/guards/admin.guard';
 import { DispatchService } from '../../escort-app/dispatch.service';
 
 @ApiTags('管理端-订单')
+@UseGuards(AdminGuard)
 @Controller('admin/orders')
 export class AdminOrdersController {
   constructor(

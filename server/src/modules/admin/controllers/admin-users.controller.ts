@@ -1,9 +1,11 @@
-import { Controller, Get, Put, Param, Query, Body } from '@nestjs/common';
+import { Controller, Get, Put, Param, Query, Body , UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiQuery, ApiParam, ApiBody } from '@nestjs/swagger';
 import { AdminUsersService } from '../services/admin-users.service';
 import { ApiResponse } from '../../../common/response/api-response';
+import { AdminGuard } from '../../auth/guards/admin.guard';
 
 @ApiTags('管理端-用户')
+@UseGuards(AdminGuard)
 @Controller('admin/users')
 export class AdminUsersController {
   constructor(private readonly usersService: AdminUsersService) {}

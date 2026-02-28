@@ -7,9 +7,11 @@ import {
     Body,
     Param,
     Query,
+    UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiQuery, ApiParam, ApiBody } from '@nestjs/swagger';
 import { ApiResponse } from '../../../common/response/api-response';
+import { AdminGuard } from '../../auth/guards/admin.guard';
 import { ChatSessionService } from '../../chat/chat-session.service';
 import { ChatMessageService } from '../../chat/chat-message.service';
 import { QuickReplyService } from '../../chat/quick-reply.service';
@@ -25,6 +27,7 @@ import {
 } from '../../chat/dto/chat.dto';
 
 @ApiTags('管理后台 - 在线客服')
+@UseGuards(AdminGuard)
 @Controller('admin/chat')
 export class AdminChatController {
     constructor(

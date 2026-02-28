@@ -25,12 +25,12 @@ import {
   CreateConsumeUpgradeRuleDto,
   GrantMembershipDto,
 } from '../../membership/dto/membership.dto';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { AdminGuard } from '../../auth/guards/admin.guard';
 import { ApiResponse } from '../../../common/response/api-response';
 
 @ApiTags('管理端-会员管理')
 @Controller('admin/membership')
-@UseGuards(JwtAuthGuard)
+@UseGuards(AdminGuard)
 @ApiBearerAuth()
 export class AdminMembershipController {
   constructor(private readonly membershipService: MembershipService) {}
@@ -200,4 +200,3 @@ export class AdminMembershipController {
     return ApiResponse.success(null, '删除成功');
   }
 }
-

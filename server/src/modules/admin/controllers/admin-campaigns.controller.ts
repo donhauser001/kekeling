@@ -7,10 +7,12 @@ import {
   Body,
   Param,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { CampaignsService } from '../../campaigns/campaigns.service';
 import { ApiResponse } from '../../../common/response/api-response';
+import { AdminGuard } from '../../auth/guards/admin.guard';
 import {
   CreateCampaignDto,
   UpdateCampaignDto,
@@ -20,6 +22,7 @@ import {
 } from '../../campaigns/dto/campaign.dto';
 
 @ApiTags('管理端-活动系统')
+@UseGuards(AdminGuard)
 @ApiBearerAuth()
 @Controller('admin/campaigns')
 export class AdminCampaignsController {
@@ -122,4 +125,3 @@ export class AdminCampaignsController {
     return ApiResponse.success(null, '删除成功');
   }
 }
-

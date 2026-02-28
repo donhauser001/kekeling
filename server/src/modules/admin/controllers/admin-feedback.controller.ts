@@ -1,9 +1,11 @@
-import { Controller, Get, Post, Param, Query, Body } from '@nestjs/common'
+import { Controller, Get, Post, Param, Query, Body, UseGuards } from '@nestjs/common'
 import { ApiTags, ApiOperation, ApiQuery, ApiParam, ApiBody } from '@nestjs/swagger'
 import { AdminFeedbackService, HandleFeedbackDto } from '../services/admin-feedback.service'
 import { ApiResponse } from '../../../common/response/api-response'
+import { AdminGuard } from '../../auth/guards/admin.guard'
 
 @ApiTags('管理后台 - 意见反馈')
+@UseGuards(AdminGuard)
 @Controller('admin/feedback')
 export class AdminFeedbackController {
   constructor(private readonly feedbackService: AdminFeedbackService) { }
@@ -76,4 +78,3 @@ export class AdminFeedbackController {
     return ApiResponse.success(data, '处理成功')
   }
 }
-

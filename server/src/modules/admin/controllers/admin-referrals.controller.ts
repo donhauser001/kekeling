@@ -7,16 +7,19 @@ import {
   Body,
   Param,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { ReferralsService } from '../../referrals/referrals.service';
 import { ApiResponse } from '../../../common/response/api-response';
+import { AdminGuard } from '../../auth/guards/admin.guard';
 import {
   CreateReferralRuleDto,
   UpdateReferralRuleDto,
 } from '../../referrals/dto/referral.dto';
 
 @ApiTags('管理端-邀请系统')
+@UseGuards(AdminGuard)
 @ApiBearerAuth()
 @Controller('admin/referrals')
 export class AdminReferralsController {
@@ -97,4 +100,3 @@ export class AdminReferralsController {
     return ApiResponse.success(data, '已标记为可疑');
   }
 }
-

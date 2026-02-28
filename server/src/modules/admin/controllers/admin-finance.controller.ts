@@ -6,12 +6,14 @@
  * - 财务统计
  */
 
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Query , UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { ApiResponse } from '../../../common/response/api-response';
+import { AdminGuard } from '../../auth/guards/admin.guard';
 
 @ApiTags('管理端-财务中心')
+@UseGuards(AdminGuard)
 @Controller('admin/finance/transactions')
 export class AdminFinanceController {
   constructor(private readonly prisma: PrismaService) { }

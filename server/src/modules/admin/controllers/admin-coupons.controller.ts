@@ -23,12 +23,12 @@ import {
   CreateCouponGrantRuleDto,
   BatchGrantCouponDto,
 } from '../../coupons/dto/coupon.dto';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { AdminGuard } from '../../auth/guards/admin.guard';
 import { ApiResponse } from '../../../common/response/api-response';
 
 @ApiTags('管理端-优惠券管理')
 @Controller('admin/coupons')
-@UseGuards(JwtAuthGuard)
+@UseGuards(AdminGuard)
 @ApiBearerAuth()
 export class AdminCouponsController {
   constructor(private readonly couponsService: CouponsService) {}
@@ -180,4 +180,3 @@ export class AdminCouponsController {
     return ApiResponse.success(result);
   }
 }
-

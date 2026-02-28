@@ -1,12 +1,12 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Query, NotFoundException, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { AdminGuard } from '../../auth/guards/admin.guard';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { ApiResponse } from '../../../common/response/api-response';
 
 @ApiTags('管理端-分销设置')
 @Controller('admin/distribution/settings')
-@UseGuards(JwtAuthGuard)
+@UseGuards(AdminGuard)
 @ApiBearerAuth()
 export class AdminDistributionSettingsController {
   constructor(private prisma: PrismaService) { }

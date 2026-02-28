@@ -10,13 +10,13 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { AdminGuard } from '../../auth/guards/admin.guard';
 import { AdminHotKeywordsService } from '../services/admin-hot-keywords.service';
 import { ApiResponse } from '../../../common/response/api-response';
 
 @ApiTags('管理后台 - 热门搜索')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(AdminGuard)
 @Controller('admin/hot-keywords')
 export class AdminHotKeywordsController {
   constructor(private readonly hotKeywordsService: AdminHotKeywordsService) {}
@@ -84,4 +84,3 @@ export class AdminHotKeywordsController {
     return ApiResponse.success(result);
   }
 }
-

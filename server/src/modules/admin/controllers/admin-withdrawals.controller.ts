@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Put, Param, Query, Body, Res, Headers } from '@nestjs/common';
+import { Controller, Get, Post, Put, Param, Query, Body, Res, Headers , UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiQuery, ApiParam, ApiBody, ApiHeader } from '@nestjs/swagger';
 import { Response } from 'express';
 import { AdminWithdrawalsService } from '../services/admin-withdrawals.service';
 import { ApiResponse } from '../../../common/response/api-response';
+import { AdminGuard } from '../../auth/guards/admin.guard';
 
 /**
  * 管理端 - 提现审核 API
@@ -11,6 +12,7 @@ import { ApiResponse } from '../../../common/response/api-response';
  * @see docs/资金安全提现体系/04-P2审核打款设计.md
  */
 @ApiTags('管理端-提现审核')
+@UseGuards(AdminGuard)
 @Controller(['admin/withdraw-records', 'admin/escorts/withdraw-records'])
 export class AdminWithdrawalsController {
   constructor(private readonly withdrawalsService: AdminWithdrawalsService) { }
@@ -268,6 +270,7 @@ export class AdminWithdrawalsController {
  * 旧版路由兼容（/admin/withdrawals）
  */
 @ApiTags('管理端-提现审核（旧版）')
+@UseGuards(AdminGuard)
 @Controller('admin/withdrawals')
 export class AdminWithdrawalsLegacyController {
   constructor(private readonly withdrawalsService: AdminWithdrawalsService) { }

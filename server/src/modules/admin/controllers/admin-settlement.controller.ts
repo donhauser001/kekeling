@@ -2,12 +2,14 @@
  * 结算配置管理 API
  */
 
-import { Controller, Get, Put, Body, Logger } from '@nestjs/common';
+import { Controller, Get, Put, Body, Logger , UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
 import { AdminSettlementService, UpdateSettlementConfigDto } from '../services/admin-settlement.service';
 import { ApiResponse } from '../../../common/response/api-response';
+import { AdminGuard } from '../../auth/guards/admin.guard';
 
 @ApiTags('管理端-结算配置')
+@UseGuards(AdminGuard)
 @Controller('admin/settlement')
 export class AdminSettlementController {
     private readonly logger = new Logger(AdminSettlementController.name);

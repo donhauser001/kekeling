@@ -7,12 +7,15 @@ import {
   Body,
   Param,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { AdminBannersService } from '../services/admin-banners.service';
 import { ApiResponse } from '../../../common/response/api-response';
+import { AdminGuard } from '../../auth/guards/admin.guard';
 
 @ApiTags('管理后台-轮播图')
+@UseGuards(AdminGuard)
 @Controller('admin/banners')
 export class AdminBannersController {
   constructor(private readonly bannersService: AdminBannersService) { }

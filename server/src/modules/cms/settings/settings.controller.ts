@@ -7,11 +7,13 @@ import {
     Body,
     Param,
     Query,
+    UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { SettingsService } from './settings.service';
 import { CreateSettingDto, UpdateSettingDto, QuerySettingDto, BatchUpdateSettingsDto } from './dto/setting.dto';
 import { ApiResponse } from '../../../common/response/api-response';
+import { AdminGuard } from '../../auth/guards/admin.guard';
 
 @ApiTags('CMS 网站设置')
 @Controller('cms/settings')
@@ -26,6 +28,7 @@ export class SettingsController {
     }
 
     @Get('groups')
+    @UseGuards(AdminGuard)
     @ApiOperation({ summary: '获取分组列表' })
     async getGroups() {
         const data = this.service.getGroups();
@@ -33,6 +36,7 @@ export class SettingsController {
     }
 
     @Get('group/:group')
+    @UseGuards(AdminGuard)
     @ApiOperation({ summary: '按分组获取设置' })
     async findByGroup(@Param('group') group: string) {
         const data = await this.service.findByGroup(group);
@@ -40,6 +44,7 @@ export class SettingsController {
     }
 
     @Get()
+    @UseGuards(AdminGuard)
     @ApiOperation({ summary: '获取设置列表' })
     async findAll(@Query() query: QuerySettingDto) {
         const data = await this.service.findAll(query);
@@ -47,6 +52,7 @@ export class SettingsController {
     }
 
     @Get('key/:key')
+    @UseGuards(AdminGuard)
     @ApiOperation({ summary: '按键名获取设置' })
     async findByKey(@Param('key') key: string) {
         const data = await this.service.findByKey(key);
@@ -54,6 +60,7 @@ export class SettingsController {
     }
 
     @Post()
+    @UseGuards(AdminGuard)
     @ApiOperation({ summary: '创建设置' })
     async create(@Body() dto: CreateSettingDto) {
         const data = await this.service.create(dto);
@@ -61,6 +68,7 @@ export class SettingsController {
     }
 
     @Put('batch')
+    @UseGuards(AdminGuard)
     @ApiOperation({ summary: '批量更新设置' })
     async batchUpdate(@Body() dto: BatchUpdateSettingsDto) {
         const data = await this.service.batchUpdate(dto);
@@ -68,6 +76,7 @@ export class SettingsController {
     }
 
     @Put('key/:key')
+    @UseGuards(AdminGuard)
     @ApiOperation({ summary: '按键名更新设置' })
     async updateByKey(@Param('key') key: string, @Body('value') value: string) {
         const data = await this.service.updateByKey(key, value);
@@ -75,6 +84,7 @@ export class SettingsController {
     }
 
     @Put(':id')
+    @UseGuards(AdminGuard)
     @ApiOperation({ summary: '更新设置' })
     async update(@Param('id') id: string, @Body() dto: UpdateSettingDto) {
         const data = await this.service.update(id, dto);
@@ -82,10 +92,10 @@ export class SettingsController {
     }
 
     @Delete(':id')
+    @UseGuards(AdminGuard)
     @ApiOperation({ summary: '删除设置' })
     async remove(@Param('id') id: string) {
         await this.service.remove(id);
         return ApiResponse.success(null, '删除成功');
     }
 }
-

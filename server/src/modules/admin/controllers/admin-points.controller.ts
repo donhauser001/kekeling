@@ -22,12 +22,12 @@ import {
   UpdatePointRuleDto,
   AdjustPointsDto,
 } from '../../points/dto/points.dto';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { AdminGuard } from '../../auth/guards/admin.guard';
 import { ApiResponse } from '../../../common/response/api-response';
 
 @ApiTags('管理端-积分管理')
 @Controller('admin/points')
-@UseGuards(JwtAuthGuard)
+@UseGuards(AdminGuard)
 @ApiBearerAuth()
 export class AdminPointsController {
   constructor(private readonly pointsService: PointsService) {}
@@ -146,4 +146,3 @@ export class AdminPointsController {
     return ApiResponse.success(result);
   }
 }
-

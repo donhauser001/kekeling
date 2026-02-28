@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Param, Body } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body , UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam, ApiBody } from '@nestjs/swagger';
 import {
   AdminEscortLevelsService,
@@ -6,8 +6,10 @@ import {
   UpdateEscortLevelDto,
 } from '../services/admin-escort-levels.service';
 import { ApiResponse } from '../../../common/response/api-response';
+import { AdminGuard } from '../../auth/guards/admin.guard';
 
 @ApiTags('管理端-陪诊员等级')
+@UseGuards(AdminGuard)
 @Controller('admin/escort-levels')
 export class AdminEscortLevelsController {
   constructor(private readonly levelsService: AdminEscortLevelsService) { }

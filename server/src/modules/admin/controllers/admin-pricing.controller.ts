@@ -3,11 +3,11 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PricingService } from '../../pricing/pricing.service';
 import { UpdatePricingConfigDto } from '../../pricing/dto/pricing-config.dto';
 import { ApiResponse } from '../../../common/response/api-response';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { AdminGuard } from '../../auth/guards/admin.guard';
 
 @ApiTags('管理端-价格配置')
 @Controller('admin/pricing')
-@UseGuards(JwtAuthGuard)
+@UseGuards(AdminGuard)
 @ApiBearerAuth()
 export class AdminPricingController {
   constructor(private readonly pricingService: PricingService) { }

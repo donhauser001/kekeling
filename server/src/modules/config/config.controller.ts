@@ -1,11 +1,13 @@
-import { Controller, Get, Put, Post, Body, Param, Delete, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Put, Post, Body, Param, Delete, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam, ApiBody } from '@nestjs/swagger';
 import { ConfigService } from './config.service';
 import { SmsService } from '../escort-auth/sms.service';
 import { ApiResponse } from '../../common/response/api-response';
 import { type OrderSettings, type ThemeSettings, type BannerPosition, type BannerAreaConfig, type HomePageSettings, type SmsSettings, type MiniappSettings, type WechatPaySettings, type AlipaySettings, type MarketingSettings } from './dto/config.dto';
+import { AdminGuard } from '../auth/guards/admin.guard';
 
 @ApiTags('系统配置')
+@UseGuards(AdminGuard)
 @Controller('config')
 export class ConfigController {
   constructor(
