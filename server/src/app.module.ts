@@ -47,6 +47,8 @@ import { UserAddressesModule } from './modules/user-addresses/user-addresses.mod
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { FavoritesModule } from './modules/favorites/favorites.module';
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -106,8 +108,8 @@ import { FavoritesModule } from './modules/favorites/favorites.module';
     UserAddressesModule,    // 用户地址管理
     ReviewsModule,          // 用户评价系统
     FavoritesModule,        // 收藏功能
-    TestModule, // ⚠️ 仅开发环境，生产环境请注释
+    // 仅非生产环境加载测试模块
+    ...(isProduction ? [] : [TestModule]),
   ],
 })
 export class AppModule { }
-

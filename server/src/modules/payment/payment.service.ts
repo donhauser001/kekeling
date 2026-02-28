@@ -251,10 +251,15 @@ export class PaymentService {
   // 解析 XML 响应
   private parseXml(xml: string): Record<string, string> {
     const result: Record<string, string> = {};
-    const regex = /<(\w+)>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/\1>/g;
+    // 仅提取叶子节点，避免把外层 <xml> 整块吞掉
+    const regex = /<(\w+)><!\[CDATA\[([\s\S]*?)\]\]><\/\1>|<(\w+)>([^<]*)<\/\3>/g;
     let match;
     while ((match = regex.exec(xml)) !== null) {
-      result[match[1]] = match[2];
+      if (match[1]) {
+        result[match[1]] = match[2];
+      } else if (match[3]) {
+        result[match[3]] = match[4];
+      }
     }
     return result;
   }
@@ -639,24 +644,57 @@ export class PaymentService {
       }
 
       // 解析 XML
-      const orderNoMatch = xmlData.match(/<out_trade_no><!\[CDATA\[(.*?)\]\]><\/out_trade_no>/);
-      const transactionIdMatch = xmlData.match(/<transaction_id><!\[CDATA\[(.*?)\]\]><\/transaction_id>/);
-      const resultCodeMatch = xmlData.match(/<result_code><!\[CDATA\[(.*?)\]\]><\/result_code>/);
+      const notifyData = this.parseXml(xmlData);
+      const orderNo = notifyData.out_trade_no;
+      const transactionId = notifyData.transaction_id;
+      const resultCode = notifyData.result_code;
+      const returnCode = notifyData.return_code;
+      const sign = notifyData.sign;
+      const appid = notifyData.appid;
+      const mchId = notifyData.mch_id;
+      const totalFee = notifyData.total_fee ? Number(notifyData.total_fee) : NaN;
 
-      console.log('[Payment] 解析结果: orderNo=', orderNoMatch?.[1], 'transactionId=', transactionIdMatch?.[1], 'resultCode=', resultCodeMatch?.[1]);
+      console.log(
+        '[Payment] 解析结果:',
+        JSON.stringify({
+          orderNo,
+          transactionId,
+          returnCode,
+          resultCode,
+          appid,
+          mchId,
+        }),
+      );
 
-      if (!orderNoMatch || !transactionIdMatch) {
-        console.error('[Payment] 回调参数解析失败');
+      if (!orderNo || !transactionId || !sign) {
+        console.error('[Payment] 回调参数缺失');
         return { success: false, message: '参数错误' };
       }
 
-      const orderNo = orderNoMatch[1];
-      const transactionId = transactionIdMatch[1];
-      const resultCode = resultCodeMatch?.[1];
-
-      if (resultCode !== 'SUCCESS') {
-        console.error('[Payment] 支付结果不是SUCCESS:', resultCode);
+      if (returnCode !== 'SUCCESS' || resultCode !== 'SUCCESS') {
+        console.error('[Payment] 支付结果失败:', { returnCode, resultCode });
         return { success: false, message: '支付失败' };
+      }
+
+      // 读取支付配置并做商户身份校验
+      const payConfig = await this.getWechatPayConfig();
+      if (!payConfig.appId || !payConfig.mchId || !payConfig.apiKey) {
+        console.error('[Payment] 微信支付配置缺失，拒绝回调');
+        return { success: false, message: '支付配置错误' };
+      }
+
+      if (appid !== payConfig.appId || mchId !== payConfig.mchId) {
+        console.error('[Payment] 回调商户信息不匹配:', { appid, mchId });
+        return { success: false, message: '商户校验失败' };
+      }
+
+      // 验签（剔除 sign 字段）
+      const signPayload: Record<string, string | number> = { ...notifyData };
+      delete (signPayload as Record<string, string | number>).sign;
+      const expectedSign = this.generateSign(signPayload, payConfig.apiKey);
+      if (expectedSign !== sign.toUpperCase()) {
+        console.error('[Payment] 回调签名校验失败:', { expectedSign, sign });
+        return { success: false, message: '签名校验失败' };
       }
 
       // 判断是普通订单还是会员订单
@@ -669,6 +707,19 @@ export class PaymentService {
       });
 
       if (membershipOrder) {
+        // 幂等：已支付直接返回成功，避免重复处理
+        if (membershipOrder.status === 'paid') {
+          console.log(`[Payment] 会员订单已支付，忽略重复回调: orderNo=${orderNo}`);
+          return { success: true, message: 'OK' };
+        }
+
+        // 金额校验（分）
+        const expectedFee = Math.round(Number(membershipOrder.amount) * 100);
+        if (!Number.isFinite(totalFee) || totalFee !== expectedFee) {
+          console.error('[Payment] 会员订单金额校验失败:', { totalFee, expectedFee, orderNo });
+          return { success: false, message: '金额校验失败' };
+        }
+
         // 会员订单支付回调 - 使用动态 import 避免循环依赖
         try {
           const { MembershipService } = await import('../membership/membership.service');
@@ -676,11 +727,28 @@ export class PaymentService {
           await membershipService.paymentSuccess(orderNo, transactionId);
         } catch (error) {
           console.error('[Payment] 会员订单支付回调处理失败:', error);
+          return { success: false, message: '会员订单处理失败' };
         }
       } else if (order) {
-        // 普通订单支付回调
-        await this.prisma.order.update({
-          where: { orderNo },
+        // 幂等：已支付直接返回成功，避免重复处理
+        if (order.status === 'paid') {
+          console.log(`[Payment] 普通订单已支付，忽略重复回调: orderNo=${orderNo}`);
+          return { success: true, message: 'OK' };
+        }
+
+        // 金额校验（分）
+        const expectedFee = Math.round(Number(order.totalAmount) * 100);
+        if (!Number.isFinite(totalFee) || totalFee !== expectedFee) {
+          console.error('[Payment] 普通订单金额校验失败:', { totalFee, expectedFee, orderNo });
+          return { success: false, message: '金额校验失败' };
+        }
+
+        // 普通订单支付回调（幂等更新）
+        const updated = await this.prisma.order.updateMany({
+          where: {
+            orderNo,
+            status: { not: 'paid' },
+          },
           data: {
             status: 'paid',
             paymentMethod: 'wechat',
@@ -689,6 +757,12 @@ export class PaymentService {
             transactionId,
           },
         });
+
+        // 并发重复通知导致未更新时，视为幂等成功
+        if (updated.count === 0) {
+          console.log(`[Payment] 普通订单并发回调幂等命中: orderNo=${orderNo}`);
+          return { success: true, message: 'OK' };
+        }
 
         // 发送支付成功通知
         this.notificationService.send({
@@ -704,6 +778,9 @@ export class PaymentService {
 
         // 处理用户指定陪诊员的自动分配
         await this.handleUserSelectEscort(order.id);
+      } else {
+        console.error('[Payment] 回调订单不存在:', orderNo);
+        return { success: false, message: '订单不存在' };
       }
 
       console.log(`[Payment] 支付成功: orderNo=${orderNo}, transactionId=${transactionId}`);
@@ -823,4 +900,3 @@ export class PaymentService {
     return updatedOrder;
   }
 }
-
