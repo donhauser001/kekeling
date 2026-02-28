@@ -796,7 +796,7 @@ export default function BannersManagement() {
     { position: 'services', config: settings.services },
     { position: 'profile', config: settings.profile },
     { position: 'service-detail', config: settings.serviceDetail },
-    { position: 'orders', config: settings.orders },
+    { position: 'cases', config: settings.cases },
   ]
 
   return (

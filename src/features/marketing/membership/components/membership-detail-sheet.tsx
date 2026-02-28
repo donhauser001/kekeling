@@ -51,7 +51,7 @@ export function MembershipDetailSheet({
                 <div>
                   <span className='text-sm text-muted-foreground'>等级</span>
                   <p className='mt-1'>
-                    <Badge variant='outline'>Lv.{level.level}</Badge>
+                    <Badge variant='outline'>{level.code}</Badge>
                   </p>
                 </div>
                 <div>

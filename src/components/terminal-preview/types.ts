@@ -71,6 +71,8 @@ export type PreviewPage =
   | 'workbench'
   | 'workbench-orders-pool'
   | 'workbench-order-detail'
+  | 'workbench-pool-order-detail'
+  | 'workbench-my-order-detail'
   | 'workbench-earnings'
   | 'workbench-withdraw'
   | 'workbench-settings'
@@ -78,6 +80,7 @@ export type PreviewPage =
   | 'workbench-hospitals'
   | 'workbench-departments'
   | 'workbench-working-hours'
+  | 'workbench-my-orders'
   | 'my-orders'
   // 分销中心（陪诊员视角）
   | 'distribution'
@@ -243,6 +246,8 @@ export const PAGE_METADATA: Record<PreviewPage, PageMetadata> = {
   'workbench': { entryAllowed: true, description: '工作台首页' },
   'workbench-orders-pool': { entryAllowed: false, description: '订单池' },
   'workbench-order-detail': { entryAllowed: false, requiredParams: ['id'], description: '订单详情' },
+  'workbench-pool-order-detail': { entryAllowed: false, requiredParams: ['id'], description: '订单池详情' },
+  'workbench-my-order-detail': { entryAllowed: false, requiredParams: ['id'], description: '我的订单详情' },
   'workbench-earnings': { entryAllowed: false, description: '收入明细' },
   'workbench-withdraw': { entryAllowed: false, description: '提现' },
   'workbench-settings': { entryAllowed: false, description: '工作台设置' },
@@ -250,6 +255,7 @@ export const PAGE_METADATA: Record<PreviewPage, PageMetadata> = {
   'workbench-hospitals': { entryAllowed: false, description: '服务医院选择' },
   'workbench-departments': { entryAllowed: false, description: '擅长科室选择' },
   'workbench-working-hours': { entryAllowed: false, description: '工作时间设置' },
+  'workbench-my-orders': { entryAllowed: false, description: '工作台我的订单' },
   'my-orders': { entryAllowed: false, description: '我的订单' },
 
   // 分销中心（主入口允许，子页面不允许）
@@ -341,6 +347,8 @@ export interface PreviewPageParamsMap {
   'workbench': Record<string, never>
   'workbench-orders-pool': Record<string, never>
   'workbench-order-detail': { id: string }
+  'workbench-pool-order-detail': { id: string }
+  'workbench-my-order-detail': { id: string }
   'workbench-earnings': Record<string, never>
   'workbench-withdraw': Record<string, never>
   'workbench-settings': Record<string, never>
@@ -348,6 +356,7 @@ export interface PreviewPageParamsMap {
   'workbench-hospitals': Record<string, never>
   'workbench-departments': Record<string, never>
   'workbench-working-hours': Record<string, never>
+  'workbench-my-orders': { status?: 'all' | 'pending' | 'ongoing' | 'completed' | 'cancelled' }
   'my-orders': { status?: 'all' | 'pending' | 'ongoing' | 'completed' | 'cancelled' }
 
   // 就诊人管理
@@ -397,6 +406,8 @@ export const PAGES_REQUIRING_PARAMS: Partial<Record<PreviewPage, readonly string
   'campaigns-detail': ['id'],
   'escort-detail': ['id'],
   'workbench-order-detail': ['id'],
+  'workbench-pool-order-detail': ['id'],
+  'workbench-my-order-detail': ['id'],
 } as const
 
 // ============================================================================
@@ -717,6 +728,12 @@ export interface AvailableCouponOverride {
   minAmount?: number
   /** 剩余可领数量 */
   remaining?: number
+  /** 是否可领取 */
+  canClaim?: boolean
+  /** 已领取数量 */
+  claimedCount?: number
+  /** 每人限领数量 */
+  perUserLimit?: number
 }
 
 /**

@@ -19,9 +19,8 @@ export interface TeamMember {
   phone?: string
   joinedAt: string
   relation: 'direct' | 'indirect'
-  totalContribution: number
-  recentOrders: number
+  totalContribution?: number
+  recentOrders?: number
 }
 
 export type RelationFilter = 'all' | 'direct' | 'indirect'
-

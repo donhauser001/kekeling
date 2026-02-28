@@ -34,7 +34,7 @@ export function ServiceInfoTabs({
   // 服务流程（仅当服务关联了流程时显示）
   const hasWorkflow = !!(service?.workflow?.steps?.length)
   const workflowSteps: WorkflowStep[] = hasWorkflow
-    ? service.workflow.steps.map(step => ({
+    ? (service.workflow?.steps || []).map(step => ({
       id: step.id,
       name: step.name,
       type: step.type as 'start' | 'action' | 'end',

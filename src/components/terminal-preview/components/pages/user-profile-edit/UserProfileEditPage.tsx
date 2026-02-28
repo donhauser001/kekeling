@@ -86,20 +86,20 @@ export function UserProfileEditPage({
 
             if (result) {
                 if (isWxEnvironment() && typeof wx !== 'undefined') {
-                    // @ts-expect-error wx 在小程序环境中存在
+                    // @ts-ignore wx 在小程序环境中存在
                     wx.showToast?.({ title: '保存成功', icon: 'success' })
                 }
                 setTimeout(() => onBack?.(), 500)
             } else {
                 if (isWxEnvironment() && typeof wx !== 'undefined') {
-                    // @ts-expect-error wx 在小程序环境中存在
+                    // @ts-ignore wx 在小程序环境中存在
                     wx.showToast?.({ title: '保存失败', icon: 'none' })
                 }
             }
         } catch (error) {
             console.error('保存失败:', error)
             if (isWxEnvironment() && typeof wx !== 'undefined') {
-                // @ts-expect-error wx 在小程序环境中存在
+                // @ts-ignore wx 在小程序环境中存在
                 wx.showToast?.({ title: '保存失败', icon: 'none' })
             }
         } finally {
@@ -109,10 +109,11 @@ export function UserProfileEditPage({
 
     // ========== 头像上传 ==========
     const handleAvatarClick = () => {
-        const isWx = typeof wx !== 'undefined' && typeof wx.chooseMedia === 'function'
+        const wxApi = typeof wx !== 'undefined' ? (wx as unknown as { chooseMedia?: (...args: unknown[]) => void }) : undefined
+        const isWx = typeof wxApi?.chooseMedia === 'function'
 
         if (isWx) {
-            // @ts-expect-error wx 在小程序环境中存在
+            // @ts-ignore wx 在小程序环境中存在
             wx.chooseMedia({
                 count: 1,
                 mediaType: ['image'],
@@ -121,19 +122,19 @@ export function UserProfileEditPage({
                     const tempFilePath = res.tempFiles[0]?.tempFilePath
                     if (!tempFilePath) return
 
-                    // @ts-expect-error wx 在小程序环境中存在
+                    // @ts-ignore wx 在小程序环境中存在
                     wx.showLoading?.({ title: '上传中...' })
 
                     const API_BASE_URL = 'https://kkl.top/api'
                     let token = ''
                     try {
-                        // @ts-expect-error wx 在小程序环境中存在
+                        // @ts-ignore wx 在小程序环境中存在
                         token = wx.getStorageSync('kekeling_user_token') || ''
                     } catch (e) {
                         console.warn('获取 token 失败:', e)
                     }
 
-                    // @ts-expect-error wx 在小程序环境中存在
+                    // @ts-ignore wx 在小程序环境中存在
                     wx.uploadFile({
                         url: `${API_BASE_URL}/upload`,
                         filePath: tempFilePath,
@@ -141,7 +142,7 @@ export function UserProfileEditPage({
                         formData: { folder: 'avatar' },
                         header: { Authorization: token ? `Bearer ${token}` : '' },
                         success: (uploadRes: { data: string }) => {
-                            // @ts-expect-error wx 在小程序环境中存在
+                            // @ts-ignore wx 在小程序环境中存在
                             wx.hideLoading?.()
                             try {
                                 const data = JSON.parse(uploadRes.data)
@@ -151,21 +152,21 @@ export function UserProfileEditPage({
                                         ? serverUrl
                                         : `https://kkl.top${serverUrl}`
                                     setAvatarPreview(fullUrl)
-                                    // @ts-expect-error wx 在小程序环境中存在
+                                    // @ts-ignore wx 在小程序环境中存在
                                     wx.showToast?.({ title: '头像已更新', icon: 'success' })
                                 } else {
-                                    // @ts-expect-error wx 在小程序环境中存在
+                                    // @ts-ignore wx 在小程序环境中存在
                                     wx.showToast?.({ title: data.message || '上传失败', icon: 'none' })
                                 }
                             } catch {
-                                // @ts-expect-error wx 在小程序环境中存在
+                                // @ts-ignore wx 在小程序环境中存在
                                 wx.showToast?.({ title: '上传失败', icon: 'none' })
                             }
                         },
                         fail: () => {
-                            // @ts-expect-error wx 在小程序环境中存在
+                            // @ts-ignore wx 在小程序环境中存在
                             wx.hideLoading?.()
-                            // @ts-expect-error wx 在小程序环境中存在
+                            // @ts-ignore wx 在小程序环境中存在
                             wx.showToast?.({ title: '上传失败', icon: 'none' })
                         },
                     })
@@ -459,4 +460,3 @@ export function UserProfileEditPage({
         </Box>
     )
 }
-

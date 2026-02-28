@@ -13,6 +13,7 @@ import type {
   CampaignDetail,
   AvailableCoupon,
   CouponsResponse,
+  MembershipPlan,
   EscortListItem,
   EscortDetail,
 } from '../api/types'
@@ -27,16 +28,6 @@ export interface MembershipInfo {
   levelName: string
   expireAt: string
   points: number
-}
-
-export interface MembershipPlan {
-  id: string
-  name: string
-  description: string
-  price: number
-  originalPrice: number
-  durationDays: number
-  isRecommended?: boolean
 }
 
 /**
@@ -269,6 +260,9 @@ export function getMockAvailableCoupons(): AvailableCoupon[] {
       amount: 20,
       minAmount: 100,
       remaining: 50,
+      canClaim: true,
+      claimedCount: 0,
+      perUserLimit: 1,
     },
     {
       id: 'coupon-available-2',
@@ -277,6 +271,9 @@ export function getMockAvailableCoupons(): AvailableCoupon[] {
       amount: 15,
       minAmount: 0,
       remaining: 999,
+      canClaim: true,
+      claimedCount: 1,
+      perUserLimit: 3,
     },
     {
       id: 'coupon-available-3',
@@ -285,6 +282,9 @@ export function getMockAvailableCoupons(): AvailableCoupon[] {
       amount: 50,
       minAmount: 200,
       remaining: 10,
+      canClaim: true,
+      claimedCount: 0,
+      perUserLimit: 1,
     },
   ]
 }
@@ -394,4 +394,3 @@ export function getMockCouponsEmpty(): CouponsResponse {
     total: 0,
   }
 }
-

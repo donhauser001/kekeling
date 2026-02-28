@@ -22,7 +22,19 @@ import {
 import { isWxEnvironment } from '../../platform/env'
 import { getWxBridge } from '../../bridge'
 import type { ThemeSettings } from '../../types'
-import { previewApi, type Address } from '../../api'
+import { previewApi } from '../../api'
+
+interface Address {
+  id: string
+  name: string
+  phone: string
+  province: string
+  city: string
+  district: string
+  address: string
+  tag?: string
+  isDefault: boolean
+}
 
 interface AddressListPageProps {
   themeSettings: ThemeSettings

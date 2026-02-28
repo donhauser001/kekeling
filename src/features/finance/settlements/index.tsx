@@ -63,11 +63,15 @@ const settlementStatusConfig: Record<string, { label: string; color: string; ico
   settled: { label: '已结算', color: 'bg-green-100 text-green-800', icon: CheckCircle },
 }
 
+function getCompletedAt(order: Order): string {
+  return order.paymentTime || order.updatedAt
+}
+
 // 根据订单状态计算结算状态
 function getSettlementStatus(order: Order): string {
   if (order.status === 'completed') {
     // 假设完成后7天内为冻结期
-    const completedAt = order.completedAt ? new Date(order.completedAt) : new Date(order.updatedAt)
+    const completedAt = new Date(getCompletedAt(order))
     const now = new Date()
     const daysDiff = Math.floor((now.getTime() - completedAt.getTime()) / (1000 * 60 * 60 * 24))
     if (daysDiff < 7) {
@@ -306,9 +310,7 @@ export function FinanceSettlements() {
                         </Badge>
                       </TableCell>
                       <TableCell className='text-muted-foreground text-sm'>
-                        {order.completedAt
-                          ? new Date(order.completedAt).toLocaleString()
-                          : new Date(order.updatedAt).toLocaleString()}
+                        {new Date(getCompletedAt(order)).toLocaleString()}
                       </TableCell>
                       <TableCell className='text-right'>
                         <DropdownMenu>
@@ -433,18 +435,14 @@ export function FinanceSettlements() {
                 <div className='flex justify-between'>
                   <span className='text-muted-foreground'>完成时间</span>
                   <span>
-                    {selectedOrder.completedAt
-                      ? new Date(selectedOrder.completedAt).toLocaleString()
-                      : new Date(selectedOrder.updatedAt).toLocaleString()}
+                    {new Date(getCompletedAt(selectedOrder)).toLocaleString()}
                   </span>
                 </div>
                 <div className='flex justify-between'>
                   <span className='text-muted-foreground'>预计解冻</span>
                   <span>
                     {(() => {
-                      const completedAt = selectedOrder.completedAt
-                        ? new Date(selectedOrder.completedAt)
-                        : new Date(selectedOrder.updatedAt)
+                      const completedAt = new Date(getCompletedAt(selectedOrder))
                       const unfreezeAt = new Date(completedAt.getTime() + 7 * 24 * 60 * 60 * 1000)
                       return unfreezeAt.toLocaleDateString()
                     })()}
@@ -463,4 +461,3 @@ export function FinanceSettlements() {
     </>
   )
 }
-

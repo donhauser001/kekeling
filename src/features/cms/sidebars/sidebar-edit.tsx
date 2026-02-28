@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useParams } from '@tanstack/react-router'
+import { useNavigate } from '@tanstack/react-router'
 import {
   ArrowLeft,
   Save,
@@ -47,7 +47,6 @@ import {
   useCmsPages,
 } from '@/hooks/use-api'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { AlertTriangle } from 'lucide-react'
 import type { SidebarWidget, WidgetType, ApplyTarget, ApplyTargetType, SidebarWidthType, CmsSidebar } from '@/lib/api/cms'
 
 // 状态选项
@@ -998,4 +997,3 @@ export function SidebarEdit({ id }: SidebarEditProps) {
     </>
   )
 }
-

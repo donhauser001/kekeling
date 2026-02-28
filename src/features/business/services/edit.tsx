@@ -209,7 +209,7 @@ export function ServiceEdit() {
             tags: tags.length ? tags : undefined,
             sort: parseInt(formData.sort) || 0,
             status: formData.status as 'active' | 'inactive' | 'draft',
-            workflowId: formData.workflowId || null,
+            workflowId: formData.workflowId || undefined,
             // 陪诊员配置
             commissionRate: parseInt(formData.commissionRate) || 70,
             commissionNote: formData.commissionNote.trim() || undefined,

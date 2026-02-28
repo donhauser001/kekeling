@@ -11,7 +11,6 @@ const defaultSettings: MarketingSettings = {
   membershipEnabled: true,
   pointsEnabled: true,
   couponsEnabled: true,
-  referralsEnabled: true,
   campaignsEnabled: true,
 }
 

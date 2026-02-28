@@ -37,7 +37,6 @@ export {
   getMockEscortDetail,
   // 类型
   type MembershipInfo,
-  type MembershipPlan,
 } from './marketing'
 
 // 工作台 Mock
@@ -84,4 +83,3 @@ export {
   getMockDistributionPromotionMaxLevel,
   getMockDistributionPromotionZeroProgress,
 } from './distribution'
-

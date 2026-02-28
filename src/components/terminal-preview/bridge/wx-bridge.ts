@@ -560,7 +560,14 @@ export const realWxBridge: WxBridge = {
 
   async setClipboardData(params: { data: string }): Promise<void> {
     return new Promise((resolve, reject) => {
-      wx!.setClipboardData({
+      const setClipboard = (wx as unknown as {
+        setClipboardData?: (opts: { data: string; success?: () => void; fail?: (err: Error) => void }) => void
+      })?.setClipboardData
+      if (!setClipboard) {
+        resolve()
+        return
+      }
+      setClipboard({
         data: params.data,
         success: () => resolve(),
         fail: (err: Error) => reject(err),

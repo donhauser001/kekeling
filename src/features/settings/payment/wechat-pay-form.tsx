@@ -27,16 +27,16 @@ import { Separator } from '@/components/ui/separator'
 import { configApi } from '@/lib/api/config'
 
 const paymentFormSchema = z.object({
-  appId: z.coerce.string().min(1, '请输入小程序 AppID'),
-  mchId: z.coerce.string().min(1, '请输入商户号'),
-  apiKey: z.coerce.string().optional(),
-  notifyUrl: z.coerce.string().url('请输入有效的回调地址').or(z.coerce.string().length(0)),
+  appId: z.string().trim().min(1, '请输入小程序 AppID'),
+  mchId: z.string().trim().min(1, '请输入商户号'),
+  apiKey: z.string().trim().optional(),
+  notifyUrl: z.string().trim().url('请输入有效的回调地址').or(z.literal('')),
 })
 
 type PaymentFormValues = z.infer<typeof paymentFormSchema>
 
 // 默认值
-const defaultValues: Partial<PaymentFormValues> = {
+const defaultValues: PaymentFormValues = {
   appId: '',
   mchId: '',
   apiKey: '',
@@ -293,4 +293,3 @@ export function WechatPayForm() {
     </div>
   )
 }
-

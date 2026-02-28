@@ -69,6 +69,11 @@ interface FeedbackStats {
   closed: number
 }
 
+interface FeedbackListResponse {
+  items: Feedback[]
+  total: number
+}
+
 // API 函数
 const feedbackApi = {
   getList: async (params: { page?: number; pageSize?: number; status?: string; type?: string }) => {
@@ -78,7 +83,7 @@ const feedbackApi = {
     if (params.status) searchParams.set('status', params.status)
     if (params.type) searchParams.set('type', params.type)
     // request 已经返回 result.data，不需要再取 .data
-    return request(`/admin/feedback?${searchParams.toString()}`)
+    return request<FeedbackListResponse>(`/admin/feedback?${searchParams.toString()}`)
   },
   getStats: async () => {
     // request 已经返回 result.data，不需要再取 .data
@@ -479,4 +484,3 @@ export function FeedbackManagement() {
     </>
   )
 }
-

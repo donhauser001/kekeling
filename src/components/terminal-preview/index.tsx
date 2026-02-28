@@ -82,7 +82,6 @@ import {
   OrdersPoolPage,
   WorkbenchEarningsPage,
   WorkbenchWithdrawPage,
-  OrderDetailPage,
   PoolOrderDetailPage,
   EscortOrderDetailPage,
   WorkbenchSettingsPage,
@@ -1098,7 +1097,6 @@ export function TerminalPreview({
             themeSettings={themeSettings}
             isDarkMode={isDarkMode}
             effectiveViewerRole={effectiveViewerRole}
-            pageParams={pageParams}
             onNavigate={(page, params) => navigateToPage(page, params)}
             onLogin={() => setShowEscortLoginDialog(true)}
           />
@@ -1111,7 +1109,6 @@ export function TerminalPreview({
             themeSettings={themeSettings}
             isDarkMode={isDarkMode}
             effectiveViewerRole={effectiveViewerRole}
-            pageParams={pageParams}
             onNavigate={(page, params) => navigateToPage(page, params)}
             onLogin={() => setShowEscortLoginDialog(true)}
           />

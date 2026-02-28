@@ -10,7 +10,6 @@ import {
   ReceiptText,
   ArrowDownLeft,
   ArrowUpRight,
-  Calendar,
 } from 'lucide-react'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
@@ -371,7 +370,7 @@ export function FinanceBills() {
                 </div>
                 <div className='flex justify-between'>
                   <span className='text-muted-foreground'>优惠金额</span>
-                  <span className='text-orange-600'>-¥{Number(selectedOrder.discountAmount || 0).toFixed(2)}</span>
+                  <span className='text-orange-600'>-¥0.00</span>
                 </div>
                 <div className='flex justify-between font-medium'>
                   <span className='text-muted-foreground'>实付金额</span>
@@ -439,4 +438,3 @@ export function FinanceBills() {
     </>
   )
 }
-

@@ -155,6 +155,15 @@ export function MembershipPlansPage({
         return
       }
 
+      if (!('timeStamp' in paymentParams)) {
+        setPurchaseResult({
+          success: false,
+          message: '支付参数异常，请稍后重试',
+          orderId: orderResult.orderId,
+        })
+        return
+      }
+
       // Step 3: 调起微信支付
       const payResult = await wxBridge.requestPayment({
         timeStamp: paymentParams.timeStamp,

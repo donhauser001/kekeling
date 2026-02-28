@@ -36,7 +36,6 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuSeparator,
     DropdownMenuShortcut,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
@@ -343,14 +342,6 @@ export function Roles() {
     const handleView = (category: UserCategory) => {
         setSelectedCategory(category)
         setDetailOpen(true)
-    }
-
-    // 打开新建分类对话框
-    const openCreateDialog = () => {
-        setCategoryDialogMode('create')
-        setFormData(defaultFormData)
-        setFormErrors({})
-        setCategoryDialogOpen(true)
     }
 
     // 打开编辑分类对话框

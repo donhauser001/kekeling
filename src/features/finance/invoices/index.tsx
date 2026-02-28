@@ -17,7 +17,6 @@ import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -26,14 +25,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-
-// 状态配置
-const statusConfig: Record<string, { label: string; color: string; icon: React.ElementType }> = {
-  pending: { label: '待处理', color: 'bg-yellow-100 text-yellow-800', icon: Clock },
-  processing: { label: '处理中', color: 'bg-blue-100 text-blue-800', icon: FileText },
-  completed: { label: '已开票', color: 'bg-green-100 text-green-800', icon: CheckCircle },
-  rejected: { label: '已驳回', color: 'bg-red-100 text-red-800', icon: XCircle },
-}
 
 export function FinanceInvoices() {
   // 筛选状态
@@ -187,4 +178,3 @@ export function FinanceInvoices() {
     </>
   )
 }
-

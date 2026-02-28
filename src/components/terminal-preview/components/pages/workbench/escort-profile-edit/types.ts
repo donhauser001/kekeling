@@ -28,10 +28,10 @@ export interface EscortProfile {
   name?: string
   phone?: string
   gender?: string
-  introduction?: string
-  foreignLanguage?: string
-  education?: string
-  avatar?: string
+  introduction?: string | null
+  foreignLanguage?: string | null
+  education?: string | null
+  avatar?: string | null
   rating?: number
   orderCount?: number
   /** 关联用户资料（用于同步功能） */
@@ -44,4 +44,3 @@ export interface GenderOption {
   value: string
   label: string
 }
-

@@ -78,11 +78,20 @@ export const Box = forwardRef<HTMLDivElement, BoxProps>(function Box(
  * Web 端渲染为 span
  */
 export const Text = forwardRef<HTMLSpanElement, TextProps>(function Text(
-  { children, className, style, ...rest },
+  { children, className, style, numberOfLines, ...rest },
   ref
 ) {
+  const lineClampStyle: React.CSSProperties | undefined = numberOfLines
+    ? {
+        display: '-webkit-box',
+        WebkitLineClamp: numberOfLines,
+        WebkitBoxOrient: 'vertical',
+        overflow: 'hidden',
+      }
+    : undefined
+
   return (
-    <span ref={ref} className={className} style={style} {...rest}>
+    <span ref={ref} className={className} style={{ ...style, ...lineClampStyle }} {...rest}>
       {children}
     </span>
   )

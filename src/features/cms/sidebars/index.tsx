@@ -342,9 +342,9 @@ export function CmsSidebars() {
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
         title='确认删除'
-        description={`确定要删除侧边栏 "${currentRow?.name}" 吗？此操作不可撤销。`}
-        onConfirm={handleConfirmDelete}
-        loading={deleteMutation.isPending}
+        desc={`确定要删除侧边栏 "${currentRow?.name}" 吗？此操作不可撤销。`}
+        handleConfirm={handleConfirmDelete}
+        isLoading={deleteMutation.isPending}
       />
     </>
   )

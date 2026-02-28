@@ -3,7 +3,7 @@ import * as React from 'react'
 type ToastActionElement = React.ReactElement
 type ToastVariant = 'default' | 'destructive'
 
-export interface Toast {
+export interface ToastOptions {
   id: string
   title?: React.ReactNode
   description?: React.ReactNode
@@ -16,7 +16,7 @@ export interface Toast {
 const TOAST_LIMIT = 3
 const TOAST_REMOVE_DELAY = 5000
 
-type ToasterToast = Toast & {
+type ToasterToast = ToastOptions & {
   id: string
   title?: React.ReactNode
   description?: React.ReactNode
@@ -143,9 +143,9 @@ function dispatch(action: Action) {
   })
 }
 
-type Toast = Omit<ToasterToast, 'id'>
+type ToastInput = Omit<ToasterToast, 'id'>
 
-function toast({ ...props }: Toast) {
+function toast({ ...props }: ToastInput) {
   const id = genId()
 
   const update = (props: ToasterToast) =>
@@ -161,7 +161,7 @@ function toast({ ...props }: Toast) {
       ...props,
       id,
       open: true,
-      onOpenChange: (open) => {
+      onOpenChange: (open: boolean) => {
         if (!open) dismiss()
       },
     },

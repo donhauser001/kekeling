@@ -21,7 +21,7 @@ import {
   ChevronRight,
 } from '../../../ui/lucide-compat'
 import { isWxEnvironment } from '../../../platform/env'
-import { previewApi, type Address } from '../../../api'
+import { previewApi } from '../../../api'
 import { RegionPicker } from './RegionPicker'
 import { areaData, findProvinceCode, findCityCode } from './areaData'
 import {
@@ -35,6 +35,18 @@ import {
 
 const wxScale = isWxEnvironment() ? 1.1 : 1
 const wxSafeAreaTop = isWxEnvironment() ? 44 : 0
+
+interface Address {
+  id: string
+  name: string
+  phone: string
+  province: string
+  city: string
+  district: string
+  address: string
+  tag?: string
+  isDefault: boolean
+}
 
 // 图标映射
 const tagIconMap: Record<string, typeof Home> = {
@@ -730,4 +742,3 @@ export function AddressEditPage({
 }
 
 export default AddressEditPage
-

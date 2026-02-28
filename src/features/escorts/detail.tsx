@@ -47,7 +47,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { escortApi, distributionApi, orderApi, withdrawalApi, type Order, type DistributionRecord, type Withdrawal, type EscortWalletTransaction } from '@/lib/api'
+import { escortApi, distributionApi, orderApi, withdrawalApi, type Order, type Withdrawal, type EscortWalletTransaction } from '@/lib/api'
 import { normalizeLevel } from '@/lib/utils'
 import {
   Table,
@@ -855,7 +855,7 @@ export function EscortDetail() {
                     <div>
                       <p className="text-sm text-muted-foreground">冻结金额</p>
                       <p className="font-semibold">
-                        ¥{distributionInfo?.wallet?.frozenBalance?.toFixed(2) || '0.00'}
+                        ¥0.00
                       </p>
                     </div>
                   </div>

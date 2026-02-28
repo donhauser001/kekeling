@@ -51,6 +51,8 @@ export interface TextProps {
   children?: ReactNode
   className?: string
   style?: CSSProperties
+  /** 最多显示行数（Web 端通过 line-clamp 样式模拟） */
+  numberOfLines?: number
   'aria-hidden'?: boolean
   /** 数据属性 */
   'data-testid'?: string
@@ -114,7 +116,7 @@ export interface InputProps {
   placeholder?: string
   className?: string
   style?: CSSProperties
-  type?: 'text' | 'number' | 'password' | 'tel'
+  type?: 'text' | 'number' | 'password' | 'tel' | 'date'
   disabled?: boolean
   maxLength?: number
   /** 输入变化回调（统一为 value 字符串） */

@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import {
   MessageSquare,
   Users,
@@ -29,7 +29,6 @@ import {
 
 export function SupportChat() {
   const { toast } = useToast()
-  const queryClient = useQueryClient()
 
   // 状态
   const [selectedSession, setSelectedSession] = useState<ChatSession | null>(null)

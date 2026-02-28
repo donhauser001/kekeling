@@ -5,7 +5,7 @@
  * - GET /escort-app/distribution/records
  */
 
-import type { ThemeSettings, PreviewViewerRole, DistributionRecord as BaseRecord } from '../../../../types'
+import type { ThemeSettings, PreviewViewerRole } from '../../../../types'
 
 export interface DistributionRecordsPageProps {
   themeSettings: ThemeSettings

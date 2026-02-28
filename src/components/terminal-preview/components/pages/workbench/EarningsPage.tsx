@@ -305,7 +305,7 @@ export function EarningsPage({
 
         {/* 加载中 */}
         {loading && (
-          <ListSkeleton count={5} variant="simple" isDarkMode={isDarkMode} />
+          <ListSkeleton count={5} variant="row" isDarkMode={isDarkMode} />
         )}
 
         {/* 请求失败 */}

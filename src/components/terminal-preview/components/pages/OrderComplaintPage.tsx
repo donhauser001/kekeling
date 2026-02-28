@@ -79,10 +79,11 @@ export function OrderComplaintPage({
 
   // 选择图片
   const handleChooseImage = () => {
-    const isWx = typeof wx !== 'undefined' && typeof wx.chooseMedia === 'function'
+    const wxApi = typeof wx !== 'undefined' ? (wx as unknown as { chooseMedia?: (...args: unknown[]) => void }) : undefined
+    const isWx = typeof wxApi?.chooseMedia === 'function'
 
     if (isWx) {
-      // @ts-expect-error wx 在小程序环境中存在
+      // @ts-ignore wx 在小程序环境中存在
       wx.chooseMedia({
         count: 6 - evidence.length,
         mediaType: ['image'],
@@ -129,7 +130,7 @@ export function OrderComplaintPage({
   const handleSubmit = async () => {
     if (!selectedType) {
       if (isWxEnvironment() && typeof wx !== 'undefined') {
-        // @ts-expect-error wx
+        // @ts-ignore wx
         wx.showToast?.({ title: '请选择投诉类型', icon: 'none' })
       } else {
         alert('请选择投诉类型')
@@ -138,7 +139,7 @@ export function OrderComplaintPage({
     }
     if (!content.trim()) {
       if (isWxEnvironment() && typeof wx !== 'undefined') {
-        // @ts-expect-error wx
+        // @ts-ignore wx
         wx.showToast?.({ title: '请填写投诉内容', icon: 'none' })
       } else {
         alert('请填写投诉内容')
@@ -147,7 +148,7 @@ export function OrderComplaintPage({
     }
     if (content.length < 10) {
       if (isWxEnvironment() && typeof wx !== 'undefined') {
-        // @ts-expect-error wx
+        // @ts-ignore wx
         wx.showToast?.({ title: '投诉内容至少需要10个字', icon: 'none' })
       } else {
         alert('投诉内容至少需要10个字')
@@ -168,7 +169,7 @@ export function OrderComplaintPage({
     } catch (error) {
       console.error('提交投诉失败:', error)
       if (isWxEnvironment() && typeof wx !== 'undefined') {
-        // @ts-expect-error wx
+        // @ts-ignore wx
         wx.showToast?.({ title: '提交失败，请重试', icon: 'none' })
       }
     } finally {

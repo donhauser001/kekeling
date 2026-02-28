@@ -256,7 +256,7 @@ function ServiceCard({ service, themeSettings, isDarkMode, onClick }: ServiceCar
 
         {/* 标签行 */}
         <Box style={{ display: 'flex', alignItems: 'center', gap: 6 * wxScale, marginTop: 6 * wxScale }}>
-          {service.categoryName && (
+          {service.category?.name && (
             <Box
               style={{
                 paddingLeft: 6 * wxScale,
@@ -268,7 +268,7 @@ function ServiceCard({ service, themeSettings, isDarkMode, onClick }: ServiceCar
               }}
             >
               <Text style={{ fontSize: 10 * wxScale, color: primaryColor }}>
-                {service.categoryName}
+                {service.category.name}
               </Text>
             </Box>
           )}
@@ -307,9 +307,9 @@ function ServiceCard({ service, themeSettings, isDarkMode, onClick }: ServiceCar
               ¥{service.originalPrice}
             </Text>
           )}
-          {service.salesCount !== undefined && service.salesCount > 0 && (
+          {service.orderCount !== undefined && service.orderCount > 0 && (
             <Text style={{ fontSize: 11 * wxScale, color: textMuted, marginLeft: 'auto' }}>
-              已售 {formatCount(service.salesCount)}
+              已售 {formatCount(service.orderCount)}
             </Text>
           )}
         </Box>

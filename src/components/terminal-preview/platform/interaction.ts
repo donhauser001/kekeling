@@ -10,7 +10,8 @@ import { isWxEnvironment } from './env'
  */
 const getWx = () => {
   if (typeof wx !== 'undefined') return wx
-  if (typeof Taro !== 'undefined') return Taro
+  const maybeTaro = (globalThis as { Taro?: typeof wx }).Taro
+  if (typeof maybeTaro !== 'undefined') return maybeTaro
   return null
 }
 
@@ -28,11 +29,27 @@ export const makePhoneCall = async (phoneNumber: string): Promise<boolean> => {
     return false
   }
 
-  const wx = getWx()
+  const wxApi = getWx() as {
+    makePhoneCall?: (params: { phoneNumber: string }) => Promise<void>
+    openLocation?: (params: { latitude: number; longitude: number; name: string; address: string; scale: number }) => Promise<void>
+    chooseLocation?: () => Promise<void>
+    showModal?: (params: {
+      title: string
+      content: string
+      confirmText: string
+      cancelText: string
+      confirmColor?: string
+      showCancel: boolean
+    }) => Promise<{ confirm: boolean }>
+    showToast?: (params: { title: string; icon: ToastIcon; duration: number }) => Promise<void>
+    hideToast?: () => Promise<void>
+    showLoading?: (params: { title: string; mask: boolean }) => Promise<void>
+    hideLoading?: () => Promise<void>
+  } | null
   
-  if (isWxEnvironment() && wx?.makePhoneCall) {
+  if (isWxEnvironment() && wxApi?.makePhoneCall) {
     try {
-      await wx.makePhoneCall({ phoneNumber })
+      await wxApi.makePhoneCall({ phoneNumber })
       return true
     } catch (err: any) {
       // 用户取消拨打不算失败
@@ -66,11 +83,11 @@ interface NavigateToLocationOptions {
  */
 export const navigateToLocation = async (options: NavigateToLocationOptions): Promise<boolean> => {
   const { latitude, longitude, name, address } = options
-  const wx = getWx()
+  const wxApi = getWx() as { openLocation?: (params: { latitude: number; longitude: number; name: string; address: string; scale: number }) => Promise<void> } | null
 
-  if (isWxEnvironment() && wx?.openLocation) {
+  if (isWxEnvironment() && wxApi?.openLocation) {
     try {
-      await wx.openLocation({
+      await wxApi.openLocation({
         latitude,
         longitude,
         name: name || '',
@@ -96,13 +113,12 @@ export const navigateToLocation = async (options: NavigateToLocationOptions): Pr
  * @param name 地点名称
  */
 export const navigateByAddress = async (address: string, name?: string): Promise<boolean> => {
-  const wx = getWx()
+  const wxApi = getWx() as { chooseLocation?: () => Promise<void> } | null
 
-  if (isWxEnvironment() && wx?.chooseLocation) {
+  if (isWxEnvironment() && wxApi?.chooseLocation) {
     // 小程序中可以搜索地点
     try {
       // 使用地图搜索
-      const searchUrl = `plugin://chooseLocation/index?key=YOUR_KEY&referer=kekeling&location=${encodeURIComponent(address)}`
       // 降级：打开地图搜索
       await showToast('请在地图中搜索：' + (name || address), 'none', 2000)
       return false
@@ -147,11 +163,20 @@ export const showConfirmModal = async (options: ConfirmModalOptions): Promise<bo
     showCancel = true,
   } = options
 
-  const wx = getWx()
+  const wxApi = getWx() as {
+    showModal?: (params: {
+      title: string
+      content: string
+      confirmText: string
+      cancelText: string
+      confirmColor?: string
+      showCancel: boolean
+    }) => Promise<{ confirm: boolean }>
+  } | null
 
-  if (isWxEnvironment() && wx?.showModal) {
+  if (isWxEnvironment() && wxApi?.showModal) {
     try {
-      const res = await wx.showModal({
+      const res = await wxApi.showModal({
         title,
         content,
         confirmText,
@@ -187,11 +212,11 @@ export const showToast = async (
   icon: ToastIcon = 'none',
   duration: number = 2000
 ): Promise<void> => {
-  const wx = getWx()
+  const wxApi = getWx() as { showToast?: (params: { title: string; icon: ToastIcon; duration: number }) => Promise<void> } | null
 
-  if (isWxEnvironment() && wx?.showToast) {
+  if (isWxEnvironment() && wxApi?.showToast) {
     try {
-      await wx.showToast({
+      await wxApi.showToast({
         title,
         icon,
         duration,
@@ -232,9 +257,9 @@ export const showToast = async (
  * 隐藏 Toast
  */
 export const hideToast = async (): Promise<void> => {
-  const wx = getWx()
-  if (isWxEnvironment() && wx?.hideToast) {
-    await wx.hideToast()
+  const wxApi = getWx() as { hideToast?: () => Promise<void> } | null
+  if (isWxEnvironment() && wxApi?.hideToast) {
+    await wxApi.hideToast()
   }
 }
 
@@ -243,9 +268,9 @@ export const hideToast = async (): Promise<void> => {
  * @param title 提示文字
  */
 export const showLoading = async (title: string = '加载中...'): Promise<void> => {
-  const wx = getWx()
-  if (isWxEnvironment() && wx?.showLoading) {
-    await wx.showLoading({ title, mask: true })
+  const wxApi = getWx() as { showLoading?: (params: { title: string; mask: boolean }) => Promise<void> } | null
+  if (isWxEnvironment() && wxApi?.showLoading) {
+    await wxApi.showLoading({ title, mask: true })
   }
 }
 
@@ -253,9 +278,8 @@ export const showLoading = async (title: string = '加载中...'): Promise<void>
  * 隐藏加载中
  */
 export const hideLoading = async (): Promise<void> => {
-  const wx = getWx()
-  if (isWxEnvironment() && wx?.hideLoading) {
-    await wx.hideLoading()
+  const wxApi = getWx() as { hideLoading?: () => Promise<void> } | null
+  if (isWxEnvironment() && wxApi?.hideLoading) {
+    await wxApi.hideLoading()
   }
 }
-

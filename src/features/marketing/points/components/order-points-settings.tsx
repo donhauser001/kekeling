@@ -71,7 +71,7 @@ export function OrderPointsSettings() {
       if (firstOrderRule) {
         promises.push(pointApi.updateRule(firstOrderRule.id, {
           points: data.firstOrderUseRate ? 0 : data.firstOrderPoints,
-          pointsRate: data.firstOrderUseRate ? data.firstOrderRate : null,
+          pointsRate: data.firstOrderUseRate ? data.firstOrderRate : undefined,
           status: data.firstOrderEnabled ? 'active' : 'inactive',
         }))
       } else {

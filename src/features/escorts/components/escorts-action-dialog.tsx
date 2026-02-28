@@ -323,7 +323,7 @@ export function EscortsActionDialog({
           {/* 右侧：预览器 */}
           <div className='w-[375px] flex-shrink-0'>
             <TerminalPreview
-              page={isEdit ? 'escort-detail' : 'escort-list'}
+              page={isEdit ? 'escort-detail' : 'profile'}
               height={500}
               showFrame={false}
               autoLoad={false}
