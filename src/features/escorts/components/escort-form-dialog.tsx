@@ -58,6 +58,8 @@ interface FormData {
   level: 'senior' | 'intermediate' | 'junior' | 'trainee'
   experience: string
   introduction: string
+  foreignLanguage: string
+  education: string
   tags: string[]
   hospitalIds: string[]
 }
@@ -71,6 +73,8 @@ const defaultFormData: FormData = {
   level: 'junior',
   experience: '',
   introduction: '',
+  foreignLanguage: '',
+  education: '',
   tags: [],
   hospitalIds: [],
 }
@@ -120,6 +124,8 @@ export function EscortFormDialog({
         level: escort.level,
         experience: escort.experience || '',
         introduction: escort.introduction || '',
+        foreignLanguage: escort.foreignLanguage || '',
+        education: escort.education || '',
         tags: escort.tags || [],
         hospitalIds: escort.hospitals.map(h => h.id),
       })
@@ -183,6 +189,8 @@ export function EscortFormDialog({
           level: formData.level,
           experience: formData.experience.trim() || undefined,
           introduction: formData.introduction.trim() || undefined,
+          foreignLanguage: formData.foreignLanguage.trim() || undefined,
+          education: formData.education.trim() || undefined,
           tags: formData.tags.length ? formData.tags : undefined,
         }
         await updateMutation.mutateAsync({ id: escort!.id, data: updateData })
@@ -197,6 +205,8 @@ export function EscortFormDialog({
           level: formData.level,
           experience: formData.experience.trim() || undefined,
           introduction: formData.introduction.trim() || undefined,
+          foreignLanguage: formData.foreignLanguage.trim() || undefined,
+          education: formData.education.trim() || undefined,
           tags: formData.tags.length ? formData.tags : undefined,
           hospitalIds: formData.hospitalIds.length ? formData.hospitalIds : undefined,
         }
@@ -323,6 +333,33 @@ export function EscortFormDialog({
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+                <div className='space-y-2'>
+                  <Label htmlFor='education'>学历</Label>
+                  <Select
+                    value={formData.education || ''}
+                    onValueChange={v => updateField('education', v)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder='请选择学历' />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value='高中'>高中</SelectItem>
+                      <SelectItem value='大专'>大专</SelectItem>
+                      <SelectItem value='本科'>本科</SelectItem>
+                      <SelectItem value='硕士'>硕士</SelectItem>
+                      <SelectItem value='博士'>博士</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className='space-y-2'>
+                  <Label htmlFor='foreignLanguage'>外语能力</Label>
+                  <Input
+                    id='foreignLanguage'
+                    value={formData.foreignLanguage}
+                    onChange={e => updateField('foreignLanguage', e.target.value)}
+                    placeholder='如: 英语六级、日语N1'
+                  />
                 </div>
               </div>
               <div className='space-y-2'>

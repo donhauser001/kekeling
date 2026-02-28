@@ -532,10 +532,12 @@ model Escort {
   // 业务属性
   cityCode     String   @default("110100") @map("city_code") // 城市代码 (默认北京)
   levelCode    String?  @map("level_code") // 等级代码，关联 EscortLevel（可选，迁移后关联）
-  experience   String? // 从业年限
-  introduction String? // 个人简介
-  tags         String[] @default([]) // 标签数组
-  certificates String? // JSON: [{name, url, expireDate, verified, verifiedAt}]
+  experience      String? // 从业年限
+  introduction    String? // 个人简介
+  tags            String[] @default([]) // 标签数组
+  certificates    String? // JSON: [{name, url, expireDate, verified, verifiedAt}]
+  foreignLanguage String? @map("foreign_language") // 外语能力（如：英语/日语/韩语等）
+  education       String? // 学历（如：高中/大专/本科/硕士/博士）
 
   // 服务配置 (Phase1 新增)
   serviceRadius      Int     @default(20) @map("service_radius") // 服务半径(公里)
@@ -656,11 +658,13 @@ model EscortApplication {
   emergencyPhone   String? @map("emergency_phone") // 紧急联系人电话
 
   // 新增字段（#27 陪诊员注册字段补齐）
-  age          Int?      // 年龄（可从身份证自动计算）
-  hospitals    String[]  @default([]) // 服务医院ID列表
-  departments  String[]  @default([]) // 擅长科室列表
-  specialties  String?   // 擅长病种（文本描述）
-  serviceAreas String?   @map("service_areas") // 服务/产品领域（文本描述）
+  age             Int?      // 年龄（可从身份证自动计算）
+  hospitals       String[]  @default([]) // 服务医院ID列表
+  departments     String[]  @default([]) // 擅长科室列表
+  specialties     String?   // 擅长病种（文本描述）
+  serviceAreas    String?   @map("service_areas") // 服务/产品领域（文本描述）
+  foreignLanguage String?   @map("foreign_language") // 外语能力
+  education       String?   // 学历
 
   // 邀请关系
   inviteCode String? @map("invite_code") // 使用的邀请码

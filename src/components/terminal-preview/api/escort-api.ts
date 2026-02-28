@@ -810,6 +810,8 @@ export const updateEscortProfile = async (data: {
   avatar?: string
   gender?: string
   introduction?: string
+  foreignLanguage?: string
+  education?: string
 }): Promise<EscortProfile | null> => {
   const currentEscortToken = getEscortToken()
 

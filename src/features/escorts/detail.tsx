@@ -436,6 +436,16 @@ export function EscortDetail() {
                     <span className="text-muted-foreground">所在城市</span>
                     <span>{cityMap[escort.cityCode] || escort.cityCode}</span>
                   </div>
+                  <Separator />
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">学历</span>
+                    <span>{escort.education || '未填写'}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">外语能力</span>
+                    <span>{escort.foreignLanguage || '未填写'}</span>
+                  </div>
                 </CardContent>
               </Card>
 

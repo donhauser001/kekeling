@@ -187,6 +187,18 @@ export function EscortsDetailSheet({
                                             </span>
                                             <span>{formatDate(escort.createdAt)}</span>
                                         </div>
+                                        {escort.education && (
+                                            <div className='flex items-center justify-between'>
+                                                <span className='text-muted-foreground'>学历</span>
+                                                <span>{escort.education}</span>
+                                            </div>
+                                        )}
+                                        {escort.foreignLanguage && (
+                                            <div className='flex items-center justify-between'>
+                                                <span className='text-muted-foreground'>外语能力</span>
+                                                <span>{escort.foreignLanguage}</span>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 

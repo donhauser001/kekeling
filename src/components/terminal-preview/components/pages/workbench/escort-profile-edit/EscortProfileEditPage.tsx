@@ -55,6 +55,8 @@ export function EscortProfileEditPage({
   const [name, setName] = useState('')
   const [gender, setGender] = useState<string>('')
   const [introduction, setIntroduction] = useState('')
+  const [foreignLanguage, setForeignLanguage] = useState('')
+  const [education, setEducation] = useState('')
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
 
   // UI 状态
@@ -77,6 +79,8 @@ export function EscortProfileEditPage({
           setName(data.name || '')
           setGender(data.gender || '')
           setIntroduction(data.introduction || '')
+          setForeignLanguage(data.foreignLanguage || '')
+          setEducation(data.education || '')
           setAvatarPreview(data.avatar || null)
         }
       })
@@ -116,6 +120,8 @@ export function EscortProfileEditPage({
         name: name || undefined,
         gender: gender || undefined,
         introduction: introduction || undefined,
+        foreignLanguage: foreignLanguage || undefined,
+        education: education || undefined,
         avatar: avatarPreview || undefined,
       })
       onBack?.()
@@ -546,6 +552,69 @@ export function EscortProfileEditPage({
               >
                 {profile?.orderCount || 0} 单
               </Text>
+            </Box>
+          </Box>
+        </Box>
+
+        {/* 学历与外语 */}
+        <Box style={{ marginTop: 12 * wxScale, marginLeft: 12 * wxScale, marginRight: 12 * wxScale }}>
+          <Box
+            style={{
+              backgroundColor: cardBg,
+              borderRadius: 12 * wxScale,
+              overflow: 'hidden',
+            }}
+          >
+            <Box
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                padding: 12 * wxScale,
+                borderBottom: `1px solid ${borderColor}`,
+              }}
+            >
+              <Text style={{ fontSize: 14 * wxScale, width: 80 * wxScale, color: textSecondary }}>
+                学历
+              </Text>
+              <Box style={{ flex: 1 }}>
+                <Input
+                  value={education}
+                  onChange={setEducation}
+                  placeholder="如：本科"
+                  style={{
+                    width: '100%',
+                    fontSize: 14 * wxScale,
+                    textAlign: 'right',
+                    color: textPrimary,
+                    backgroundColor: 'transparent',
+                  }}
+                />
+              </Box>
+            </Box>
+            <Box
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                padding: 12 * wxScale,
+              }}
+            >
+              <Text style={{ fontSize: 14 * wxScale, width: 80 * wxScale, color: textSecondary }}>
+                外语能力
+              </Text>
+              <Box style={{ flex: 1 }}>
+                <Input
+                  value={foreignLanguage}
+                  onChange={setForeignLanguage}
+                  placeholder="如：英语六级"
+                  style={{
+                    width: '100%',
+                    fontSize: 14 * wxScale,
+                    textAlign: 'right',
+                    color: textPrimary,
+                    backgroundColor: 'transparent',
+                  }}
+                />
+              </Box>
             </Box>
           </Box>
         </Box>

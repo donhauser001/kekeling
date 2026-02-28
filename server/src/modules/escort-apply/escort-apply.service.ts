@@ -222,6 +222,8 @@ export class EscortApplyService {
         departments: dto.departments || [],
         specialties: dto.specialties,
         serviceAreas: dto.serviceAreas,
+        foreignLanguage: dto.foreignLanguage,
+        education: dto.education,
       },
     });
 
@@ -303,6 +305,8 @@ export class EscortApplyService {
         departments: dto.departments || [],
         specialties: dto.specialties,
         serviceAreas: dto.serviceAreas,
+        foreignLanguage: dto.foreignLanguage,
+        education: dto.education,
       },
     });
 
@@ -579,6 +583,8 @@ export class EscortApplyService {
           gender: application.gender,
           emergencyContact: application.emergencyContact,
           emergencyPhone: application.emergencyPhone,
+          foreignLanguage: application.foreignLanguage,
+          education: application.education,
           status: 'active',
           workStatus: 'resting',
           // 如果有邀请人，建立分销关系

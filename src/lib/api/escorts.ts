@@ -34,6 +34,8 @@ export interface Escort {
   introduction: string | null
   tags: string[]
   certificates: EscortCertificate[]
+  foreignLanguage: string | null
+  education: string | null
   rating: number
   orderCount: number
   status: 'pending' | 'active' | 'inactive' | 'suspended'
@@ -71,6 +73,8 @@ export interface CreateEscortData {
   tags?: string[]
   certificates?: EscortCertificate[]
   hospitalIds?: string[]
+  foreignLanguage?: string
+  education?: string
 }
 
 export interface UpdateEscortData extends Partial<CreateEscortData> {

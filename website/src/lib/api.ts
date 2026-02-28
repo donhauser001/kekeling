@@ -521,6 +521,8 @@ export interface EscortApplicationData {
   emergencyContact?: string
   emergencyPhone?: string
   inviteCode?: string
+  foreignLanguage?: string
+  education?: string
 }
 
 /** 陪诊员申请 API */

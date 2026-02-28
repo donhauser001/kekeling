@@ -29,6 +29,8 @@ export interface EscortProfile {
   phone?: string
   gender?: string
   introduction?: string
+  foreignLanguage?: string
+  education?: string
   avatar?: string
   rating?: number
   orderCount?: number

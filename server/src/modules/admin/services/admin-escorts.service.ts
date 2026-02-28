@@ -23,6 +23,8 @@ export interface CreateEscortDto {
   serviceRadius?: number;
   serviceHours?: Record<string, Array<{ start: string; end: string }>>;
   maxDailyOrders?: number;
+  foreignLanguage?: string;
+  education?: string;
 }
 
 export interface UpdateEscortDto {
@@ -46,6 +48,8 @@ export interface UpdateEscortDto {
   serviceRadius?: number;
   serviceHours?: Record<string, Array<{ start: string; end: string }>>;
   maxDailyOrders?: number;
+  foreignLanguage?: string;
+  education?: string;
 }
 
 export interface AssociateHospitalDto {

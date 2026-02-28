@@ -313,6 +313,8 @@ export class EscortAppService {
       avatar?: string;
       gender?: string;
       introduction?: string;
+      foreignLanguage?: string;
+      education?: string;
     },
   ) {
     const escortId = await this.getEscortId(userId);
@@ -324,6 +326,8 @@ export class EscortAppService {
         avatar: data.avatar,
         gender: data.gender,
         introduction: data.introduction,
+        foreignLanguage: data.foreignLanguage,
+        education: data.education,
       },
     });
   }
@@ -336,6 +340,8 @@ export class EscortAppService {
       avatar?: string;
       gender?: string;
       introduction?: string;
+      foreignLanguage?: string;
+      education?: string;
     },
   ) {
     return this.prisma.escort.update({
@@ -345,6 +351,8 @@ export class EscortAppService {
         avatar: data.avatar,
         gender: data.gender,
         introduction: data.introduction,
+        foreignLanguage: data.foreignLanguage,
+        education: data.education,
       },
     });
   }

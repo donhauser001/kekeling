@@ -49,6 +49,8 @@ export function ApplyForm({
     departments: [],
     specialties: '',
     serviceAreas: '',
+    foreignLanguage: '',
+    education: '',
   })
   const [inviter, setInviter] = useState<InviterInfo | null>(null)
   const [inviteCodeError, setInviteCodeError] = useState('')
@@ -427,11 +429,41 @@ export function ApplyForm({
         </FormItem>
 
         {/* 服务领域 */}
-        <FormItem label="服务领域" colors={colors} noBorder>
+        <FormItem label="服务领域" colors={colors}>
           <Input
             value={formData.serviceAreas}
             onChange={(value) => updateField('serviceAreas', value)}
             placeholder="请输入服务/产品领域"
+            style={{
+              flex: 1,
+              fontSize: 14 * wxScale,
+              color: colors.textPrimary,
+              backgroundColor: 'transparent',
+            }}
+          />
+        </FormItem>
+
+        {/* 学历 */}
+        <FormItem label="学历" colors={colors}>
+          <Input
+            value={formData.education}
+            onChange={(value) => updateField('education', value)}
+            placeholder="如：本科、大专"
+            style={{
+              flex: 1,
+              fontSize: 14 * wxScale,
+              color: colors.textPrimary,
+              backgroundColor: 'transparent',
+            }}
+          />
+        </FormItem>
+
+        {/* 外语能力 */}
+        <FormItem label="外语能力" colors={colors} noBorder>
+          <Input
+            value={formData.foreignLanguage}
+            onChange={(value) => updateField('foreignLanguage', value)}
+            placeholder="如：英语六级、日语N1"
             style={{
               flex: 1,
               fontSize: 14 * wxScale,

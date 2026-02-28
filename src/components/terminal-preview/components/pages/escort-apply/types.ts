@@ -50,6 +50,8 @@ export interface ApplyFormData {
   departments: string[] // 擅长科室列表
   specialties: string // 擅长病种
   serviceAreas: string // 服务领域
+  foreignLanguage: string // 外语能力
+  education: string // 学历
 }
 
 // 医院信息（用于选择器展示）

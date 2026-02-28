@@ -511,6 +511,8 @@ export interface EscortProfile {
   phone: string
   gender: string
   introduction?: string | null
+  foreignLanguage?: string | null
+  education?: string | null
   levelCode?: string | null
   rating: number
   orderCount: number

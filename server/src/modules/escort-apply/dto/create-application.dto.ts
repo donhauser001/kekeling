@@ -96,4 +96,15 @@ export class CreateEscortApplicationDto {
   @IsOptional()
   @Length(0, 500, { message: '服务领域描述不能超过500个字符' })
   serviceAreas?: string;
+
+  @ApiPropertyOptional({ description: '外语能力（如：英语/日语/韩语等）' })
+  @IsString()
+  @IsOptional()
+  @Length(0, 100, { message: '外语能力描述不能超过100个字符' })
+  foreignLanguage?: string;
+
+  @ApiPropertyOptional({ description: '学历（高中/大专/本科/硕士/博士）' })
+  @IsString()
+  @IsOptional()
+  education?: string;
 }

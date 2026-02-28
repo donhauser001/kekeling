@@ -52,6 +52,8 @@ export function EscortRegisterPage() {
     password: '',
     confirmPassword: '',
     inviteCode: '',
+    education: '',
+    foreignLanguage: '',
     agree: false,
   })
 
@@ -295,8 +297,10 @@ export function EscortRegisterPage() {
         name: formData.name,
         phone: formData.phone,
         idCard: formData.idCard,
-        gender: 'unknown', // 可以后续在表单中添加性别选择
+        gender: 'unknown',
         inviteCode: formData.inviteCode || undefined,
+        education: formData.education || undefined,
+        foreignLanguage: formData.foreignLanguage || undefined,
       })
       setCurrentStep(2)
     } catch (err) {
@@ -656,6 +660,53 @@ export function EscortRegisterPage() {
             placeholder="如有邀请码请输入"
             value={formData.inviteCode}
             onChange={(e) => setFormData({ ...formData, inviteCode: e.target.value.toUpperCase() })}
+            className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl
+                     focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20
+                     transition-all outline-none text-base"
+          />
+        </div>
+      </div>
+
+      {/* 学历（选填） */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          学历 <span className="text-gray-400 font-normal">(选填)</span>
+        </label>
+        <div className="relative">
+          <div className="absolute left-4 top-1/2 -translate-y-1/2">
+            <Icon name="book-one" className="text-xl text-gray-400" />
+          </div>
+          <select
+            value={formData.education}
+            onChange={(e) => setFormData({ ...formData, education: e.target.value })}
+            className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl
+                     focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20
+                     transition-all outline-none text-base appearance-none"
+          >
+            <option value="">请选择学历</option>
+            <option value="高中">高中</option>
+            <option value="大专">大专</option>
+            <option value="本科">本科</option>
+            <option value="硕士">硕士</option>
+            <option value="博士">博士</option>
+          </select>
+        </div>
+      </div>
+
+      {/* 外语能力（选填） */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          外语能力 <span className="text-gray-400 font-normal">(选填)</span>
+        </label>
+        <div className="relative">
+          <div className="absolute left-4 top-1/2 -translate-y-1/2">
+            <Icon name="translate" className="text-xl text-gray-400" />
+          </div>
+          <input
+            type="text"
+            placeholder="如：英语六级、日语N1"
+            value={formData.foreignLanguage}
+            onChange={(e) => setFormData({ ...formData, foreignLanguage: e.target.value })}
             className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl
                      focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20
                      transition-all outline-none text-base"

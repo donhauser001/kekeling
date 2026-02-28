@@ -53,6 +53,8 @@ export class EscortAppController {
       avatar?: string;
       gender?: string;
       introduction?: string;
+      foreignLanguage?: string;
+      education?: string;
     },
   ) {
     const escortId = await this.getEscortIdFromRequest(req);
