@@ -1,6 +1,7 @@
 import { useParams, Link } from 'react-router-dom'
 import { usePageBySlug, useSidebarsForTarget } from '@/hooks/useApi'
 import { SidebarRenderer } from '@/components/SidebarRenderer'
+import { SafeHTML } from '@/components/SafeHTML'
 
 export function PageDetail() {
   const { slug } = useParams<{ slug: string }>()
@@ -71,7 +72,7 @@ export function PageDetail() {
         )}
 
         {/* 全宽内容区域 - 直接渲染HTML，无外层容器限制 */}
-        <div 
+        <SafeHTML
           className="prose prose-lg max-w-none 
                    prose-headings:text-gray-900 prose-headings:font-bold
                    prose-p:text-gray-700 prose-p:leading-relaxed
@@ -80,7 +81,7 @@ export function PageDetail() {
                    prose-ul:text-gray-700 prose-ol:text-gray-700
                    prose-blockquote:border-primary-500 prose-blockquote:text-gray-600
                    prose-code:text-primary-600 prose-code:bg-primary-50 prose-code:px-1 prose-code:rounded"
-          dangerouslySetInnerHTML={{ __html: page.content }}
+          html={page.content}
         />
       </div>
     )
@@ -133,11 +134,11 @@ export function PageDetail() {
                 )}
 
                 {/* Content */}
-                <div 
+                <SafeHTML
                   className="prose prose-lg max-w-none prose-headings:text-gray-900 
                            prose-p:text-gray-700 prose-a:text-primary-600 
                            prose-img:rounded-xl prose-img:shadow-lg"
-                  dangerouslySetInnerHTML={{ __html: page.content }}
+                  html={page.content}
                 />
               </div>
             </article>

@@ -5,6 +5,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { serviceApi, type Service } from '@/lib/api'
+import { SafeHTML } from '@/components/SafeHTML'
 
 // 图标组件
 function Icon({ name, className = '' }: { name: string; className?: string }) {
@@ -298,9 +299,9 @@ export function ServiceDetailPage() {
                 <Icon name="document" className="text-primary-600" />
                 服务详情
               </h2>
-              <div 
+              <SafeHTML
                 className="prose prose-gray max-w-none prose-headings:text-gray-900 prose-a:text-primary-600"
-                dangerouslySetInnerHTML={{ __html: service.content }}
+                html={service.content}
               />
             </div>
           )}

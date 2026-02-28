@@ -24,10 +24,39 @@ async function bootstrap() {
     rawBody: true, // 支持微信支付回调的 XML raw body
   });
 
+  const parseAllowedOrigins = (): string[] => {
+    const fromEnv = process.env.CORS_ORIGINS
+      ? process.env.CORS_ORIGINS.split(',').map((v) => v.trim()).filter(Boolean)
+      : []
+
+    if (fromEnv.length > 0) {
+      return fromEnv
+    }
+
+    if (process.env.NODE_ENV !== 'production') {
+      return ['http://localhost:3000', 'http://localhost:5173', 'http://127.0.0.1:3000', 'http://127.0.0.1:5173']
+    }
+
+    return []
+  }
+
+  const allowedOrigins = parseAllowedOrigins()
+
   // ⚠️ 重要：CORS 必须在静态文件服务之前配置，否则字体文件无法跨域访问
   // 启用 CORS（支持 Cookie）
   app.enableCors({
-    origin: true,
+    origin: (origin, callback) => {
+      // Allow server-to-server / curl style calls without Origin.
+      if (!origin) {
+        return callback(null, true)
+      }
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true)
+      }
+
+      return callback(new Error(`CORS blocked origin: ${origin}`), false)
+    },
     credentials: true, // 允许携带 Cookie
   });
 
@@ -79,4 +108,3 @@ async function bootstrap() {
 }
 
 bootstrap();
-

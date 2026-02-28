@@ -10,6 +10,7 @@ import { useSite } from '@/context/SiteContext'
 import { usePageBySlug, useSidebarsForTarget, type MenuItem } from '@/hooks/useApi'
 import { SidebarRenderer } from '@/components/SidebarRenderer'
 import { Seo } from '@/components/Seo'
+import { SafeHTML } from '@/components/SafeHTML'
 import { DefaultHomePage } from './DefaultHomePage'
 
 /** 递归查找首页菜单 */
@@ -90,7 +91,7 @@ function PageContent({ slug }: { slug: string }) {
         )}
 
         {/* 全宽内容区域 - 直接渲染HTML，无外层容器限制 */}
-        <div 
+        <SafeHTML
           className="prose prose-lg max-w-none 
                    prose-headings:text-gray-900 prose-headings:font-bold
                    prose-p:text-gray-700 prose-p:leading-relaxed
@@ -99,7 +100,7 @@ function PageContent({ slug }: { slug: string }) {
                    prose-ul:text-gray-700 prose-ol:text-gray-700
                    prose-blockquote:border-primary-500 prose-blockquote:text-gray-600
                    prose-code:text-primary-600 prose-code:bg-primary-50 prose-code:px-1 prose-code:rounded"
-          dangerouslySetInnerHTML={{ __html: page.content }}
+          html={page.content}
         />
       </div>
     )
@@ -157,7 +158,7 @@ function PageContent({ slug }: { slug: string }) {
             <main className="flex-1 min-w-0">
               <article className="bg-white rounded-2xl shadow-sm overflow-hidden">
                 <div className="p-8 lg:p-12">
-                  <div 
+                  <SafeHTML
                     className="prose prose-lg max-w-none 
                              prose-headings:text-gray-900 prose-headings:font-bold
                              prose-p:text-gray-700 prose-p:leading-relaxed
@@ -166,7 +167,7 @@ function PageContent({ slug }: { slug: string }) {
                              prose-ul:text-gray-700 prose-ol:text-gray-700
                              prose-blockquote:border-primary-500 prose-blockquote:text-gray-600
                              prose-code:text-primary-600 prose-code:bg-primary-50 prose-code:px-1 prose-code:rounded"
-                    dangerouslySetInnerHTML={{ __html: page.content }}
+                    html={page.content}
                   />
                 </div>
               </article>

@@ -5,6 +5,7 @@
 
 import { Link } from 'react-router-dom'
 import { type Sidebar, type SidebarWidget, getMenuLink } from '@/lib/api'
+import { SafeHTML } from '@/components/SafeHTML'
 
 interface SidebarRendererProps {
   sidebar: Sidebar
@@ -63,10 +64,7 @@ function WidgetRenderer({ widget }: { widget: SidebarWidget }) {
       )}
 
       {widget.type === 'html' && widget.htmlContent && (
-        <div 
-          className="prose prose-sm max-w-none"
-          dangerouslySetInnerHTML={{ __html: widget.htmlContent }}
-        />
+        <SafeHTML className="prose prose-sm max-w-none" html={widget.htmlContent} />
       )}
     </div>
   )
@@ -87,5 +85,4 @@ export function SidebarRenderer({ sidebar }: SidebarRendererProps) {
     </div>
   )
 }
-
 

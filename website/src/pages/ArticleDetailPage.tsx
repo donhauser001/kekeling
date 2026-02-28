@@ -5,6 +5,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { articleApi, type Article } from '@/lib/api'
+import { SafeHTML } from '@/components/SafeHTML'
 
 // 图标组件
 function Icon({ name, className = '' }: { name: string; className?: string }) {
@@ -256,7 +257,7 @@ export function ArticleDetailPage() {
                 )}
 
                 {/* 正文内容 */}
-                <div
+                <SafeHTML
                   className="prose prose-lg max-w-none 
                     prose-headings:text-gray-900 prose-headings:font-bold
                     prose-h2:text-xl prose-h2:mt-8 prose-h2:mb-4
@@ -270,7 +271,7 @@ export function ArticleDetailPage() {
                     prose-blockquote:border-l-primary-500 prose-blockquote:bg-gray-50 prose-blockquote:py-1 prose-blockquote:rounded-r-lg
                     prose-code:text-primary-600 prose-code:bg-primary-50 prose-code:px-1 prose-code:rounded
                     prose-pre:bg-gray-900 prose-pre:rounded-xl"
-                  dangerouslySetInnerHTML={{ __html: article.content }}
+                  html={article.content}
                 />
 
                 {/* 标签 */}

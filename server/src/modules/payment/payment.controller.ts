@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { PaymentService } from './payment.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { AdminGuard } from '../auth/guards/admin.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { ApiResponse } from '../../common/response/api-response';
 import { Request } from 'express';
@@ -122,8 +123,9 @@ export class PaymentController {
    * - 需要显式开启 ENABLE_MOCK_PAYMENT=true
    *
    * @see docs/终端预览器集成/安全审计报告-2024-12-13.md - P1-10
-   */
+  */
   @Post('mock-pay')
+  @UseGuards(AdminGuard)
   async mockPay(@Body() body: { orderId: string }) {
     // 安全修复：双重检查，生产环境完全禁用
     const isProduction = process.env.NODE_ENV === 'production';
@@ -161,4 +163,3 @@ export class PaymentController {
     return ApiResponse.success(result);
   }
 }
-
