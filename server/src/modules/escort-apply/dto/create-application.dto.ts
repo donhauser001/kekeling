@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import {
   IsString,
   IsNotEmpty,
@@ -67,6 +68,19 @@ export class CreateEscortApplicationDto {
   // ========== 新增字段（#27 陪诊员注册字段补齐）==========
 
   @ApiPropertyOptional({ description: '年龄（可选，可从身份证自动计算）' })
+  @Transform(({ value }) => {
+    if (value === '' || value === null || value === undefined) {
+      return undefined;
+    }
+    if (typeof value === 'number') {
+      return value;
+    }
+    if (typeof value === 'string') {
+      const parsed = Number(value);
+      return Number.isNaN(parsed) ? value : parsed;
+    }
+    return value;
+  })
   @IsInt({ message: '年龄必须为整数' })
   @Min(18, { message: '年龄不能小于18岁' })
   @Max(70, { message: '年龄不能大于70岁' })

@@ -55,7 +55,10 @@ async function bootstrap() {
         return callback(null, true)
       }
 
-      return callback(new Error(`CORS blocked origin: ${origin}`), false)
+      // Block CORS without turning the request into 500.
+      // This keeps browser access restricted while allowing non-browser clients
+      // (e.g. miniapp runtime asset loading) to receive normal responses.
+      return callback(null, false)
     },
     credentials: true, // 允许携带 Cookie
   });

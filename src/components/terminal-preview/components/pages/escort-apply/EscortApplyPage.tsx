@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react'
 import { Box, Text, Button, Icon, ScrollView } from '../../../ui/primitives'
 import { isWxEnvironment } from '../../../platform/env'
+import { showToast } from '../../../platform/interaction'
 import { previewApi } from '../../../api'
 import type { EscortApplyPageProps, ApplicationStatus, ApplyFormData, InviterInfo } from './types'
 import { getThemeColors } from './constants'
@@ -100,13 +101,21 @@ export function EscortApplyPage({
           submitData[key] = value
         }
       })
+      // age 在表单中是字符串，提交前统一转换为数字
+      if (typeof submitData.age === 'string') {
+        const parsedAge = Number(submitData.age)
+        if (!Number.isNaN(parsedAge)) {
+          submitData.age = parsedAge
+        }
+      }
       await previewApi.submitEscortApplication(submitData as any)
+      await showToast('申请提交成功', 'success')
       // 重新加载申请状态
       await loadApplication()
       setShowForm(false)
     } catch (error: any) {
       console.error('提交申请失败:', error)
-      // 可以添加 toast 提示
+      await showToast(error?.message || '提交失败，请重试', 'none')
     }
   }
 

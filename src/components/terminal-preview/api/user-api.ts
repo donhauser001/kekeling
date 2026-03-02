@@ -1394,10 +1394,25 @@ export const submitEscortApplication = async (data: {
   emergencyContact?: string
   emergencyPhone?: string
   inviteCode?: string
+  age?: number | string
+  hospitals?: string[]
+  departments?: string[]
+  specialties?: string
+  serviceAreas?: string
+  foreignLanguage?: string
+  education?: string
 }): Promise<any> => {
+  const normalizedData: Record<string, unknown> = { ...data }
+  if (typeof normalizedData.age === 'string' && normalizedData.age.trim() !== '') {
+    const parsedAge = Number(normalizedData.age)
+    if (!Number.isNaN(parsedAge)) {
+      normalizedData.age = parsedAge
+    }
+  }
+
   return await userRequest<any>('/escort-apply', {
     method: 'POST',
-    body: JSON.stringify(data),
+    body: JSON.stringify(normalizedData),
   })
 }
 

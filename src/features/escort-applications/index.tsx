@@ -351,7 +351,7 @@ function ApplicationCard({
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
             <Avatar className="h-12 w-12">
-              <AvatarImage src={application.avatar} />
+              <AvatarImage src={application.avatar || application.user?.avatar} />
               <AvatarFallback>{application.name[0]}</AvatarFallback>
             </Avatar>
             <div>
@@ -435,7 +435,7 @@ function ApplicationDetail({ application }: { application: EscortApplication }) 
       {/* 头像和基本信息 */}
       <div className="flex items-center gap-4">
         <Avatar className="h-16 w-16">
-          <AvatarImage src={application.avatar} />
+          <AvatarImage src={application.avatar || application.user?.avatar} />
           <AvatarFallback className="text-lg">{application.name[0]}</AvatarFallback>
         </Avatar>
         <div>

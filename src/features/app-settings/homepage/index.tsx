@@ -47,6 +47,7 @@ import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { TerminalPreview } from '@/components/terminal-preview'
+import { request } from '@/lib/api/request'
 import { cn } from '@/lib/utils'
 
 // 统计项配置
@@ -162,20 +163,15 @@ const getServices = async (): Promise<ServiceItem[]> => {
 
 // 获取首页设置
 const getHomePageSettings = async (): Promise<HomePageSettings> => {
-  const response = await fetch('/api/config/homepage/settings')
-  const result = await response.json()
-  return result.data
+  return request<HomePageSettings>('/config/homepage/settings')
 }
 
 // 更新首页设置
 const updateHomePageSettings = async (settings: Partial<HomePageSettings>) => {
-  const response = await fetch('/api/config/homepage/settings', {
+  return request<HomePageSettings>('/config/homepage/settings', {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(settings),
   })
-  const result = await response.json()
-  return result.data
 }
 
 export default function HomepageManagement() {

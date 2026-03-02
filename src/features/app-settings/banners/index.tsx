@@ -65,6 +65,7 @@ import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { cn } from '@/lib/utils'
 import { bannerApi, type Banner, type CreateBannerData } from '@/lib/api'
+import { request } from '@/lib/api/request'
 
 // 位置选项
 const positionOptions = [
@@ -121,20 +122,15 @@ interface BannerSettings {
 
 // 获取区域配置 API
 const getBannerSettings = async (): Promise<BannerSettings> => {
-  const response = await fetch('/api/config/banner/settings')
-  const result = await response.json()
-  return result.data
+  return request<BannerSettings>('/config/banner/settings')
 }
 
 // 更新区域配置 API
 const updateBannerAreaConfig = async (position: string, config: Partial<BannerAreaConfig>) => {
-  const response = await fetch(`/api/config/banner/settings/${position}`, {
+  return request<BannerAreaConfig>(`/config/banner/settings/${position}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(config),
   })
-  const result = await response.json()
-  return result.data
 }
 
 // 单个区域的轮播图管理组件

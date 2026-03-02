@@ -202,14 +202,24 @@ export class EscortApplyService {
       inviterId = inviter.id;
     }
 
-    // 5. 创建申请记录
+    // 5. 头像兜底：若前端未传 avatar，尝试使用用户资料头像
+    let avatar = dto.avatar || null;
+    if (!avatar) {
+      const userProfile = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { avatar: true },
+      });
+      avatar = userProfile?.avatar || null;
+    }
+
+    // 6. 创建申请记录
     const application = await this.prisma.escortApplication.create({
       data: {
         userId,
         name: dto.name,
         phone: dto.phone,
         idCard: dto.idCard,
-        avatar: dto.avatar,
+        avatar,
         gender: dto.gender,
         emergencyContact: dto.emergencyContact,
         emergencyPhone: dto.emergencyPhone,
