@@ -17,15 +17,27 @@ export class EscortAppService {
   ) { }
 
   // 获取陪诊员ID（辅助方法）
-  private async getEscortId(userId: string): Promise<string> {
-    const escort = await this.prisma.escort.findFirst({
-      where: { userId },
+  // 兼容两类 token:
+  // 1) userToken -> 传入 userId
+  // 2) escortToken(公开申请渠道) -> 可能仅有 escortId
+  private async getEscortId(identity: string): Promise<string> {
+    const escortByUserId = await this.prisma.escort.findFirst({
+      where: { userId: identity },
       select: { id: true },
     });
-    if (!escort) {
-      throw new NotFoundException('您不是陪诊员');
+    if (escortByUserId) {
+      return escortByUserId.id;
     }
-    return escort.id;
+
+    const escortById = await this.prisma.escort.findUnique({
+      where: { id: identity },
+      select: { id: true },
+    });
+    if (escortById) {
+      return escortById.id;
+    }
+
+    throw new NotFoundException('您不是陪诊员');
   }
 
   // 解析时间为分钟数（辅助方法）
