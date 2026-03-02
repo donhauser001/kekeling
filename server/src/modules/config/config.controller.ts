@@ -5,6 +5,7 @@ import { SmsService } from '../escort-auth/sms.service';
 import { ApiResponse } from '../../common/response/api-response';
 import { type OrderSettings, type ThemeSettings, type BannerPosition, type BannerAreaConfig, type HomePageSettings, type SmsSettings, type MiniappSettings, type WechatPaySettings, type AlipaySettings, type MarketingSettings } from './dto/config.dto';
 import { AdminGuard } from '../auth/guards/admin.guard';
+import { AdminPublic } from '../auth/decorators/public-admin.decorator';
 
 @ApiTags('系统配置')
 @UseGuards(AdminGuard)
@@ -70,8 +71,17 @@ export class ConfigController {
   // ============================================
 
   @Get('theme/settings')
+  @AdminPublic()
   @ApiOperation({ summary: '获取主题设置' })
   async getThemeSettings() {
+    const data = await this.configService.getThemeSettings();
+    return ApiResponse.success(data);
+  }
+
+  @Get('theme')
+  @AdminPublic()
+  @ApiOperation({ summary: '获取主题设置（兼容旧路径）' })
+  async getThemeLegacy() {
     const data = await this.configService.getThemeSettings();
     return ApiResponse.success(data);
   }

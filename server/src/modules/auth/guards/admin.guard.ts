@@ -1,5 +1,7 @@
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { Reflector } from '@nestjs/core';
+import { ADMIN_PUBLIC_KEY } from '../decorators/public-admin.decorator';
 
 /**
  * 管理员权限守卫
@@ -7,7 +9,19 @@ import { AuthGuard } from '@nestjs/passport';
  */
 @Injectable()
 export class AdminGuard extends AuthGuard('jwt') implements CanActivate {
+  constructor(private readonly reflector: Reflector) {
+    super();
+  }
+
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    const isAdminPublic = this.reflector.getAllAndOverride<boolean>(ADMIN_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (isAdminPublic) {
+      return true;
+    }
+
     // 1) 先验证 JWT（未登录直接拦截）
     const isAuthenticated = await super.canActivate(context);
     if (!isAuthenticated) {

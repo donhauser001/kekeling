@@ -68,13 +68,14 @@ function loadIconFonts() {
  */
 function preloadThemeSettings() {
   Taro.request({
-    url: `${SERVER_BASE_URL}/api/config/theme`,
+    url: `${SERVER_BASE_URL}/api/config/theme/settings`,
     method: 'GET',
     success: (res) => {
-      if (res.statusCode === 200 && res.data) {
+      const payload = (res.data as { data?: unknown })?.data ?? res.data
+      if (res.statusCode === 200 && payload) {
         // 缓存主题设置
-        Taro.setStorageSync(THEME_CACHE_KEY, JSON.stringify(res.data))
-        console.log('[Theme] 主题预加载成功:', res.data.primaryColor)
+        Taro.setStorageSync(THEME_CACHE_KEY, JSON.stringify(payload))
+        console.log('[Theme] 主题预加载成功')
       }
     },
     fail: (err) => {
