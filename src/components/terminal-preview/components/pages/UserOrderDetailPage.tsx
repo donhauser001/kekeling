@@ -271,7 +271,7 @@ function InfoRow({
 export function UserOrderDetailPage({
   themeSettings,
   isDarkMode,
-  orderId,
+  orderId: _orderId,
   onBack,
   onNavigate,
 }: UserOrderDetailPageProps) {

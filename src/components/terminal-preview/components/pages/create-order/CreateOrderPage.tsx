@@ -62,7 +62,7 @@ export function CreateOrderPage({
   themeSettings,
   isDarkMode = false,
   onBack,
-  onNavigate,
+  onNavigate: _onNavigate,
 }: CreateOrderPageProps) {
   const withFallbackDepartment = (items: Department[]) => {
     const hasOther = items.some((item) => item.id === fallbackDepartment.id || item.name === fallbackDepartment.name)

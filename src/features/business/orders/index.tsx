@@ -175,13 +175,15 @@ export function Orders() {
     setSelectedEscortId('')
     setAssignDialogOpen(true)
   }
+  void _openAssignDialog
 
   // 打开取消对话框
-  const openCancelDialog = (order: Order) => {
+  const _openCancelDialog = (order: Order) => {
     setSelectedOrder(order)
     setCancelReason('')
     setCancelDialogOpen(true)
   }
+  void _openCancelDialog
 
   // 打开删除对话框
   const openDeleteDialog = (order: Order) => {
