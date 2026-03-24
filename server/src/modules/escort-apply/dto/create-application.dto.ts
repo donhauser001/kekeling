@@ -11,6 +11,7 @@ import {
   Min,
   Max,
   IsArray,
+  ArrayMinSize,
 } from 'class-validator';
 
 export enum Gender {
@@ -67,7 +68,7 @@ export class CreateEscortApplicationDto {
 
   // ========== 新增字段（#27 陪诊员注册字段补齐）==========
 
-  @ApiPropertyOptional({ description: '年龄（可选，可从身份证自动计算）' })
+  @ApiProperty({ description: '年龄（必填，可从身份证自动计算）' })
   @Transform(({ value }) => {
     if (value === '' || value === null || value === undefined) {
       return undefined;
@@ -84,41 +85,40 @@ export class CreateEscortApplicationDto {
   @IsInt({ message: '年龄必须为整数' })
   @Min(18, { message: '年龄不能小于18岁' })
   @Max(70, { message: '年龄不能大于70岁' })
-  @IsOptional()
-  age?: number;
+  age: number;
 
-  @ApiPropertyOptional({ description: '服务医院ID列表', type: [String] })
+  @ApiProperty({ description: '服务医院名称列表，支持自定义其他项', type: [String] })
   @IsArray({ message: '医院列表格式错误' })
+  @ArrayMinSize(1, { message: '请至少选择一个服务医院' })
   @IsString({ each: true, message: '医院ID必须为字符串' })
-  @IsOptional()
-  hospitals?: string[];
+  hospitals: string[];
 
-  @ApiPropertyOptional({ description: '擅长科室列表', type: [String] })
+  @ApiProperty({ description: '擅长科室列表，支持自定义其他项', type: [String] })
   @IsArray({ message: '科室列表格式错误' })
+  @ArrayMinSize(1, { message: '请至少选择一个擅长科室' })
   @IsString({ each: true, message: '科室名称必须为字符串' })
-  @IsOptional()
-  departments?: string[];
+  departments: string[];
 
-  @ApiPropertyOptional({ description: '擅长病种（文本描述）' })
+  @ApiProperty({ description: '擅长病种（文本描述）' })
   @IsString()
-  @IsOptional()
+  @IsNotEmpty({ message: '擅长病种不能为空' })
   @Length(0, 500, { message: '擅长病种描述不能超过500个字符' })
-  specialties?: string;
+  specialties: string;
 
-  @ApiPropertyOptional({ description: '服务/产品领域（文本描述）' })
+  @ApiProperty({ description: '既往产品线与产品名称组合文本，例如：设备：超声刀' })
   @IsString()
-  @IsOptional()
+  @IsNotEmpty({ message: '既往产品线不能为空' })
   @Length(0, 500, { message: '服务领域描述不能超过500个字符' })
-  serviceAreas?: string;
+  serviceAreas: string;
 
-  @ApiPropertyOptional({ description: '外语能力（如：英语/日语/韩语等）' })
+  @ApiProperty({ description: '外语能力（如：英语/日语/韩语等）' })
   @IsString()
-  @IsOptional()
+  @IsNotEmpty({ message: '外语能力不能为空' })
   @Length(0, 100, { message: '外语能力描述不能超过100个字符' })
-  foreignLanguage?: string;
+  foreignLanguage: string;
 
-  @ApiPropertyOptional({ description: '学历（高中/大专/本科/硕士/博士）' })
+  @ApiProperty({ description: '学历（高中/大专/本科/硕士/博士）' })
   @IsString()
-  @IsOptional()
-  education?: string;
+  @IsNotEmpty({ message: '学历不能为空' })
+  education: string;
 }

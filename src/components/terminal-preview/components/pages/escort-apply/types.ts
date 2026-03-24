@@ -46,10 +46,12 @@ export interface ApplyFormData {
   inviteCode: string
   // 新增字段（#27 陪诊员注册字段补齐）
   age: string // 用字符串方便表单处理，提交时转为数字
-  hospitals: string[] // 服务医院ID列表
+  hospitals: string[] // 服务医院名称列表
   departments: string[] // 擅长科室列表
   specialties: string // 擅长病种
-  serviceAreas: string // 服务领域
+  serviceAreas: string // 既往产品线与产品名称（提交用）
+  productLine: string // 既往产品线
+  productName: string // 具体产品名称
   foreignLanguage: string // 外语能力
   education: string // 学历
 }

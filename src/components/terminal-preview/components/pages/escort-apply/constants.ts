@@ -19,6 +19,15 @@ export const GENDER_OPTIONS = [
   { value: 'female', label: '女' },
 ]
 
+export const PRODUCT_LINE_OPTIONS = [
+  '设备',
+  '耗材',
+  '药品',
+  'IVD',
+  '基因检测',
+  '其他',
+]
+
 export const STATUS_CONFIG = {
   pending: {
     title: '审核中',

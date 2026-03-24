@@ -94,13 +94,21 @@ export function EscortApplyPage({
 
   const handleSubmit = async (data: ApplyFormData) => {
     try {
+      const submitSource = {
+        ...data,
+        serviceAreas: data.productLine && data.productName
+          ? `${data.productLine}：${data.productName}`
+          : data.serviceAreas,
+      }
       // 过滤掉空字符串字段，避免后端验证失败
       const submitData: Record<string, unknown> = {}
-      Object.entries(data).forEach(([key, value]) => {
+      Object.entries(submitSource).forEach(([key, value]) => {
         if (value !== '' && value !== null && value !== undefined) {
           submitData[key] = value
         }
       })
+      delete submitData.productLine
+      delete submitData.productName
       // age 在表单中是字符串，提交前统一转换为数字
       if (typeof submitData.age === 'string') {
         const parsedAge = Number(submitData.age)
@@ -134,6 +142,10 @@ export function EscortApplyPage({
 
   const handleGoWorkbench = () => {
     onNavigate?.('workbench')
+  }
+
+  const handleViewAgreement = () => {
+    onNavigate?.('cms-page', { slug: 'escort-terms' })
   }
 
   // ============================================================================
@@ -215,6 +227,7 @@ export function EscortApplyPage({
             initialInviteCode={initialInviteCode}
             onSubmit={handleSubmit}
             onValidateInviteCode={handleValidateInviteCode}
+            onViewAgreement={handleViewAgreement}
           />
         ) : application ? (
           <ApplyStatusCard
@@ -234,6 +247,7 @@ export function EscortApplyPage({
             initialInviteCode={initialInviteCode}
             onSubmit={handleSubmit}
             onValidateInviteCode={handleValidateInviteCode}
+            onViewAgreement={handleViewAgreement}
           />
         )}
       </ScrollView>

@@ -3,12 +3,13 @@
  * 按《小程序页面改造规范》改造
  */
 
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Box, Text, Button, Input, Icon, Image } from '../../../../ui/primitives'
 import { isWxEnvironment } from '../../../../platform/env'
 import { getFullResourceUrl } from '../../../../platform/config'
+import { previewApi } from '../../../../api'
 import type { ApplyFormData, InviterInfo, ThemeColors } from '../types'
-import { GENDER_OPTIONS } from '../constants'
+import { GENDER_OPTIONS, PRODUCT_LINE_OPTIONS } from '../constants'
 
 const wxScale = isWxEnvironment() ? 1.1 : 1
 
@@ -22,6 +23,7 @@ interface ApplyFormProps {
   initialInviteCode?: string
   onSubmit: (data: ApplyFormData) => Promise<void>
   onValidateInviteCode: (code: string) => Promise<{ valid: boolean; inviter?: InviterInfo; message?: string }>
+  onViewAgreement?: () => void
 }
 
 export function ApplyForm({
@@ -33,6 +35,7 @@ export function ApplyForm({
   initialInviteCode,
   onSubmit,
   onValidateInviteCode,
+  onViewAgreement,
 }: ApplyFormProps) {
   const [formData, setFormData] = useState<ApplyFormData>({
     name: '',
@@ -49,6 +52,8 @@ export function ApplyForm({
     departments: [],
     specialties: '',
     serviceAreas: '',
+    productLine: '',
+    productName: '',
     foreignLanguage: '',
     education: '',
   })
@@ -56,6 +61,96 @@ export function ApplyForm({
   const [inviteCodeError, setInviteCodeError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [hospitalOptions, setHospitalOptions] = useState<Array<{ id: string; name: string }>>([])
+  const [departmentOptions, setDepartmentOptions] = useState<string[]>([])
+  const [selectedHospitalIds, setSelectedHospitalIds] = useState<string[]>([])
+  const [selectedDepartments, setSelectedDepartments] = useState<string[]>([])
+  const [showHospitalPicker, setShowHospitalPicker] = useState(false)
+  const [showDepartmentPicker, setShowDepartmentPicker] = useState(false)
+  const [showProductLinePicker, setShowProductLinePicker] = useState(false)
+  const [useCustomHospitals, setUseCustomHospitals] = useState(false)
+  const [useCustomDepartments, setUseCustomDepartments] = useState(false)
+  const [customHospitalInput, setCustomHospitalInput] = useState('')
+  const [customDepartmentInput, setCustomDepartmentInput] = useState('')
+
+  const parseCustomValues = (value: string) =>
+    value
+      .split(/[、,，\n]/)
+      .map((item) => item.trim())
+      .filter(Boolean)
+
+  const selectedHospitalNames = useMemo(
+    () => hospitalOptions
+      .filter((option) => selectedHospitalIds.includes(option.id))
+      .map((option) => option.name),
+    [hospitalOptions, selectedHospitalIds]
+  )
+
+  const customHospitalValues = useMemo(
+    () => (useCustomHospitals ? parseCustomValues(customHospitalInput) : []),
+    [useCustomHospitals, customHospitalInput]
+  )
+
+  const customDepartmentValues = useMemo(
+    () => (useCustomDepartments ? parseCustomValues(customDepartmentInput) : []),
+    [useCustomDepartments, customDepartmentInput]
+  )
+
+  useEffect(() => {
+    previewApi.getHospitals({ pageSize: 200 })
+      .then((result) => {
+        setHospitalOptions(result?.data || [])
+      })
+      .catch((error) => {
+        console.warn('[ApplyForm] 获取医院列表失败:', error)
+      })
+  }, [])
+
+  useEffect(() => {
+    if (selectedHospitalIds.length === 0) {
+      setDepartmentOptions([])
+      setSelectedDepartments([])
+      setFormData((prev) => ({ ...prev, departments: customDepartmentValues }))
+      return
+    }
+
+    Promise.all(selectedHospitalIds.map((hospitalId) => previewApi.getHospitalDepartments(hospitalId)))
+      .then((results) => {
+        const names = Array.from(new Set(results.flatMap((departments) => flattenDepartmentNames(departments))))
+        setDepartmentOptions(names)
+        setSelectedDepartments((prev) => prev.filter((item) => names.includes(item)))
+      })
+      .catch((error) => {
+        console.warn('[ApplyForm] 获取科室列表失败:', error)
+      })
+  }, [selectedHospitalIds])
+
+  useEffect(() => {
+    setFormData((prev) => ({ ...prev, hospitals: [...selectedHospitalNames, ...customHospitalValues] }))
+    if (selectedHospitalNames.length > 0 || customHospitalValues.length > 0) {
+      setErrors((prev) => ({ ...prev, hospitals: '' }))
+    }
+  }, [selectedHospitalNames, customHospitalValues])
+
+  useEffect(() => {
+    setFormData((prev) => ({ ...prev, departments: [...selectedDepartments, ...customDepartmentValues] }))
+    if (selectedDepartments.length > 0 || customDepartmentValues.length > 0) {
+      setErrors((prev) => ({ ...prev, departments: '' }))
+    }
+  }, [selectedDepartments, customDepartmentValues])
+
+  useEffect(() => {
+    setFormData((prev) => ({
+      ...prev,
+      serviceAreas: prev.productLine && prev.productName ? `${prev.productLine}：${prev.productName}` : '',
+    }))
+  }, [formData.productLine, formData.productName])
+
+  useEffect(() => {
+    if (formData.productLine) {
+      setErrors((prev) => ({ ...prev, productLine: '' }))
+    }
+  }, [formData.productLine])
 
   const updateField = (field: keyof ApplyFormData, value: string | string[]) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -109,6 +204,30 @@ export function ApplyForm({
     }
     if (formData.emergencyPhone && !/^1[3-9]\d{9}$/.test(formData.emergencyPhone)) {
       newErrors.emergencyPhone = '手机号格式不正确'
+    }
+    if (!formData.age.trim()) {
+      newErrors.age = '请输入年龄'
+    }
+    if (formData.hospitals.length === 0) {
+      newErrors.hospitals = '请选择服务医院'
+    }
+    if (formData.departments.length === 0) {
+      newErrors.departments = '请选择擅长科室'
+    }
+    if (!formData.specialties.trim()) {
+      newErrors.specialties = '请输入擅长病种'
+    }
+    if (!formData.productLine.trim()) {
+      newErrors.productLine = '请选择既往产品线'
+    }
+    if (!formData.productName.trim()) {
+      newErrors.productName = '请输入具体产品名称'
+    }
+    if (!formData.education.trim()) {
+      newErrors.education = '请输入学历'
+    }
+    if (!formData.foreignLanguage.trim()) {
+      newErrors.foreignLanguage = '请输入外语能力'
     }
 
     setErrors(newErrors)
@@ -363,11 +482,11 @@ export function ApplyForm({
             marginBottom: 16 * wxScale,
           }}
         >
-          专业信息（选填）
+          专业信息
         </Text>
 
         {/* 年龄（自动从身份证计算） */}
-        <FormItem label="年龄" colors={colors}>
+        <FormItem label="年龄" required error={errors.age} colors={colors}>
           <Input
             value={formData.age}
             onChange={(value) => updateField('age', value)}
@@ -384,37 +503,27 @@ export function ApplyForm({
         </FormItem>
 
         {/* 服务医院 */}
-        <FormItem label="服务医院" colors={colors}>
-          <Input
+        <FormItem label="服务医院" required error={errors.hospitals} colors={colors}>
+          <SelectorField
             value={formData.hospitals.join('、')}
-            onChange={(value) => updateField('hospitals', value.split('、').filter(Boolean))}
-            placeholder="请输入服务医院（多个用顿号分隔）"
-            style={{
-              flex: 1,
-              fontSize: 14 * wxScale,
-              color: colors.textPrimary,
-              backgroundColor: 'transparent',
-            }}
+            placeholder="请选择服务医院"
+            colors={colors}
+            onClick={() => setShowHospitalPicker(true)}
           />
         </FormItem>
 
         {/* 擅长科室 */}
-        <FormItem label="擅长科室" colors={colors}>
-          <Input
+        <FormItem label="擅长科室" required error={errors.departments} colors={colors}>
+          <SelectorField
             value={formData.departments.join('、')}
-            onChange={(value) => updateField('departments', value.split('、').filter(Boolean))}
-            placeholder="请输入擅长科室（多个用顿号分隔）"
-            style={{
-              flex: 1,
-              fontSize: 14 * wxScale,
-              color: colors.textPrimary,
-              backgroundColor: 'transparent',
-            }}
+            placeholder="请选择擅长科室"
+            colors={colors}
+            onClick={() => setShowDepartmentPicker(true)}
           />
         </FormItem>
 
         {/* 擅长病种 */}
-        <FormItem label="擅长病种" colors={colors}>
+        <FormItem label="擅长病种" required error={errors.specialties} colors={colors}>
           <Input
             value={formData.specialties}
             onChange={(value) => updateField('specialties', value)}
@@ -428,12 +537,21 @@ export function ApplyForm({
           />
         </FormItem>
 
-        {/* 服务领域 */}
-        <FormItem label="服务领域" colors={colors}>
+        {/* 既往产品线 */}
+        <FormItem label="既往产品线" required error={errors.productLine} colors={colors}>
+          <SelectorField
+            value={formData.productLine}
+            placeholder="请选择既往产品线"
+            colors={colors}
+            onClick={() => setShowProductLinePicker(true)}
+          />
+        </FormItem>
+
+        <FormItem label="产品名称" required error={errors.productName} colors={colors}>
           <Input
-            value={formData.serviceAreas}
-            onChange={(value) => updateField('serviceAreas', value)}
-            placeholder="请输入服务/产品领域"
+            value={formData.productName}
+            onChange={(value) => updateField('productName', value)}
+            placeholder="请输入具体产品名称"
             style={{
               flex: 1,
               fontSize: 14 * wxScale,
@@ -444,7 +562,7 @@ export function ApplyForm({
         </FormItem>
 
         {/* 学历 */}
-        <FormItem label="学历" colors={colors}>
+        <FormItem label="学历" required error={errors.education} colors={colors}>
           <Input
             value={formData.education}
             onChange={(value) => updateField('education', value)}
@@ -459,7 +577,7 @@ export function ApplyForm({
         </FormItem>
 
         {/* 外语能力 */}
-        <FormItem label="外语能力" colors={colors} noBorder>
+        <FormItem label="外语能力" required error={errors.foreignLanguage} colors={colors} noBorder>
           <Input
             value={formData.foreignLanguage}
             onChange={(value) => updateField('foreignLanguage', value)}
@@ -587,8 +705,349 @@ export function ApplyForm({
           lineHeight: 1.6,
         }}
       >
-        提交申请即表示您同意《陪诊员服务协议》
+        提交申请即表示您同意
+        <Text
+          onClick={onViewAgreement}
+          style={{
+            color: primaryColor,
+            textDecorationLine: 'underline',
+          }}
+        >
+          《陪诊员服务协议》
+        </Text>
       </Text>
+
+      <MultiSelectModal
+        open={showHospitalPicker}
+        title="选择服务医院"
+        options={hospitalOptions.map((item) => ({ value: item.id, label: item.name }))}
+        selectedValues={selectedHospitalIds}
+        useCustom={useCustomHospitals}
+        customValue={customHospitalInput}
+        customPlaceholder="请输入其他医院，多个用顿号分隔"
+        onClose={() => setShowHospitalPicker(false)}
+        onToggleValue={(value) => {
+          setSelectedHospitalIds((prev) => (
+            prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value]
+          ))
+        }}
+        onToggleCustom={(checked) => {
+          setUseCustomHospitals(checked)
+          if (!checked) {
+            setCustomHospitalInput('')
+          }
+        }}
+        onCustomValueChange={setCustomHospitalInput}
+      />
+
+      <MultiSelectModal
+        open={showDepartmentPicker}
+        title="选择擅长科室"
+        options={departmentOptions.map((item) => ({ value: item, label: item }))}
+        selectedValues={selectedDepartments}
+        useCustom={useCustomDepartments}
+        customValue={customDepartmentInput}
+        customPlaceholder="请输入其他科室，多个用顿号分隔"
+        emptyText={selectedHospitalIds.length === 0 ? '请先选择服务医院' : '暂无可选科室'}
+        onClose={() => setShowDepartmentPicker(false)}
+        onToggleValue={(value) => {
+          setSelectedDepartments((prev) => (
+            prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value]
+          ))
+        }}
+        onToggleCustom={(checked) => {
+          setUseCustomDepartments(checked)
+          if (!checked) {
+            setCustomDepartmentInput('')
+          }
+        }}
+        onCustomValueChange={setCustomDepartmentInput}
+      />
+
+      <SingleSelectModal
+        open={showProductLinePicker}
+        title="选择既往产品线"
+        options={PRODUCT_LINE_OPTIONS}
+        selectedValue={formData.productLine}
+        onClose={() => setShowProductLinePicker(false)}
+        onSelect={(value) => {
+          updateField('productLine', value)
+          setShowProductLinePicker(false)
+        }}
+      />
+    </Box>
+  )
+}
+
+function flattenDepartmentNames(
+  departments: Array<{ name: string; children?: Array<{ name: string; children?: any[] }> }>
+): string[] {
+  return departments.flatMap((department) => [
+    department.name,
+    ...(department.children ? flattenDepartmentNames(department.children) : []),
+  ]).filter(Boolean)
+}
+
+function SelectorField({
+  value,
+  placeholder,
+  colors,
+  onClick,
+  children,
+}: {
+  value?: string
+  placeholder: string
+  colors: ThemeColors
+  onClick?: () => void
+  children?: React.ReactNode
+}) {
+  if (children) {
+    return <Box style={{ flex: 1 }}>{children}</Box>
+  }
+
+  return (
+    <Button
+      onClick={onClick}
+      style={{
+        flex: 1,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 8 * wxScale,
+      }}
+    >
+      <Text
+        style={{
+          flex: 1,
+          fontSize: 14 * wxScale,
+          color: value ? colors.textPrimary : colors.textMuted,
+          textAlign: 'left',
+        }}
+      >
+        {value || placeholder}
+      </Text>
+      <Icon name="down" size={16 * wxScale} color={colors.textMuted} />
+    </Button>
+  )
+}
+
+function MultiSelectModal({
+  open,
+  title,
+  options,
+  selectedValues,
+  useCustom,
+  customValue,
+  customPlaceholder,
+  emptyText = '暂无可选项',
+  onClose,
+  onToggleValue,
+  onToggleCustom,
+  onCustomValueChange,
+}: {
+  open: boolean
+  title: string
+  options: Array<{ value: string; label: string }>
+  selectedValues: string[]
+  useCustom: boolean
+  customValue: string
+  customPlaceholder: string
+  emptyText?: string
+  onClose: () => void
+  onToggleValue: (value: string) => void
+  onToggleCustom: (checked: boolean) => void
+  onCustomValueChange: (value: string) => void
+}) {
+  if (!open) return null
+
+  return (
+    <Box
+      style={{
+        position: 'fixed',
+        left: 0,
+        right: 0,
+        top: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0,0,0,0.45)',
+        zIndex: 999,
+        display: 'flex',
+        alignItems: 'flex-end',
+      }}
+    >
+      <Box
+        style={{
+          width: '100%',
+          maxHeight: '70vh',
+          backgroundColor: '#ffffff',
+          borderTopLeftRadius: 16 * wxScale,
+          borderTopRightRadius: 16 * wxScale,
+          padding: 16 * wxScale,
+        }}
+      >
+        <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 * wxScale }}>
+          <Text style={{ fontSize: 16 * wxScale, fontWeight: 600, color: '#111827' }}>{title}</Text>
+          <Button onClick={onClose} style={{ padding: 4 * wxScale }}>
+            <Icon name="close" size={18 * wxScale} color="#6b7280" />
+          </Button>
+        </Box>
+
+        <Box style={{ display: 'flex', flexDirection: 'column', gap: 10 * wxScale, maxHeight: '52vh', overflowY: 'auto' }}>
+          {options.length > 0 ? options.map((option) => {
+            const checked = selectedValues.includes(option.value)
+            return (
+              <Button
+                key={option.value}
+                onClick={() => onToggleValue(option.value)}
+                style={{
+                  width: '100%',
+                  padding: 12 * wxScale,
+                  borderRadius: 10 * wxScale,
+                  backgroundColor: checked ? '#22c55e' : '#f3f4f6',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <Text style={{ fontSize: 14 * wxScale, color: checked ? '#ffffff' : '#111827' }}>{option.label}</Text>
+                {checked && <Icon name="check-one" size={16 * wxScale} color="#ffffff" />}
+              </Button>
+            )
+          }) : (
+            <Text style={{ fontSize: 13 * wxScale, color: '#6b7280' }}>{emptyText}</Text>
+          )}
+
+          <Button
+            onClick={() => onToggleCustom(!useCustom)}
+            style={{
+              width: '100%',
+              padding: 12 * wxScale,
+              borderRadius: 10 * wxScale,
+              backgroundColor: useCustom ? '#22c55e' : '#f3f4f6',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <Text style={{ fontSize: 14 * wxScale, color: useCustom ? '#ffffff' : '#111827' }}>其他</Text>
+            {useCustom && <Icon name="check-one" size={16 * wxScale} color="#ffffff" />}
+          </Button>
+
+          {useCustom && (
+            <Box
+              style={{
+                paddingLeft: 12 * wxScale,
+                paddingRight: 12 * wxScale,
+                borderRadius: 10 * wxScale,
+                backgroundColor: '#f9fafb',
+              }}
+            >
+              <Input
+                value={customValue}
+                onChange={onCustomValueChange}
+                placeholder={customPlaceholder}
+                style={{
+                  width: '100%',
+                  height: 44 * wxScale,
+                  fontSize: 14 * wxScale,
+                  color: '#111827',
+                  backgroundColor: 'transparent',
+                }}
+              />
+            </Box>
+          )}
+        </Box>
+
+        <Button
+          onClick={onClose}
+          style={{
+            width: '100%',
+            height: 44 * wxScale,
+            marginTop: 16 * wxScale,
+            borderRadius: 22 * wxScale,
+            backgroundColor: '#22c55e',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Text style={{ fontSize: 15 * wxScale, color: '#ffffff', fontWeight: 500 }}>完成</Text>
+        </Button>
+      </Box>
+    </Box>
+  )
+}
+
+function SingleSelectModal({
+  open,
+  title,
+  options,
+  selectedValue,
+  onClose,
+  onSelect,
+}: {
+  open: boolean
+  title: string
+  options: string[]
+  selectedValue: string
+  onClose: () => void
+  onSelect: (value: string) => void
+}) {
+  if (!open) return null
+
+  return (
+    <Box
+      style={{
+        position: 'fixed',
+        left: 0,
+        right: 0,
+        top: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0,0,0,0.45)',
+        zIndex: 999,
+        display: 'flex',
+        alignItems: 'flex-end',
+      }}
+    >
+      <Box
+        style={{
+          width: '100%',
+          backgroundColor: '#ffffff',
+          borderTopLeftRadius: 16 * wxScale,
+          borderTopRightRadius: 16 * wxScale,
+          padding: 16 * wxScale,
+        }}
+      >
+        <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 * wxScale }}>
+          <Text style={{ fontSize: 16 * wxScale, fontWeight: 600, color: '#111827' }}>{title}</Text>
+          <Button onClick={onClose} style={{ padding: 4 * wxScale }}>
+            <Icon name="close" size={18 * wxScale} color="#6b7280" />
+          </Button>
+        </Box>
+
+        <Box style={{ display: 'flex', flexDirection: 'column', gap: 10 * wxScale }}>
+          {options.map((option) => {
+            const checked = selectedValue === option
+            return (
+              <Button
+                key={option}
+                onClick={() => onSelect(option)}
+                style={{
+                  width: '100%',
+                  padding: 12 * wxScale,
+                  borderRadius: 10 * wxScale,
+                  backgroundColor: checked ? '#22c55e' : '#f3f4f6',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <Text style={{ fontSize: 14 * wxScale, color: checked ? '#ffffff' : '#111827' }}>{option}</Text>
+                {checked && <Icon name="check-one" size={16 * wxScale} color="#ffffff" />}
+              </Button>
+            )
+          })}
+        </Box>
+      </Box>
     </Box>
   )
 }
@@ -618,18 +1077,43 @@ function FormItem({ label, required, error, noBorder, colors, children }: FormIt
         style={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
         }}
       >
-        <Box style={{ display: 'flex', alignItems: 'center', gap: 4 * wxScale }}>
-          <Text style={{ fontSize: 14 * wxScale, color: colors.textSecondary }}>
+        <Box
+          style={{
+            width: 108 * wxScale,
+            flexShrink: 0,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4 * wxScale,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 14 * wxScale,
+              fontWeight: 500,
+              color: colors.textPrimary,
+            }}
+          >
             {label}
           </Text>
+          <Text style={{ fontSize: 14 * wxScale, color: colors.textMuted }}>：</Text>
           {required && (
             <Text style={{ fontSize: 14 * wxScale, color: '#ef4444' }}>*</Text>
           )}
         </Box>
-        {children}
+        <Box
+          style={{
+            flex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-start',
+            minWidth: 0,
+            marginLeft: 8 * wxScale,
+          }}
+        >
+          {children}
+        </Box>
       </Box>
       {error && (
         <Text
