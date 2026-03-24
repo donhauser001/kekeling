@@ -12,12 +12,14 @@ import type { ThemeSettings } from '@terminal-preview/types'
 import { defaultThemeSettings } from '@terminal-preview/types'
 import { getPreviewEscortToken, setPreviewEscortToken } from '@terminal-preview/session'
 import { useViewerRole } from '@terminal-preview/hooks/useViewerRole'
+import { navigateToEscortAgreement } from '../../../utils/escort-agreement'
 import './index.scss'
 
 // 邀请数据类型
 interface InviteData {
   inviteCode: string
   inviteLink: string
+  miniappPath?: string
   qrCodeUrl?: string
   totalInvited: number
   rewardPerInvite: number
@@ -40,6 +42,42 @@ function DistributionInvitePageContent() {
   const [showLoginDialog, setShowLoginDialog] = useState(false)
   // 存储邀请数据用于分享
   const inviteDataRef = useRef<InviteData | null>(null)
+
+  const resolveSharePath = useCallback((inviteCode: string) => {
+    const rawPath = inviteDataRef.current?.miniappPath || 'packageB/pages/escort-apply/index'
+    const normalizedPath = rawPath.startsWith('/') ? rawPath : `/${rawPath}`
+    return inviteCode ? `${normalizedPath}?inviteCode=${inviteCode}` : normalizedPath
+  }, [])
+
+  const resolveShareImage = useCallback((url?: string) => {
+    if (!url || url.startsWith('data:')) {
+      return undefined
+    }
+    return url
+  }, [])
+
+  const writeBase64ImageToTempFile = useCallback(async (dataUrl: string) => {
+    const match = dataUrl.match(/^data:image\/(\w+);base64,(.+)$/)
+    if (!match) {
+      throw new Error('INVALID_DATA_URL')
+    }
+
+    const [, ext, base64] = match
+    const filePath = `${Taro.env.USER_DATA_PATH}/invite-qr-${Date.now()}.${ext || 'png'}`
+    const fileSystemManager = Taro.getFileSystemManager()
+
+    await new Promise<void>((resolve, reject) => {
+      fileSystemManager.writeFile({
+        filePath,
+        data: base64,
+        encoding: 'base64',
+        success: () => resolve(),
+        fail: reject,
+      })
+    })
+
+    return filePath
+  }, [])
 
   const [localEscortToken, setLocalEscortToken] = useState<string | null>(() => {
     return getPreviewEscortToken()
@@ -87,8 +125,8 @@ function DistributionInvitePageContent() {
     const inviteCode = inviteDataRef.current?.inviteCode || ''
     return {
       title: '邀请好友一起加入科科灵！',
-      path: `/packageB/pages/escort-apply/index?inviteCode=${inviteCode}`,
-      imageUrl: inviteDataRef.current?.qrCodeUrl,
+      path: resolveSharePath(inviteCode),
+      imageUrl: resolveShareImage(inviteDataRef.current?.qrCodeUrl),
     }
   })
 
@@ -119,7 +157,7 @@ function DistributionInvitePageContent() {
   // 渲染分享按钮（使用小程序原生 openType="share"）
   const renderShareButton = useCallback((props: { children: ReactNode; style?: React.CSSProperties }) => {
     return (
-      <Button openType="share" className="share-button-reset">
+      <Button openType="share" className="share-button-reset" style={props.style}>
         <View style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
           {props.children}
         </View>
@@ -147,8 +185,9 @@ function DistributionInvitePageContent() {
 
       Taro.showLoading({ title: '保存中...' })
 
-      // 下载图片
-      const { tempFilePath } = await Taro.downloadFile({ url })
+      const tempFilePath = url.startsWith('data:')
+        ? await writeBase64ImageToTempFile(url)
+        : (await Taro.downloadFile({ url })).tempFilePath
 
       // 保存到相册
       await Taro.saveImageToPhotosAlbum({ filePath: tempFilePath })
@@ -163,7 +202,7 @@ function DistributionInvitePageContent() {
         Taro.showToast({ title: '保存失败', icon: 'none' })
       }
     }
-  }, [])
+  }, [writeBase64ImageToTempFile])
 
   if (isLoading || isCheckingEscortToken) {
     return (
@@ -194,6 +233,7 @@ function DistributionInvitePageContent() {
           }
         }}
         onLoginSuccess={handleLoginSuccess}
+        onViewAgreement={navigateToEscortAgreement}
         themeSettings={themeSettings}
         isDarkMode={false}
       />

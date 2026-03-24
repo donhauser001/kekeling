@@ -43,6 +43,8 @@ interface ServicesPageProps {
   effectiveViewerRole?: PreviewViewerRole
   /** 初始选中的分类 ID（从首页跳转时传入） */
   initialCategory?: string
+  /** 初始搜索关键词（从搜索结果跳转时传入） */
+  initialKeyword?: string
 }
 
 // 排序选项配置（纯文字，无图标）
@@ -54,7 +56,16 @@ const sortOptionConfigs: { value: SortType; label: string }[] = [
   { value: 'price-desc', label: '价格↓' },
 ]
 
-export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: bannerDataOverride, onServiceClick, onSearchClick, effectiveViewerRole = 'user', initialCategory }: ServicesPageProps) {
+export function ServicesPage({
+  themeSettings,
+  isDarkMode = false,
+  bannerData: bannerDataOverride,
+  onServiceClick,
+  onSearchClick,
+  effectiveViewerRole = 'user',
+  initialCategory,
+  initialKeyword = '',
+}: ServicesPageProps) {
   // 调试日志
   console.log('[ServicesPage] 组件渲染, 初始分类:', initialCategory)
 
@@ -62,6 +73,7 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
   const isEscort = effectiveViewerRole === 'escort'
   // 如果有初始分类参数，则使用它；否则默认 'all'
   const [activeCategory, setActiveCategory] = useState(initialCategory || 'all')
+  const searchKeyword = initialKeyword.trim()
   const [layoutMode, setLayoutMode] = useState<LayoutMode>('grid')
   const [sortType, setSortType] = useState<SortType>('default')
   const [showSortMenu, setShowSortMenu] = useState(false)
@@ -82,6 +94,7 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
   const [services, setServices] = useState<ServiceListItem[]>([])
   const [_servicesLoading, setServicesLoading] = useState(true)
   void _servicesLoading // 保留用于未来加载状态显示
+  const isSearchMode = searchKeyword.length > 0
 
   // 获取轮播图
   useEffect(() => {
@@ -103,6 +116,18 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
   // 获取服务列表（依赖 activeCategory）
   useEffect(() => {
     setServicesLoading(true)
+    if (isSearchMode) {
+      console.log('[ServicesPage] 🚀 请求搜索服务列表, keyword:', searchKeyword)
+      previewApi.search(searchKeyword, 20)
+        .then(result => {
+          console.log('[ServicesPage] ✅ 搜索服务列表加载成功:', result?.services?.length, '条')
+          setServices((result?.services || []) as unknown as ServiceListItem[])
+        })
+        .catch(err => console.error('[ServicesPage] ❌ 搜索服务列表加载失败:', err))
+        .finally(() => setServicesLoading(false))
+      return
+    }
+
     console.log('[ServicesPage] 🚀 请求服务列表, categoryId:', activeCategory)
     previewApi.getServices({
       categoryId: activeCategory === 'all' ? undefined : activeCategory,
@@ -114,7 +139,7 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
       })
       .catch(err => console.error('[ServicesPage] ❌ 服务列表加载失败:', err))
       .finally(() => setServicesLoading(false))
-  }, [activeCategory])
+  }, [activeCategory, isSearchMode, searchKeyword])
 
   // 获取用户收藏列表
   useEffect(() => {
@@ -243,16 +268,16 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
               flex: 1,
               marginLeft: 8 * wxScale,
               fontSize: 14 * wxScale, 
-              color: textMuted,
+              color: isSearchMode ? textPrimary : textMuted,
             }}
           >
-            搜索服务、医院、医生
+            {isSearchMode ? searchKeyword : '搜索服务、医院、医生'}
           </Text>
         </Button>
       </Box>
 
       {/* 轮播图区域 */}
-      {bannerData?.enabled && bannerData.items && bannerData.items.length > 0 && (
+      {!isSearchMode && bannerData?.enabled && bannerData.items && bannerData.items.length > 0 && (
         <Box style={{ backgroundColor: headerBg }}>
           <BannerSection
             bannerData={bannerData}
@@ -264,55 +289,71 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
       )}
 
       {/* 分类 Tab（隐藏滚动条，增加上下边距） */}
-      <Box
-        className='services-category-scroll'
-        style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 10,
-          paddingLeft: 12 * wxScale,
-          paddingRight: 12 * wxScale,
-          paddingTop: 12 * wxScale,
-          paddingBottom: 12 * wxScale,
-          marginTop: 4 * wxScale,
-          marginBottom: 4 * wxScale,
-          backgroundColor: headerBg,
-          overflowX: 'auto',
-        }}
-      >
+      {isSearchMode ? (
         <Box
           style={{
-            display: 'flex',
-            gap: 8 * wxScale,
+            paddingLeft: 12 * wxScale,
+            paddingRight: 12 * wxScale,
+            paddingTop: 12 * wxScale,
+            paddingBottom: 12 * wxScale,
+            backgroundColor: headerBg,
           }}
         >
-          {categoryList.map(cat => (
-            <Box
-              key={cat.id}
-              className='cursor-pointer transition-all'
-              style={{
-                flexShrink: 0,
-                paddingLeft: 14 * wxScale,
-                paddingRight: 14 * wxScale,
-                paddingTop: 10 * wxScale,
-                paddingBottom: 10 * wxScale,
-                borderRadius: 9999,
-                fontSize: 14 * wxScale,
-                backgroundColor: activeCategory === cat.id
-                  ? `${themeSettings.primaryColor}15`
-                  : isDarkMode ? '#3a3a3a' : '#f3f4f6',
-                color: activeCategory === cat.id
-                  ? themeSettings.primaryColor
-                  : textSecondary,
-                fontWeight: activeCategory === cat.id ? 500 : 400,
-              }}
-              onClick={() => setActiveCategory(cat.id)}
-            >
-              <Text style={{ fontSize: 14 * wxScale }}>{cat.name}</Text>
-            </Box>
-          ))}
+          <Text style={{ fontSize: 13 * wxScale, color: textSecondary }}>
+            “{searchKeyword}”相关服务 {services.length} 个
+          </Text>
         </Box>
-      </Box>
+      ) : (
+        <Box
+          className='services-category-scroll'
+          style={{
+            position: 'sticky',
+            top: 0,
+            zIndex: 10,
+            paddingLeft: 12 * wxScale,
+            paddingRight: 12 * wxScale,
+            paddingTop: 12 * wxScale,
+            paddingBottom: 12 * wxScale,
+            marginTop: 4 * wxScale,
+            marginBottom: 4 * wxScale,
+            backgroundColor: headerBg,
+            overflowX: 'auto',
+          }}
+        >
+          <Box
+            style={{
+              display: 'flex',
+              gap: 8 * wxScale,
+            }}
+          >
+            {categoryList.map(cat => (
+              <Box
+                key={cat.id}
+                className='cursor-pointer transition-all'
+                style={{
+                  flexShrink: 0,
+                  paddingLeft: 14 * wxScale,
+                  paddingRight: 14 * wxScale,
+                  paddingTop: 10 * wxScale,
+                  paddingBottom: 10 * wxScale,
+                  borderRadius: 9999,
+                  fontSize: 14 * wxScale,
+                  backgroundColor: activeCategory === cat.id
+                    ? `${themeSettings.primaryColor}15`
+                    : isDarkMode ? '#3a3a3a' : '#f3f4f6',
+                  color: activeCategory === cat.id
+                    ? themeSettings.primaryColor
+                    : textSecondary,
+                  fontWeight: activeCategory === cat.id ? 500 : 400,
+                }}
+                onClick={() => setActiveCategory(cat.id)}
+              >
+                <Text style={{ fontSize: 14 * wxScale }}>{cat.name}</Text>
+              </Box>
+            ))}
+          </Box>
+        </Box>
+      )}
 
       {/* 工具栏：排序 + 布局切换 */}
       <Box
@@ -579,16 +620,9 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
                     marginTop: 6 * wxScale,
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 6 * wxScale,
                     color: textMuted,
                   }}
                 >
-                  <Box
-                    style={{ display: 'flex', alignItems: 'center', gap: 2 * wxScale }}
-                  >
-                    <Icon name="good-one" size={10 * wxScale} color="#fbbf24" />
-                    <Text style={{ fontSize: 10 * wxScale, color: textMuted }}>{service.rating}%</Text>
-                  </Box>
                   <Text style={{ fontSize: 10 * wxScale, color: textMuted }}>{formatCount(service.orderCount)}人购</Text>
                 </Box>
                 <Box
@@ -793,12 +827,6 @@ export function ServicesPage({ themeSettings, isDarkMode = false, bannerData: ba
                           <Text style={{ fontSize: 11 * wxScale, color: textMuted, whiteSpace: 'nowrap' }}>{service.duration}</Text>
                         </Box>
                       )}
-                      <Box
-                        style={{ display: 'flex', alignItems: 'center', flexShrink: 0, gap: 2 * wxScale }}
-                      >
-                        <Icon name="good-one" size={10 * wxScale} color="#fbbf24" />
-                        <Text style={{ fontSize: 11 * wxScale, color: textMuted, whiteSpace: 'nowrap' }}>{service.rating}%</Text>
-                      </Box>
                       <Text style={{ fontSize: 11 * wxScale, color: textMuted, whiteSpace: 'nowrap', flexShrink: 0 }}>{formatCount(service.orderCount)}人购</Text>
                     </Box>
                     <Box
