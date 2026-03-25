@@ -60,15 +60,27 @@ export function FormRow({
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 12 * wxScale,
-          width: 96 * wxScale,
+          gap: 8 * wxScale,
+          width: 108 * wxScale,
+          flexShrink: 0,
         }}
       >
         <Icon name={icon} size={16 * wxScale} color={textMuted} />
         <Text style={{ fontSize: 14 * wxScale, color: textSecondary }}>{label}</Text>
+        <Text style={{ fontSize: 14 * wxScale, color: textMuted }}>：</Text>
         {required && <Text style={{ fontSize: 14 * wxScale, color: '#ef4444' }}>*</Text>}
       </Box>
-      {children}
+      <Box
+        style={{
+          flex: 1,
+          minWidth: 0,
+          marginLeft: 8 * wxScale,
+          display: 'flex',
+          alignItems: 'center',
+        }}
+      >
+        {children}
+      </Box>
     </Box>
   )
 }

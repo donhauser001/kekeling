@@ -32,6 +32,14 @@ interface WechatPayConfig {
   notifyUrl: string;
 }
 
+interface WechatOrderQueryResult {
+  success: boolean;
+  tradeState?: string;
+  transactionId?: string;
+  paidAt?: Date;
+  raw?: Record<string, string>;
+}
+
 @Injectable()
 export class PaymentService {
   constructor(
@@ -264,6 +272,10 @@ export class PaymentService {
     return result;
   }
 
+  private isPaidLikeStatus(status: string): boolean {
+    return ['paid', 'confirmed', 'assigned', 'arrived', 'in_progress', 'completed'].includes(status);
+  }
+
   // 发送 HTTPS 请求
   private async httpPost(url: string, data: string): Promise<string> {
     return new Promise((resolve, reject) => {
@@ -289,6 +301,104 @@ export class PaymentService {
       req.write(data);
       req.end();
     });
+  }
+
+  private async markServiceOrderPaid(
+    order: { id: string; orderNo: string; userId: string; status: string },
+    transactionId: string,
+    paidAt: Date = new Date(),
+  ): Promise<boolean> {
+    if (this.isPaidLikeStatus(order.status)) {
+      return false;
+    }
+
+    const updated = await this.prisma.order.updateMany({
+      where: {
+        id: order.id,
+        status: 'pending',
+      },
+      data: {
+        status: 'paid',
+        paymentMethod: 'wechat',
+        paymentTime: paidAt,
+        paidAt,
+        transactionId,
+      },
+    });
+
+    if (updated.count === 0) {
+      return false;
+    }
+
+    this.notificationService.send({
+      event: 'order_paid',
+      recipientId: order.userId,
+      recipientType: 'user',
+      data: { orderNo: order.orderNo },
+      relatedType: 'order',
+      relatedId: order.id,
+    }).catch((err) => {
+      console.error('[Payment] 发送支付成功通知失败:', err);
+    });
+
+    await this.handleUserSelectEscort(order.id);
+    return true;
+  }
+
+  private async queryWechatOrderByOrderNo(orderNo: string): Promise<WechatOrderQueryResult> {
+    const payConfig = await this.getWechatPayConfig();
+
+    if (!payConfig.appId || !payConfig.mchId || !payConfig.apiKey) {
+      throw new BadRequestException('微信支付未配置，请先在后台配置支付参数');
+    }
+
+    const queryParams: Record<string, string> = {
+      appid: payConfig.appId,
+      mch_id: payConfig.mchId,
+      nonce_str: this.generateNonceStr(),
+      out_trade_no: orderNo,
+    };
+
+    queryParams.sign = this.generateSign(queryParams, payConfig.apiKey);
+
+    const xmlData = this.buildXml(queryParams);
+    const responseXml = await this.httpPost('https://api.mch.weixin.qq.com/pay/orderquery', xmlData);
+    const response = this.parseXml(responseXml);
+
+    console.log(
+      '[Payment] 微信查单响应:',
+      JSON.stringify({
+        orderNo,
+        returnCode: response.return_code,
+        resultCode: response.result_code,
+        tradeState: response.trade_state,
+        errCode: response.err_code,
+      }),
+    );
+
+    if (response.return_code !== 'SUCCESS' || response.result_code !== 'SUCCESS') {
+      return {
+        success: false,
+        tradeState: response.trade_state,
+        transactionId: response.transaction_id,
+        raw: response,
+      };
+    }
+
+    const paidAt =
+      response.time_end && /^\d{14}$/.test(response.time_end)
+        ? new Date(
+            `${response.time_end.slice(0, 4)}-${response.time_end.slice(4, 6)}-${response.time_end.slice(6, 8)}T${response.time_end.slice(8, 10)}:${response.time_end.slice(10, 12)}:${response.time_end.slice(12, 14)}+08:00`,
+          )
+        : undefined;
+
+    return {
+      success: response.trade_state === 'SUCCESS',
+      tradeState: response.trade_state,
+      transactionId: response.transaction_id,
+      paidAt,
+      raw: response,
+    };
   }
 
   // 创建预支付订单（调用微信统一下单接口）
@@ -322,7 +432,7 @@ export class PaymentService {
 
     // 构建统一下单请求参数
     const nonceStr = this.generateNonceStr();
-    const totalFee = Math.round(Number(order.totalAmount) * 100); // 转换为分
+    const totalFee = Math.round(Number(order.paidAmount) * 100); // 转换为分，使用实际应付金额
     
     // 确保所有参数都是字符串（签名计算需要）
     const unifiedOrderParams: Record<string, string | number> = {
@@ -364,6 +474,17 @@ export class PaymentService {
       }
 
       if (response.result_code !== 'SUCCESS') {
+        if (response.err_code === 'ORDERPAID') {
+          console.warn(`[Payment] 统一下单返回 ORDERPAID，尝试同步订单状态: orderNo=${order.orderNo}`);
+          try {
+            const queryResult = await this.queryWechatOrderByOrderNo(order.orderNo);
+            if (queryResult.success && queryResult.transactionId) {
+              await this.markServiceOrderPaid(order, queryResult.transactionId, queryResult.paidAt || new Date());
+            }
+          } catch (syncError) {
+            console.error('[Payment] ORDERPAID 后同步订单状态失败:', syncError);
+          }
+        }
         console.error('[Payment] 统一下单业务失败:', response.err_code, response.err_code_des);
         throw new BadRequestException(`微信支付失败: ${response.err_code_des || response.err_code}`);
       }
@@ -731,53 +852,26 @@ export class PaymentService {
         }
       } else if (order) {
         // 幂等：已支付直接返回成功，避免重复处理
-        if (order.status === 'paid') {
+        if (this.isPaidLikeStatus(order.status)) {
           console.log(`[Payment] 普通订单已支付，忽略重复回调: orderNo=${orderNo}`);
           return { success: true, message: 'OK' };
         }
 
         // 金额校验（分）
-        const expectedFee = Math.round(Number(order.totalAmount) * 100);
+        const expectedFee = Math.round(Number(order.paidAmount) * 100);
         if (!Number.isFinite(totalFee) || totalFee !== expectedFee) {
           console.error('[Payment] 普通订单金额校验失败:', { totalFee, expectedFee, orderNo });
           return { success: false, message: '金额校验失败' };
         }
 
         // 普通订单支付回调（幂等更新）
-        const updated = await this.prisma.order.updateMany({
-          where: {
-            orderNo,
-            status: { not: 'paid' },
-          },
-          data: {
-            status: 'paid',
-            paymentMethod: 'wechat',
-            paymentTime: new Date(),
-            paidAt: new Date(),
-            transactionId,
-          },
-        });
+        const updated = await this.markServiceOrderPaid(order, transactionId);
 
         // 并发重复通知导致未更新时，视为幂等成功
-        if (updated.count === 0) {
+        if (!updated) {
           console.log(`[Payment] 普通订单并发回调幂等命中: orderNo=${orderNo}`);
           return { success: true, message: 'OK' };
         }
-
-        // 发送支付成功通知
-        this.notificationService.send({
-          event: 'order_paid',
-          recipientId: order.userId,
-          recipientType: 'user',
-          data: { orderNo: order.orderNo },
-          relatedType: 'order',
-          relatedId: order.id,
-        }).catch((err) => {
-          console.error('[Payment] 发送支付成功通知失败:', err);
-        });
-
-        // 处理用户指定陪诊员的自动分配
-        await this.handleUserSelectEscort(order.id);
       } else {
         console.error('[Payment] 回调订单不存在:', orderNo);
         return { success: false, message: '订单不存在' };
@@ -851,9 +945,12 @@ export class PaymentService {
     status: string;
     transactionId?: string;
   }> {
-    const order = await this.prisma.order.findUnique({
+    let order = await this.prisma.order.findUnique({
       where: { id: orderId },
       select: {
+        id: true,
+        orderNo: true,
+        userId: true,
         status: true,
         transactionId: true,
       },
@@ -863,8 +960,37 @@ export class PaymentService {
       throw new BadRequestException('订单不存在');
     }
 
+    if (order.status === 'pending') {
+      try {
+        const queryResult = await this.queryWechatOrderByOrderNo(order.orderNo);
+        if (queryResult.success && queryResult.transactionId) {
+          await this.markServiceOrderPaid(order, queryResult.transactionId, queryResult.paidAt || new Date());
+          order = await this.prisma.order.findUnique({
+            where: { id: orderId },
+            select: {
+              id: true,
+              orderNo: true,
+              userId: true,
+              status: true,
+              transactionId: true,
+            },
+          });
+
+          if (!order) {
+            throw new BadRequestException('订单不存在');
+          }
+        }
+      } catch (error) {
+        console.error('[Payment] 主动查单失败:', { orderId, error });
+      }
+    }
+
+    if (!order) {
+      throw new BadRequestException('订单不存在');
+    }
+
     return {
-      paid: order.status === 'paid' || ['confirmed', 'in_progress', 'completed'].includes(order.status),
+      paid: this.isPaidLikeStatus(order.status),
       status: order.status,
       transactionId: order.transactionId || undefined,
     };

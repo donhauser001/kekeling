@@ -62,6 +62,17 @@ export class OrdersController {
     return ApiResponse.success(data);
   }
 
+  @Post(':id/patient')
+  @ApiOperation({ summary: '补充或更新订单就诊人' })
+  async updatePatient(
+    @CurrentUser('sub') userId: string,
+    @Param('id') id: string,
+    @Body('patientId') patientId: string,
+  ) {
+    const data = await this.ordersService.updatePatient(id, userId, patientId);
+    return ApiResponse.success(data, '就诊信息已更新');
+  }
+
   @Post(':id/cancel')
   @ApiOperation({ summary: '取消订单' })
   async cancel(
@@ -122,4 +133,3 @@ export class OrdersController {
     return ApiResponse.success(data, '投诉已提交');
   }
 }
-

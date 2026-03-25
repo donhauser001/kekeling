@@ -22,7 +22,9 @@
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "db:upsert:escort-terms": "ts-node prisma/scripts/upsert-escort-terms-page.ts",
+    "db:upsert:terms": "ts-node prisma/scripts/upsert-terms-page.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",

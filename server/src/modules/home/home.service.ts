@@ -75,7 +75,7 @@ export class HomeService {
 
     return {
       userCount: userCount > 50000 ? userCount : 50000, // 至少显示 50000
-      orderCount: orderCount > 10000 ? orderCount : 10000,
+      orderCount,
       escortCount,
       hospitalCount: hospitalCount > 200 ? hospitalCount : 200,
       rating,
@@ -189,4 +189,3 @@ export class HomeService {
     };
   }
 }
-

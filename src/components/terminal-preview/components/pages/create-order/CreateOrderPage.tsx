@@ -57,13 +57,36 @@ const wxSafeAreaTop = isWxEnvironment() ? 44 : 0
 const wxSafeAreaBottom = isWxEnvironment() ? 84 : 0
 const fallbackDepartment: Department = { id: 'other', name: '其他' }
 
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
 export function CreateOrderPage({
   serviceId,
   themeSettings,
   isDarkMode = false,
+  preferredPatientId = null,
+  patientsRefreshTrigger = 0,
   onBack,
   onNavigate: _onNavigate,
 }: CreateOrderPageProps) {
+  const verifyPaymentStatus = async (orderId: string, retries = 4, intervalMs = 1200) => {
+    for (let attempt = 0; attempt < retries; attempt++) {
+      try {
+        const paymentStatus = await previewApi.getPaymentStatus(orderId)
+        if (paymentStatus.paid) {
+          return paymentStatus
+        }
+      } catch (error) {
+        console.error('[CreateOrderPage] 核验支付状态失败:', error)
+      }
+
+      if (attempt < retries - 1) {
+        await delay(intervalMs)
+      }
+    }
+
+    return null
+  }
+
   const withFallbackDepartment = (items: Department[]) => {
     const hasOther = items.some((item) => item.id === fallbackDepartment.id || item.name === fallbackDepartment.name)
     return hasOther ? items : [...items, fallbackDepartment]
@@ -130,6 +153,32 @@ export function CreateOrderPage({
   // 数据获取
   // ============================================================================
 
+  const loadPatients = async (nextSelectedPatientId?: string | null) => {
+    const patientsData = await previewApi.getPatients()
+    setPatients(patientsData)
+
+    const preferredPatient = nextSelectedPatientId
+      ? patientsData.find((p) => p.id === nextSelectedPatientId)
+      : null
+    const currentPatient = selectedPatientId
+      ? patientsData.find((p) => p.id === selectedPatientId)
+      : null
+    const defaultPatient = patientsData.find((p) => p.isDefault)
+
+    if (preferredPatient) {
+      setSelectedPatientId(preferredPatient.id)
+      return
+    }
+    if (currentPatient) {
+      return
+    }
+    if (defaultPatient) {
+      setSelectedPatientId(defaultPatient.id)
+    } else if (!patientsData.length) {
+      setSelectedPatientId(null)
+    }
+  }
+
   useEffect(() => {
     if (!serviceId) return
 
@@ -138,13 +187,11 @@ export function CreateOrderPage({
     // 并行获取服务详情、就诊人列表、医院列表、营销设置
     Promise.all([
       previewApi.getServiceDetail(serviceId),
-      previewApi.getPatients(),
       previewApi.getHospitals({ pageSize: 100 }),
       previewApi.getMarketingSettings(),
     ])
-      .then(([serviceData, patientsData, hospitalsRes, marketingSettings]) => {
+      .then(async ([serviceData, hospitalsRes, marketingSettings]) => {
         setService(serviceData)
-        setPatients(patientsData)
         setHospitals(hospitalsRes.data || [])
 
         // 检查优惠券功能是否启用
@@ -170,12 +217,7 @@ export function CreateOrderPage({
               console.error('[CreateOrderPage] 优惠券加载失败', err)
             })
         }
-
-        // 如果有默认就诊人，自动选中
-        const defaultPatient = patientsData.find((p) => p.isDefault)
-        if (defaultPatient) {
-          setSelectedPatientId(defaultPatient.id)
-        }
+        await loadPatients(preferredPatientId)
       })
       .catch((err) => {
         console.error('[CreateOrderPage] 数据加载失败', err)
@@ -184,6 +226,21 @@ export function CreateOrderPage({
         setIsLoading(false)
       })
   }, [serviceId])
+
+  useEffect(() => {
+    if (!serviceId || !patientsRefreshTrigger) return
+
+    void loadPatients(preferredPatientId).catch((err) => {
+      console.error('[CreateOrderPage] 刷新就诊人失败', err)
+    })
+  }, [patientsRefreshTrigger, preferredPatientId, serviceId])
+
+  useEffect(() => {
+    if (!preferredPatientId || !patients.length) return
+    if (patients.some((patient) => patient.id === preferredPatientId)) {
+      setSelectedPatientId(preferredPatientId)
+    }
+  }, [preferredPatientId, patients])
 
   // 当选择医院后，获取科室列表
   useEffect(() => {
@@ -283,7 +340,7 @@ export function CreateOrderPage({
     if (isSubmitting) return
 
     // 表单校验
-    if (service?.needPatient !== false && !selectedPatientId) {
+    if (service?.needPatient !== false && !fillLater && !selectedPatientId) {
       wxBridge.showToast({ title: '请选择就诊人', icon: 'none' })
       return
     }
@@ -308,7 +365,7 @@ export function CreateOrderPage({
       const orderResult = await previewApi.createOrder({
         serviceId: serviceId,
         hospitalId: selectedHospitalId || '',
-        patientId: selectedPatientId || '',
+        patientId: fillLater ? undefined : (selectedPatientId || undefined),
         appointmentDate: selectedDate || '',
         appointmentTime: selectedTime || '',
         departmentName: selectedDepartment?.name,
@@ -335,12 +392,15 @@ export function CreateOrderPage({
       })
 
       if (payResult.success) {
-        // 支付成功
-        wxBridge.showToast({ title: '支付成功', icon: 'success' })
+        const paymentStatus = await verifyPaymentStatus(orderResult.id)
+        wxBridge.showToast({
+          title: paymentStatus?.paid ? '支付成功' : '支付处理中',
+          icon: paymentStatus?.paid ? 'success' : 'loading',
+        })
 
         // 跳转到订单详情页
         setTimeout(() => {
-          onNavigate?.('user-order-detail', { id: orderResult.id })
+          _onNavigate?.('user-order-detail', { id: orderResult.id })
         }, 1500)
       } else {
         // 支付取消或失败
@@ -348,11 +408,16 @@ export function CreateOrderPage({
         if (errorMsg.includes('cancel')) {
           wxBridge.showToast({ title: '已取消支付', icon: 'none' })
         } else {
-          wxBridge.showToast({ title: errorMsg, icon: 'error' })
+          const paymentStatus = await verifyPaymentStatus(orderResult.id, 2, 800)
+          if (paymentStatus?.paid || errorMsg.includes('已支付')) {
+            wxBridge.showToast({ title: '订单已支付', icon: 'success' })
+          } else {
+            wxBridge.showToast({ title: errorMsg, icon: 'error' })
+          }
         }
         // 跳转到待支付订单详情
         setTimeout(() => {
-          onNavigate?.('user-order-detail', { id: orderResult.id })
+          _onNavigate?.('user-order-detail', { id: orderResult.id })
         }, 1500)
       }
     } catch (error: any) {
@@ -564,7 +629,7 @@ export function CreateOrderPage({
           onClose={() => setShowPatientPicker(false)}
           onAddPatient={() => {
             setShowPatientPicker(false)
-            onNavigate?.('patients')
+            _onNavigate?.('patients')
           }}
           colors={colors}
           primaryColor={primaryColor}

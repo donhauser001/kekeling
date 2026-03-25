@@ -70,6 +70,10 @@ export interface SearchPageProps {
   onBack?: () => void
   /** 服务点击回调 */
   onServiceClick?: (serviceId: string) => void
+  /** 医院点击回调 */
+  onHospitalClick?: (hospital: SearchHospitalItem) => void
+  /** 医生点击回调 */
+  onDoctorClick?: (doctor: SearchDoctorItem) => void
 }
 
 // ============================================================================
@@ -328,6 +332,8 @@ export function SearchPage({
   initialKeyword = '',
   onBack,
   onServiceClick,
+  onHospitalClick,
+  onDoctorClick,
 }: SearchPageProps) {
   console.log('[SearchPage Component] 开始渲染, themeSettings:', themeSettings)
   const [keyword, setKeyword] = useState(initialKeyword)
@@ -462,6 +468,14 @@ export function SearchPage({
   const handleServiceClick = useCallback((serviceId: string) => {
     onServiceClick?.(serviceId)
   }, [onServiceClick])
+
+  const handleHospitalClick = useCallback((hospital: SearchHospitalItem) => {
+    onHospitalClick?.(hospital)
+  }, [onHospitalClick])
+
+  const handleDoctorClick = useCallback((doctor: SearchDoctorItem) => {
+    onDoctorClick?.(doctor)
+  }, [onDoctorClick])
 
   // 清空搜索
   const handleClearSearch = useCallback(() => {
@@ -645,6 +659,7 @@ export function SearchPage({
                       {searchResults.hospitals.map((hospital) => (
                         <Box
                           key={hospital.id}
+                          onClick={() => handleHospitalClick(hospital)}
                           style={{
                             display: 'flex',
                             alignItems: 'center',
@@ -653,6 +668,7 @@ export function SearchPage({
                             borderRadius: 10 * wxScale,
                             backgroundColor: cardBg,
                             boxShadow: isDarkMode ? 'none' : '0 1px 3px rgba(0,0,0,0.06)',
+                            cursor: 'pointer',
                           }}
                         >
                           <Box
@@ -707,6 +723,7 @@ export function SearchPage({
                       {searchResults.doctors.map((doctor) => (
                         <Box
                           key={doctor.id}
+                          onClick={() => handleDoctorClick(doctor)}
                           style={{
                             display: 'flex',
                             alignItems: 'center',
@@ -715,6 +732,7 @@ export function SearchPage({
                             borderRadius: 10 * wxScale,
                             backgroundColor: cardBg,
                             boxShadow: isDarkMode ? 'none' : '0 1px 3px rgba(0,0,0,0.06)',
+                            cursor: 'pointer',
                           }}
                         >
                           <Box

@@ -35,6 +35,8 @@ export interface EscortLoginDialogProps {
   themeSettings: ThemeSettings
   /** 深色模式 */
   isDarkMode?: boolean
+  /** 查看协议 */
+  onViewAgreement?: () => void
 }
 
 // ============================================================================
@@ -47,6 +49,7 @@ export function EscortLoginDialog({
   onLoginSuccess,
   themeSettings,
   isDarkMode = false,
+  onViewAgreement,
 }: EscortLoginDialogProps) {
   const [phone, setPhone] = useState('')
   const [code, setCode] = useState('')
@@ -419,7 +422,16 @@ export function EscortLoginDialog({
               lineHeight: 1.5,
             }}
           >
-            登录即表示同意《陪诊员服务协议》
+            登录即表示同意
+            <Text
+              onClick={onViewAgreement}
+              style={{
+                color: primaryColor,
+                textDecorationLine: 'underline',
+              }}
+            >
+              《陪诊员服务协议》
+            </Text>
           </Text>
         </Box>
       </Box>

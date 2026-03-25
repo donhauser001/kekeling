@@ -120,6 +120,8 @@ import {
   DistributionPromotionPage,
   // 搜索页面
   SearchPage,
+  HospitalDetailPage,
+  DoctorDetailPage,
 } from './components/pages'
 
 export function TerminalPreview({
@@ -695,6 +697,7 @@ export function TerminalPreview({
             isDarkMode={isDarkMode}
             onServiceClick={handleServiceClick}
             effectiveViewerRole={effectiveViewerRole}
+            initialKeyword={pageParams?.keyword || ''}
           />
         )
       case 'orders':
@@ -1190,6 +1193,30 @@ export function TerminalPreview({
             initialKeyword={pageParams?.keyword || ''}
             onBack={() => navigateToPage(previousPageRef.current || 'home')}
             onServiceClick={handleServiceClick}
+            onHospitalClick={(hospital) => navigateToPage('hospital-detail', { id: hospital.id })}
+            onDoctorClick={(doctor) => navigateToPage('doctor-detail', { id: doctor.id })}
+          />
+        )
+
+      case 'hospital-detail':
+        return (
+          <HospitalDetailPage
+            hospitalId={pageParams?.id || ''}
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            onBack={() => navigateToPage(previousPageRef.current || 'search')}
+            onDoctorClick={(doctorId) => navigateToPage('doctor-detail', { id: doctorId })}
+          />
+        )
+
+      case 'doctor-detail':
+        return (
+          <DoctorDetailPage
+            doctorId={pageParams?.id || ''}
+            themeSettings={themeSettings}
+            isDarkMode={isDarkMode}
+            onBack={() => navigateToPage(previousPageRef.current || 'search')}
+            onHospitalClick={(hospitalId) => navigateToPage('hospital-detail', { id: hospitalId })}
           />
         )
 
@@ -1344,6 +1371,7 @@ export function TerminalPreview({
         open={showEscortLoginDialog}
         onClose={() => setShowEscortLoginDialog(false)}
         onLoginSuccess={handleEscortLoginSuccess}
+        onViewAgreement={() => navigateToPage('cms-page', { slug: 'escort-terms' })}
         themeSettings={themeSettings}
         isDarkMode={isDarkMode}
       />

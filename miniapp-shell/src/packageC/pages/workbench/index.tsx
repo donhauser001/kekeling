@@ -25,6 +25,7 @@ import {
   clearPreviewEscortToken,
 } from '@terminal-preview/session'
 import { useViewerRole } from '@terminal-preview/hooks/useViewerRole'
+import { navigateToEscortAgreement } from '../../../utils/escort-agreement'
 import './index.scss'
 
 const queryClient = new QueryClient({
@@ -270,6 +271,7 @@ function WorkbenchPageContent() {
           }
         }}
         onLoginSuccess={handleLoginSuccess}
+        onViewAgreement={navigateToEscortAgreement}
         themeSettings={themeSettings}
         isDarkMode={false}
       />

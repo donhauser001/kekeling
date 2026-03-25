@@ -43,6 +43,8 @@ function App() {
           
           {/* 静态页面 */}
           <Route path="page/:slug" element={<PageDetail />} />
+          <Route path="escort-terms" element={<PageDetail slugOverride="escort-terms" />} />
+          <Route path="terms" element={<PageDetail slugOverride="terms" />} />
           
           {/* 服务项目 */}
           <Route path="services" element={<ServicesPage />} />
@@ -54,7 +56,6 @@ function App() {
           <Route path="booking" element={<NotFoundPage message="预约页面开发中..." />} />
           <Route path="help" element={<NotFoundPage message="帮助中心开发中..." />} />
           <Route path="faq" element={<NotFoundPage message="常见问题开发中..." />} />
-          <Route path="terms" element={<NotFoundPage message="服务条款开发中..." />} />
           <Route path="privacy" element={<NotFoundPage message="隐私政策开发中..." />} />
           <Route path="join" element={<NotFoundPage message="加入我们开发中..." />} />
           

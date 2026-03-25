@@ -55,6 +55,7 @@ import { WithdrawDetailDrawer } from './components/WithdrawDetailDrawer'
 import { WithdrawExportButton } from './components/WithdrawExportButton'
 import { WithdrawReviewDrawer } from './components/WithdrawReviewDrawer'
 import { WithdrawPayoutModal } from './components/WithdrawPayoutModal'
+import { WithdrawFailModal } from './components/WithdrawFailModal'
 import { canShowAction, type WithdrawPermissions } from './utils/withdrawPermissions'
 import {
   DropdownMenu,
@@ -155,6 +156,8 @@ export function EscortWithdrawRecords() {
   // P2: 打款 Modal
   const [payoutModalOpen, setPayoutModalOpen] = useState(false)
   const [payoutId, setPayoutId] = useState<string | null>(null)
+  const [failModalOpen, setFailModalOpen] = useState(false)
+  const [failId, setFailId] = useState<string | null>(null)
 
   // 构建查询参数
   const query = {
@@ -209,6 +212,16 @@ export function EscortWithdrawRecords() {
   const closePayout = () => {
     setPayoutModalOpen(false)
     setTimeout(() => setPayoutId(null), 300)
+  }
+
+  const openFail = (id: string) => {
+    setFailId(id)
+    setFailModalOpen(true)
+  }
+
+  const closeFail = () => {
+    setFailModalOpen(false)
+    setTimeout(() => setFailId(null), 300)
   }
 
   // 重置筛选
@@ -442,8 +455,8 @@ export function EscortWithdrawRecords() {
                       <TableHead className='text-right'>手续费</TableHead>
                       <TableHead className='text-right'>实际到账</TableHead>
                       <TableHead>提现方式</TableHead>
-                      <TableHead>账户信息</TableHead>
-                      <TableHead>开户名称</TableHead>
+                      <TableHead>账号</TableHead>
+                      <TableHead>户名</TableHead>
                       <TableHead>开户行</TableHead>
                       <TableHead>状态</TableHead>
                       <TableHead>申请时间</TableHead>
@@ -488,19 +501,36 @@ export function EscortWithdrawRecords() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className='flex flex-col'>
+                            <div className='flex flex-col gap-1'>
                               <span className='font-mono text-xs'>{record.accountMasked}</span>
+                              <span className='text-muted-foreground text-xs'>
+                                {methodInfo?.label || record.method}
+                              </span>
                             </div>
                           </TableCell>
-                          <TableCell className='text-sm'>
-                            {record.method === 'bank'
-                              ? (record.accountName || '--')
-                              : '--'}
+                          <TableCell>
+                            <div className='flex flex-col'>
+                              <span className='font-medium'>
+                                {record.method === 'bank'
+                                  ? (record.accountName || '--')
+                                  : '--'}
+                              </span>
+                              {record.method === 'bank' && record.accountName && (
+                                <span className='text-muted-foreground text-xs'>银行卡户名</span>
+                              )}
+                            </div>
                           </TableCell>
-                          <TableCell className='text-sm'>
-                            {record.method === 'bank'
-                              ? (record.bankName || '--')
-                              : '--'}
+                          <TableCell>
+                            <div className='flex flex-col'>
+                              <span className='font-medium'>
+                                {record.method === 'bank'
+                                  ? (record.bankName || '--')
+                                  : '--'}
+                              </span>
+                              {record.method === 'bank' && record.bankName && (
+                                <span className='text-muted-foreground text-xs'>开户银行</span>
+                              )}
+                            </div>
                           </TableCell>
                           <TableCell>
                             <Badge className={cn('gap-1', statusInfo?.color)}>
@@ -537,7 +567,13 @@ export function EscortWithdrawRecords() {
                                 {canShowAction(record.status, defaultPermissions, 'payout') && (
                                   <DropdownMenuItem onClick={() => openPayout(record.id)}>
                                     <Wallet className='mr-2 h-4 w-4' />
-                                    打款
+                                    登记打款
+                                  </DropdownMenuItem>
+                                )}
+                                {canShowAction(record.status, defaultPermissions, 'fail') && (
+                                  <DropdownMenuItem onClick={() => openFail(record.id)}>
+                                    <XCircle className='mr-2 h-4 w-4' />
+                                    标记失败
                                   </DropdownMenuItem>
                                 )}
                               </DropdownMenuContent>
@@ -590,6 +626,12 @@ export function EscortWithdrawRecords() {
         open={payoutModalOpen}
         withdrawId={payoutId}
         onClose={closePayout}
+      />
+
+      <WithdrawFailModal
+        open={failModalOpen}
+        withdrawId={failId}
+        onClose={closeFail}
       />
     </>
   )

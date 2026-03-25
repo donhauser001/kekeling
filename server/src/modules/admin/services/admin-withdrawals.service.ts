@@ -1,6 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ConflictException, Logger } from '@nestjs/common';
+import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { Decimal } from '@prisma/client/runtime/library';
+import { NotificationService } from '../../notification/notification.service';
 
 /**
  * P2: 提现状态机定义
@@ -16,7 +18,7 @@ import { Decimal } from '@prisma/client/runtime/library';
  */
 const WITHDRAW_STATE_MACHINE = {
   pending: ['approved', 'rejected'],
-  approved: ['processing', 'failed'],
+  approved: ['processing', 'completed', 'failed'],
   processing: ['completed', 'failed'],
   // 终态，不可变更
   completed: [],
@@ -48,9 +50,62 @@ function maskAccount(account: string): string {
   return '****' + account.slice(-4);
 }
 
+function parseStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
+}
+
 @Injectable()
 export class AdminWithdrawalsService {
-  constructor(private prisma: PrismaService) { }
+  private readonly logger = new Logger(AdminWithdrawalsService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private notificationService: NotificationService,
+  ) { }
+
+  private buildKeywordWhere(keyword?: string): Prisma.WithdrawalWhereInput[] | undefined {
+    const normalizedKeyword = (keyword || '').trim();
+    if (!normalizedKeyword) return undefined;
+
+    const uuidPrefix = normalizedKeyword.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+
+    return [
+      { id: { contains: normalizedKeyword } },
+      ...(uuidPrefix ? [{ id: { startsWith: uuidPrefix } }] : []),
+      { wallet: { escort: { name: { contains: normalizedKeyword, mode: 'insensitive' } } } },
+      { wallet: { escort: { phone: { contains: normalizedKeyword } } } },
+      { wallet: { escort: { id: normalizedKeyword } } },
+    ];
+  }
+
+  private async sendWithdrawNotification(params: {
+    event: 'withdrawal_approved' | 'withdrawal_rejected' | 'withdrawal_completed' | 'withdrawal_failed';
+    escortId?: string | null;
+    withdrawId: string;
+    amount: number;
+    reason?: string | null;
+  }) {
+    const { event, escortId, withdrawId, amount, reason } = params;
+    if (!escortId) return;
+
+    try {
+      await this.notificationService.send({
+        event,
+        recipientId: escortId,
+        recipientType: 'escort',
+        data: {
+          amount: amount.toFixed(2),
+          reason: reason || '',
+        },
+        relatedType: 'withdrawal',
+        relatedId: withdrawId,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.warn(`发送提现通知失败(${event}): ${message}`);
+    }
+  }
 
   /**
    * 获取提现列表
@@ -69,20 +124,14 @@ export class AdminWithdrawalsService {
   }) {
     const { status, method, escortId, keyword, startDate, endDate, minAmount, maxAmount, page = 1, pageSize = 10 } = params;
 
-    const where: any = {};
+    const where: Prisma.WithdrawalWhereInput = {};
 
     if (status) where.status = status;
     if (method) where.method = method;
     if (escortId) where.wallet = { escortId };
 
-    if (keyword) {
-      where.OR = [
-        { id: { contains: keyword } },
-        { wallet: { escort: { name: { contains: keyword, mode: 'insensitive' } } } },
-        { wallet: { escort: { phone: { contains: keyword } } } },
-        { wallet: { escort: { id: keyword } } },
-      ];
-    }
+    const keywordWhere = this.buildKeywordWhere(keyword);
+    if (keywordWhere) where.OR = keywordWhere;
 
     if (startDate || endDate) {
       where.createdAt = {};
@@ -90,8 +139,12 @@ export class AdminWithdrawalsService {
       if (endDate) where.createdAt.lte = new Date(endDate + 'T23:59:59');
     }
 
-    if (minAmount) where.amount = { ...where.amount, gte: minAmount };
-    if (maxAmount) where.amount = { ...where.amount, lte: maxAmount };
+    const amountFilter: Prisma.DecimalFilter = {};
+    if (minAmount !== undefined) amountFilter.gte = minAmount;
+    if (maxAmount !== undefined) amountFilter.lte = maxAmount;
+    if (Object.keys(amountFilter).length > 0) {
+      where.amount = amountFilter;
+    }
 
     const [data, total] = await Promise.all([
       this.prisma.withdrawal.findMany({
@@ -130,6 +183,7 @@ export class AdminWithdrawalsService {
       createdAt: w.createdAt.toISOString(),
       paidAt: w.transferAt?.toISOString(),
       failReason: w.failReason,
+      payoutAccount: w.payoutAccount,
     }));
 
     return { data: formattedData, total, page, pageSize };
@@ -173,6 +227,7 @@ export class AdminWithdrawalsService {
       netAmount: Number(withdrawal.actualAmount),
       method: withdrawal.method,
       accountMasked: maskAccount(withdrawal.account),
+      accountNo: withdrawal.account,
       accountName: withdrawal.method === 'bank' ? (withdrawal.wallet.withdrawAccountName || null) : null,
       bankName: withdrawal.method === 'bank' ? (withdrawal.wallet.withdrawBankName || null) : null,
       status: withdrawal.status,
@@ -182,6 +237,10 @@ export class AdminWithdrawalsService {
       transactionNo: withdrawal.transferNo,
       reviewedAt: withdrawal.reviewedAt?.toISOString(),
       reviewNote: withdrawal.reviewNote,
+      payoutAccount: withdrawal.payoutAccount,
+      payoutRemark: withdrawal.payoutRemark,
+      payoutProofUrls: parseStringArray(withdrawal.payoutProofUrls),
+      payoutOperatorName: withdrawal.payoutOperatorName,
     };
   }
 
@@ -226,6 +285,7 @@ export class AdminWithdrawalsService {
       netAmount: Number(withdrawal.actualAmount),
       method: withdrawal.method,
       accountMasked: maskAccount(withdrawal.account),
+      accountNo: withdrawal.account,
       accountName: withdrawal.method === 'bank' ? (withdrawal.wallet.withdrawAccountName || null) : null,
       bankName: withdrawal.method === 'bank' ? (withdrawal.wallet.withdrawBankName || null) : null,
       status: withdrawal.status,
@@ -233,6 +293,12 @@ export class AdminWithdrawalsService {
       paidAt: withdrawal.transferAt?.toISOString(),
       failReason: withdrawal.failReason,
       transactionNo: withdrawal.transferNo,
+      reviewedAt: withdrawal.reviewedAt?.toISOString(),
+      reviewNote: withdrawal.reviewNote,
+      payoutAccount: withdrawal.payoutAccount,
+      payoutRemark: withdrawal.payoutRemark,
+      payoutProofUrls: parseStringArray(withdrawal.payoutProofUrls),
+      payoutOperatorName: withdrawal.payoutOperatorName,
       logs: withdrawal.logs.map(log => ({
         id: log.id,
         action: log.action,
@@ -290,7 +356,15 @@ export class AdminWithdrawalsService {
     const withdrawal = await this.prisma.withdrawal.findUnique({
       where: { id },
       include: {
-        wallet: true,
+        wallet: {
+          include: {
+            escort: {
+              select: {
+                id: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -355,6 +429,13 @@ export class AdminWithdrawalsService {
             }),
           },
         });
+      });
+
+      await this.sendWithdrawNotification({
+        event: 'withdrawal_approved',
+        escortId: withdrawal.wallet.escort?.id,
+        withdrawId: id,
+        amount: Number(withdrawal.actualAmount),
       });
 
       return this.findById(id);
@@ -429,6 +510,14 @@ export class AdminWithdrawalsService {
         });
       });
 
+      await this.sendWithdrawNotification({
+        event: 'withdrawal_rejected',
+        escortId: withdrawal.wallet.escort?.id,
+        withdrawId: id,
+        amount: Number(withdrawal.actualAmount),
+        reason: rejectReason,
+      });
+
       return this.findById(id);
     }
   }
@@ -449,6 +538,9 @@ export class AdminWithdrawalsService {
     payoutMethod: 'manual',
     operatorConfirmText: string,
     transactionNo?: string,
+    payoutAccount?: string,
+    payoutRemark?: string,
+    payoutProofUrls?: string[],
     adminId?: string,
     adminName?: string,
   ) {
@@ -472,9 +564,19 @@ export class AdminWithdrawalsService {
       throw new NotFoundException('提现记录不存在');
     }
 
-    // P2: 状态机验证
-    if (!validateStateTransition(withdrawal.status, 'processing')) {
-      throw new ConflictException(`状态转换非法: ${withdrawal.status} → processing`);
+    if (!transactionNo?.trim()) {
+      throw new BadRequestException('请填写打款流水号');
+    }
+    if (!payoutAccount?.trim()) {
+      throw new BadRequestException('请填写打款账户');
+    }
+    const payoutProofs = (payoutProofUrls || []).filter((url) => typeof url === 'string' && url.trim().length > 0);
+    if (payoutProofs.length === 0) {
+      throw new BadRequestException('请至少上传一张打款凭证');
+    }
+
+    if (!validateStateTransition(withdrawal.status, 'completed')) {
+      throw new ConflictException(`状态转换非法: ${withdrawal.status} → completed`);
     }
 
     // 幂等性检查：如果已有交易号，验证是否重复
@@ -493,11 +595,16 @@ export class AdminWithdrawalsService {
     await this.prisma.$transaction(async (tx) => {
       // 状态条件更新，避免并发重复打款
       const updated = await tx.withdrawal.updateMany({
-        where: { id, status: 'approved' },
+        where: { id, status: withdrawal.status },
         data: {
           status: 'completed',
           transferNo: transactionNo,
           transferAt: new Date(),
+          payoutAccount: payoutAccount?.trim() || null,
+          payoutRemark: payoutRemark?.trim() || null,
+          payoutProofUrls: payoutProofs.length ? payoutProofs : undefined,
+          payoutOperatorId: adminId,
+          payoutOperatorName: adminName || '管理员',
         },
       });
       if (updated.count !== 1) {
@@ -513,6 +620,25 @@ export class AdminWithdrawalsService {
         },
       });
 
+      // 记录提现支出流水，供财务收支明细查看
+      await tx.walletTransaction.create({
+        data: {
+          walletId: withdrawal.walletId,
+          type: 'withdraw',
+          amount: new Decimal(0),
+          balanceAfter: new Decimal(Number(withdrawal.wallet.balance)),
+          withdrawId: id,
+          title: `人工打款提现 ${withdrawal.id.slice(0, 8).toUpperCase()}`,
+          remark: [
+            `提现单号: ${withdrawal.id.slice(0, 8).toUpperCase()}`,
+            `提现金额 ¥${Number(withdrawal.amount).toFixed(2)}`,
+            `实际到账 ¥${Number(withdrawal.actualAmount).toFixed(2)}`,
+            transactionNo ? `流水号: ${transactionNo}` : null,
+            payoutAccount?.trim() ? `打款账户: ${payoutAccount.trim()}` : null,
+          ].filter(Boolean).join('；'),
+        },
+      });
+
       // P2: 写入操作日志
       await tx.withdrawLog.create({
         data: {
@@ -521,21 +647,14 @@ export class AdminWithdrawalsService {
           operator: 'admin',
           operatorId: adminId,
           operatorName: adminName || '管理员',
-          message: `打款方式: 手动${transactionNo ? `，交易号: ${transactionNo}` : ''}`,
+          message: [
+            '已登记人工打款',
+            payoutAccount?.trim() ? `打款账户: ${payoutAccount.trim()}` : null,
+            transactionNo ? `流水号: ${transactionNo}` : null,
+            payoutRemark?.trim() ? `备注: ${payoutRemark.trim()}` : null,
+            payoutProofs.length ? `凭证: ${payoutProofs.length} 张` : null,
+          ].filter(Boolean).join('；'),
           oldStatus: withdrawal.status,
-          newStatus: 'processing',
-        },
-      });
-
-      await tx.withdrawLog.create({
-        data: {
-          withdrawId: id,
-          action: 'complete',
-          operator: 'admin',
-          operatorId: adminId,
-          operatorName: adminName || '管理员',
-          message: '打款成功',
-          oldStatus: 'processing',
           newStatus: 'completed',
         },
       });
@@ -554,9 +673,19 @@ export class AdminWithdrawalsService {
             escortId: withdrawal.wallet.escortId,
             payoutMethod,
             transactionNo,
+            payoutAccount: payoutAccount?.trim() || null,
+            payoutRemark: payoutRemark?.trim() || null,
+            payoutProofUrls: payoutProofs,
           }),
         },
       });
+    });
+
+    await this.sendWithdrawNotification({
+      event: 'withdrawal_completed',
+      escortId: withdrawal.wallet.escortId,
+      withdrawId: id,
+      amount: Number(withdrawal.actualAmount),
     });
 
     return this.findById(id);
@@ -566,11 +695,11 @@ export class AdminWithdrawalsService {
    * 确认打款完成（旧版，保留兼容）
    */
   async confirmTransfer(
-    id: string,
-    transferNo: string,
-    adminId?: string,
+    _id: string,
+    _transferNo: string,
+    _adminId?: string,
   ) {
-    return this.payout(id, 'manual', 'CONFIRM', transferNo, adminId);
+    throw new BadRequestException('旧版打款接口已停用，请使用新版人工打款接口并填写打款账户与凭证');
   }
 
   /**
@@ -585,7 +714,15 @@ export class AdminWithdrawalsService {
     const withdrawal = await this.prisma.withdrawal.findUnique({
       where: { id },
       include: {
-        wallet: true,
+        wallet: {
+          include: {
+            escort: {
+              select: {
+                id: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -665,6 +802,14 @@ export class AdminWithdrawalsService {
       });
     });
 
+    await this.sendWithdrawNotification({
+      event: 'withdrawal_failed',
+      escortId: withdrawal.wallet.escort?.id,
+      withdrawId: id,
+      amount: Number(withdrawal.actualAmount),
+      reason,
+    });
+
     return this.findById(id);
   }
 
@@ -701,29 +846,30 @@ export class AdminWithdrawalsService {
       }),
       this.prisma.withdrawal.count({
         where: {
-          createdAt: { gte: today },
+          transferAt: { gte: today },
+          status: 'completed',
         },
       }),
       // 今日提现金额
       this.prisma.withdrawal.aggregate({
         where: {
-          createdAt: { gte: today },
-          status: { in: ['approved', 'completed'] },
+          transferAt: { gte: today },
+          status: 'completed',
         },
         _sum: { actualAmount: true },
       }),
       // 本月提现笔数
       this.prisma.withdrawal.count({
         where: {
-          createdAt: { gte: monthStart },
-          status: { in: ['approved', 'completed'] },
+          transferAt: { gte: monthStart },
+          status: 'completed',
         },
       }),
       // 本月提现金额
       this.prisma.withdrawal.aggregate({
         where: {
-          createdAt: { gte: monthStart },
-          status: { in: ['approved', 'completed'] },
+          transferAt: { gte: monthStart },
+          status: 'completed',
         },
         _sum: { actualAmount: true },
       }),
@@ -760,20 +906,14 @@ export class AdminWithdrawalsService {
   }) {
     const { status, method, escortId, keyword, startDate, endDate, minAmount, maxAmount, format = 'csv', adminId, adminName } = params;
 
-    const where: any = {};
+    const where: Prisma.WithdrawalWhereInput = {};
 
     if (status) where.status = status;
     if (method) where.method = method;
     if (escortId) where.wallet = { escortId };
 
-    if (keyword) {
-      where.OR = [
-        { id: { contains: keyword } },
-        { wallet: { escort: { name: { contains: keyword, mode: 'insensitive' } } } },
-        { wallet: { escort: { phone: { contains: keyword } } } },
-        { wallet: { escort: { id: keyword } } },
-      ];
-    }
+    const keywordWhere = this.buildKeywordWhere(keyword);
+    if (keywordWhere) where.OR = keywordWhere;
 
     if (startDate || endDate) {
       where.createdAt = {};
@@ -781,8 +921,12 @@ export class AdminWithdrawalsService {
       if (endDate) where.createdAt.lte = new Date(endDate + 'T23:59:59');
     }
 
-    if (minAmount) where.amount = { ...where.amount, gte: minAmount };
-    if (maxAmount) where.amount = { ...where.amount, lte: maxAmount };
+    const amountFilter: Prisma.DecimalFilter = {};
+    if (minAmount !== undefined) amountFilter.gte = minAmount;
+    if (maxAmount !== undefined) amountFilter.lte = maxAmount;
+    if (Object.keys(amountFilter).length > 0) {
+      where.amount = amountFilter;
+    }
 
     // 查询数据（限制最大 10000 条）
     const data = await this.prisma.withdrawal.findMany({

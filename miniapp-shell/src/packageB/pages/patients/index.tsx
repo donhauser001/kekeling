@@ -5,7 +5,7 @@
  */
 import { useState, useEffect, useCallback } from 'react'
 import { View } from '@tarojs/components'
-import Taro, { useShareAppMessage, useShareTimeline, useDidShow } from '@tarojs/taro'
+import Taro, { useRouter, useShareAppMessage, useShareTimeline, useDidShow } from '@tarojs/taro'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { PatientsPage as PatientsPageComponent } from '@terminal-preview/components/pages/PatientsPage'
 import { previewApi } from '@terminal-preview/api'
@@ -24,6 +24,9 @@ const queryClient = new QueryClient({
 })
 
 function PatientsPageContent() {
+  const router = useRouter()
+  const selectMode = router.params?.mode === 'select'
+  const source = router.params?.source || ''
   const [themeSettings, setThemeSettings] = useState<ThemeSettings>(defaultThemeSettings)
   const [isLoading, setIsLoading] = useState(true)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
@@ -62,16 +65,37 @@ function PatientsPageContent() {
     Taro.navigateBack()
   }, [])
 
+  const handleSelectPatient = useCallback((patientId: string) => {
+    if (source === 'create-order') {
+      Taro.setStorageSync('createOrderSelectedPatientId', patientId)
+      Taro.navigateBack()
+      return
+    }
+    if (source === 'user-order-detail') {
+      const orderId = router.params?.orderId || ''
+      Taro.setStorageSync('userOrderDetailSelectedPatientId', patientId)
+      if (orderId) {
+        Taro.setStorageSync('userOrderDetailSelectedOrderId', orderId)
+      }
+      Taro.navigateBack()
+      return
+    }
+    Taro.navigateBack()
+  }, [router.params?.orderId, source])
+
   const handleNavigate = useCallback((page: string, params?: Record<string, string>) => {
     if (page === 'patient-edit') {
-      const url = params?.id
-        ? `/packageB/pages/patient-edit/index?id=${params.id}`
-        : '/packageB/pages/patient-edit/index'
+      const query = new URLSearchParams()
+      if (params?.id) query.set('id', params.id)
+      if (selectMode) query.set('mode', 'select')
+      if (source) query.set('source', source)
+      const queryString = query.toString()
+      const url = `/packageB/pages/patient-edit/index${queryString ? `?${queryString}` : ''}`
       Taro.navigateTo({ url })
     } else {
       console.warn('[PatientsPage] 未知页面:', page)
     }
-  }, [])
+  }, [selectMode, source])
 
   if (isLoading) {
     return (
@@ -86,8 +110,10 @@ function PatientsPageContent() {
       <PatientsPageComponent
         themeSettings={themeSettings}
         isDarkMode={false}
+        selectMode={selectMode}
         onBack={handleBack}
         onNavigate={handleNavigate}
+        onSelectPatient={handleSelectPatient}
         refreshTrigger={refreshTrigger}
       />
     </View>
@@ -101,4 +127,3 @@ export default function PatientsPage() {
     </QueryClientProvider>
   )
 }
-

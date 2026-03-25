@@ -40,7 +40,7 @@ export const relationLabelMap: Record<PatientRelation, string> = {
 export const defaultPatientForm: PatientForm = {
   name: '',
   gender: 'male',
-  age: '',
+  birthday: '',
   phone: '',
   idCard: '',
   relation: 'self',

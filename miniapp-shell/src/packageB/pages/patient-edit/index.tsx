@@ -26,6 +26,8 @@ const queryClient = new QueryClient({
 function PatientEditPageContent() {
   const router = useRouter()
   const patientId = router.params?.id || undefined
+  const selectMode = router.params?.mode === 'select'
+  const source = router.params?.source || ''
   const [themeSettings, setThemeSettings] = useState<ThemeSettings>(defaultThemeSettings)
   const [isLoading, setIsLoading] = useState(true)
 
@@ -59,11 +61,35 @@ function PatientEditPageContent() {
 
   const handleNavigate = useCallback((page: string, params?: Record<string, string>) => {
     console.log('[PatientEditPage] 导航:', page, params)
-    // 保存成功后返回
     if (page === 'patients') {
+      if (params?.selectedPatientId) {
+        if (source === 'create-order') {
+          Taro.setStorageSync('createOrderSelectedPatientId', params.selectedPatientId)
+        }
+        if (source === 'user-order-detail') {
+          Taro.setStorageSync('userOrderDetailSelectedPatientId', params.selectedPatientId)
+          const orderId = router.params?.orderId || ''
+          if (orderId) {
+            Taro.setStorageSync('userOrderDetailSelectedOrderId', orderId)
+          }
+        }
+      }
+      if (source === 'create-order' && selectMode) {
+        Taro.setStorageSync('createOrderRefreshPatients', '1')
+        const pages = Taro.getCurrentPages()
+        const delta = Math.min(2, Math.max(1, pages.length - 1))
+        Taro.navigateBack({ delta })
+        return
+      }
+      if (source === 'user-order-detail' && selectMode) {
+        const pages = Taro.getCurrentPages()
+        const delta = Math.min(2, Math.max(1, pages.length - 1))
+        Taro.navigateBack({ delta })
+        return
+      }
       Taro.navigateBack()
     }
-  }, [])
+  }, [router.params?.orderId, selectMode, source])
 
   if (isLoading) {
     return (
@@ -93,4 +119,3 @@ export default function PatientEditPage() {
     </QueryClientProvider>
   )
 }
-

@@ -53,6 +53,7 @@ export interface TextProps {
   style?: CSSProperties
   /** 最多显示行数（Web 端通过 line-clamp 样式模拟） */
   numberOfLines?: number
+  onClick?: (e: MouseEvent) => void
   'aria-hidden'?: boolean
   /** 数据属性 */
   'data-testid'?: string

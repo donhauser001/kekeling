@@ -109,6 +109,7 @@ export const previewApi = {
   getHospital: userApi.getHospital,
   getHospitalDepartments: userApi.getHospitalDepartments,
   getHospitalDoctors: userApi.getHospitalDoctors,
+  getDoctor: userApi.getDoctor,
 
   // 服务
   getCategories: userApi.getCategories,
@@ -159,6 +160,7 @@ export const previewApi = {
 
   // 订单创建和支付
   createOrder: userApi.createOrder,
+  updateOrderPatient: userApi.updateOrderPatient,
   getPaymentParams: userApi.getPaymentParams,
   getMembershipPaymentParams: userApi.getMembershipPaymentParams,
   getPaymentStatus: userApi.getPaymentStatus,

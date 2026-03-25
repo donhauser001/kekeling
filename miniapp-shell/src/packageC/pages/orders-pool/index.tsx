@@ -12,6 +12,7 @@ import type { ThemeSettings } from '@terminal-preview/types'
 import { defaultThemeSettings } from '@terminal-preview/types'
 import { getPreviewEscortToken, setPreviewEscortToken } from '@terminal-preview/session'
 import { useViewerRole } from '@terminal-preview/hooks/useViewerRole'
+import { navigateToEscortAgreement } from '../../../utils/escort-agreement'
 import './index.scss'
 
 const queryClient = new QueryClient({
@@ -26,6 +27,8 @@ const queryClient = new QueryClient({
 
 const PAGE_ROUTE_MAP: Record<string, string> = {
   'pool-order-detail': '/packageC/pages/pool-order-detail/index',
+  'workbench-pool-order-detail': '/packageC/pages/pool-order-detail/index',
+  'orders-pool': '/packageC/pages/orders-pool/index',
   'workbench': '/packageC/pages/workbench/index',
 }
 
@@ -134,6 +137,7 @@ function OrdersPoolPageContent() {
           }
         }}
         onLoginSuccess={handleLoginSuccess}
+        onViewAgreement={navigateToEscortAgreement}
         themeSettings={themeSettings}
         isDarkMode={false}
       />

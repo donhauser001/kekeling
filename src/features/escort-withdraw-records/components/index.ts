@@ -7,8 +7,8 @@ export type { WithdrawRecordListProps } from './WithdrawRecordList'
 // P2 组件
 export { WithdrawReviewDrawer } from './WithdrawReviewDrawer'
 export { WithdrawPayoutModal } from './WithdrawPayoutModal'
+export { WithdrawFailModal } from './WithdrawFailModal'
 export { WithdrawLogsTimeline, StatusTimeline } from './WithdrawLogsTimeline'
-
 
 
 

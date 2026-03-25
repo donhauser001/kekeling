@@ -5,7 +5,7 @@
  */
 import { useState, useEffect, useCallback } from 'react'
 import { View } from '@tarojs/components'
-import Taro, { useRouter, useShareAppMessage, useShareTimeline } from '@tarojs/taro'
+import Taro, { useRouter, useShareAppMessage, useShareTimeline, useDidShow } from '@tarojs/taro'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { UserOrderDetailPage as UserOrderDetailPageComponent } from '@terminal-preview/components/pages/UserOrderDetailPage'
 import { previewApi } from '@terminal-preview/api'
@@ -28,6 +28,7 @@ function UserOrderDetailPageContent() {
   const orderId = router.params?.id || ''
   const [themeSettings, setThemeSettings] = useState<ThemeSettings>(defaultThemeSettings)
   const [isLoading, setIsLoading] = useState(true)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
     console.log('[UserOrderDetailPage] 页面加载, orderId:', orderId)
@@ -53,6 +54,35 @@ function UserOrderDetailPageContent() {
     title: '订单详情',
   }))
 
+  useDidShow(() => {
+    const selectedPatientId = Taro.getStorageSync('userOrderDetailSelectedPatientId') as string | undefined
+    const selectedOrderId = Taro.getStorageSync('userOrderDetailSelectedOrderId') as string | undefined
+
+    if (!selectedPatientId || selectedOrderId !== orderId) {
+      return
+    }
+
+    Taro.removeStorageSync('userOrderDetailSelectedPatientId')
+    Taro.removeStorageSync('userOrderDetailSelectedOrderId')
+
+    Taro.showLoading({ title: '更新就诊信息...' })
+    previewApi.updateOrderPatient(orderId, selectedPatientId)
+      .then((result) => {
+        Taro.hideLoading()
+        if (result) {
+          Taro.showToast({ title: '就诊信息已补充', icon: 'success' })
+          setRefreshKey((prev) => prev + 1)
+          return
+        }
+        Taro.showToast({ title: '更新失败，请重试', icon: 'none' })
+      })
+      .catch((error) => {
+        console.error('[UserOrderDetailPage] 更新订单就诊人失败:', error)
+        Taro.hideLoading()
+        Taro.showToast({ title: error?.message || '更新失败，请重试', icon: 'none' })
+      })
+  })
+
   const handleBack = useCallback(() => {
     Taro.navigateBack()
   }, [])
@@ -64,6 +94,7 @@ function UserOrderDetailPageContent() {
       'user-orders': '/packageB/pages/user-orders/index',
       'review-submit': '/packageB/pages/review-submit/index',
       'customer-service': '/packageB/pages/customer-service/index',
+      'patients': '/packageB/pages/patients/index',
     }
     const basePath = PAGE_MAP[page]
     if (basePath) {
@@ -77,6 +108,13 @@ function UserOrderDetailPageContent() {
         if (params.serviceName) queryParams.append('serviceName', encodeURIComponent(params.serviceName))
         if (params.escortAvatar) queryParams.append('escortAvatar', encodeURIComponent(params.escortAvatar))
         url += `?${queryParams.toString()}`
+      } else if (page === 'patients') {
+        const queryParams = new URLSearchParams()
+        if (params?.mode) queryParams.append('mode', params.mode)
+        if (params?.source) queryParams.append('source', params.source)
+        if (params?.orderId) queryParams.append('orderId', params.orderId)
+        const queryString = queryParams.toString()
+        url += queryString ? `?${queryString}` : ''
       } else if (params?.id) {
         url += `?id=${params.id}`
       }
@@ -97,6 +135,7 @@ function UserOrderDetailPageContent() {
   return (
     <View className="page-container">
       <UserOrderDetailPageComponent
+        key={`${orderId}-${refreshKey}`}
         themeSettings={themeSettings}
         isDarkMode={false}
         orderId={orderId}
@@ -114,4 +153,3 @@ export default function UserOrderDetailPage() {
     </QueryClientProvider>
   )
 }
-

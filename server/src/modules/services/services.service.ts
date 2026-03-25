@@ -105,8 +105,8 @@ export class ServicesService {
       price: Number(item.price),
       originalPrice: item.originalPrice ? Number(item.originalPrice) : null,
       rating: Number(item.rating),
-      // 使用真实的订单数量
-      orderCount: item._count.orders,
+      // 与首页推荐口径保持一致，使用服务表中的销量字段
+      orderCount: item.orderCount,
       _count: undefined,
       // 展开保障数据
       guarantees: item.guarantees.map((g) => g.guarantee),

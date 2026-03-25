@@ -72,6 +72,7 @@ export function PoolOrderDetailPage({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
   const [grabbing, setGrabbing] = useState(false)
+  const [grabError, setGrabError] = useState<string | null>(null)
 
   // 颜色配置
   const bgColor = isDarkMode ? '#1a1a1a' : '#f5f7fa'
@@ -168,14 +169,18 @@ export function PoolOrderDetailPage({
   const handleGrabOrder = async () => {
     if (!orderId || grabbing) return
     setGrabbing(true)
+    setGrabError(null)
     try {
       const result = await previewApi.grabOrder(orderId)
       if (result.success) {
         // 抢单成功，跳转到已接订单详情
         onNavigate?.('workbench-order-detail', { id: orderId, source: 'my-orders' })
+      } else {
+        setGrabError(result.message || '抢单失败')
       }
     } catch (err) {
       console.error('[PoolOrderDetailPage] 抢单失败:', err)
+      setGrabError(err instanceof Error ? err.message : '抢单失败，请重试')
     } finally {
       setGrabbing(false)
     }
@@ -461,6 +466,21 @@ export function PoolOrderDetailPage({
             borderTopColor: isDarkMode ? '#3a3a3a' : '#e5e7eb',
           }}
         >
+          {grabError && (
+            <Text
+              style={{
+                position: 'absolute',
+                top: -28 * wxScale,
+                left: 16 * wxScale,
+                right: 16 * wxScale,
+                display: 'block',
+                fontSize: 12 * wxScale,
+                color: '#dc2626',
+              }}
+            >
+              {grabError}
+            </Text>
+          )}
           <Box
             onClick={!grabbing ? handleGrabOrder : undefined}
             style={{
@@ -557,4 +577,3 @@ function PageHeader({ title, themeSettings, onBack, wxScale, wxSafeAreaTop }: Pa
     </Box>
   )
 }
-

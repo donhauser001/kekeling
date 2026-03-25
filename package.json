@@ -12,7 +12,9 @@
     "format": "prettier --write .",
     "knip": "knip",
     "check:distribution": "bash scripts/check-distribution-guardrails.sh",
-    "lint:preview-guard": "bash scripts/check-preview-guardrails.sh"
+    "lint:preview-guard": "bash scripts/check-preview-guardrails.sh",
+    "miniapp:build": "bash scripts/miniapp-build.sh",
+    "miniapp:build:clean": "bash scripts/miniapp-build.sh --clean"
   },
   "dependencies": {
     "@clerk/clerk-react": "^5.57.0",

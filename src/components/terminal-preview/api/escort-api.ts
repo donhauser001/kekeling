@@ -238,16 +238,7 @@ export const getWorkbenchOrdersPool = async (): Promise<OrdersPoolResponse> => {
     return getMockOrdersPool()
   }
 
-  try {
-    return await escortRequest<OrdersPoolResponse>('/escort-app/orders/pool')
-  } catch (error) {
-    if (error instanceof ApiError && (error.status === 404 || error.status === 500)) {
-      console.warn('[previewApi.getWorkbenchOrdersPool] 接口错误，使用 mock 数据')
-      return getMockOrdersPool()
-    }
-    console.warn('[previewApi.getWorkbenchOrdersPool] 请求失败，降级 mock:', error)
-    return getMockOrdersPool()
-  }
+  return await escortRequest<OrdersPoolResponse>('/escort-app/orders/pool')
 }
 
 /**

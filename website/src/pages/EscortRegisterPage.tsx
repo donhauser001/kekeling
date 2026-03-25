@@ -729,7 +729,7 @@ export function EscortRegisterPage() {
         </div>
         <span className="text-sm text-gray-600">
           我已阅读并同意
-          <Link to="/terms" className="text-emerald-600 hover:underline mx-0.5">《陪诊员服务协议》</Link>
+          <Link to="/escort-terms" className="text-emerald-600 hover:underline mx-0.5">《陪诊员服务协议》</Link>
           和
           <Link to="/privacy" className="text-emerald-600 hover:underline mx-0.5">《隐私政策》</Link>
         </span>

@@ -216,6 +216,13 @@ export function EscortLoginPage() {
               立即申请
             </Link>
           </p>
+
+          <p className="text-center mt-4 text-sm text-gray-500">
+            登录即表示您同意
+            <Link to="/escort-terms" className="text-emerald-600 hover:underline mx-1">
+              《陪诊员服务协议》
+            </Link>
+          </p>
         </div>
 
         {/* 用户入口 */}

@@ -12,10 +12,10 @@ export class CreateOrderDto {
   @IsNotEmpty()
   hospitalId: string;
 
-  @ApiProperty({ description: '就诊人ID' })
+  @ApiPropertyOptional({ description: '就诊人ID' })
   @IsString()
-  @IsNotEmpty()
-  patientId: string;
+  @IsOptional()
+  patientId?: string;
 
   @ApiProperty({ description: '预约日期', example: '2024-12-20' })
   @IsString()
@@ -56,4 +56,3 @@ export class CreateOrderDto {
   @IsOptional()
   escortId?: string;
 }
-

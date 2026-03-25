@@ -4,8 +4,7 @@
  * 职责：
  * 1. 环境检测
  * 2. 注入 WxBridge runtime
- * 3. 加载图标字体（Iconfont）
- * 4. 预加载主题设置（避免页面闪烁）
+ * 3. 预加载主题设置（避免页面闪烁）
  *
  * 说明：
  * - Taro 的页面渲染与 App 的 children 是分离的
@@ -29,37 +28,9 @@ import './app.scss'
 const SERVER_BASE_URL = 'https://kkl.top'
 
 /**
- * Iconfont 字体 URL（从服务器加载）
- * 字体文件位于 server/uploads/fonts/iconfont.ttf
- */
-const ICONFONT_URL = `${SERVER_BASE_URL}/uploads/fonts/iconfont.ttf`
-
-/**
  * 主题缓存 key
  */
 const THEME_CACHE_KEY = 'kekeling_theme_settings'
-
-/**
- * 加载图标字体
- *
- * 使用 iconfont 统一图标系统（775 个图标）
- * 确保后台、终端预览器、小程序使用相同的图标
- */
-function loadIconFonts() {
-  // 加载 Iconfont（统一图标系统）
-  Taro.loadFontFace({
-    global: true,
-    family: 'iconfont',
-    source: `url("${ICONFONT_URL}")`,
-    success: () => {
-      console.log('[Iconfont] 字体加载成功 (775 icons)')
-    },
-    fail: (err) => {
-      console.warn('[Iconfont] 字体加载失败:', err)
-      console.warn('[Iconfont] URL:', ICONFONT_URL)
-    },
-  })
-}
 
 /**
  * 预加载主题设置
@@ -90,8 +61,6 @@ class App extends Component<PropsWithChildren> {
     console.log('[miniapp-shell] App launched')
     // 注入小程序环境的 WxBridge 实现
     injectWxBridgeRuntime()
-    // 加载图标字体（统一 Iconfont 系统）
-    loadIconFonts()
     // 预加载主题设置（避免页面切换时闪烁）
     preloadThemeSettings()
   }

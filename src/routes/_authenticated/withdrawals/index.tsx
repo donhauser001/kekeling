@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { Withdrawals } from '@/features/withdrawals'
+import { EscortWithdrawRecords } from '@/features/escort-withdraw-records'
 
 export const Route = createFileRoute('/_authenticated/withdrawals/')({
-  component: Withdrawals,
+  component: EscortWithdrawRecords,
 })

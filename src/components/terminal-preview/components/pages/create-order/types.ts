@@ -12,6 +12,8 @@ export interface CreateOrderPageProps {
   serviceId: string
   themeSettings: ThemeSettings
   isDarkMode?: boolean
+  preferredPatientId?: string | null
+  patientsRefreshTrigger?: number
   onBack?: () => void
   onNavigate?: (page: string, params?: Record<string, string>) => void
 }

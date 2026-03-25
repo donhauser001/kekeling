@@ -30,6 +30,8 @@ export default defineAppConfig({
         'pages/service-detail/index',
         'pages/create-order/index',
         'pages/search/index',           // 搜索页面
+        'pages/hospital-detail/index',  // 医院详情
+        'pages/doctor-detail/index',    // 医生详情
       ],
     },
     {
@@ -89,6 +91,13 @@ export default defineAppConfig({
       ],
     },
     {
+      root: 'packageD',
+      name: 'home',
+      pages: [
+        'pages/home/index',
+      ],
+    },
+    {
       root: 'packageE',
       name: 'distribution',
       pages: [
@@ -101,20 +110,9 @@ export default defineAppConfig({
     },
   ],
   // 分包预下载规则
-  preloadRule: {
-    'pages/main/index': {
-      network: 'all',
-      packages: ['packageA', 'packageB'],
-    },
-    'packageB/pages/profile/index': {
-      network: 'all',
-      packages: ['packageC'],
-    },
-    'packageC/pages/workbench/index': {
-      network: 'all',
-      packages: ['packageE'],
-    },
-  },
+  // 关闭分包预下载，避免微信代码质量将启动下载体积计入主包检查。
+  // 功能不受影响，只是首次进入分包页面时会按需加载。
+  preloadRule: {},
   window: {
     backgroundTextStyle: 'light',
     navigationBarBackgroundColor: '#fff',

@@ -31,6 +31,8 @@ export interface WorkbenchStatsData {
   todayOrders: number
   /** 待服务订单数 */
   pendingOrders: number
+  /** 进行中订单数 */
+  ongoingOrders: number
   /** 已完成订单数 */
   completedOrders: number
   /** 本月收入 */
@@ -127,6 +129,7 @@ export interface TodayOverviewProps {
   themeSettings: ThemeSettings
   isDarkMode: boolean
   wxScale: number
+  onNavigate?: (page: string, params?: Record<string, string>) => void
 }
 
 export interface QuickEntriesProps {

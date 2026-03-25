@@ -40,7 +40,6 @@ export function SelectItem({
       style={{
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'space-between',
         paddingTop: 12 * wxScale,
         paddingBottom: 12 * wxScale,
         borderBottomWidth: isLast ? 0 : 1,
@@ -48,7 +47,7 @@ export function SelectItem({
         borderBottomColor: borderColor,
       }}
     >
-      <Box style={{ display: 'flex', alignItems: 'center', gap: 12 * wxScale }}>
+      <Box style={{ display: 'flex', alignItems: 'center', gap: 8 * wxScale, width: 116 * wxScale, flexShrink: 0 }}>
         <Icon name={icon} size={20 * wxScale} color={primaryColor} />
         <Text style={{ fontSize: 14 * wxScale, color: textPrimary }}>
           {label}
@@ -56,8 +55,9 @@ export function SelectItem({
             <Text style={{ color: '#ef4444' }}>*</Text>
           )}
         </Text>
+        <Text style={{ fontSize: 14 * wxScale, color: textMuted }}>：</Text>
       </Box>
-      <Box style={{ display: 'flex', alignItems: 'center', gap: 8 * wxScale }}>
+      <Box style={{ flex: 1, minWidth: 0, marginLeft: 8 * wxScale, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 * wxScale }}>
         <Text style={{ fontSize: 14 * wxScale, color: value ? textPrimary : textMuted }}>
           {value || placeholder}
         </Text>

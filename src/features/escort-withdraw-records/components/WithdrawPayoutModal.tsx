@@ -41,10 +41,12 @@ import {
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { useAdminEscortWithdrawRecord, useAdminWithdrawPayout } from '@/hooks/use-api'
+import { ImageUpload } from '@/components/image-upload'
 import type { AdminWithdrawMethod } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
@@ -82,6 +84,9 @@ export function WithdrawPayoutModal({
 }: WithdrawPayoutModalProps) {
   // 表单状态
   const [transactionNo, setTransactionNo] = useState('')
+  const [payoutAccount, setPayoutAccount] = useState('')
+  const [payoutRemark, setPayoutRemark] = useState('')
+  const [payoutProofUrls, setPayoutProofUrls] = useState<string[]>([])
   const [confirmInput, setConfirmInput] = useState('')
 
   // 详情查询
@@ -95,6 +100,9 @@ export function WithdrawPayoutModal({
   // 重置表单
   const resetForm = () => {
     setTransactionNo('')
+    setPayoutAccount('')
+    setPayoutRemark('')
+    setPayoutProofUrls([])
     setConfirmInput('')
   }
 
@@ -115,10 +123,19 @@ export function WithdrawPayoutModal({
       return
     }
 
-    // 建议填写交易号，便于人工打款后审计追溯
     if (!transactionNo.trim()) {
-      const confirmed = window.confirm('未填写交易号，确定继续吗？')
-      if (!confirmed) return
+      toast.error('请填写打款流水号')
+      return
+    }
+
+    if (!payoutAccount.trim()) {
+      toast.error('请填写打款账户')
+      return
+    }
+
+    if (payoutProofUrls.length === 0) {
+      toast.error('请至少上传一张打款凭证')
+      return
     }
 
     try {
@@ -127,7 +144,10 @@ export function WithdrawPayoutModal({
         data: {
           payoutMethod: 'manual',
           operatorConfirmText: 'CONFIRM',
-          transactionNo: transactionNo.trim() || undefined,
+          transactionNo: transactionNo.trim(),
+          payoutAccount: payoutAccount.trim(),
+          payoutRemark: payoutRemark.trim() || undefined,
+          payoutProofUrls,
         },
       })
 
@@ -228,6 +248,10 @@ export function WithdrawPayoutModal({
               )}
               <Separator />
               <div className='flex justify-between'>
+                <span className='text-muted-foreground'>提现单号</span>
+                <span className='font-mono text-sm'>{detail.withdrawNo}</span>
+              </div>
+              <div className='flex justify-between'>
                 <span className='text-muted-foreground'>陪诊员 ID</span>
                 <span className='font-mono text-sm'>{detail.escortId}</span>
               </div>
@@ -248,13 +272,48 @@ export function WithdrawPayoutModal({
               </div>
               <div className='space-y-2'>
                 <Label htmlFor='transactionNo'>
-                  交易单号 <span className='text-muted-foreground text-xs'>（建议填写）</span>
+                  打款流水号 <span className='text-red-500'>*</span>
                 </Label>
                 <Input
                   id='transactionNo'
                   value={transactionNo}
                   onChange={(e) => setTransactionNo(e.target.value)}
-                  placeholder='请输入银行/支付宝/微信转账单号...'
+                  placeholder='请输入银行/支付宝/微信转账流水号'
+                />
+              </div>
+              <div className='space-y-2'>
+                <Label htmlFor='payoutAccount'>
+                  打款账户 <span className='text-red-500'>*</span>
+                </Label>
+                <Input
+                  id='payoutAccount'
+                  value={payoutAccount}
+                  onChange={(e) => setPayoutAccount(e.target.value)}
+                  placeholder='例如：招商银行基本户（尾号0001）'
+                />
+              </div>
+              <div className='space-y-2'>
+                <Label htmlFor='payoutRemark'>打款备注</Label>
+                <Textarea
+                  id='payoutRemark'
+                  value={payoutRemark}
+                  onChange={(e) => setPayoutRemark(e.target.value)}
+                  placeholder='可填写打款批次、操作说明、异常备注等'
+                  rows={3}
+                />
+              </div>
+              <div className='space-y-2'>
+                <Label>
+                  打款凭证 <span className='text-red-500'>*</span>
+                </Label>
+                <ImageUpload
+                  value={payoutProofUrls}
+                  onChange={(value) => setPayoutProofUrls(Array.isArray(value) ? value : value ? [value] : [])}
+                  multiple
+                  maxCount={6}
+                  folder='common'
+                  itemSize='sm'
+                  hint='请上传银行回单、转账截图等凭证'
                 />
               </div>
             </div>
@@ -278,7 +337,7 @@ export function WithdrawPayoutModal({
                 disabled={payoutMutation.isPending}
               />
               <p className='text-xs text-muted-foreground'>
-                为防止误操作，请手动输入 CONFIRM（禁止复制粘贴）
+                为防止误操作，请在确认人工已打款并上传凭证后手动输入 CONFIRM
               </p>
             </div>
           </div>
@@ -307,8 +366,6 @@ export function WithdrawPayoutModal({
     </Dialog>
   )
 }
-
-
 
 
 

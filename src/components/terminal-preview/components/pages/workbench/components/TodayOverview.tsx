@@ -15,6 +15,7 @@ export function TodayOverview({
   themeSettings,
   isDarkMode,
   wxScale,
+  onNavigate,
 }: TodayOverviewProps) {
   return (
     <Box
@@ -48,13 +49,15 @@ export function TodayOverview({
           color="#f59e0b"
           isDarkMode={isDarkMode}
           wxScale={wxScale}
+          onClick={() => onNavigate?.('my-orders', { status: 'pending' })}
         />
         <StatCard
           label="进行中"
-          value={stats.todayOrders}
+          value={stats.ongoingOrders}
           color={themeSettings.primaryColor}
           isDarkMode={isDarkMode}
           wxScale={wxScale}
+          onClick={() => onNavigate?.('my-orders', { status: 'ongoing' })}
         />
         <StatCard
           label="已完成"
@@ -62,6 +65,7 @@ export function TodayOverview({
           color="#10b981"
           isDarkMode={isDarkMode}
           wxScale={wxScale}
+          onClick={() => onNavigate?.('my-orders', { status: 'completed' })}
         />
       </Box>
     </Box>
@@ -75,16 +79,20 @@ interface StatCardProps {
   color: string
   isDarkMode: boolean
   wxScale: number
+  onClick?: () => void
 }
 
-function StatCard({ label, value, color, isDarkMode, wxScale }: StatCardProps) {
+function StatCard({ label, value, color, isDarkMode, wxScale, onClick }: StatCardProps) {
   return (
     <Box
+      onClick={onClick}
       style={{
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         flex: 1,
+        paddingTop: 4 * wxScale,
+        paddingBottom: 4 * wxScale,
       }}
     >
       <Text

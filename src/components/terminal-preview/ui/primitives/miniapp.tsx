@@ -94,7 +94,7 @@ export const Box = forwardRef<any, BoxProps>(function Box(
  * 小程序端渲染为 Text
  */
 export const Text = forwardRef<any, TextProps>(function Text(
-  { children, className, style, ...rest },
+  { children, className, style, onClick, ...rest },
   _ref
 ) {
   const filteredProps: Record<string, unknown> = {}
@@ -102,7 +102,7 @@ export const Text = forwardRef<any, TextProps>(function Text(
   if (rest['data-testid']) filteredProps['data-testid'] = rest['data-testid']
 
   return (
-    <TaroText className={className} style={style} {...filteredProps}>
+    <TaroText className={className} style={style} onClick={onClick} {...filteredProps}>
       {children}
     </TaroText>
   )

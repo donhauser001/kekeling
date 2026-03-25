@@ -46,6 +46,7 @@ const slugTitles: Record<string, string> = {
   about: '关于我们',
   privacy: '隐私政策',
   terms: '用户协议',
+  'escort-terms': '陪诊员服务协议',
   help: '帮助中心',
   contact: '联系我们',
 }

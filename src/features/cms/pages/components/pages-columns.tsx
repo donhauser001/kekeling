@@ -19,6 +19,7 @@ const systemPageTypes = [
   { slug: 'about', label: '关于我们' },
   { slug: 'privacy', label: '隐私政策' },
   { slug: 'terms', label: '用户协议' },
+  { slug: 'escort-terms', label: '陪诊员服务协议' },
   { slug: 'help', label: '帮助中心' },
   { slug: 'contact', label: '联系我们' },
 ]

@@ -3,9 +3,14 @@ import { usePageBySlug, useSidebarsForTarget } from '@/hooks/useApi'
 import { SidebarRenderer } from '@/components/SidebarRenderer'
 import { SafeHTML } from '@/components/SafeHTML'
 
-export function PageDetail() {
-  const { slug } = useParams<{ slug: string }>()
-  const { data: page, loading, error } = usePageBySlug(slug || '')
+interface PageDetailProps {
+  slugOverride?: string
+}
+
+export function PageDetail({ slugOverride }: PageDetailProps) {
+  const { slug: routeSlug } = useParams<{ slug: string }>()
+  const slug = slugOverride || routeSlug || ''
+  const { data: page, loading, error } = usePageBySlug(slug)
   
   // 获取页面侧边栏
   const { data: sidebars } = useSidebarsForTarget('page', page?.id)

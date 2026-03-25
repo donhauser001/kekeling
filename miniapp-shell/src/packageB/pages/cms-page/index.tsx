@@ -19,6 +19,7 @@ const SLUG_TITLES: Record<string, string> = {
   about: '关于我们',
   privacy: '隐私政策',
   terms: '服务条款',
+  'escort-terms': '陪诊员服务协议',
   faq: '常见问题',
   help: '帮助中心',
   contact: '联系我们',

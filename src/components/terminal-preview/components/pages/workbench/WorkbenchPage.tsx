@@ -97,6 +97,7 @@ export function WorkbenchPage({
         setStats({
           todayOrders: statsRes.pendingOrders + statsRes.ongoingOrders + statsRes.completedOrders,
           pendingOrders: statsRes.pendingOrders,
+          ongoingOrders: statsRes.ongoingOrders,
           completedOrders: statsRes.completedOrders,
           monthEarnings: statsRes.monthIncome || 0,
           poolOrders: 0, // 后端暂无此字段
@@ -242,6 +243,7 @@ export function WorkbenchPage({
   const displayStats: WorkbenchStatsData = stats || {
     todayOrders: 0,
     pendingOrders: 0,
+    ongoingOrders: 0,
     completedOrders: 0,
     monthEarnings: 0,
     poolOrders: 0,
@@ -285,6 +287,7 @@ export function WorkbenchPage({
           themeSettings={themeSettings}
           isDarkMode={isDarkMode}
           wxScale={wxScale}
+          onNavigate={onNavigate}
         />
 
         {/* 快捷入口 */}

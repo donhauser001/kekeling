@@ -23,6 +23,7 @@
   "author": "Kekeling",
   "dependencies": {
     "@babel/runtime": "^7.24.0",
+    "@vant/area-data": "^2.1.0",
     "@tanstack/react-query": "^5.90.12",
     "@tarojs/components": "4.1.9",
     "@tarojs/helper": "4.1.9",

@@ -38,7 +38,7 @@ export function Footer() {
   const serviceHours = getSetting('service_hours', '7:00 - 22:00')
   const siteLogo = getSetting('site_logo', '')
   const siteCopyright = getSetting('site_copyright', `© ${new Date().getFullYear()} 科科灵陪诊. All rights reserved.`)
-  const siteIcp = getSetting('site_icp', '')
+  const siteIcp = getSetting('site_icp', '京ICP备2025149672号-2')
 
   // 使用文章分类或备用数据
   const categoryLinks = Array.isArray(categories) && categories.length > 0
@@ -169,7 +169,16 @@ export function Footer() {
               <Link to="/privacy" className="hover:text-gray-400 transition-colors">
                 隐私政策
               </Link>
-              {siteIcp && <span>{siteIcp}</span>}
+              {siteIcp && (
+                <a
+                  href="https://beian.miit.gov.cn/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-gray-400 transition-colors"
+                >
+                  {siteIcp}
+                </a>
+              )}
             </div>
           </div>
         </div>

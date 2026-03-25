@@ -46,6 +46,7 @@ const pageTemplates = [
   { slug: 'about', title: '关于我们', desc: '公司介绍、发展历程、团队介绍等' },
   { slug: 'privacy', title: '隐私政策', desc: '用户隐私保护条款' },
   { slug: 'terms', title: '用户协议', desc: '服务使用条款' },
+  { slug: 'escort-terms', title: '陪诊员服务协议', desc: '陪诊师端服务使用条款' },
   { slug: 'help', title: '帮助中心', desc: '常见问题解答' },
   { slug: 'contact', title: '联系我们', desc: '联系方式、地址信息' },
 ]
@@ -529,4 +530,3 @@ export function PageEdit() {
     </>
   )
 }
-

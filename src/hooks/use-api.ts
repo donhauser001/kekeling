@@ -540,6 +540,17 @@ export function useAdminWithdrawPayout() {
   })
 }
 
+export function useAdminWithdrawFail() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+      adminEscortWithdrawApi.markFailed(id, reason),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'escort-withdraw-records'] })
+    },
+  })
+}
+
 // ============================================
 // 服务分类
 // ============================================
@@ -1737,4 +1748,3 @@ export function useDeleteCmsSidebar() {
     },
   })
 }
-

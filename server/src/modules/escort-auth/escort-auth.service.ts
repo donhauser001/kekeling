@@ -392,9 +392,10 @@ export class EscortAuthService {
       return null;
     }
 
-    // 4. 检查陪诊员状态（开发模式下放宽限制，只要不是 suspended 都允许）
-    if (escort.status === 'suspended') {
-      this.logger.warn(`[DevModeAutoLogin] 陪诊员已被暂停: ${escort.id}`);
+    // 4. 检查陪诊员状态
+    // 与真实短信登录、抢单接口保持一致，避免“能进工作台但不能接单”
+    if (escort.status !== 'active') {
+      this.logger.warn(`[DevModeAutoLogin] 陪诊员状态不可接单: ${escort.id}, status=${escort.status}`);
       return null;
     }
 
@@ -529,4 +530,3 @@ export class EscortAuthService {
     }
   }
 }
-

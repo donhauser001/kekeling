@@ -26,6 +26,7 @@ import {
   User,
   Hash,
   AlertCircle,
+  FileText,
 } from 'lucide-react'
 import {
   Sheet,
@@ -37,7 +38,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { useAdminEscortWithdrawRecord } from '@/hooks/use-api'
+import { useAdminEscortWithdrawDetail } from '@/hooks/use-api'
 import type { AdminWithdrawStatus, AdminWithdrawMethod } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
@@ -105,6 +106,8 @@ const logActionConfig: Record<
   create: { label: '提交申请', color: 'text-blue-600' },
   submit: { label: '提交申请', color: 'text-blue-600' },
   processing: { label: '发起打款', color: 'text-purple-600' },
+  payout: { label: '登记打款', color: 'text-purple-600' },
+  complete: { label: '打款完成', color: 'text-green-600' },
   success: { label: '打款成功', color: 'text-green-600' },
   fail: { label: '打款失败', color: 'text-red-600' },
   approve: { label: '审核通过', color: 'text-green-600' },
@@ -123,7 +126,7 @@ export function WithdrawDetailDrawer({
   onClose,
 }: WithdrawDetailDrawerProps) {
   // 详情查询
-  const { data: detail, isLoading } = useAdminEscortWithdrawRecord(
+  const { data: detail, isLoading } = useAdminEscortWithdrawDetail(
     withdrawId || ''
   )
 
@@ -150,39 +153,7 @@ export function WithdrawDetailDrawer({
   const statusInfo = detail ? statusConfig[detail.status] : null
   const methodInfo = detail ? methodConfig[detail.method] : null
 
-  // 模拟操作日志（后端暂时可能没有此字段，先用静态数据占位）
-  // TODO: 后端扩展详情接口返回 logs 字段后替换
-  const logs = detail
-    ? [
-      {
-        id: '1',
-        action: detail.status === 'completed' ? 'success' : detail.status === 'failed' ? 'fail' : 'create',
-        operator: 'system',
-        operatorName: '系统',
-        message: detail.status === 'completed'
-          ? '打款成功'
-          : detail.status === 'failed'
-            ? detail.failReason || '打款失败'
-            : '陪诊员提交提现申请',
-        createdAt: detail.paidAt || detail.createdAt,
-      },
-      ...(detail.status !== 'pending'
-        ? [
-          {
-            id: '2',
-            action: 'create',
-            operator: 'system',
-            operatorName: '系统',
-            message: '陪诊员提交提现申请',
-            createdAt: detail.createdAt,
-          },
-        ]
-        : []),
-    ].sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    )
-    : []
+  const logs = detail?.logs || []
 
   return (
     <Sheet open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
@@ -269,11 +240,11 @@ export function WithdrawDetailDrawer({
 
               <Separator />
 
-              {/* 账户信息 */}
+              {/* 收款信息 */}
               <div className='space-y-1'>
                 <h4 className='flex items-center gap-2 text-sm font-medium'>
                   <CreditCard className='h-4 w-4 text-muted-foreground' />
-                  账户信息
+                  收款银行信息
                 </h4>
                 <div className='ml-6 grid gap-3 text-sm'>
                   <div className='flex justify-between'>
@@ -283,16 +254,22 @@ export function WithdrawDetailDrawer({
                       <span>{methodInfo?.label || detail.method}</span>
                     </div>
                   </div>
-                  <div className='flex justify-between'>
-                    <span className='text-muted-foreground'>收款账户</span>
-                    <span className='font-mono'>{detail.accountMasked}</span>
-                  </div>
                   {detail.accountName && (
                     <div className='flex justify-between'>
-                      <span className='text-muted-foreground'>开户名称</span>
+                      <span className='text-muted-foreground'>户名</span>
                       <span>{detail.accountName}</span>
                     </div>
                   )}
+                  {detail.accountNo && (
+                    <div className='flex justify-between'>
+                      <span className='text-muted-foreground'>账号</span>
+                      <span className='font-mono text-xs break-all text-right max-w-[60%]'>{detail.accountNo}</span>
+                    </div>
+                  )}
+                  <div className='flex justify-between'>
+                    <span className='text-muted-foreground'>脱敏账号</span>
+                    <span className='font-mono'>{detail.accountMasked}</span>
+                  </div>
                   {detail.bankName && (
                     <div className='flex justify-between'>
                       <span className='text-muted-foreground'>开户行</span>
@@ -319,8 +296,80 @@ export function WithdrawDetailDrawer({
                     <span className='text-muted-foreground'>打款时间</span>
                     <span>{formatTime(detail.paidAt)}</span>
                   </div>
+                  {detail.reviewedAt && (
+                    <div className='flex justify-between'>
+                      <span className='text-muted-foreground'>审核时间</span>
+                      <span>{formatTime(detail.reviewedAt)}</span>
+                    </div>
+                  )}
+                  {detail.reviewNote && (
+                    <div className='rounded-md bg-muted/50 p-3'>
+                      <p className='text-xs text-muted-foreground'>审核备注</p>
+                      <p className='mt-1 text-sm'>{detail.reviewNote}</p>
+                    </div>
+                  )}
                 </div>
               </div>
+
+              {(detail.transactionNo || detail.payoutAccount || detail.payoutRemark || (detail.payoutProofUrls || []).length > 0) && (
+                <>
+                  <Separator />
+                  <div className='space-y-1'>
+                    <h4 className='flex items-center gap-2 text-sm font-medium'>
+                      <FileText className='h-4 w-4 text-muted-foreground' />
+                      人工打款信息
+                    </h4>
+                    <div className='ml-6 grid gap-3 text-sm'>
+                      {detail.transactionNo && (
+                        <div className='flex justify-between'>
+                          <span className='text-muted-foreground'>打款流水号</span>
+                          <span className='font-mono text-xs'>{detail.transactionNo}</span>
+                        </div>
+                      )}
+                      {detail.payoutAccount && (
+                        <div className='flex justify-between'>
+                          <span className='text-muted-foreground'>打款账户</span>
+                          <span>{detail.payoutAccount}</span>
+                        </div>
+                      )}
+                      {detail.payoutOperatorName && (
+                        <div className='flex justify-between'>
+                          <span className='text-muted-foreground'>登记人</span>
+                          <span>{detail.payoutOperatorName}</span>
+                        </div>
+                      )}
+                      {detail.payoutRemark && (
+                        <div className='rounded-md bg-muted/50 p-3'>
+                          <p className='text-xs text-muted-foreground'>打款备注</p>
+                          <p className='mt-1 text-sm'>{detail.payoutRemark}</p>
+                        </div>
+                      )}
+                      {(detail.payoutProofUrls || []).length > 0 && (
+                        <div className='space-y-2'>
+                          <span className='text-muted-foreground'>打款凭证</span>
+                          <div className='grid grid-cols-3 gap-3'>
+                            {detail.payoutProofUrls?.map((url, index) => (
+                              <a
+                                key={`${url}-${index}`}
+                                href={url}
+                                target='_blank'
+                                rel='noreferrer'
+                                className='overflow-hidden rounded-md border bg-muted/30'
+                              >
+                                <img
+                                  src={url}
+                                  alt={`打款凭证${index + 1}`}
+                                  className='h-24 w-full object-cover'
+                                />
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
 
               {/* 失败原因 - 仅 failed 状态显示 */}
               {detail.status === 'failed' && detail.failReason && (
@@ -396,8 +445,6 @@ export function WithdrawDetailDrawer({
     </Sheet>
   )
 }
-
-
 
 
 

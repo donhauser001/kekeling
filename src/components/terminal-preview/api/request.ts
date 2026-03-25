@@ -276,7 +276,19 @@ export async function escortRequest<T>(
     throw new ApiError(response.status, errorMessage, endpoint)
   }
 
-  const result = await response.json() as { data: T }
+  const result = await response.json() as {
+    code?: number
+    message?: string
+    data: T
+  }
+
+  if (typeof result.code === 'number' && result.code !== 0) {
+    if (result.code === 401) {
+      clearEscortToken()
+    }
+    throw new ApiError(result.code, result.message || '请求失败', endpoint)
+  }
+
   return result.data
 }
 

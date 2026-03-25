@@ -32,13 +32,32 @@ export class OrdersService {
       throw new BadRequestException('预约时间不能早于当前时间30分钟');
     }
 
-    // 验证就诊人是否属于当前用户
-    const patient = await this.prisma.patient.findFirst({
-      where: { id: dto.patientId, userId },
+    const serviceConfig = await this.prisma.service.findUnique({
+      where: { id: dto.serviceId },
+      select: {
+        id: true,
+        needPatient: true,
+        allowPostOrder: true,
+      },
     });
 
-    if (!patient) {
-      throw new BadRequestException('就诊人不存在');
+    if (!serviceConfig) {
+      throw new BadRequestException('服务不存在');
+    }
+
+    let patientId: string | null = null;
+    if (dto.patientId) {
+      const patient = await this.prisma.patient.findFirst({
+        where: { id: dto.patientId, userId },
+      });
+
+      if (!patient) {
+        throw new BadRequestException('就诊人不存在');
+      }
+
+      patientId = patient.id;
+    } else if (serviceConfig.needPatient !== false && !serviceConfig.allowPostOrder) {
+      throw new BadRequestException('请选择就诊人');
     }
 
     // 使用新的价格计算服务（支持活动、优惠券、积分）
@@ -95,7 +114,7 @@ export class OrdersService {
         data: {
           orderNo: this.generateOrderNo(),
           userId,
-          patientId: dto.patientId,
+          patientId,
           serviceId: dto.serviceId,
           hospitalId: dto.hospitalId,
           appointmentDate: new Date(dto.appointmentDate),
@@ -402,6 +421,51 @@ export class OrdersService {
     }
 
     return updatedOrder;
+  }
+
+  async updatePatient(id: string, userId: string, patientId: string) {
+    if (!patientId) {
+      throw new BadRequestException('请选择就诊人');
+    }
+
+    const order = await this.prisma.order.findFirst({
+      where: { id, userId, userDeletedAt: null },
+      include: {
+        service: {
+          select: {
+            allowPostOrder: true,
+          },
+        },
+      },
+    });
+
+    if (!order) {
+      throw new BadRequestException('订单不存在');
+    }
+
+    if (!['pending', 'paid', 'confirmed', 'assigned'].includes(order.status)) {
+      throw new BadRequestException('当前订单状态不支持修改就诊信息');
+    }
+
+    const patient = await this.prisma.patient.findFirst({
+      where: { id: patientId, userId },
+      select: { id: true },
+    });
+
+    if (!patient) {
+      throw new BadRequestException('就诊人不存在');
+    }
+
+    return this.prisma.order.update({
+      where: { id },
+      data: { patientId: patient.id },
+      include: {
+        service: true,
+        hospital: true,
+        patient: true,
+        escort: true,
+      },
+    });
   }
 
   // 用户软删除订单（仅已取消订单可删除，数据保留）
@@ -711,4 +775,3 @@ export class OrdersService {
     return complaint;
   }
 }
-

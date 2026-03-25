@@ -21,7 +21,7 @@ import { Box, Text } from '../../../ui/primitives'
 import { MapPin, Clock, ChevronLeft, ClipboardList } from '../../../ui/lucide-compat'
 import { isWxEnvironment } from '../../../platform/env'
 import { previewApi } from '../../../api'
-import type { PoolOrderItem } from '../../../api'
+import type { EscortStatusInfo, PoolOrderItem } from '../../../api'
 import { PermissionPrompt } from '../../PermissionPrompt'
 import { ListSkeleton } from '../../ListSkeleton'
 import { ErrorRetry } from '../../ErrorRetry'
@@ -64,6 +64,7 @@ export function OrdersPoolPage({
 
   // 状态管理（规则 4: 使用 useState + useEffect）
   const [orders, setOrders] = useState<PoolOrderItem[]>([])
+  const [escortStatus, setEscortStatus] = useState<EscortStatusInfo | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
   
@@ -96,6 +97,7 @@ export function OrdersPoolPage({
     try {
       const response = await previewApi.getWorkbenchOrdersPool()
       setOrders(response?.items ?? [])
+      setEscortStatus(response?.escortStatus ?? null)
     } catch (err) {
       console.error('[OrdersPoolPage] 加载数据失败:', err)
       setError(err instanceof Error ? err : new Error('加载失败'))
@@ -283,15 +285,43 @@ export function OrdersPoolPage({
         </Box>
       </Box>
 
-      {/* 内容区 */}
-      <Box
-        style={{
+        {/* 内容区 */}
+        <Box
+          style={{
           paddingLeft: 16 * wxScale,
           paddingRight: 16 * wxScale,
           paddingTop: 16 * wxScale,
           paddingBottom: 16 * wxScale,
         }}
-      >
+        >
+        {escortStatus && !escortStatus.canAcceptOrder && (
+          <Box
+            style={{
+              marginBottom: 12 * wxScale,
+              paddingLeft: 12 * wxScale,
+              paddingRight: 12 * wxScale,
+              paddingTop: 10 * wxScale,
+              paddingBottom: 10 * wxScale,
+              borderRadius: 12 * wxScale,
+              backgroundColor: isDarkMode ? '#452112' : '#fff7ed',
+              borderWidth: 1,
+              borderStyle: 'solid',
+              borderColor: isDarkMode ? '#7c2d12' : '#fdba74',
+            }}
+          >
+            <Text
+              style={{
+                display: 'block',
+                fontSize: 13 * wxScale,
+                lineHeight: 1.5,
+                color: isDarkMode ? '#fdba74' : '#9a3412',
+              }}
+            >
+              {escortStatus.statusMessage || '当前账号暂时不能接单'}
+            </Text>
+          </Box>
+        )}
+
         {/* 加载中骨架屏 */}
         {loading && (
           <ListSkeleton count={3} variant="card" isDarkMode={isDarkMode} />
@@ -355,6 +385,7 @@ export function OrdersPoolPage({
               <PoolOrderCard
                 key={order.id}
                 order={order}
+                canAcceptOrder={escortStatus?.canAcceptOrder ?? true}
                 themeSettings={themeSettings}
                 isDarkMode={isDarkMode}
                 cardBg={cardBg}
@@ -419,6 +450,7 @@ export function OrdersPoolPage({
 
 interface PoolOrderCardProps {
   order: PoolOrderItem
+  canAcceptOrder: boolean
   themeSettings: ThemeSettings
   isDarkMode: boolean
   cardBg: string
@@ -435,6 +467,7 @@ interface PoolOrderCardProps {
 
 function PoolOrderCard({
   order,
+  canAcceptOrder,
   themeSettings,
   isDarkMode,
   cardBg,
@@ -648,7 +681,7 @@ function PoolOrderCard({
         <Box
           onClick={(e: React.MouseEvent) => {
             e.stopPropagation() // 防止触发卡片点击
-            if (!isGrabbing) {
+            if (!isGrabbing && canAcceptOrder) {
             onAccept()
             }
           }}
@@ -658,20 +691,20 @@ function PoolOrderCard({
             paddingTop: isWxEnvironment() ? 14 * wxScale : 10,
             paddingBottom: isWxEnvironment() ? 14 * wxScale : 10,
             borderRadius: 9999,
-            backgroundColor: isGrabbing 
+            backgroundColor: isGrabbing || !canAcceptOrder
               ? (isDarkMode ? '#4a4a4a' : '#d1d5db')
               : themeSettings.primaryColor,
-            opacity: isGrabbing ? 0.7 : 1,
+            opacity: isGrabbing || !canAcceptOrder ? 0.7 : 1,
           }}
         >
           <Text
             style={{
               fontSize: 14 * wxScale,
               fontWeight: 500,
-              color: isGrabbing ? (isDarkMode ? '#9ca3af' : '#6b7280') : '#fff',
+              color: isGrabbing || !canAcceptOrder ? (isDarkMode ? '#9ca3af' : '#6b7280') : '#fff',
             }}
           >
-            {isGrabbing ? '接单中...' : '立即接单'}
+            {isGrabbing ? '接单中...' : canAcceptOrder ? '立即接单' : '暂不可接'}
           </Text>
         </Box>
       </Box>

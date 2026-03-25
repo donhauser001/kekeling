@@ -19,6 +19,7 @@ export function FormSection({
     onPhoneBindSuccess,
 }: FormSectionProps) {
     const { cardBg, borderColor, textPrimary, textSecondary, textMuted } = colors
+    const labelWidth = 88 * wxScale
 
     return (
         <Box
@@ -43,30 +44,27 @@ export function FormSection({
                     borderBottom: `1px solid ${borderColor}`,
                 }}
             >
-                <Text
-                    style={{
-                        width: 70 * wxScale,
-                        fontSize: 14 * wxScale,
-                        color: textSecondary,
-                    }}
-                >
-                    昵称
-                </Text>
-                <Input
-                    value={nickname}
-                    onChange={(val) => setNickname(val)}
-                    placeholder="请输入昵称"
-                    maxLength={20}
-                    style={{
-                        flex: 1,
-                        textAlign: 'right',
-                        fontSize: 14 * wxScale,
-                        color: textPrimary,
-                        backgroundColor: 'transparent',
-                        border: 'none',
-                        outline: 'none',
-                    }}
-                />
+                <Box style={{ width: labelWidth, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4 * wxScale }}>
+                    <Text style={{ fontSize: 14 * wxScale, color: textSecondary }}>昵称</Text>
+                    <Text style={{ fontSize: 14 * wxScale, color: textMuted }}>：</Text>
+                </Box>
+                <Box style={{ flex: 1, minWidth: 0, marginLeft: 8 * wxScale }}>
+                    <Input
+                        value={nickname}
+                        onChange={(val) => setNickname(val)}
+                        placeholder="请输入昵称"
+                        maxLength={20}
+                        style={{
+                            flex: 1,
+                            textAlign: 'right',
+                            fontSize: 14 * wxScale,
+                            color: textPrimary,
+                            backgroundColor: 'transparent',
+                            border: 'none',
+                            outline: 'none',
+                        }}
+                    />
+                </Box>
             </Box>
 
             {/* 手机号 */}
@@ -81,42 +79,37 @@ export function FormSection({
                     borderBottom: `1px solid ${borderColor}`,
                 }}
             >
-                <Text
-                    style={{
-                        width: 70 * wxScale,
-                        fontSize: 14 * wxScale,
-                        color: textSecondary,
-                    }}
-                >
-                    手机号
-                </Text>
-                {phone ? (
-                    <Text
-                        style={{
-                            flex: 1,
-                            textAlign: 'right',
-                            fontSize: 14 * wxScale,
-                            color: textPrimary,
-                        }}
-                    >
-                        {phone}
-                    </Text>
-                ) : renderBindPhoneButton ? (
-                    // 小程序：使用自定义绑定按钮
-                    renderBindPhoneButton({ onSuccess: onPhoneBindSuccess })
-                ) : (
-                    // Web：显示未绑定
-                    <Text
-                        style={{
-                            flex: 1,
-                            textAlign: 'right',
-                            fontSize: 14 * wxScale,
-                            color: textMuted,
-                        }}
-                    >
-                        未绑定
-                    </Text>
-                )}
+                <Box style={{ width: labelWidth, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4 * wxScale }}>
+                    <Text style={{ fontSize: 14 * wxScale, color: textSecondary }}>手机号</Text>
+                    <Text style={{ fontSize: 14 * wxScale, color: textMuted }}>：</Text>
+                </Box>
+                <Box style={{ flex: 1, minWidth: 0, marginLeft: 8 * wxScale }}>
+                    {phone ? (
+                        <Text
+                            style={{
+                                display: 'block',
+                                textAlign: 'right',
+                                fontSize: 14 * wxScale,
+                                color: textPrimary,
+                            }}
+                        >
+                            {phone}
+                        </Text>
+                    ) : renderBindPhoneButton ? (
+                        renderBindPhoneButton({ onSuccess: onPhoneBindSuccess })
+                    ) : (
+                        <Text
+                            style={{
+                                display: 'block',
+                                textAlign: 'right',
+                                fontSize: 14 * wxScale,
+                                color: textMuted,
+                            }}
+                        >
+                            未绑定
+                        </Text>
+                    )}
+                </Box>
             </Box>
 
             {/* 性别 */}
@@ -133,18 +126,14 @@ export function FormSection({
                     cursor: 'pointer',
                 }}
             >
-                <Text
-                    style={{
-                        width: 70 * wxScale,
-                        fontSize: 14 * wxScale,
-                        color: textSecondary,
-                    }}
-                >
-                    性别
-                </Text>
+                <Box style={{ width: labelWidth, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4 * wxScale }}>
+                    <Text style={{ fontSize: 14 * wxScale, color: textSecondary }}>性别</Text>
+                    <Text style={{ fontSize: 14 * wxScale, color: textMuted }}>：</Text>
+                </Box>
                 <Text
                     style={{
                         flex: 1,
+                        marginLeft: 8 * wxScale,
                         textAlign: 'right',
                         fontSize: 14 * wxScale,
                         color: gender ? textPrimary : textMuted,
@@ -168,18 +157,14 @@ export function FormSection({
                     cursor: 'pointer',
                 }}
             >
-                <Text
-                    style={{
-                        width: 70 * wxScale,
-                        fontSize: 14 * wxScale,
-                        color: textSecondary,
-                    }}
-                >
-                    生日
-                </Text>
+                <Box style={{ width: labelWidth, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4 * wxScale }}>
+                    <Text style={{ fontSize: 14 * wxScale, color: textSecondary }}>生日</Text>
+                    <Text style={{ fontSize: 14 * wxScale, color: textMuted }}>：</Text>
+                </Box>
                 <Text
                     style={{
                         flex: 1,
+                        marginLeft: 8 * wxScale,
                         textAlign: 'right',
                         fontSize: 14 * wxScale,
                         color: birthday ? textPrimary : textMuted,
@@ -192,4 +177,3 @@ export function FormSection({
         </Box>
     )
 }
-

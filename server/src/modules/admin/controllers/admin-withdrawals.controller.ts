@@ -196,6 +196,13 @@ export class AdminWithdrawalsController {
         payoutMethod: { type: 'string', enum: ['manual'], description: '打款方式（当前仅支持 manual）' },
         operatorConfirmText: { type: 'string', description: '确认文本，必须是 CONFIRM' },
         transactionNo: { type: 'string', description: '交易单号（手动打款时填写）' },
+        payoutAccount: { type: 'string', description: '平台实际打款账户，如基本户/企业支付宝' },
+        payoutRemark: { type: 'string', description: '打款备注' },
+        payoutProofUrls: {
+          type: 'array',
+          items: { type: 'string' },
+          description: '打款凭证 URL 列表',
+        },
       },
       required: ['payoutMethod', 'operatorConfirmText'],
     },
@@ -205,6 +212,9 @@ export class AdminWithdrawalsController {
     @Body('payoutMethod') payoutMethod: 'manual',
     @Body('operatorConfirmText') operatorConfirmText: string,
     @Body('transactionNo') transactionNo?: string,
+    @Body('payoutAccount') payoutAccount?: string,
+    @Body('payoutRemark') payoutRemark?: string,
+    @Body('payoutProofUrls') payoutProofUrls?: string[],
     @Headers('x-admin-id') adminId?: string,
     @Headers('x-admin-name') adminName?: string,
   ) {
@@ -213,6 +223,9 @@ export class AdminWithdrawalsController {
       payoutMethod,
       operatorConfirmText,
       transactionNo,
+      payoutAccount,
+      payoutRemark,
+      payoutProofUrls,
       adminId,
       adminName,
     );

@@ -453,6 +453,33 @@ export function UserOrdersPage({
                   </Text>
                 </Box>
 
+                {!order.patient?.id && (
+                  <Box
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8 * wxScale,
+                      marginBottom: 12 * wxScale,
+                      paddingLeft: 10 * wxScale,
+                      paddingRight: 10 * wxScale,
+                      paddingTop: 8 * wxScale,
+                      paddingBottom: 8 * wxScale,
+                      borderRadius: 8 * wxScale,
+                      backgroundColor: '#fff7e6',
+                    }}
+                  >
+                    <Icon name="tips" size={14 * wxScale} color="#fa8c16" />
+                    <Text
+                      style={{
+                        fontSize: 12 * wxScale,
+                        color: '#d46b08',
+                      }}
+                    >
+                      尚未填写就诊信息
+                    </Text>
+                  </Box>
+                )}
+
                 {/* 底部：价格 + 操作 */}
                 <Box
                   style={{
@@ -487,9 +514,9 @@ export function UserOrdersPage({
                         fontWeight: 700,
                         color: primaryColor,
                       }}
-                    >
-                      {order.paidAmount || order.totalAmount}
-                    </Text>
+                  >
+                    {order.paidAmount || order.totalAmount}
+                  </Text>
                   </Box>
 
                   {/* 操作按钮 */}
@@ -500,6 +527,26 @@ export function UserOrdersPage({
                       gap: 8 * wxScale,
                     }}
                   >
+                    {!order.patient?.id && ['pending', 'paid', 'confirmed', 'assigned'].includes(order.status) && (
+                      <Box
+                        onClick={(e: React.MouseEvent) => {
+                          e.stopPropagation()
+                          onNavigate?.('user-order-detail', { id: order.id })
+                        }}
+                        style={{
+                          paddingLeft: 10 * wxScale,
+                          paddingRight: 10 * wxScale,
+                          paddingTop: 6 * wxScale,
+                          paddingBottom: 6 * wxScale,
+                          borderRadius: 9999,
+                          borderWidth: 1,
+                          borderStyle: 'solid',
+                          borderColor: '#ffd591',
+                        }}
+                      >
+                        <Text style={{ fontSize: 12 * wxScale, color: '#d46b08' }}>去补充</Text>
+                      </Box>
+                    )}
                     {order.status === 'pending' && (
                       <Box
                         onClick={async (e: React.MouseEvent) => {

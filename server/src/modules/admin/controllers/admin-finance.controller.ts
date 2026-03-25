@@ -7,6 +7,7 @@
  */
 
 import { Controller, Get, Query , UseGuards } from '@nestjs/common';
+import type { Prisma } from '@prisma/client';
 import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { ApiResponse } from '../../../common/response/api-response';
@@ -41,7 +42,7 @@ export class AdminFinanceController {
     const pageSizeNum = pageSize ? Number(pageSize) : 20;
 
     // 构建查询条件
-    const where: any = {};
+    const where: Prisma.WalletTransactionWhereInput = {};
     
     if (type) {
       where.type = type;
@@ -101,7 +102,34 @@ export class AdminFinanceController {
       this.prisma.walletTransaction.count({ where }),
     ]);
 
-    return ApiResponse.success({ data, total });
+    const withdrawIds = data
+      .filter((item) => item.type === 'withdraw' && !!item.withdrawId)
+      .map((item) => item.withdrawId as string);
+
+    const withdrawals = withdrawIds.length
+      ? await this.prisma.withdrawal.findMany({
+        where: {
+          id: { in: withdrawIds },
+        },
+        select: {
+          id: true,
+          actualAmount: true,
+        },
+      })
+      : [];
+
+    const withdrawAmountMap = new Map(
+      withdrawals.map((item) => [item.id, Number(item.actualAmount)])
+    );
+
+    const formattedData = data.map((item) => ({
+      ...item,
+      amount: item.type === 'withdraw' && item.withdrawId
+        ? -Number(withdrawAmountMap.get(item.withdrawId) || 0)
+        : item.amount,
+    }));
+
+    return ApiResponse.success({ data: formattedData, total });
   }
 
   /**
@@ -129,9 +157,9 @@ export class AdminFinanceController {
         _sum: { amount: true },
       }),
       // 总提现
-      this.prisma.walletTransaction.aggregate({
-        where: { type: 'withdraw' },
-        _sum: { amount: true },
+      this.prisma.withdrawal.aggregate({
+        where: { status: 'completed' },
+        _sum: { actualAmount: true },
       }),
       // 总退款扣回
       this.prisma.walletTransaction.aggregate({
@@ -149,20 +177,19 @@ export class AdminFinanceController {
         _sum: { amount: true },
       }),
       // 今日提现
-      this.prisma.walletTransaction.aggregate({
-        where: { type: 'withdraw', createdAt: { gte: todayStart } },
-        _sum: { amount: true },
+      this.prisma.withdrawal.aggregate({
+        where: { status: 'completed', transferAt: { gte: todayStart } },
+        _sum: { actualAmount: true },
       }),
     ]);
 
     return ApiResponse.success({
       totalIncome: Number(totalIncome._sum.amount || 0),
-      totalWithdraw: Math.abs(Number(totalWithdraw._sum.amount || 0)),
+      totalWithdraw: Math.abs(Number(totalWithdraw._sum.actualAmount || 0)),
       totalRefund: Math.abs(Number(totalRefund._sum.amount || 0)),
       pendingUnfreeze: Number(pendingUnfreeze._sum.amount || 0),
       todayIncome: Number(todayIncome._sum.amount || 0),
-      todayWithdraw: Math.abs(Number(todayWithdraw._sum.amount || 0)),
+      todayWithdraw: Math.abs(Number(todayWithdraw._sum.actualAmount || 0)),
     });
   }
 }
-

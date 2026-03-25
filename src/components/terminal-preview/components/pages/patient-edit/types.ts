@@ -29,7 +29,7 @@ export type PatientRelation = 'self' | 'parent' | 'child' | 'spouse' | 'other'
 export interface PatientForm {
   name: string
   gender: 'male' | 'female'
-  age: string
+  birthday: string
   phone: string
   idCard: string
   relation: PatientRelation

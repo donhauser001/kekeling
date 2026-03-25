@@ -68,6 +68,8 @@ function EscortApplyPageContent() {
   const handleNavigate = useCallback((page: string, params?: Record<string, string>) => {
     if (page === 'workbench') {
       Taro.navigateTo({ url: '/packageC/pages/workbench/index' })
+    } else if (page === 'cms-page' && params?.slug) {
+      Taro.navigateTo({ url: `/packageB/pages/cms-page/index?slug=${encodeURIComponent(params.slug)}` })
     } else if (page === 'profile') {
       Taro.reLaunch({ url: '/packageB/pages/profile/index' })
     } else {
@@ -95,7 +97,6 @@ export default function EscortApplyPage() {
     </QueryClientProvider>
   )
 }
-
 
 
 

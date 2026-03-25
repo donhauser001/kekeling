@@ -46,6 +46,7 @@ export function EscortProfileEditPage({
   const textPrimary = isDarkMode ? '#f3f4f6' : '#111827'
   const textSecondary = isDarkMode ? '#9ca3af' : '#6b7280'
   const textMuted = isDarkMode ? '#6b7280' : '#9ca3af'
+  const fieldLabelWidth = 92 * wxScale
 
   // 数据状态
   const [profile, setProfile] = useState<EscortProfile | null>(null)
@@ -437,10 +438,11 @@ export function EscortProfileEditPage({
                 borderBottom: `1px solid ${borderColor}`,
               }}
             >
-              <Text style={{ fontSize: 14 * wxScale, width: 80 * wxScale, color: textSecondary }}>
-                姓名
-              </Text>
-              <Box style={{ flex: 1 }}>
+              <Box style={{ width: fieldLabelWidth, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4 * wxScale }}>
+                <Text style={{ fontSize: 14 * wxScale, color: textSecondary }}>姓名</Text>
+                <Text style={{ fontSize: 14 * wxScale, color: textMuted }}>：</Text>
+              </Box>
+              <Box style={{ flex: 1, minWidth: 0, marginLeft: 8 * wxScale }}>
                 <Input
                   value={name}
                   onChange={setName}
@@ -466,12 +468,14 @@ export function EscortProfileEditPage({
                 borderBottom: `1px solid ${borderColor}`,
               }}
             >
-              <Text style={{ fontSize: 14 * wxScale, width: 80 * wxScale, color: textSecondary }}>
-                手机号
-              </Text>
+              <Box style={{ width: fieldLabelWidth, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4 * wxScale }}>
+                <Text style={{ fontSize: 14 * wxScale, color: textSecondary }}>手机号</Text>
+                <Text style={{ fontSize: 14 * wxScale, color: textMuted }}>：</Text>
+              </Box>
               <Text
                 style={{
                   flex: 1,
+                  marginLeft: 8 * wxScale,
                   fontSize: 14 * wxScale,
                   textAlign: 'right',
                   color: textMuted,
@@ -491,12 +495,14 @@ export function EscortProfileEditPage({
                 borderBottom: `1px solid ${borderColor}`,
               }}
             >
-              <Text style={{ fontSize: 14 * wxScale, width: 80 * wxScale, color: textSecondary }}>
-                性别
-              </Text>
+              <Box style={{ width: fieldLabelWidth, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4 * wxScale }}>
+                <Text style={{ fontSize: 14 * wxScale, color: textSecondary }}>性别</Text>
+                <Text style={{ fontSize: 14 * wxScale, color: textMuted }}>：</Text>
+              </Box>
               <Text
                 style={{
                   flex: 1,
+                  marginLeft: 8 * wxScale,
                   fontSize: 14 * wxScale,
                   textAlign: 'right',
                   color: gender ? textPrimary : textMuted,
@@ -516,12 +522,14 @@ export function EscortProfileEditPage({
                 borderBottom: `1px solid ${borderColor}`,
               }}
             >
-              <Text style={{ fontSize: 14 * wxScale, width: 80 * wxScale, color: textSecondary }}>
-                服务评分
-              </Text>
+              <Box style={{ width: fieldLabelWidth, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4 * wxScale }}>
+                <Text style={{ fontSize: 14 * wxScale, color: textSecondary }}>服务评分</Text>
+                <Text style={{ fontSize: 14 * wxScale, color: textMuted }}>：</Text>
+              </Box>
               <Text
                 style={{
                   flex: 1,
+                  marginLeft: 8 * wxScale,
                   fontSize: 14 * wxScale,
                   textAlign: 'right',
                   color: textPrimary,
@@ -539,12 +547,14 @@ export function EscortProfileEditPage({
                 padding: 12 * wxScale,
               }}
             >
-              <Text style={{ fontSize: 14 * wxScale, width: 80 * wxScale, color: textSecondary }}>
-                服务订单
-              </Text>
+              <Box style={{ width: fieldLabelWidth, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4 * wxScale }}>
+                <Text style={{ fontSize: 14 * wxScale, color: textSecondary }}>服务订单</Text>
+                <Text style={{ fontSize: 14 * wxScale, color: textMuted }}>：</Text>
+              </Box>
               <Text
                 style={{
                   flex: 1,
+                  marginLeft: 8 * wxScale,
                   fontSize: 14 * wxScale,
                   textAlign: 'right',
                   color: textPrimary,
@@ -573,10 +583,11 @@ export function EscortProfileEditPage({
                 borderBottom: `1px solid ${borderColor}`,
               }}
             >
-              <Text style={{ fontSize: 14 * wxScale, width: 80 * wxScale, color: textSecondary }}>
-                学历
-              </Text>
-              <Box style={{ flex: 1 }}>
+              <Box style={{ width: fieldLabelWidth, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4 * wxScale }}>
+                <Text style={{ fontSize: 14 * wxScale, color: textSecondary }}>学历</Text>
+                <Text style={{ fontSize: 14 * wxScale, color: textMuted }}>：</Text>
+              </Box>
+              <Box style={{ flex: 1, minWidth: 0, marginLeft: 8 * wxScale }}>
                 <Input
                   value={education}
                   onChange={setEducation}
@@ -598,10 +609,11 @@ export function EscortProfileEditPage({
                 padding: 12 * wxScale,
               }}
             >
-              <Text style={{ fontSize: 14 * wxScale, width: 80 * wxScale, color: textSecondary }}>
-                外语能力
-              </Text>
-              <Box style={{ flex: 1 }}>
+              <Box style={{ width: fieldLabelWidth, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4 * wxScale }}>
+                <Text style={{ fontSize: 14 * wxScale, color: textSecondary }}>外语能力</Text>
+                <Text style={{ fontSize: 14 * wxScale, color: textMuted }}>：</Text>
+              </Box>
+              <Box style={{ flex: 1, minWidth: 0, marginLeft: 8 * wxScale }}>
                 <Input
                   value={foreignLanguage}
                   onChange={setForeignLanguage}
@@ -704,4 +716,3 @@ export function EscortProfileEditPage({
     </Box>
   )
 }
-

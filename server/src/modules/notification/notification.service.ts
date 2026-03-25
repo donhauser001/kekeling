@@ -24,6 +24,7 @@ export type NotificationEvent =
   | 'withdrawal_approved'  // 提现审核通过
   | 'withdrawal_rejected'  // 提现审核拒绝
   | 'withdrawal_completed' // 提现完成
+  | 'withdrawal_failed'    // 提现失败退回
   | 'complaint_submitted'  // 投诉已提交
   | 'complaint_resolved'   // 投诉已处理
   | 'escort_late_warning'  // 陪诊员迟到警告
@@ -146,6 +147,11 @@ const DEFAULT_TEMPLATES: Record<NotificationEvent, { title: string; content: str
   withdrawal_completed: {
     title: '提现已到账',
     content: '您的提现 ¥{{amount}} 已到账，请查收',
+    category: 'escort',
+  },
+  withdrawal_failed: {
+    title: '提现处理失败',
+    content: '您的提现 ¥{{amount}} 处理失败，原因：{{reason}}，金额已退回余额',
     category: 'escort',
   },
   complaint_submitted: {

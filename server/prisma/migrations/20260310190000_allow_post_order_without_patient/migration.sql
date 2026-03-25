@@ -1,0 +1,2 @@
+ALTER TABLE "orders"
+ALTER COLUMN "patient_id" DROP NOT NULL;

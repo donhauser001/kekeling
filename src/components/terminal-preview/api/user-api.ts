@@ -158,10 +158,10 @@ export interface UserOrderItem {
     id: string
     name: string
   }
-  patient: {
+  patient?: {
     id: string
     name: string
-  }
+  } | null
   escort?: {
     id: string
     name: string
@@ -534,6 +534,7 @@ export interface Patient {
   phone: string
   idCard: string
   gender: string
+  birthday?: string | null
   isDefault?: boolean
 }
 
@@ -616,6 +617,27 @@ export interface Doctor {
   introduction?: string
 }
 
+export interface DoctorDetail extends Doctor {
+  phone?: string
+  specialties?: string[]
+  rating?: number
+  consultCount?: number
+  hospital?: {
+    id: string
+    name: string
+    address?: string
+    phone?: string
+  } | null
+  department?: {
+    id: string
+    name: string
+    parent?: {
+      id: string
+      name: string
+    } | null
+  } | null
+}
+
 /** 获取医院列表 */
 export const getHospitals = async (params?: {
   keyword?: string
@@ -676,6 +698,16 @@ export const getHospitalDoctors = async (
   } catch (error) {
     console.warn('[previewApi.getHospitalDoctors] 获取医生失败:', error)
     return { data: [], total: 0 }
+  }
+}
+
+/** 获取医生详情 */
+export const getDoctor = async (id: string): Promise<DoctorDetail | null> => {
+  try {
+    return await userRequest<DoctorDetail>(`/doctors/${id}`)
+  } catch (error) {
+    console.warn('[previewApi.getDoctor] 获取医生详情失败:', error)
+    return null
   }
 }
 
@@ -1516,7 +1548,7 @@ export const devModeAutoLogin = async (): Promise<DevModeAutoLoginResponse | nul
 export interface CreateOrderParams {
   serviceId: string
   hospitalId: string
-  patientId: string
+  patientId?: string
   appointmentDate: string
   appointmentTime: string
   departmentName?: string
@@ -1547,6 +1579,19 @@ export const createOrder = async (params: CreateOrderParams): Promise<CreateOrde
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),
   })
+}
+
+export const updateOrderPatient = async (orderId: string, patientId: string): Promise<UserOrderDetail | null> => {
+  try {
+    return await userRequest<UserOrderDetail>(`/orders/${orderId}/patient`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ patientId }),
+    })
+  } catch (error) {
+    console.warn('[previewApi.updateOrderPatient] 更新订单就诊人失败:', error)
+    return null
+  }
 }
 
 /** 微信支付参数 */

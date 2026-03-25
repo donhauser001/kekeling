@@ -22,6 +22,7 @@ import type { UserOrderDetail } from '../../api/user-api'
 
 const wxScale = isWxEnvironment() ? 1.1 : 1
 const wxSafeAreaTop = isWxEnvironment() ? 44 : 0
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 // ============================================================================
 // 类型定义
@@ -57,6 +58,7 @@ interface OrderDisplayData {
   patientGender: string
   patientAge?: number
   patientIdCard: string
+  hasPatientInfo: boolean
   // 陪诊员信息（可能为空）
   escortId?: string
   escortName?: string
@@ -162,6 +164,7 @@ const transformOrderData = (data: UserOrderDetail): OrderDisplayData => ({
   patientGender: data.patient?.gender || '-',
   patientAge: data.patient?.age,
   patientIdCard: data.patient?.idCard ? `${data.patient.idCard.slice(0, 3)}***********${data.patient.idCard.slice(-4)}` : '-',
+  hasPatientInfo: Boolean(data.patient?.id),
   // 陪诊员（可能为空）
   escortId: data.escort?.id,
   escortName: data.escort?.name,
@@ -275,6 +278,52 @@ export function UserOrderDetailPage({
   onBack,
   onNavigate,
 }: UserOrderDetailPageProps) {
+  const orderId = _orderId
+
+  const loadOrderDetail = async () => {
+    if (!orderId) {
+      setError('订单ID不存在')
+      setLoading(false)
+      return
+    }
+
+    setLoading(true)
+    setError(null)
+
+    try {
+      const data = await previewApi.getUserOrderDetail(orderId)
+      if (data) {
+        setOrder(transformOrderData(data))
+      } else {
+        setError('订单不存在')
+      }
+    } catch (err) {
+      console.error('[UserOrderDetailPage] 加载订单失败:', err)
+      setError('加载失败，请重试')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const verifyPaymentStatus = async (targetOrderId: string, retries = 4, intervalMs = 1200) => {
+    for (let attempt = 0; attempt < retries; attempt++) {
+      try {
+        const paymentStatus = await previewApi.getPaymentStatus(targetOrderId)
+        if (paymentStatus.paid) {
+          return paymentStatus
+        }
+      } catch (err) {
+        console.error('[UserOrderDetailPage] 核验支付状态失败:', err)
+      }
+
+      if (attempt < retries - 1) {
+        await delay(intervalMs)
+      }
+    }
+
+    return null
+  }
+
   // 状态管理
   const [order, setOrder] = useState<OrderDisplayData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -291,29 +340,7 @@ export function UserOrderDetailPage({
 
   // 加载订单数据
   useEffect(() => {
-    if (!orderId) {
-      setError('订单ID不存在')
-      setLoading(false)
-      return
-    }
-
-    setLoading(true)
-    setError(null)
-    previewApi.getUserOrderDetail(orderId)
-      .then((data) => {
-        if (data) {
-          setOrder(transformOrderData(data))
-        } else {
-          setError('订单不存在')
-        }
-      })
-      .catch((err) => {
-        console.error('[UserOrderDetailPage] 加载订单失败:', err)
-        setError('加载失败，请重试')
-      })
-      .finally(() => {
-        setLoading(false)
-      })
+    loadOrderDetail()
   }, [orderId])
 
   // 加载中状态
@@ -468,6 +495,30 @@ export function UserOrderDetailPage({
       </Box>
 
       <ScrollView>
+        {!order.hasPatientInfo && (
+          <InfoCard
+            cardBg={cardBg}
+            style={{
+              backgroundColor: isDarkMode ? '#3a2a1f' : '#fff7e6',
+              borderWidth: 1,
+              borderStyle: 'solid',
+              borderColor: '#ffd591',
+            }}
+          >
+            <Box style={{ display: 'flex', alignItems: 'flex-start', gap: 12 * wxScale }}>
+              <Icon name="tips" size={18 * wxScale} color="#fa8c16" />
+              <Box style={{ flex: 1 }}>
+                <Text style={{ display: 'block', fontSize: 14 * wxScale, fontWeight: 600, color: '#d46b08' }}>
+                  尚未填写就诊信息
+                </Text>
+                <Text style={{ display: 'block', marginTop: 6 * wxScale, fontSize: 12 * wxScale, color: '#ad6800' }}>
+                  请尽快补充就诊人信息，避免影响后续服务安排。
+                </Text>
+              </Box>
+            </Box>
+          </InfoCard>
+        )}
+
         {/* 订单状态卡片 */}
         <InfoCard cardBg={cardBg}>
           <Box
@@ -596,6 +647,26 @@ export function UserOrderDetailPage({
         {/* 就诊人信息 */}
         <InfoCard cardBg={cardBg}>
           <CardTitle color={textPrimary}>就诊人信息</CardTitle>
+          {!order.hasPatientInfo && (
+            <Box
+              onClick={() => onNavigate?.('patients', { mode: 'select', source: 'user-order-detail', orderId: order.id })}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                paddingLeft: 12 * wxScale,
+                paddingRight: 12 * wxScale,
+                paddingTop: 10 * wxScale,
+                paddingBottom: 10 * wxScale,
+                marginBottom: 12 * wxScale,
+                borderRadius: 8 * wxScale,
+                backgroundColor: isDarkMode ? '#3a2a1f' : '#fff7e6',
+              }}
+            >
+              <Text style={{ fontSize: 13 * wxScale, color: '#d46b08' }}>去补充就诊信息</Text>
+              <Icon name="right" size={16 * wxScale} color="#fa8c16" />
+            </Box>
+          )}
           <InfoRow label="姓名" value={order.patientName} labelColor={textMuted} valueColor={textPrimary} />
           <InfoRow label="性别/年龄" value={`${translateGender(order.patientGender)} / ${order.patientAge !== undefined && order.patientAge !== null ? order.patientAge + '岁' : '-'}`} labelColor={textMuted} valueColor={textPrimary} />
           <InfoRow label="联系电话" value={order.patientPhone} labelColor={textMuted} valueColor={textPrimary} />
@@ -730,6 +801,14 @@ export function UserOrderDetailPage({
         <Box style={{ display: 'flex', alignItems: 'center', gap: 8 * wxScale }}>
           {order.status === 'pending' && (
             <>
+              {!order.hasPatientInfo && (
+                <ActionButton
+                  label="补充就诊人"
+                  borderColor="#ffd591"
+                  textColor="#d46b08"
+                  onClick={() => onNavigate?.('patients', { mode: 'select', source: 'user-order-detail', orderId: order.id })}
+                />
+              )}
               <ActionButton
                 label="取消订单"
                 borderColor={borderColor}
@@ -782,18 +861,28 @@ export function UserOrderDetailPage({
                     })
 
                     if (payResult.success) {
-                      wxBridge.showToast({ title: '支付成功', icon: 'success' })
-                      // 刷新页面或更新状态
+                      const paymentStatus = await verifyPaymentStatus(order.id)
+                      wxBridge.showToast({
+                        title: paymentStatus?.paid ? '支付成功' : '支付处理中',
+                        icon: paymentStatus?.paid ? 'success' : 'loading',
+                      })
                       setTimeout(() => {
-                        // 可以重新获取订单详情或直接返回订单列表
-                        onNavigate?.('user-orders')
+                        loadOrderDetail()
                       }, 1500)
                     } else {
                       const errorMsg = payResult.errMsg || '支付未完成'
                       if (errorMsg.includes('cancel')) {
                         wxBridge.showToast({ title: '已取消支付', icon: 'none' })
                       } else {
-                        wxBridge.showToast({ title: errorMsg, icon: 'error' })
+                        const paymentStatus = await verifyPaymentStatus(order.id, 2, 800)
+                        if (paymentStatus?.paid || errorMsg.includes('已支付')) {
+                          wxBridge.showToast({ title: '订单已支付', icon: 'success' })
+                          setTimeout(() => {
+                            loadOrderDetail()
+                          }, 1200)
+                        } else {
+                          wxBridge.showToast({ title: errorMsg, icon: 'error' })
+                        }
                       }
                     }
                   } catch (error: any) {
@@ -804,6 +893,14 @@ export function UserOrderDetailPage({
                 }}
               />
             </>
+          )}
+          {['paid', 'confirmed', 'assigned'].includes(order.status) && !order.hasPatientInfo && (
+            <ActionButton
+              label="补充就诊人"
+              borderColor="#ffd591"
+              textColor="#d46b08"
+              onClick={() => onNavigate?.('patients', { mode: 'select', source: 'user-order-detail', orderId: order.id })}
+            />
           )}
           {order.status === 'confirmed' && (
             <>

@@ -83,6 +83,14 @@ export const SearchPage = lazy(() =>
   import('./SearchPage').then(m => ({ default: m.SearchPage }))
 )
 
+export const HospitalDetailPage = lazy(() =>
+  import('./HospitalDetailPage').then(m => ({ default: m.HospitalDetailPage }))
+)
+
+export const DoctorDetailPage = lazy(() =>
+  import('./DoctorDetailPage').then(m => ({ default: m.DoctorDetailPage }))
+)
+
 // ============================================================================
 // 营销中心页面（9 个）
 // ============================================================================

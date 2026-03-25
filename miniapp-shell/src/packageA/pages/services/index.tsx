@@ -29,6 +29,7 @@ function ServicesPageContent() {
   const router = useRouter()
   // 从 URL 参数获取初始分类 ID
   const initialCategoryId = router.params.categoryId || undefined
+  const initialKeyword = decodeURIComponent(router.params.keyword || '')
   
   const [themeSettings, setThemeSettings] = useState<ThemeSettings>(defaultThemeSettings)
   const [isLoading, setIsLoading] = useState(true)
@@ -112,6 +113,7 @@ function ServicesPageContent() {
           onSearchClick={handleSearchClick}
           effectiveViewerRole="user"
           initialCategory={initialCategoryId}
+          initialKeyword={initialKeyword}
         />
       </View>
       <TabBarNav

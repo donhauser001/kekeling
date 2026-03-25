@@ -1003,6 +1003,11 @@ model Withdrawal {
   transferNo String?   @map("transfer_no") // 转账流水号
   transferAt DateTime? @map("transfer_at") // 转账时间
   failReason String?   @map("fail_reason") // 失败原因
+  payoutAccount      String? @map("payout_account") // 平台实际打款账户
+  payoutRemark       String? @map("payout_remark") // 打款备注
+  payoutProofUrls    Json?   @map("payout_proof_urls") // 打款凭证 URL 列表
+  payoutOperatorId   String? @map("payout_operator_id") // 打款操作人 ID
+  payoutOperatorName String? @map("payout_operator_name") // 打款操作人名称
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -1176,7 +1181,7 @@ model Order {
   id           String  @id @default(uuid())
   orderNo      String  @unique @map("order_no")
   userId       String  @map("user_id")
-  patientId    String  @map("patient_id")
+  patientId    String? @map("patient_id")
   serviceId    String  @map("service_id")
   hospitalId   String  @map("hospital_id")
   departmentId String? @map("department_id") // 科室关联
@@ -1244,7 +1249,7 @@ model Order {
 
   // 关联
   user                User                 @relation(fields: [userId], references: [id])
-  patient             Patient              @relation(fields: [patientId], references: [id])
+  patient             Patient?             @relation(fields: [patientId], references: [id])
   service             Service              @relation(fields: [serviceId], references: [id])
   hospital            Hospital             @relation(fields: [hospitalId], references: [id])
   department          Department?          @relation(fields: [departmentId], references: [id])

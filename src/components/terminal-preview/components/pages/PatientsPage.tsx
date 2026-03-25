@@ -15,6 +15,7 @@ import { isWxEnvironment } from '../../platform/env'
 import type { ThemeSettings } from '../../types'
 import { PatientsPageSkeleton } from '../PatientsPageSkeleton'
 import { previewApi } from '../../api'
+import { getWxBridge } from '../../bridge'
 
 // ============================================================================
 // 常量定义
@@ -30,8 +31,10 @@ const wxSafeAreaTop = isWxEnvironment() ? 44 : 0
 export interface PatientsPageProps {
   themeSettings: ThemeSettings
   isDarkMode: boolean
+  selectMode?: boolean
   onBack?: () => void
   onNavigate?: (page: string, params?: Record<string, string>) => void
+  onSelectPatient?: (patientId: string) => void
   /** 刷新触发器，值变化时重新加载数据 */
   refreshTrigger?: number
 }
@@ -345,8 +348,10 @@ function PatientCard({
 export function PatientsPage({
   themeSettings,
   isDarkMode,
+  selectMode = false,
   onBack,
   onNavigate,
+  onSelectPatient,
   refreshTrigger,
 }: PatientsPageProps) {
   // 操作菜单状态
@@ -362,6 +367,7 @@ export function PatientsPage({
   const bgColor = isDarkMode ? '#1a1a1a' : '#f5f7fa'
   const textMuted = isDarkMode ? '#6b7280' : '#9ca3af'
   const primaryColor = themeSettings.primaryColor
+  const wxBridge = getWxBridge()
 
   // 加载就诊人列表
   const loadPatients = useCallback(async () => {
@@ -414,8 +420,11 @@ export function PatientsPage({
         ...p,
         isDefault: p.id === id,
       })))
+      wxBridge.showToast({ title: '已设为默认就诊人', icon: 'success' })
     } catch (error) {
       console.error('[PatientsPage] 设为默认失败:', error)
+      const message = error instanceof Error ? error.message : '设为默认失败'
+      wxBridge.showToast({ title: message, icon: 'none' })
     } finally {
       setIsOperating(false)
       setActiveMenuId(null)
@@ -425,13 +434,28 @@ export function PatientsPage({
   // 删除就诊人
   const handleDelete = async (id: string) => {
     if (isOperating) return
+    const patient = patients.find((item) => item.id === id)
+    const result = await wxBridge.showModal({
+      title: '删除就诊人',
+      content: patient
+        ? `确认删除就诊人“${patient.name}”吗？`
+        : '确认删除这个就诊人吗？',
+      confirmText: '删除',
+    })
+    if (!result.confirm) {
+      setActiveMenuId(null)
+      return
+    }
     setIsOperating(true)
     try {
       await previewApi.deletePatient(id)
       // 更新本地状态
       setPatients(prev => prev.filter(p => p.id !== id))
+      wxBridge.showToast({ title: '删除成功', icon: 'success' })
     } catch (error) {
       console.error('[PatientsPage] 删除就诊人失败:', error)
+      const message = error instanceof Error ? error.message : '删除失败'
+      wxBridge.showToast({ title: message, icon: 'none' })
     } finally {
       setIsOperating(false)
       setActiveMenuId(null)
@@ -442,6 +466,15 @@ export function PatientsPage({
   const handleEdit = (id: string) => {
     onNavigate?.('patient-edit', { id })
     setActiveMenuId(null)
+  }
+
+  const handleCardClick = (id: string) => {
+    if (selectMode) {
+      onSelectPatient?.(id)
+      setActiveMenuId(null)
+      return
+    }
+    handleEdit(id)
   }
 
   // 添加就诊人
@@ -550,7 +583,7 @@ export function PatientsPage({
                   patient={patient}
                   isMenuOpen={activeMenuId === patient.id}
                   onToggleMenu={() => setActiveMenuId(activeMenuId === patient.id ? null : patient.id)}
-                  onEdit={() => handleEdit(patient.id)}
+                  onEdit={() => handleCardClick(patient.id)}
                   onSetDefault={() => handleSetDefault(patient.id)}
                   onDelete={() => handleDelete(patient.id)}
                   themeSettings={themeSettings}

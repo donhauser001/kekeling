@@ -90,9 +90,20 @@ export default defineConfig<'webpack5'>(async (merge) => {
     },
     mini: {
       // 增加模板层级限制（默认 16），防止深层嵌套导致模板缺失
-      baseLevel: 32,
+      baseLevel: 16,
       // 禁用 source map，减少包体积
       enableSourceMap: false,
+      // 将只给分包复用的公共 chunk 从主包根目录拆出去。
+      commonChunks(commonChunks) {
+        return [...commonChunks, 'subpackages/vendors', 'subpackages/common']
+      },
+      addChunkPages(pages, pageNames) {
+        for (const pageName of pageNames) {
+          if (/^package[A-Z]\//.test(pageName)) {
+            pages.set(pageName, ['subpackages/vendors', 'subpackages/common'])
+          }
+        }
+      },
       // 启用运行时配置
       runtime: {
         // 启用内部 HTML 支持，允许使用原生 HTML 标签
@@ -187,25 +198,27 @@ export default defineConfig<'webpack5'>(async (merge) => {
         // 恢复 splitChunks 配置，确保 vendors 和 common chunks 被生成
         // 通过 Taro 的 commonChunks + addChunkPages 控制主包不引用这些 chunks
         chain.optimization.splitChunks({
-          chunks: 'all',
+          // 主包只保留极轻的启动页，不再参与公共 chunk 抽取。
+          // 这样第三方依赖会优先落到分包公共文件，而不是根目录 vendors.js。
+          chunks: (chunk: { name?: string }) => /^package[A-Z]\//.test(chunk.name || ''),
           cacheGroups: {
             // 将 React 相关模块强制打包到 vendors chunk
             react: {
-              name: 'vendors',
+              name: 'subpackages/vendors',
               test: /[\\/]node_modules[\\/](react|react-reconciler|scheduler|@tanstack[\\/]react-query)[\\/]/,
               priority: 30,
               reuseExistingChunk: true,
             },
             // 默认 vendors
             defaultVendors: {
-              name: 'vendors',
+              name: 'subpackages/vendors',
               test: /[\\/]node_modules[\\/]/,
               priority: 10,
               reuseExistingChunk: true,
             },
             // common chunk
             common: {
-              name: 'common',
+              name: 'subpackages/common',
               minChunks: 2,
               priority: 5,
               reuseExistingChunk: true,
@@ -223,6 +236,21 @@ export default defineConfig<'webpack5'>(async (merge) => {
           config: {
             namingPattern: 'module',
             generateScopedName: '[name]__[local]___[hash:base64:5]'
+          }
+        },
+        // CSS 优化：移除未使用的样式，减少主包体积
+        cssnano: {
+          enable: true,
+          config: {
+            preset: [
+              'default',
+              {
+                discardComments: { removeAll: true },
+                normalizeWhitespace: true,
+                minifyFontValues: true,
+                minifySelectors: true,
+              }
+            ]
           }
         }
       }

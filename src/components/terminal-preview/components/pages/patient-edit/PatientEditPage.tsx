@@ -14,6 +14,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react'
+import { Picker } from '@tarojs/components'
 import { Box, Text, ScrollView, Icon, Input } from '../../../ui/primitives'
 import { isWxEnvironment } from '../../../platform/env'
 import {
@@ -62,14 +63,25 @@ function calculateAgeFromBirthday(birthday: string | null | undefined): string {
   return age.toString()
 }
 
-/** 从年龄计算大概生日（用于提交，假设当年生日） */
-function calculateBirthdayFromAge(age: string): string | undefined {
-  const ageNum = parseInt(age, 10)
-  if (isNaN(ageNum) || ageNum < 0) return undefined
-  const today = new Date()
-  const birthYear = today.getFullYear() - ageNum
-  // 返回 YYYY-01-01 格式（假设1月1日）
-  return `${birthYear}-01-01`
+function normalizeBirthday(birthday: string | null | undefined): string {
+  if (!birthday) return ''
+  return birthday.slice(0, 10)
+}
+
+function extractBirthdayFromIdCard(idCard: string | null | undefined): string {
+  if (!idCard) return ''
+  const normalized = idCard.trim().toUpperCase()
+  if (/^\d{17}[\dX]$/.test(normalized)) {
+    return `${normalized.slice(6, 10)}-${normalized.slice(10, 12)}-${normalized.slice(12, 14)}`
+  }
+  if (/^\d{15}$/.test(normalized)) {
+    return `19${normalized.slice(6, 8)}-${normalized.slice(8, 10)}-${normalized.slice(10, 12)}`
+  }
+  return ''
+}
+
+function getTodayDateString(): string {
+  return new Date().toISOString().slice(0, 10)
 }
 
 // ============================================================================
@@ -81,6 +93,7 @@ export function PatientEditPage({
   isDarkMode,
   patientId,
   onBack,
+  onNavigate,
 }: PatientEditPageProps) {
   // 是否为编辑模式
   const isEdit = !!patientId
@@ -112,7 +125,7 @@ export function PatientEditPage({
         setForm({
           name: patient.name,
           gender: (patient.gender === 'male' || patient.gender === 'female' ? patient.gender : 'male') as 'male' | 'female',
-          age: calculateAgeFromBirthday((patient as { birthday?: string }).birthday),
+          birthday: normalizeBirthday(patient.birthday) || extractBirthdayFromIdCard(patient.idCard),
           phone: patient.phone,
           idCard: patient.idCard || '',
           relation: patient.relation,
@@ -134,14 +147,23 @@ export function PatientEditPage({
 
   // 更新表单字段
   const updateField = <K extends keyof PatientForm>(key: K, value: PatientForm[K]) => {
-    setForm(prev => ({ ...prev, [key]: value }))
+    setForm(prev => {
+      const next = { ...prev, [key]: value }
+      if (key === 'idCard' && typeof value === 'string') {
+        const birthday = extractBirthdayFromIdCard(value)
+        if (birthday) {
+          next.birthday = birthday
+        }
+      }
+      return next
+    })
   }
 
   // 表单验证
   const validateForm = () => {
     if (!form.name.trim()) return false
     if (!form.phone.trim()) return false
-    if (!form.age.trim()) return false
+    if (!form.birthday.trim()) return false
     return true
   }
 
@@ -155,7 +177,7 @@ export function PatientEditPage({
       const submitData = {
         name: form.name.trim(),
         gender: form.gender,
-        birthday: calculateBirthdayFromAge(form.age),
+        birthday: form.birthday,
         phone: form.phone.trim(),
         idCard: form.idCard.trim() || undefined,
         relation: form.relation,
@@ -163,13 +185,22 @@ export function PatientEditPage({
 
       if (isEdit && patientId) {
         // 更新就诊人
-        await previewApi.updatePatient(patientId, submitData)
+        const updatedPatient = await previewApi.updatePatient(patientId, submitData)
+        onNavigate?.('patients', {
+          selectedPatientId: updatedPatient.id,
+          action: 'updated',
+        })
       } else {
         // 创建就诊人
-        await previewApi.createPatient(submitData as Parameters<typeof previewApi.createPatient>[0])
+        const createdPatient = await previewApi.createPatient(submitData as Parameters<typeof previewApi.createPatient>[0])
+        onNavigate?.('patients', {
+          selectedPatientId: createdPatient.id,
+          action: 'created',
+        })
       }
-      // 返回列表页
-      onBack?.()
+      if (!onNavigate) {
+        onBack?.()
+      }
     } catch (error) {
       console.error('[PatientEditPage] 保存就诊人失败:', error)
     } finally {
@@ -181,6 +212,9 @@ export function PatientEditPage({
   if (isLoading) {
     return <PatientEditSkeleton colors={colors} />
   }
+
+  const ageDisplay = calculateAgeFromBirthday(form.birthday)
+  const todayDate = getTodayDateString()
 
   return (
     <Box
@@ -317,33 +351,70 @@ export function PatientEditPage({
               </Box>
             </FormRow>
 
-            {/* 年龄 */}
+            {/* 出生日期 */}
             <FormRow
               icon="date-comes-back"
+              label="出生日期"
+              required
+              borderColor={borderColor}
+              textMuted={textMuted}
+              textSecondary={textSecondary}
+            >
+              <Picker
+                mode="date"
+                value={form.birthday || todayDate}
+                end={todayDate}
+                onChange={(e) => updateField('birthday', e.detail.value)}
+              >
+                <Box
+                  style={{
+                    flex: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'flex-end',
+                    gap: 4 * wxScale,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 14 * wxScale,
+                      color: form.birthday ? textPrimary : textMuted,
+                    }}
+                  >
+                    {form.birthday || '请选择出生日期'}
+                  </Text>
+                  <Icon name="down" size={16 * wxScale} color={textMuted} />
+                </Box>
+              </Picker>
+            </FormRow>
+
+            {/* 年龄（自动生成） */}
+            <FormRow
+              icon="time"
               label="年龄"
               required
               borderColor={borderColor}
               textMuted={textMuted}
               textSecondary={textSecondary}
             >
-              <Input
-                type="number"
-                value={form.age}
-                onChange={(value) => updateField('age', value)}
-                placeholder="请输入年龄"
+              <Box
                 style={{
                   flex: 1,
-                  fontSize: 14 * wxScale,
-                  color: textPrimary,
-                  backgroundColor: 'transparent',
-                  textAlign: 'right',
-                  border: 'none',
-                  outline: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'flex-end',
+                  gap: 4 * wxScale,
                 }}
-              />
-              <Text style={{ marginLeft: 4 * wxScale, fontSize: 14 * wxScale, color: textMuted }}>
-                岁
-              </Text>
+              >
+                <Text
+                  style={{
+                    fontSize: 14 * wxScale,
+                    color: ageDisplay ? textPrimary : textMuted,
+                  }}
+                >
+                  {ageDisplay ? `${ageDisplay} 岁` : '选择出生日期后自动计算'}
+                </Text>
+              </Box>
             </FormRow>
 
             {/* 手机号 */}

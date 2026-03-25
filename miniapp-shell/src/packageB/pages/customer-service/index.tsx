@@ -77,6 +77,20 @@ function CustomerServicePage() {
     const currentUser = getCurrentUser()
     const userAvatar = getFullUrl(currentUser?.avatar || '') || 'https://kkl.top/avatars/01.png'
 
+    const notifyIncomingMessage = useCallback((message?: ChatMessage) => {
+        const title = message?.senderType === 'admin'
+            ? '收到客服新消息'
+            : message?.senderType === 'system'
+                ? '收到系统通知'
+                : '收到新消息'
+        Taro.showToast({
+            title,
+            icon: 'none',
+            duration: 2000,
+        })
+        Taro.vibrateShort({ type: 'light' }).catch(() => { })
+    }, [])
+
     // 同步更新 ref
     useEffect(() => {
         sessionRef.current = session
@@ -236,6 +250,14 @@ function CustomerServicePage() {
                             console.log('[CustomerService] 会话状态变更:', oldStatus, '->', newStatus)
                             setSession(sessionResult)
                             sessionRef.current = sessionResult
+                            if (oldStatus === 'waiting' && newStatus === 'chatting') {
+                                Taro.showToast({
+                                    title: '客服已接入',
+                                    icon: 'none',
+                                    duration: 2000,
+                                })
+                                Taro.vibrateShort({ type: 'light' }).catch(() => { })
+                            }
                         }
                     }
                 }
@@ -251,10 +273,18 @@ function CustomerServicePage() {
 
                     if (lastNewId !== lastCurrentId || newMessages.length !== currentMessages.length) {
                         console.log('[CustomerService] 检测到新消息')
+                        const currentIds = new Set(currentMessages.map((msg) => msg.id))
+                        const incomingMessages = newMessages.filter((msg) => !currentIds.has(msg.id))
+                        const latestIncomingMessage = incomingMessages[incomingMessages.length - 1]
+
                         setMessages(newMessages)
                         messagesRef.current = newMessages
                         await markMessagesRead(sessionId)
                         scrollToBottom()
+
+                        if (latestIncomingMessage && latestIncomingMessage.senderType !== 'user') {
+                            notifyIncomingMessage(latestIncomingMessage)
+                        }
                     }
                 }
             } catch (error) {

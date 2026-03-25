@@ -19,11 +19,10 @@
 import { useState, useEffect } from 'react'
 import { View, Text } from '@tarojs/components'
 import Taro from '@tarojs/taro'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 // 使用精简版首页组件，不导入完整版 TerminalPreview
 // 完整版会拉入 45+ 页面组件导致主包超限
 import { TerminalPreviewLite } from '@/components/TerminalPreviewLite'
-import { previewApi } from '@terminal-preview/api'
+import { getThemeSettings } from '@/api/home'
 import Icon from '@/components/Icon'
 import type { ThemeSettings } from '@terminal-preview/types'
 import { defaultThemeSettings } from '@terminal-preview/types'
@@ -75,20 +74,6 @@ function getThemeColors(isDarkMode: boolean) {
 }
 
 // ============================================================================
-// QueryClient
-// ============================================================================
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 60 * 1000,
-      retry: 2,
-      refetchOnWindowFocus: false,
-    },
-  },
-})
-
-// ============================================================================
 // 登录状态
 // ============================================================================
 
@@ -110,7 +95,7 @@ export function TerminalPreviewApp() {
 
   // 加载主题设置（如果有新的，更新缓存）
   useEffect(() => {
-    previewApi.getThemeSettings()
+    getThemeSettings()
       .then((settings) => {
         if (settings) {
           const merged = { ...defaultThemeSettings, ...settings }
@@ -366,9 +351,5 @@ export function TerminalPreviewApp() {
 
   // 登录成功，渲染精简版首页
   // 其他页面通过 TabBar 点击跳转到分包
-  return (
-    <QueryClientProvider client={queryClient}>
-      <TerminalPreviewLite autoLoad={true} />
-    </QueryClientProvider>
-  )
+  return <TerminalPreviewLite autoLoad={true} />
 }

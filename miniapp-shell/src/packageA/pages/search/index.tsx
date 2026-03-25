@@ -10,6 +10,7 @@ import { SearchPage as SearchPageComponent } from '@terminal-preview/components/
 import { previewApi } from '@terminal-preview/api'
 import type { ThemeSettings } from '@terminal-preview/types'
 import { defaultThemeSettings } from '@terminal-preview/types'
+import type { SearchHospitalItem, SearchDoctorItem } from '@terminal-preview/api/user-api'
 import './index.scss'
 
 export default function SearchPage() {
@@ -52,6 +53,18 @@ export default function SearchPage() {
     })
   }, [])
 
+  const handleHospitalClick = useCallback((hospital: SearchHospitalItem) => {
+    Taro.navigateTo({
+      url: `/packageA/pages/hospital-detail/index?id=${hospital.id}`,
+    })
+  }, [])
+
+  const handleDoctorClick = useCallback((doctor: SearchDoctorItem) => {
+    Taro.navigateTo({
+      url: `/packageA/pages/doctor-detail/index?id=${doctor.id}`,
+    })
+  }, [])
+
   console.log('[SearchPage] 准备渲染 SearchPageComponent')
 
   return (
@@ -62,8 +75,9 @@ export default function SearchPage() {
         initialKeyword={initialKeyword}
         onBack={handleBack}
         onServiceClick={handleServiceClick}
+        onHospitalClick={handleHospitalClick}
+        onDoctorClick={handleDoctorClick}
       />
     </View>
   )
 }
-

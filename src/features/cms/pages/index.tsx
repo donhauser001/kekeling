@@ -118,6 +118,7 @@ export function CmsPages() {
       about: '关于我们',
       privacy: '隐私政策',
       terms: '用户协议',
+      'escort-terms': '陪诊员服务协议',
       help: '帮助中心',
       contact: '联系我们',
     }
@@ -182,7 +183,7 @@ export function CmsPages() {
           <div>
             <h2 className='text-2xl font-bold tracking-tight'>页面管理</h2>
             <p className='text-muted-foreground'>
-              管理静态页面，如关于我们、隐私政策、用户协议等
+              管理静态页面，如关于我们、隐私政策、用户协议、陪诊员服务协议等
             </p>
           </div>
           <Button onClick={handleCreate}>

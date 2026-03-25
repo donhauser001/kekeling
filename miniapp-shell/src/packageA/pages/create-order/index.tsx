@@ -5,7 +5,7 @@
  */
 import { useState, useEffect } from 'react'
 import { View } from '@tarojs/components'
-import Taro, { useRouter } from '@tarojs/taro'
+import Taro, { useRouter, useDidShow } from '@tarojs/taro'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { CreateOrderPage as CreateOrderPageComponent } from '@terminal-preview/components/pages/CreateOrderPage'
 import { previewApi } from '@terminal-preview/api'
@@ -28,6 +28,22 @@ function CreateOrderPageContent() {
   const serviceId = router.params.serviceId || ''
   const [themeSettings, setThemeSettings] = useState<ThemeSettings>(defaultThemeSettings)
   const [isLoading, setIsLoading] = useState(true)
+  const [preferredPatientId, setPreferredPatientId] = useState<string | null>(null)
+  const [patientsRefreshTrigger, setPatientsRefreshTrigger] = useState(0)
+
+  useDidShow(() => {
+    const nextPatientId = Taro.getStorageSync('createOrderSelectedPatientId') as string | undefined
+    const shouldRefresh = Taro.getStorageSync('createOrderRefreshPatients') === '1'
+
+    if (nextPatientId) {
+      setPreferredPatientId(nextPatientId)
+      Taro.removeStorageSync('createOrderSelectedPatientId')
+    }
+    if (shouldRefresh) {
+      setPatientsRefreshTrigger(prev => prev + 1)
+      Taro.removeStorageSync('createOrderRefreshPatients')
+    }
+  })
 
   useEffect(() => {
     previewApi.getThemeSettings()
@@ -52,10 +68,12 @@ function CreateOrderPageContent() {
   const handleNavigate = (page: string, params?: Record<string, string>) => {
     if (page === 'services') {
       Taro.navigateTo({ url: '/packageA/pages/services/index' })
+    } else if (page === 'user-order-detail' && params?.id) {
+      Taro.redirectTo({ url: `/packageB/pages/user-order-detail/index?id=${params.id}` })
     } else if (page === 'user-orders') {
       Taro.reLaunch({ url: '/packageB/pages/user-orders/index' })
     } else if (page === 'patients') {
-      Taro.navigateTo({ url: '/packageB/pages/patients/index' })
+      Taro.navigateTo({ url: '/packageB/pages/patients/index?mode=select&source=create-order' })
     } else {
       Taro.switchTab({ url: '/pages/main/index' })
     }
@@ -86,6 +104,8 @@ function CreateOrderPageContent() {
         serviceId={serviceId}
         themeSettings={themeSettings}
         isDarkMode={false}
+        preferredPatientId={preferredPatientId}
+        patientsRefreshTrigger={patientsRefreshTrigger}
         onBack={handleBack}
         onNavigate={handleNavigate}
       />

@@ -15,7 +15,14 @@
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import Taro from '@tarojs/taro'
-import { previewApi } from '@terminal-preview/api'
+import {
+  getBanners,
+  getCategories,
+  getHomePageSettings,
+  getRecommendedServices,
+  getStats,
+  getThemeSettings,
+} from '@/api/home'
 import { Box } from '@terminal-preview/ui/primitives'
 import { isWxEnvironment } from '@terminal-preview/platform/env'
 import {
@@ -50,18 +57,16 @@ function getCachedThemeSettings(): ThemeSettings | null {
   }
   return null
 }
-import {
-  BrandSection,
-  SearchBar,
-  CategorySection,
-  BannerSection,
-  StatsCard,
-  ServiceRecommendation,
-  ContentSection,
-  FooterSection,
-  TabBarNav,
-  ScrollIndicator,
-} from '@terminal-preview/components'
+import { BrandSection } from '../../../src/components/terminal-preview/components/BrandSection'
+import { SearchBar } from '../../../src/components/terminal-preview/components/SearchBar'
+import { CategorySection } from '../../../src/components/terminal-preview/components/CategorySection'
+import { BannerSection } from '../../../src/components/terminal-preview/components/BannerSection'
+import { StatsCard } from '../../../src/components/terminal-preview/components/StatsCard'
+import { ServiceRecommendation } from '../../../src/components/terminal-preview/components/ServiceRecommendation'
+import { ContentSection } from '../../../src/components/terminal-preview/components/ContentSection'
+import { FooterSection } from '../../../src/components/terminal-preview/components/FooterSection'
+import { TabBarNav } from '../../../src/components/terminal-preview/components/TabBarNav'
+import { ScrollIndicator } from '../../../src/components/terminal-preview/components/ScrollIndicator'
 import { useScrollDrag } from '@terminal-preview/hooks/useScrollDrag'
 
 // ============================================================================
@@ -144,12 +149,12 @@ export function TerminalPreviewLite({
     if (!autoLoad) return
 
     Promise.all([
-      previewApi.getThemeSettings().catch(() => null),
-      previewApi.getHomePageSettings().catch(() => null),
-      previewApi.getBanners('home').catch(() => null),
-      previewApi.getStats().catch(() => null),
-      previewApi.getCategories().catch(() => []),
-      previewApi.getRecommendedServices().catch(() => null),
+      getThemeSettings().catch(() => null),
+      getHomePageSettings().catch(() => null),
+      getBanners('home').catch(() => null),
+      getStats().catch(() => null),
+      getCategories().catch(() => []),
+      getRecommendedServices().catch(() => null),
     ]).then(([theme, home, banners, stats, categories, recommended]) => {
       if (theme) setFetchedThemeSettings(theme)
       if (home) setFetchedHomeSettings(home)
@@ -427,4 +432,3 @@ export function TerminalPreviewLite({
 }
 
 export default TerminalPreviewLite
-

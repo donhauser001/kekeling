@@ -57,6 +57,26 @@ export class EscortAppService {
     return `${account.slice(0, 3)}****${account.slice(-4)}`;
   }
 
+  private async getWithdrawalAmountMap(withdrawIds: string[]) {
+    if (withdrawIds.length === 0) {
+      return new Map<string, number>();
+    }
+
+    const withdrawals = await this.prisma.withdrawal.findMany({
+      where: {
+        id: { in: withdrawIds },
+      },
+      select: {
+        id: true,
+        actualAmount: true,
+      },
+    });
+
+    return new Map(
+      withdrawals.map((item) => [item.id, Number(item.actualAmount)])
+    );
+  }
+
   /**
    * 检查时段冲突
    * 在抢单/派单前调用，确保不会分配时间冲突的订单
@@ -430,7 +450,10 @@ export class EscortAppService {
       this.prisma.walletTransaction.aggregate({
         where: {
           wallet: { escortId: escort.id },
-          type: { in: ['income', 'frozen'] },  // 实时到账 + 冻结中的收入
+          OR: [
+            { type: 'income' },
+            { type: 'frozen', amount: { gt: 0 } },
+          ], // 只统计正向收入，排除“提现申请冻结”等负向 frozen 流水
           createdAt: { gte: startOfMonth },
         },
         _sum: { amount: true },
@@ -527,7 +550,10 @@ export class EscortAppService {
       this.prisma.walletTransaction.aggregate({
         where: {
           wallet: { escortId: escort.id },
-          type: { in: ['income', 'frozen'] },  // 实时到账 + 冻结中的收入
+          OR: [
+            { type: 'income' },
+            { type: 'frozen', amount: { gt: 0 } },
+          ], // 只统计正向收入，排除“提现申请冻结”等负向 frozen 流水
           createdAt: { gte: startOfMonth },
         },
         _sum: { amount: true },
@@ -830,14 +856,24 @@ export class EscortAppService {
       take: 50,
     });
 
+    const canAcceptOrder = escort.status === 'active';
+    const statusMessage =
+      escort.status === 'pending'
+        ? '您的陪诊员账号正在审核中，暂时不能接单'
+        : escort.status === 'suspended'
+          ? '您的陪诊员账号已被暂停，暂时不能接单'
+          : escort.status !== 'active'
+            ? '您的陪诊员账号未激活，暂时不能接单'
+            : '';
+
     // 返回订单列表和陪诊员状态信息
-    // 预约制服务：任何状态都可以接单，由陪诊员自己安排时间
+    // 预约制服务不限制 workStatus，但仍需满足账号状态可用
     return {
       orders,
       escortStatus: {
         workStatus: escort.workStatus,
-        canAcceptOrder: true, // 始终允许接单
-        statusMessage: '',
+        canAcceptOrder,
+        statusMessage,
       },
     };
   }
@@ -1543,6 +1579,9 @@ export class EscortAppService {
     // 计算手续费和实际到账
     const fee = amount * feeRate + feeFixed;
     const actualAmount = amount - fee;
+    if (actualAmount <= 0) {
+      throw new BadRequestException('当前提现手续费配置异常，实际到账金额必须大于 0');
+    }
 
     // 创建提现申请并冻结余额
     const withdrawal = await this.prisma.$transaction(async (tx) => {
@@ -1612,10 +1651,10 @@ export class EscortAppService {
     }
     if (method === 'bank') {
       if (!normalizedAccountName) {
-        throw new BadRequestException('银行卡开户名称不能为空');
+        throw new BadRequestException('银行卡/对公账户开户名称不能为空');
       }
       if (!normalizedBankName) {
-        throw new BadRequestException('银行卡开户行不能为空');
+        throw new BadRequestException('银行卡/对公账户开户行不能为空');
       }
     }
 
@@ -2316,7 +2355,10 @@ export class EscortAppService {
     const monthlyEarningsResult = await this.prisma.walletTransaction.aggregate({
       where: {
         walletId: wallet.id,
-        type: { in: ['income', 'frozen'] },  // 实时到账 + 冻结中的收入
+        OR: [
+          { type: 'income' },
+          { type: 'frozen', amount: { gt: 0 } },
+        ], // 只统计正向收入，排除“提现申请冻结”等负向 frozen 流水
         createdAt: {
           gte: firstDayOfMonth,
         },
@@ -2330,7 +2372,10 @@ export class EscortAppService {
     const lastMonthEarningsResult = await this.prisma.walletTransaction.aggregate({
       where: {
         walletId: wallet.id,
-        type: { in: ['income', 'frozen'] },  // 实时到账 + 冻结中的收入
+        OR: [
+          { type: 'income' },
+          { type: 'frozen', amount: { gt: 0 } },
+        ], // 只统计正向收入，排除“提现申请冻结”等负向 frozen 流水
         createdAt: {
           gte: firstDayOfLastMonth,
           lt: firstDayOfMonth,
@@ -2400,6 +2445,12 @@ export class EscortAppService {
       take: 5,
     });
 
+    const withdrawAmountMap = await this.getWithdrawalAmountMap(
+      recentTransactions
+        .filter((item) => item.type === 'withdraw' && !!item.withdrawId)
+        .map((item) => item.withdrawId as string)
+    );
+
     // 转换为前端期望的格式（复用上面声明的 now）
     const recentRecords = recentTransactions.map(t => {
       // 判断是否为冻结状态
@@ -2418,11 +2469,15 @@ export class EscortAppService {
         unfreezeCountdown = remaining > 0 ? remaining : 0;
       }
 
+      const displayAmount = t.type === 'withdraw' && t.withdrawId
+        ? -Number(withdrawAmountMap.get(t.withdrawId) || 0)
+        : Number(t.amount);
+
       return {
         id: t.id,
         type: this.mapTransactionType(t.type),
         title: t.title,
-        amount: Number(t.amount),
+        amount: displayAmount,
         status,
         createdAt: this.formatDateTime(t.createdAt),
         orderNo: t.orderId ? `ORD${t.orderId.slice(-8).toUpperCase()}` : undefined,
@@ -2488,12 +2543,20 @@ export class EscortAppService {
       take: pageSize,
     });
 
+    const withdrawAmountMap = await this.getWithdrawalAmountMap(
+      transactions
+        .filter((item) => item.type === 'withdraw' && !!item.withdrawId)
+        .map((item) => item.withdrawId as string)
+    );
+
     // 转换为前端期望的格式
     const items = transactions.map(t => ({
       id: t.id,
       type: this.mapTransactionType(t.type),
       title: t.title,
-      amount: Number(t.amount),
+      amount: t.type === 'withdraw' && t.withdrawId
+        ? -Number(withdrawAmountMap.get(t.withdrawId) || 0)
+        : Number(t.amount),
       createdAt: this.formatDateTime(t.createdAt),
       orderNo: t.orderId ? `ORD${t.orderId.slice(-8).toUpperCase()}` : undefined,
     }));
@@ -2569,7 +2632,7 @@ export class EscortAppService {
         id: 'default',
         type: wallet.withdrawMethod as 'bank' | 'alipay' | 'wechat',
         name: wallet.withdrawMethod === 'bank'
-          ? (wallet.withdrawAccountName || '储蓄卡')
+          ? (wallet.withdrawAccountName || wallet.withdrawBankName || '银行卡/对公账户')
           : wallet.withdrawMethod === 'alipay'
             ? '支付宝'
             : '微信',
@@ -2591,7 +2654,9 @@ export class EscortAppService {
       amount: Number(w.amount),
       fee: Number(w.fee),
       actualAmount: Number(w.actualAmount),
-      accountName: w.method === 'bank' ? '银行卡' :
+      accountName: w.method === 'bank'
+        ? (wallet.withdrawAccountName || wallet.withdrawBankName || '银行卡/对公账户')
+        :
         w.method === 'alipay' ? '支付宝' : '微信',
       createdAt: this.formatWithdrawDateTime(w.createdAt),
       completedAt: w.transferAt ? this.formatWithdrawDateTime(w.transferAt) : undefined,

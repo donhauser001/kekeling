@@ -30,7 +30,7 @@ export interface WithdrawPermissions {
   payout: boolean
 }
 
-export type WithdrawActionType = 'review' | 'payout'
+export type WithdrawActionType = 'review' | 'payout' | 'fail'
 
 /**
  * 判断是否可以显示某个操作按钮
@@ -52,6 +52,9 @@ export function canShowAction(
   }
   if (action === 'payout') {
     return status === 'approved' && permissions.payout
+  }
+  if (action === 'fail') {
+    return ['approved', 'processing'].includes(status) && permissions.payout
   }
   return false
 }
@@ -135,7 +138,6 @@ export function getNextAction(
   }
   return null
 }
-
 
 
 

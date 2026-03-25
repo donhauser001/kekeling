@@ -104,6 +104,8 @@ export type PreviewPage =
   | 'favorites'
   // 搜索
   | 'search'
+  | 'hospital-detail'
+  | 'doctor-detail'
   // 评价与客服
   | 'my-reviews'
   | 'review-submit'
@@ -179,6 +181,8 @@ export const VALID_PAGE_KEYS: readonly PreviewPage[] = [
   'favorites',
   // 搜索
   'search',
+  'hospital-detail',
+  'doctor-detail',
   // 评价与客服
   'my-reviews',
   'review-submit',
@@ -286,6 +290,8 @@ export const PAGE_METADATA: Record<PreviewPage, PageMetadata> = {
 
   // 搜索
   'search': { entryAllowed: false, description: '搜索' },
+  'hospital-detail': { entryAllowed: false, requiredParams: ['id'], description: '医院详情' },
+  'doctor-detail': { entryAllowed: false, requiredParams: ['id'], description: '医生详情' },
 
   // 评价与客服
   'my-reviews': { entryAllowed: false, description: '我的评价' },
@@ -391,6 +397,8 @@ export interface PreviewPageParamsMap {
 
   // 搜索
   'search': { keyword?: string }
+  'hospital-detail': { id: string }
+  'doctor-detail': { id: string }
 
   // 评价与客服
   'my-reviews': Record<string, never>
@@ -405,6 +413,8 @@ export interface PreviewPageParamsMap {
 export const PAGES_REQUIRING_PARAMS: Partial<Record<PreviewPage, readonly string[]>> = {
   'campaigns-detail': ['id'],
   'escort-detail': ['id'],
+  'hospital-detail': ['id'],
+  'doctor-detail': ['id'],
   'workbench-order-detail': ['id'],
   'workbench-pool-order-detail': ['id'],
   'workbench-my-order-detail': ['id'],

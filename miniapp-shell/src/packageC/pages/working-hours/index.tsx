@@ -12,6 +12,7 @@ import type { ThemeSettings } from '@terminal-preview/types'
 import { defaultThemeSettings } from '@terminal-preview/types'
 import { getPreviewEscortToken, setPreviewEscortToken } from '@terminal-preview/session'
 import { useViewerRole } from '@terminal-preview/hooks/useViewerRole'
+import { navigateToEscortAgreement } from '../../../utils/escort-agreement'
 import './index.scss'
 
 const queryClient = new QueryClient({
@@ -107,6 +108,7 @@ function WorkingHoursPageContent() {
           }
         }}
         onLoginSuccess={handleLoginSuccess}
+        onViewAgreement={navigateToEscortAgreement}
         themeSettings={themeSettings}
         isDarkMode={false}
       />
@@ -121,5 +123,4 @@ export default function WorkingHoursPage() {
     </QueryClientProvider>
   )
 }
-
 

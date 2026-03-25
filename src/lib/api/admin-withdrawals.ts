@@ -36,12 +36,14 @@ export interface AdminEscortWithdrawRecord {
   netAmount: number
   method: AdminWithdrawMethod
   accountMasked: string
+  accountNo?: string
   accountName?: string
   bankName?: string
   status: AdminWithdrawStatus
   createdAt: string
   paidAt?: string
   failReason?: string
+  payoutAccount?: string
 }
 
 export interface AdminEscortWithdrawRecordQuery {
@@ -66,6 +68,9 @@ export interface AdminWithdrawPayoutRequest {
   payoutMethod: 'manual'
   operatorConfirmText: 'CONFIRM'
   transactionNo?: string
+  payoutAccount?: string
+  payoutRemark?: string
+  payoutProofUrls?: string[]
 }
 
 export interface AdminWithdrawLog {
@@ -79,8 +84,13 @@ export interface AdminWithdrawLog {
 
 export interface AdminEscortWithdrawDetail extends AdminEscortWithdrawRecord {
   transactionNo?: string
+  reviewedAt?: string
+  reviewNote?: string
   channel?: 'alipay' | 'wechat' | 'bank'
   channelResponse?: string
+  payoutRemark?: string
+  payoutProofUrls?: string[]
+  payoutOperatorName?: string
   logs: AdminWithdrawLog[]
 }
 
@@ -159,5 +169,11 @@ export const adminEscortWithdrawApi = {
     request<AdminEscortWithdrawRecord>(`/admin/withdraw-records/${id}/payout`, {
       method: 'POST',
       body: JSON.stringify(data),
+    }),
+
+  markFailed: (id: string, reason: string) =>
+    request<AdminEscortWithdrawRecord>(`/admin/withdraw-records/${id}/fail`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
     }),
 }

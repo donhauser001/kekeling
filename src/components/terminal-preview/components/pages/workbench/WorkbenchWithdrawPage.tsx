@@ -7,7 +7,7 @@
  *
  * 功能：
  * - 可提现余额展示
- * - 提现账户信息（银行卡/支付宝）
+ * - 提现账户信息（银行卡/对公账户/支付宝）
  * - 提现表单（金额输入、提交按钮、禁用状态）
  * - 最近提现记录列表（5 条）
  *
@@ -367,7 +367,7 @@ function WithdrawContent({
     const accountName = newAccountName.trim()
     const bankName = newBankName.trim()
     if (newAccountType === 'bank' && !accountName) {
-      setActionError('请输入开户名称')
+      setActionError('请输入开户名称（个人或公司）')
       setActionMessage(null)
       return
     }
@@ -734,7 +734,7 @@ function WithdrawContent({
             <Box style={{ display: 'flex', gap: 8 * wxScale, marginBottom: 10 * wxScale }}>
               {(['bank', 'alipay', 'wechat'] as const).map((type) => {
                 const selected = newAccountType === type
-                const label = type === 'bank' ? '银行卡' : type === 'alipay' ? '支付宝' : '微信'
+                const label = type === 'bank' ? '银行卡/对公账户' : type === 'alipay' ? '支付宝' : '微信'
                 return (
                   <Box
                     key={type}
@@ -763,7 +763,7 @@ function WithdrawContent({
             <Input
               value={newAccountNo}
               onChange={setNewAccountNo}
-              placeholder={newAccountType === 'bank' ? '请输入银行卡号' : newAccountType === 'alipay' ? '请输入支付宝账号' : '请输入微信账号'}
+              placeholder={newAccountType === 'bank' ? '请输入银行卡号或对公账户号' : newAccountType === 'alipay' ? '请输入支付宝账号' : '请输入微信账号'}
               style={{
                 width: '100%',
                 paddingTop: 10 * wxScale,
@@ -782,7 +782,7 @@ function WithdrawContent({
                 <Input
                   value={newAccountName}
                   onChange={setNewAccountName}
-                  placeholder='请输入开户名称'
+                  placeholder='请输入开户名称（个人或公司）'
                   style={{
                     width: '100%',
                     paddingTop: 10 * wxScale,
