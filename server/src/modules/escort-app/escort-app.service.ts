@@ -785,7 +785,7 @@ export class EscortAppService {
         appointmentTime: order.appointmentDate
           ? `${new Date(order.appointmentDate).toLocaleDateString('zh-CN')} ${order.appointmentTime || ''}`
           : '',
-        hospitalName: order.hospital?.name || '未指定医院',
+        hospitalName: order.hospitalName || order.hospital?.name || '未指定医院',
         department: order.departmentName || '',
         amount: Number(order.totalAmount) || 0,
         commission: Number(order.commissionAmount) || Math.floor(Number(order.totalAmount) * 0.8) || 0,
@@ -1095,7 +1095,7 @@ export class EscortAppService {
         data: {
           orderNo: order.orderNo,
           escortName: order.escort?.name || '',
-          hospitalName: order.hospital?.name || order.hospital?.shortName || '',
+          hospitalName: order.hospitalName || order.hospital?.name || order.hospital?.shortName || '',
         },
         relatedType: 'order',
         relatedId: orderId,
@@ -2157,7 +2157,7 @@ export class EscortAppService {
       appointment: {
         date: appointmentDate,
         time: order.appointmentTime || '-',
-        hospitalName: order.hospital?.name || '-',
+        hospitalName: order.hospitalName || order.hospital?.name || '-',
         department: order.departmentName || undefined,
         address: order.hospital?.address || undefined,
       },

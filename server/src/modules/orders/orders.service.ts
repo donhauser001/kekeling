@@ -45,6 +45,27 @@ export class OrdersService {
       throw new BadRequestException('服务不存在');
     }
 
+    const customHospitalName = dto.hospitalName?.trim() || '';
+    const hospitalMode = dto.hospitalMode === 'custom' || (!dto.hospitalId && customHospitalName)
+      ? 'custom'
+      : 'catalog';
+
+    let selectedHospital: { id: string; name: string } | null = null;
+    if (hospitalMode === 'catalog') {
+      if (!dto.hospitalId) {
+        throw new BadRequestException('请选择医院');
+      }
+      selectedHospital = await this.prisma.hospital.findUnique({
+        where: { id: dto.hospitalId },
+        select: { id: true, name: true },
+      });
+      if (!selectedHospital) {
+        throw new BadRequestException('医院不存在');
+      }
+    } else if (!customHospitalName) {
+      throw new BadRequestException('请输入医院名称');
+    }
+
     let patientId: string | null = null;
     if (dto.patientId) {
       const patient = await this.prisma.patient.findFirst({
@@ -116,10 +137,15 @@ export class OrdersService {
           userId,
           patientId,
           serviceId: dto.serviceId,
-          hospitalId: dto.hospitalId,
+          hospitalId: selectedHospital?.id || null,
           appointmentDate: new Date(dto.appointmentDate),
           appointmentTime: dto.appointmentTime,
+          hospitalMode,
+          hospitalName: selectedHospital?.name || customHospitalName || null,
+          hospitalProvince: dto.province?.trim() || null,
+          hospitalCity: dto.city?.trim() || null,
           departmentName: dto.departmentName,
+          doctorName: dto.doctorName?.trim() || null,
           totalAmount: new Prisma.Decimal(pricing.originalPrice),
           discountAmount: new Prisma.Decimal(pricing.totalSavings),
           paidAmount: new Prisma.Decimal(pricing.finalPrice),

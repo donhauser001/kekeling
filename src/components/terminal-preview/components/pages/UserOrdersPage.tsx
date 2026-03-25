@@ -429,7 +429,7 @@ export function UserOrdersPage({
                       color: textSecondary,
                     }}
                   >
-                    {order.hospital?.name || '医院'}
+                    {order.hospitalName || order.hospital?.name || '医院'}
                   </Text>
                 </Box>
 

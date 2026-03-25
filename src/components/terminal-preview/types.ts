@@ -1143,7 +1143,7 @@ export interface TerminalPreviewProps {
 
 // 默认主题设置
 export const defaultThemeSettings: ThemeSettings = {
-  primaryColor: '#f97316',
+  primaryColor: '#3ea75e',
   defaultThemeMode: 'light',
   brandName: '科科灵',
   brandSlogan: '全家一站式就医助手',

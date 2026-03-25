@@ -7,10 +7,30 @@ export class CreateOrderDto {
   @IsNotEmpty()
   serviceId: string;
 
-  @ApiProperty({ description: '医院ID' })
+  @ApiPropertyOptional({ description: '医院ID（医院库选择时传）' })
   @IsString()
-  @IsNotEmpty()
-  hospitalId: string;
+  @IsOptional()
+  hospitalId?: string;
+
+  @ApiPropertyOptional({ description: '医院模式：catalog=医院库，custom=自填医院' })
+  @IsString()
+  @IsOptional()
+  hospitalMode?: string;
+
+  @ApiPropertyOptional({ description: '自填医院名称' })
+  @IsString()
+  @IsOptional()
+  hospitalName?: string;
+
+  @ApiPropertyOptional({ description: '自填医院所在省' })
+  @IsString()
+  @IsOptional()
+  province?: string;
+
+  @ApiPropertyOptional({ description: '自填医院所在市' })
+  @IsString()
+  @IsOptional()
+  city?: string;
 
   @ApiPropertyOptional({ description: '就诊人ID' })
   @IsString()
@@ -31,6 +51,11 @@ export class CreateOrderDto {
   @IsString()
   @IsOptional()
   departmentName?: string;
+
+  @ApiPropertyOptional({ description: '医生名称（自填医生时传）' })
+  @IsString()
+  @IsOptional()
+  doctorName?: string;
 
   @ApiPropertyOptional({ description: '备注' })
   @IsString()

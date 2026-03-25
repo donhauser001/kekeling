@@ -145,7 +145,7 @@ export const THEME_CONFIG_KEYS = {
 
 // 主题设置默认值
 export const THEME_CONFIG_DEFAULTS: Record<string, any> = {
-  [THEME_CONFIG_KEYS.PRIMARY_COLOR]: '#f97316',
+  [THEME_CONFIG_KEYS.PRIMARY_COLOR]: '#3ea75e',
   [THEME_CONFIG_KEYS.DEFAULT_THEME_MODE]: 'light', // light, dark, system
   [THEME_CONFIG_KEYS.BRAND_NAME]: '科科灵',
   [THEME_CONFIG_KEYS.BRAND_SLOGAN]: '全家一站式就医助手',

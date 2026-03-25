@@ -232,6 +232,7 @@ export class ConfigController {
   // ============================================
 
   @Get('miniapp/settings')
+  @AdminPublic()
   @ApiOperation({ summary: '获取小程序设置' })
   async getMiniappSettings() {
     const data = await this.configService.getMiniappSettings();
@@ -329,6 +330,7 @@ export class ConfigController {
   // ============================================
 
   @Get('marketing/settings')
+  @AdminPublic()
   @ApiOperation({ summary: '获取营销设置' })
   async getMarketingSettings() {
     const data = await this.configService.getMarketingSettings();

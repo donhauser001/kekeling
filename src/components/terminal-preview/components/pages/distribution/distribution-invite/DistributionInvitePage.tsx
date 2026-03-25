@@ -21,7 +21,6 @@ import { isWxEnvironment } from '../../../../platform/env'
 import { getWxBridge } from '../../../../bridge'
 import { previewApi } from '../../../../api'
 import { PermissionPrompt } from '../../../PermissionPrompt'
-import { formatMoney } from '../../../../utils'
 import { wxScale, wxSafeAreaTop } from './constants'
 import type { DistributionInvitePageProps, InviteData } from './types'
 import { InvitePageSkeleton } from './components'
@@ -297,72 +296,6 @@ export function DistributionInvitePage({
 
       {/* 内容区 */}
       <Box style={{ padding: 16 * wxScale }}>
-        {/* 统计卡片 */}
-        <Box
-          style={{
-            padding: 16 * wxScale,
-            borderRadius: 12 * wxScale,
-            marginBottom: 16 * wxScale,
-            background: `linear-gradient(135deg, ${primaryColor} 0%, ${primaryColor}dd 100%)`,
-          }}
-        >
-          <Box style={{ display: 'flex', justifyContent: 'space-around' }}>
-            <Box style={{ alignItems: 'center', textAlign: 'center' }}>
-              <Box
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 4 * wxScale,
-                }}
-              >
-                <Icon name="peoples" size={16 * wxScale} color="rgba(255,255,255,0.7)" />
-                <Text style={{ fontSize: 14 * wxScale, color: 'rgba(255,255,255,0.7)' }}>
-                  累计邀请
-                </Text>
-              </Box>
-              <Text
-                style={{
-                  display: 'block',
-                  fontSize: 24 * wxScale,
-                  fontWeight: 700,
-                  color: '#fff',
-                  marginTop: 4 * wxScale,
-                }}
-              >
-                {inviteData.totalInvited}
-              </Text>
-            </Box>
-            <Box style={{ width: 1, backgroundColor: 'rgba(255,255,255,0.2)' }} />
-            <Box style={{ alignItems: 'center', textAlign: 'center' }}>
-              <Box
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 4 * wxScale,
-                }}
-              >
-                <Icon name="gift" size={16 * wxScale} color="rgba(255,255,255,0.7)" />
-                <Text style={{ fontSize: 14 * wxScale, color: 'rgba(255,255,255,0.7)' }}>
-                  每次奖励
-                </Text>
-              </Box>
-              <Text
-                style={{
-                  display: 'block',
-                  fontSize: 24 * wxScale,
-                  fontWeight: 700,
-                  color: '#fff',
-                  marginTop: 4 * wxScale,
-                }}
-              >
-                ¥{formatMoney(inviteData.rewardPerInvite)}
-              </Text>
-            </Box>
-          </Box>
-        </Box>
-
         {/* 邀请码 */}
         <Box
           style={{
@@ -613,4 +546,3 @@ export function DistributionInvitePage({
     </Box>
   )
 }
-

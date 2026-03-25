@@ -60,6 +60,7 @@ export function ApplyForm({
   const [inviter, setInviter] = useState<InviterInfo | null>(null)
   const [inviteCodeError, setInviteCodeError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [hospitalOptions, setHospitalOptions] = useState<Array<{ id: string; name: string }>>([])
   const [departmentOptions, setDepartmentOptions] = useState<string[]>([])
@@ -228,6 +229,9 @@ export function ApplyForm({
     }
     if (!formData.foreignLanguage.trim()) {
       newErrors.foreignLanguage = '请输入外语能力'
+    }
+    if (!agreedToTerms) {
+      newErrors.agreement = '请先勾选并同意陪诊员服务协议'
     }
 
     setErrors(newErrors)
@@ -695,27 +699,71 @@ export function ApplyForm({
       </Button>
 
       {/* 协议提示 */}
-      <Text
+      <Box
         style={{
-          display: 'block',
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'center',
+          gap: 8 * wxScale,
           marginTop: 16 * wxScale,
-          fontSize: 12 * wxScale,
-          color: colors.textMuted,
-          textAlign: 'center',
-          lineHeight: 1.6,
         }}
       >
-        提交申请即表示您同意
-        <Text
-          onClick={onViewAgreement}
+        <Box
+          onClick={() => {
+            setAgreedToTerms((prev) => !prev)
+            setErrors((prev) => ({ ...prev, agreement: '' }))
+          }}
           style={{
-            color: primaryColor,
-            textDecorationLine: 'underline',
+            width: 16 * wxScale,
+            height: 16 * wxScale,
+            marginTop: 2 * wxScale,
+            borderRadius: 4 * wxScale,
+            borderWidth: 1,
+            borderStyle: 'solid',
+            borderColor: agreedToTerms ? primaryColor : colors.borderColor,
+            backgroundColor: agreedToTerms ? primaryColor : colors.cardBg,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
           }}
         >
-          《陪诊员服务协议》
+          {agreedToTerms ? <Icon name="check-one" size={12 * wxScale} color="#ffffff" /> : null}
+        </Box>
+        <Text
+          style={{
+            display: 'block',
+            fontSize: 12 * wxScale,
+            color: colors.textMuted,
+            textAlign: 'left',
+            lineHeight: 1.6,
+          }}
+        >
+          勾选即表示同意
+          <Text
+            onClick={onViewAgreement}
+            style={{
+              color: primaryColor,
+              textDecorationLine: 'underline',
+            }}
+          >
+            《陪诊员服务协议》
+          </Text>
         </Text>
-      </Text>
+      </Box>
+      {errors.agreement ? (
+        <Text
+          style={{
+            display: 'block',
+            marginTop: 6 * wxScale,
+            fontSize: 12 * wxScale,
+            color: '#ef4444',
+            textAlign: 'center',
+          }}
+        >
+          {errors.agreement}
+        </Text>
+      ) : null}
 
       <MultiSelectModal
         open={showHospitalPicker}

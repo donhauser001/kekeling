@@ -119,9 +119,15 @@ export function CreateOrderPage({
 
   // 表单状态
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null)
+  const [hospitalMode, setHospitalMode] = useState<'catalog' | 'custom'>('catalog')
   const [selectedHospitalId, setSelectedHospitalId] = useState<string | null>(null)
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<string | null>(null)
   const [selectedDoctorId, setSelectedDoctorId] = useState<string | null>(null)
+  const [customProvince, setCustomProvince] = useState('')
+  const [customCity, setCustomCity] = useState('')
+  const [customHospitalName, setCustomHospitalName] = useState('')
+  const [customDepartmentName, setCustomDepartmentName] = useState('')
+  const [customDoctorName, setCustomDoctorName] = useState('')
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [selectedTime, setSelectedTime] = useState<string | null>(null)
   const [selectedCouponId, setSelectedCouponId] = useState<string | null>(null)
@@ -145,6 +151,8 @@ export function CreateOrderPage({
   const [showEmergencyContactInput, setShowEmergencyContactInput] = useState(false)
   const [showIdCardInput, setShowIdCardInput] = useState(false)
   const [showMedicalRecordPicker, setShowMedicalRecordPicker] = useState(false)
+  const [showCustomDepartmentInput, setShowCustomDepartmentInput] = useState(false)
+  const [showCustomDoctorInput, setShowCustomDoctorInput] = useState(false)
 
   // 提交状态
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -301,9 +309,22 @@ export function CreateOrderPage({
 
   // 获取选中的数据
   const selectedPatient = patients.find((p) => p.id === selectedPatientId)
-  const selectedHospital = hospitals.find((h) => h.id === selectedHospitalId)
-  const selectedDepartment = departments.find((d) => d.id === selectedDepartmentId)
-  const selectedDoctor = doctors.find((d) => d.id === selectedDoctorId)
+  const selectedHospital = hospitalMode === 'custom'
+    ? (customHospitalName
+      ? {
+          id: 'custom',
+          name: customHospitalName,
+          shortName: null,
+          address: [customProvince, customCity].filter(Boolean).join(' '),
+        }
+      : undefined)
+    : hospitals.find((h) => h.id === selectedHospitalId)
+  const selectedDepartment = hospitalMode === 'custom'
+    ? (customDepartmentName ? { id: 'custom-department', name: customDepartmentName } : undefined)
+    : departments.find((d) => d.id === selectedDepartmentId)
+  const selectedDoctor = hospitalMode === 'custom'
+    ? (customDoctorName ? { id: 'custom-doctor', name: customDoctorName, title: '' } : undefined)
+    : doctors.find((d) => d.id === selectedDoctorId)
   const selectedCoupon = coupons.find((c) => c.id === selectedCouponId)
   const selectedMedicalRecord = mockMedicalRecords.find((r) => r.id === selectedMedicalRecordId)
 
@@ -344,8 +365,16 @@ export function CreateOrderPage({
       wxBridge.showToast({ title: '请选择就诊人', icon: 'none' })
       return
     }
-    if (service?.needHospital && !selectedHospitalId) {
+    if (service?.needHospital && !selectedHospital?.name) {
       wxBridge.showToast({ title: '请选择医院', icon: 'none' })
+      return
+    }
+    if (service?.needDepartment && !selectedDepartment?.name) {
+      wxBridge.showToast({ title: hospitalMode === 'custom' ? '请输入科室' : '请选择科室', icon: 'none' })
+      return
+    }
+    if (service?.needDoctor && !selectedDoctor?.name) {
+      wxBridge.showToast({ title: hospitalMode === 'custom' ? '请输入医生姓名' : '请选择医生', icon: 'none' })
       return
     }
     if (service?.needAppointment !== false && !selectedDate) {
@@ -364,11 +393,16 @@ export function CreateOrderPage({
       // Step 1: 创建订单
       const orderResult = await previewApi.createOrder({
         serviceId: serviceId,
-        hospitalId: selectedHospitalId || '',
+        hospitalId: hospitalMode === 'catalog' ? (selectedHospitalId || undefined) : undefined,
+        hospitalMode,
+        hospitalName: hospitalMode === 'custom' ? customHospitalName.trim() : undefined,
+        province: hospitalMode === 'custom' ? (customProvince || undefined) : undefined,
+        city: hospitalMode === 'custom' ? (customCity || undefined) : undefined,
         patientId: fillLater ? undefined : (selectedPatientId || undefined),
         appointmentDate: selectedDate || '',
         appointmentTime: selectedTime || '',
         departmentName: selectedDepartment?.name,
+        doctorName: selectedDoctor?.name,
         remark: remark || undefined,
         // 仅当优惠券功能启用时才传递 couponId
         couponId: couponsEnabled ? (selectedCouponId || undefined) : undefined,
@@ -437,6 +471,10 @@ export function CreateOrderPage({
   }
 
   const handleOpenDepartmentPicker = () => {
+    if (hospitalMode === 'custom') {
+      setShowCustomDepartmentInput(true)
+      return
+    }
     if (!selectedHospitalId) {
       getWxBridge().showToast({ title: '请先选择就诊医院', icon: 'none' })
       return
@@ -580,7 +618,17 @@ export function CreateOrderPage({
         onOpenPatientPicker={() => setShowPatientPicker(true)}
         onOpenHospitalPicker={() => setShowHospitalPicker(true)}
         onOpenDepartmentPicker={handleOpenDepartmentPicker}
-        onOpenDoctorPicker={() => setShowDoctorPicker(true)}
+        onOpenDoctorPicker={() => {
+          if (hospitalMode === 'custom') {
+            setShowCustomDoctorInput(true)
+            return
+          }
+          if (!selectedHospitalId) {
+            getWxBridge().showToast({ title: '请先选择就诊医院', icon: 'none' })
+            return
+          }
+          setShowDoctorPicker(true)
+        }}
         onOpenDatePicker={() => setShowDatePicker(true)}
         onOpenTimePicker={() => setShowTimePicker(true)}
         onOpenIdCardInput={() => setShowIdCardInput(true)}
@@ -641,7 +689,33 @@ export function CreateOrderPage({
         <HospitalPicker
           hospitals={hospitals}
           selectedHospital={selectedHospital}
-          onSelect={(hospital) => setSelectedHospitalId(hospital.id)}
+          selectedProvince={customProvince}
+          selectedCity={customCity}
+          customHospitalName={hospitalMode === 'custom' ? customHospitalName : ''}
+          customProvince={customProvince}
+          customCity={customCity}
+          onSelect={(hospital) => {
+            setHospitalMode('catalog')
+            setSelectedHospitalId(hospital.id)
+            setSelectedDepartmentId(null)
+            setSelectedDoctorId(null)
+            setCustomProvince('')
+            setCustomCity('')
+            setCustomHospitalName('')
+            setCustomDepartmentName('')
+            setCustomDoctorName('')
+          }}
+          onSelectCustom={({ hospitalName, province, city }) => {
+            setHospitalMode('custom')
+            setSelectedHospitalId(null)
+            setSelectedDepartmentId(null)
+            setSelectedDoctorId(null)
+            setCustomHospitalName(hospitalName)
+            setCustomProvince(province || '')
+            setCustomCity(city || '')
+            setCustomDepartmentName('')
+            setCustomDoctorName('')
+          }}
           onClose={() => setShowHospitalPicker(false)}
           colors={colors}
           primaryColor={primaryColor}
@@ -669,6 +743,36 @@ export function CreateOrderPage({
           onClose={() => setShowDoctorPicker(false)}
           colors={colors}
           primaryColor={primaryColor}
+        />
+      )}
+
+      {showCustomDepartmentInput && (
+        <InputModal
+          title="输入就诊科室"
+          colors={colors}
+          primaryColor={primaryColor}
+          value={customDepartmentName}
+          placeholder="请输入就诊科室"
+          onClose={() => setShowCustomDepartmentInput(false)}
+          onConfirm={(value) => {
+            setCustomDepartmentName(value.trim())
+            setShowCustomDepartmentInput(false)
+          }}
+        />
+      )}
+
+      {showCustomDoctorInput && (
+        <InputModal
+          title="输入医生姓名"
+          colors={colors}
+          primaryColor={primaryColor}
+          value={customDoctorName}
+          placeholder="请输入医生姓名"
+          onClose={() => setShowCustomDoctorInput(false)}
+          onConfirm={(value) => {
+            setCustomDoctorName(value.trim())
+            setShowCustomDoctorInput(false)
+          }}
         />
       )}
 

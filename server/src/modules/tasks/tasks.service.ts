@@ -1226,7 +1226,7 @@ export class TasksService implements OnModuleInit, OnModuleDestroy {
               data: {
                 orderNo: order.orderNo,
                 appointmentTime: `${order.appointmentDate} ${order.appointmentTime}`,
-                hospitalName: order.hospital?.name || order.hospital?.shortName || '',
+                hospitalName: order.hospitalName || order.hospital?.name || order.hospital?.shortName || '',
               },
               relatedType: 'order',
               relatedId: order.id,

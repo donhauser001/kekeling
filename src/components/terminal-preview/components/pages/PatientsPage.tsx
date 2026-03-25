@@ -115,8 +115,9 @@ function PatientCard({
     <Box
       style={{
         borderRadius: 12 * wxScale,
-        overflow: 'hidden',
+        overflow: 'visible',
         position: 'relative',
+        zIndex: isMenuOpen ? 20 : 1,
         backgroundColor: cardBg,
         marginBottom: 12 * wxScale,
       }}

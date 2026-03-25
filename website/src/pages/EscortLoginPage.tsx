@@ -19,6 +19,7 @@ export function EscortLoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [agreedToTerms, setAgreedToTerms] = useState(false)
   
   const siteName = getSetting('site_name', '科科灵陪诊')
   const siteLogo = getSetting('site_logo', '')
@@ -40,6 +41,10 @@ export function EscortLoginPage() {
     }
     if (!formData.password) {
       setError('请输入登录密码')
+      return
+    }
+    if (!agreedToTerms) {
+      setError('请先勾选并同意陪诊员服务协议')
       return
     }
     
@@ -171,7 +176,7 @@ export function EscortLoginPage() {
             {/* 登录按钮 */}
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !agreedToTerms}
               className="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white 
                        font-semibold rounded-2xl shadow-lg shadow-emerald-200
                        hover:shadow-xl hover:shadow-emerald-300 hover:from-emerald-600 hover:to-teal-700
@@ -191,6 +196,24 @@ export function EscortLoginPage() {
               )}
             </button>
           </form>
+
+          <label className="mt-4 flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={agreedToTerms}
+              onChange={(e) => {
+                setAgreedToTerms(e.target.checked)
+                setError('')
+              }}
+              className="mt-1 w-4 h-4 rounded border-gray-300 text-emerald-500 focus:ring-emerald-500"
+            />
+            <span className="text-sm text-gray-500">
+              勾选即表示同意
+              <Link to="/escort-terms" className="text-emerald-600 hover:underline mx-1">
+                《陪诊员服务协议》
+              </Link>
+            </span>
+          </label>
 
           {/* 分隔线 */}
           <div className="relative my-8">
@@ -217,12 +240,6 @@ export function EscortLoginPage() {
             </Link>
           </p>
 
-          <p className="text-center mt-4 text-sm text-gray-500">
-            登录即表示您同意
-            <Link to="/escort-terms" className="text-emerald-600 hover:underline mx-1">
-              《陪诊员服务协议》
-            </Link>
-          </p>
         </div>
 
         {/* 用户入口 */}

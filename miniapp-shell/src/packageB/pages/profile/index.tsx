@@ -10,7 +10,7 @@
  */
 import { useState, useEffect, useCallback, Component, type ReactNode } from 'react'
 import { View, Text } from '@tarojs/components'
-import Taro, { useShareAppMessage, useShareTimeline } from '@tarojs/taro'
+import Taro, { useDidShow, useShareAppMessage, useShareTimeline } from '@tarojs/taro'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ProfilePage as ProfilePageComponent } from '@terminal-preview/components/pages/ProfilePage'
 import { TabBarNav } from '@terminal-preview/components'
@@ -158,6 +158,7 @@ function ProfilePageContent() {
   const [themeSettings, setThemeSettings] = useState<ThemeSettings>(defaultThemeSettings)
   // 内容就绪标记 - 使用短延迟确保组件已渲染
   const [isReady, setIsReady] = useState(false)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   // 本地 escortToken 状态
   const [localEscortToken, setLocalEscortToken] = useState<string | null>(() => {
@@ -204,6 +205,10 @@ function ProfilePageContent() {
   useShareTimeline(() => ({
     title: '科科灵陪诊',
   }))
+
+  useDidShow(() => {
+    setRefreshKey((prev) => prev + 1)
+  })
 
   /**
    * 页面导航处理
@@ -327,6 +332,7 @@ function ProfilePageContent() {
       <View className="page-container">
         <View className="page-content">
           <ProfilePageComponent
+            key={refreshKey}
             themeSettings={themeSettings}
             isDarkMode={false}
             effectiveViewerRole={effectiveViewerRole}

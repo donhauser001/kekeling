@@ -89,9 +89,9 @@ export const getStats = () => userRequest<StatsData>('/home/stats')
 
 /** 默认营销设置（API 失败时使用） */
 const DEFAULT_MARKETING_SETTINGS: MarketingSettings = {
-  membershipEnabled: true,
-  pointsEnabled: true,
-  couponsEnabled: true,
+  membershipEnabled: false,
+  pointsEnabled: false,
+  couponsEnabled: false,
   referralsEnabled: true,
   campaignsEnabled: true,
 }
@@ -149,15 +149,19 @@ export interface UserOrderItem {
   appointmentDate: string
   appointmentTime: string
   createdAt: string
+  hospitalMode?: string
+  hospitalName?: string
+  hospitalProvince?: string
+  hospitalCity?: string
   service: {
     id: string
     name: string
     coverImage?: string
   }
-  hospital: {
+  hospital?: {
     id: string
     name: string
-  }
+  } | null
   patient?: {
     id: string
     name: string
@@ -225,7 +229,12 @@ export interface UserOrderDetail {
   transactionId?: string
   appointmentDate: string
   appointmentTime: string
+  hospitalMode?: string
+  hospitalName?: string
+  hospitalProvince?: string
+  hospitalCity?: string
   departmentName?: string
+  doctorName?: string
   userRemark?: string
   createdAt: string
   updatedAt: string
@@ -1547,11 +1556,16 @@ export const devModeAutoLogin = async (): Promise<DevModeAutoLoginResponse | nul
 /** 创建订单请求参数 */
 export interface CreateOrderParams {
   serviceId: string
-  hospitalId: string
+  hospitalId?: string
+  hospitalMode?: 'catalog' | 'custom'
+  hospitalName?: string
+  province?: string
+  city?: string
   patientId?: string
   appointmentDate: string
   appointmentTime: string
   departmentName?: string
+  doctorName?: string
   remark?: string
   couponId?: string
   campaignId?: string

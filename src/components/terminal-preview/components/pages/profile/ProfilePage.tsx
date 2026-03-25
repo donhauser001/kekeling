@@ -69,13 +69,7 @@ export function ProfilePage({
   const [userProfile, setUserProfile] = useState<UserProfile | undefined>(undefined)
   const [orderStats, setOrderStats] = useState<OrderStats>({ pending: 0, confirmed: 0, inProgress: 0, completed: 0 })
   const [couponCount, setCouponCount] = useState<number>(0)
-  const [marketingSettings, setMarketingSettings] = useState<MarketingSettings>({
-    membershipEnabled: true,
-    pointsEnabled: true,
-    couponsEnabled: true,
-    referralsEnabled: true,
-    campaignsEnabled: true,
-  })
+  const [marketingSettings, setMarketingSettings] = useState<MarketingSettings | null>(null)
   const [escortWorkbenchEnabled, setEscortWorkbenchEnabled] = useState(true)
 
   // ============================================================================
@@ -143,6 +137,7 @@ export function ProfilePage({
         const featureKey = MENU_FEATURE_MAP[item.key]
         // 如果没有映射关系，说明不受营销设置控制，始终显示
         if (!featureKey) return true
+        if (!marketingSettings) return false
         // 根据营销设置决定是否显示
         return marketingSettings[featureKey] !== false
       })

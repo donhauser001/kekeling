@@ -53,6 +53,7 @@ export function EscortLoginDialog({
 }: EscortLoginDialogProps) {
   const [phone, setPhone] = useState('')
   const [code, setCode] = useState('')
+  const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isSendingCode, setIsSendingCode] = useState(false)
   const [countdown, setCountdown] = useState(0)
@@ -72,6 +73,12 @@ export function EscortLoginDialog({
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [open, onClose])
+
+  useEffect(() => {
+    if (!open) {
+      setAgreedToTerms(false)
+    }
+  }, [open])
 
   // 发送验证码
   const handleSendCode = useCallback(async () => {
@@ -122,6 +129,10 @@ export function EscortLoginDialog({
       setError('请输入验证码')
       return
     }
+    if (!agreedToTerms) {
+      setError('请先勾选并同意陪诊员服务协议')
+      return
+    }
 
     setIsLoading(true)
     setError(null)
@@ -149,12 +160,13 @@ export function EscortLoginDialog({
       onClose()
       setPhone('')
       setCode('')
+      setAgreedToTerms(false)
     } catch (err: any) {
       setError(err.message || '登录失败，请检查验证码')
     } finally {
       setIsLoading(false)
     }
-  }, [phone, code, onLoginSuccess, onClose])
+  }, [phone, code, agreedToTerms, onLoginSuccess, onClose])
 
   if (!open) return null
 
@@ -169,7 +181,7 @@ export function EscortLoginDialog({
   const closeButtonSize = 28 * wxScale
 
   // 按钮禁用状态
-  const isLoginDisabled = isLoading || !phone || !code
+  const isLoginDisabled = isLoading || !phone || !code || !agreedToTerms
   const isSendDisabled = isSendingCode || countdown > 0
 
   return (
@@ -412,27 +424,58 @@ export function EscortLoginDialog({
           </Box>
 
           {/* 底部提示（规则 10：文本块需设置 display: block） */}
-          <Text
+          <Box
             style={{
-              display: 'block',
-              fontSize: 12 * wxScale,
-              textAlign: 'center',
-              color: textSecondary,
+              display: 'flex',
+              alignItems: 'flex-start',
+              justifyContent: 'center',
+              gap: 8 * wxScale,
               marginTop: 16 * wxScale,
-              lineHeight: 1.5,
             }}
           >
-            登录即表示同意
-            <Text
-              onClick={onViewAgreement}
+            <Box
+              onClick={() => {
+                setAgreedToTerms((prev) => !prev)
+                setError(null)
+              }}
               style={{
-                color: primaryColor,
-                textDecorationLine: 'underline',
+                width: 16 * wxScale,
+                height: 16 * wxScale,
+                marginTop: 1 * wxScale,
+                borderRadius: 4 * wxScale,
+                borderWidth: 1,
+                borderStyle: 'solid',
+                borderColor: agreedToTerms ? primaryColor : borderColor,
+                backgroundColor: agreedToTerms ? primaryColor : bgColor,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
               }}
             >
-              《陪诊员服务协议》
+              {agreedToTerms ? <Icon name="check-one" size={12 * wxScale} color="#ffffff" /> : null}
+            </Box>
+            <Text
+              style={{
+                display: 'block',
+                fontSize: 12 * wxScale,
+                textAlign: 'left',
+                color: textSecondary,
+                lineHeight: 1.5,
+              }}
+            >
+              勾选即表示同意
+              <Text
+                onClick={onViewAgreement}
+                style={{
+                  color: primaryColor,
+                  textDecorationLine: 'underline',
+                }}
+              >
+                《陪诊员服务协议》
+              </Text>
             </Text>
-          </Text>
+          </Box>
         </Box>
       </Box>
     </Box>

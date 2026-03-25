@@ -1183,7 +1183,7 @@ model Order {
   userId       String  @map("user_id")
   patientId    String? @map("patient_id")
   serviceId    String  @map("service_id")
-  hospitalId   String  @map("hospital_id")
+  hospitalId   String? @map("hospital_id")
   departmentId String? @map("department_id") // 科室关联
   doctorId     String? @map("doctor_id") // 医生关联
   escortId     String? @map("escort_id")
@@ -1191,7 +1191,12 @@ model Order {
   // 预约信息
   appointmentDate     DateTime @map("appointment_date")
   appointmentTime     String   @map("appointment_time")
+  hospitalMode        String   @default("catalog") @map("hospital_mode") // catalog, custom
+  hospitalName        String?  @map("hospital_name")
+  hospitalProvince    String?  @map("hospital_province")
+  hospitalCity        String?  @map("hospital_city")
   departmentName      String?  @map("department_name") // 保留: 兼容旧数据
+  doctorName          String?  @map("doctor_name")
   appointmentAddress  String?  @map("appointment_address") // Phase1: 详细地址
   appointmentBuilding String?  @map("appointment_building") // Phase1: 楼栋/门诊号
 
@@ -1251,7 +1256,7 @@ model Order {
   user                User                 @relation(fields: [userId], references: [id])
   patient             Patient?             @relation(fields: [patientId], references: [id])
   service             Service              @relation(fields: [serviceId], references: [id])
-  hospital            Hospital             @relation(fields: [hospitalId], references: [id])
+  hospital            Hospital?            @relation(fields: [hospitalId], references: [id])
   department          Department?          @relation(fields: [departmentId], references: [id])
   doctor              Doctor?              @relation(fields: [doctorId], references: [id])
   escort              Escort?              @relation(fields: [escortId], references: [id])
