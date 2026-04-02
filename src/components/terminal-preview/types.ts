@@ -568,6 +568,8 @@ export interface DistributionInvite {
   totalInvited: number
   /** 每次邀请奖励（单位：元） */
   rewardPerInvite: number
+  /** 是否显示累计邀请和每次奖励统计 */
+  showInviteStats?: boolean
 }
 
 /**

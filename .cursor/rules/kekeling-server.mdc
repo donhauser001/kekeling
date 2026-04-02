@@ -1,0 +1,53 @@
+---
+description: 科科灵服务器、部署、生产环境操作规则。涉及服务器运维、部署上线、回滚、生产调试、PM2/Nginx/PostgreSQL/Redis 操作时自动应用。
+alwaysApply: true
+---
+
+# 科科灵 服务器与部署规则
+
+处理 Kekeling 生产环境相关任务时保持简洁、操作导向。
+
+## 核心原则
+
+- 完整的服务器信息参考 `.cursor/server-info.md`，部署/回滚/生产调试前先读取该文件
+- 操作顺序：先检查再变更，先 dry-run 再同步，只重启受影响的服务
+- 命令中的路径和进程名必须精确匹配实际配置
+
+## 服务器概要
+
+- IP: `8.130.23.38` / 域名: `kkl.top` / OS: Alibaba Cloud Linux 3
+- PM2 进程: `kekeling-api` / NestJS 端口: `3000`
+- PostgreSQL: `5432` / Redis: `6379` / Nginx: `80, 443`
+- 后端路径: `/var/www/kekeling/server/` / 前端: `/var/www/kekeling/dist/`
+
+## 部署安全规则
+
+- **绝不** 对生产使用 `rsync --delete`，除非用户明确接受风险且源目录完整
+- **绝不** 在服务器使用 `pnpm install --prod`，构建依赖 Prisma CLI 等 devDependencies
+- **绝不** 随意覆盖服务器 `.env`，它是服务器独立管理的
+- 同步排除: `node_modules`, `dist`, `uploads`, `.env`
+
+## 部署模式
+
+**后端部署**: rsync server/ → SSH install + build + pm2 restart kekeling-api
+**前端部署**: 本地 vite build → rsync dist/
+
+## 常见故障模式
+
+出现 `502` 时按此顺序检查：
+1. PM2 日志 (`pm2 logs kekeling-api --lines 50`)
+2. `.env` 完整性
+3. Prisma client 是否生成 (`npx prisma generate`)
+4. Nginx upstream 协议（当前为 `http://`）
+5. `node_modules` 是否完整
+
+## 历史事故教训
+
+- `rsync --delete` 导致全站宕机：删除了 `.env`、`node_modules`、`uploads/fonts/`
+- `pnpm install --prod` 导致 Prisma CLI 缺失 → `.prisma/client` 丢失 → 502 循环重启
+- Nginx `proxy_pass` 协议错配（HTTPS vs HTTP）导致无法代理
+
+## 小程序相关
+
+- AppID: `wx6e10ab2c3b2c8c73`
+- iconfont 资源: `https://kkl.top/uploads/fonts/iconfont.ttf`

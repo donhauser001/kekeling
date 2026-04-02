@@ -1,0 +1,79 @@
+---
+description: 科科灵小程序 UI 布局与视觉规则。修改小程序页面布局、样式、图标、文字、图片时自动应用。
+globs: miniapp-shell/**, src/components/terminal-preview/**
+alwaysApply: false
+---
+
+# 科科灵 小程序 UI 规则
+
+修改小程序布局或视觉表现前必读。
+
+## 不可妥协的规则
+
+### 1. `style` 是布局唯一来源
+
+小程序布局不能依赖 Tailwind `className`。以下属性**必须**在 `style` 中定义：
+- `display` / flex 和 grid 属性 / position 和偏移
+- width 和 height / overflow / 关键间距
+- `className` 仅作为 Web 端视觉辅助
+
+### 2. `wxScale` 仅用于视觉像素值
+
+**使用**: fontSize, padding, margin, gap, borderRadius, 固定像素 width/height, 像素 lineHeight
+**不用于**: flex, 百分比, alignment, zIndex, opacity
+**特例**: 1px 边框和分割线保持 `1`，不乘 wxScale
+
+### 3. 优先显式 loading 状态
+
+在小程序 wrapper 和敏感页面中：
+- 默认使用 `useState + useEffect`
+- 渲染 skeleton 或 loading 占位
+- 避免空默认值导致的首帧闪烁
+
+### 4. 图标系统统一 iconfont
+
+- 管理后台、预览、小程序共用同一套 iconfont
+- 共享页面用 `lucide-compat` / 小程序原生页面用 `@/components/Icon`
+- **禁止**: emoji、unicode 符号、内联 SVG、直接 `lucide-react`
+- 图标尺寸用 `size` 属性，非 `style.width/height`
+
+### 5. 文本块必须 block 级
+
+堆叠文字需设置:
+- `display: 'block'` + 明确 `lineHeight` + 明确垂直间距
+- 否则小程序 `Text` 会意外内联流动
+
+### 6. 按钮需小程序专属内距
+
+主操作按钮在小程序中通常需要比 Web 预览更大的垂直 padding。
+
+### 7. 圆形按钮不用原生 `Button`
+
+浮动返回按钮/小图标按钮：用 `Box` 或 `View`，固定宽高，`borderRadius = size / 2`，手动居中内容。
+
+### 8. 顶部安全区必须适配胶囊
+
+优先从运行时读取: `getSystemInfoSync` + `getMenuButtonBoundingClientRect`
+回退常量仅做备用。
+
+### 9. Image 必须设 `mode`
+
+- 头像/卡片/Banner: `aspectFill`
+- 文章图片需完整展示: `aspectFit`
+- 宽度驱动内容图: `widthFix`
+
+## 视觉语言
+
+- 品牌色默认橙色系: `var(--primary-color, #f97316)`
+- 状态色: 成功/在线=绿 / 警告/审核=琥珀 / 错误/异常=红 / 信息/进行中=蓝
+- 间距基线: 4px 步进，页面内距 16px，卡片圆角 12px，区块间距 20px
+- 排版基线: 正文 14px，区块标题 16-18px，页面标题 20px，强调数字 24-32px
+
+## 常见失败模式
+
+- 布局仅在 `className` 中 → 小程序无效
+- 1px 边框被 wxScale 放大 → 保持 `1`
+- 图标用 style 而非 size prop → 尺寸异常
+- 缺少 loading 状态 → 首帧闪烁
+- 安全区与胶囊/状态栏重叠
+- Image 未设 `mode` → 变形

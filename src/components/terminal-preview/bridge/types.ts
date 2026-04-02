@@ -112,38 +112,6 @@ export interface WxUploadFileResult {
 }
 
 // ============================================================================
-// 定位相关
-// ============================================================================
-
-/** 定位参数 */
-export interface WxGetLocationParams {
-  /** 坐标类型 */
-  type?: 'wgs84' | 'gcj02'
-  /** 是否返回高度信息 */
-  altitude?: boolean
-  /** 是否开启高精度定位 */
-  isHighAccuracy?: boolean
-}
-
-/** 定位结果 */
-export interface WxLocationResult {
-  /** 纬度 */
-  latitude: number
-  /** 经度 */
-  longitude: number
-  /** 速度 */
-  speed?: number
-  /** 位置的精确度 */
-  accuracy?: number
-  /** 高度 */
-  altitude?: number
-  /** 垂直精度 */
-  verticalAccuracy?: number
-  /** 水平精度 */
-  horizontalAccuracy?: number
-}
-
-// ============================================================================
 // 扫码相关
 // ============================================================================
 
@@ -245,14 +213,6 @@ export interface WxBridge {
    * 预览图片
    */
   previewImage(urls: string[], current?: string): void
-
-  // ==================== 定位 ====================
-
-  /**
-   * 获取当前位置
-   * @see https://developers.weixin.qq.com/miniprogram/dev/api/location/wx.getLocation.html
-   */
-  getLocation(params?: WxGetLocationParams): Promise<WxLocationResult>
 
   // ==================== 扫码 ====================
 

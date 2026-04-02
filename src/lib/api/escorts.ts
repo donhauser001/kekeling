@@ -12,12 +12,51 @@ export interface EscortCertificate {
   name: string
   url: string
   expireDate?: string
+  verified?: boolean
+  verifiedAt?: string
 }
 
 export interface EscortHospital {
   id: string
   name: string
+  address?: string
   familiarDepts: string[]
+}
+
+export interface EscortLevelInfo {
+  id: string
+  code: string
+  name: string
+  badge?: string | null
+  description?: string | null
+  commissionRate?: number
+  dispatchWeight?: number
+  sort?: number
+  status?: string
+}
+
+export interface EscortWalletInfo {
+  id: string
+  escortId: string
+  balance: number | string
+  frozenBalance: number | string
+  totalEarned: number | string
+  totalWithdrawn: number | string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface EscortApplicationProfile {
+  id: string
+  age?: number | null
+  hospitals?: string[]
+  departments?: string[]
+  specialties?: string | null
+  serviceAreas?: string | null
+  foreignLanguage?: string | null
+  education?: string | null
+  createdAt: string
+  reviewedAt?: string | null
 }
 
 export interface Escort {
@@ -29,25 +68,65 @@ export interface Escort {
   avatar: string | null
   idCard: string | null
   cityCode: string
-  level: 'senior' | 'intermediate' | 'junior' | 'trainee'
+  levelCode?: 'senior' | 'intermediate' | 'junior' | 'trainee' | string | null
+  level: EscortLevelInfo | 'senior' | 'intermediate' | 'junior' | 'trainee' | string | null
   experience: string | null
   introduction: string | null
   tags: string[]
   certificates: EscortCertificate[]
   foreignLanguage: string | null
   education: string | null
+  serviceRadius?: number
+  serviceHours?: string | Record<string, Array<{ start: string; end: string }>> | null
+  maxDailyOrders?: number
+  currentDailyOrders?: number
+  emergencyContact?: string | null
+  emergencyPhone?: string | null
+  healthCertExpiry?: string | null
+  lastHealthCheck?: string | null
+  lastLatitude?: number | null
+  lastLongitude?: number | null
+  lastLocationAt?: string | null
   rating: number
+  ratingCount?: number
   orderCount: number
   status: 'pending' | 'active' | 'inactive' | 'suspended'
   workStatus: 'resting' | 'working' | 'busy'
+  lastActiveAt?: string | null
+  inactiveReason?: string | null
+  reviewedAt?: string | null
+  reviewedBy?: string | null
+  reviewNote?: string | null
+  distributionLevel?: number
+  inviteCode?: string | null
+  parentId?: string | null
+  ancestorPath?: string | null
+  teamSize?: number
+  totalTeamSize?: number
+  promotedAt?: string | null
+  promotionAppliedAt?: string | null
+  originalParentId?: string | null
+  parentChangedAt?: string | null
+  parentChangeReason?: string | null
+  distributionActive?: boolean
+  totalOrders?: number
+  totalDistributionAmount?: number | string
   hospitals: EscortHospital[]
+  wallet?: EscortWalletInfo | null
+  application?: EscortApplicationProfile | null
+  _count?: {
+    orders: number
+    reviews: number
+  }
   user?: {
     id: string
     nickname: string | null
     avatar: string | null
+    phone?: string | null
   }
   createdAt: string
   updatedAt: string
+  deletedAt?: string | null
 }
 
 export interface EscortQuery {
@@ -255,7 +334,7 @@ export interface CreateEscortLevelData {
   status?: string
 }
 
-export interface UpdateEscortLevelData extends Partial<CreateEscortLevelData> { }
+export type UpdateEscortLevelData = Partial<CreateEscortLevelData>
 
 export const escortLevelApi = {
   // 获取列表

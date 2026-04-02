@@ -107,6 +107,7 @@ export const previewApi = {
   // 医院/科室/医生
   getHospitals: userApi.getHospitals,
   getHospital: userApi.getHospital,
+  getDepartments: userApi.getDepartments,
   getHospitalDepartments: userApi.getHospitalDepartments,
   getHospitalDoctors: userApi.getHospitalDoctors,
   getDoctor: userApi.getDoctor,

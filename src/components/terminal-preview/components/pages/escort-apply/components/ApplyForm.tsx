@@ -105,26 +105,22 @@ export function ApplyForm({
       .catch((error) => {
         console.warn('[ApplyForm] 获取医院列表失败:', error)
       })
-  }, [])
 
-  useEffect(() => {
-    if (selectedHospitalIds.length === 0) {
-      setDepartmentOptions([])
-      setSelectedDepartments([])
-      setFormData((prev) => ({ ...prev, departments: customDepartmentValues }))
-      return
-    }
-
-    Promise.all(selectedHospitalIds.map((hospitalId) => previewApi.getHospitalDepartments(hospitalId)))
-      .then((results) => {
-        const names = Array.from(new Set(results.flatMap((departments) => flattenDepartmentNames(departments))))
+    previewApi.getDepartments({ pageSize: 500, status: 'active' })
+      .then((result) => {
+        const names = Array.from(
+          new Set(
+            (result?.data || [])
+              .map((item) => item.name?.trim())
+              .filter(Boolean)
+          )
+        )
         setDepartmentOptions(names)
-        setSelectedDepartments((prev) => prev.filter((item) => names.includes(item)))
       })
       .catch((error) => {
         console.warn('[ApplyForm] 获取科室列表失败:', error)
       })
-  }, [selectedHospitalIds])
+  }, [])
 
   useEffect(() => {
     setFormData((prev) => ({ ...prev, hospitals: [...selectedHospitalNames, ...customHospitalValues] }))
@@ -768,6 +764,7 @@ export function ApplyForm({
       <MultiSelectModal
         open={showHospitalPicker}
         title="选择服务医院"
+        searchPlaceholder="搜索医院名称"
         options={hospitalOptions.map((item) => ({ value: item.id, label: item.name }))}
         selectedValues={selectedHospitalIds}
         useCustom={useCustomHospitals}
@@ -791,12 +788,13 @@ export function ApplyForm({
       <MultiSelectModal
         open={showDepartmentPicker}
         title="选择擅长科室"
+        searchPlaceholder="搜索科室名称"
         options={departmentOptions.map((item) => ({ value: item, label: item }))}
         selectedValues={selectedDepartments}
         useCustom={useCustomDepartments}
         customValue={customDepartmentInput}
         customPlaceholder="请输入其他科室，多个用顿号分隔"
-        emptyText={selectedHospitalIds.length === 0 ? '请先选择服务医院' : '暂无可选科室'}
+        emptyText="暂无可选科室"
         onClose={() => setShowDepartmentPicker(false)}
         onToggleValue={(value) => {
           setSelectedDepartments((prev) => (
@@ -825,15 +823,6 @@ export function ApplyForm({
       />
     </Box>
   )
-}
-
-function flattenDepartmentNames(
-  departments: Array<{ name: string; children?: Array<{ name: string; children?: any[] }> }>
-): string[] {
-  return departments.flatMap((department) => [
-    department.name,
-    ...(department.children ? flattenDepartmentNames(department.children) : []),
-  ]).filter(Boolean)
 }
 
 function SelectorField({
@@ -882,6 +871,7 @@ function SelectorField({
 function MultiSelectModal({
   open,
   title,
+  searchPlaceholder = '搜索',
   options,
   selectedValues,
   useCustom,
@@ -895,6 +885,7 @@ function MultiSelectModal({
 }: {
   open: boolean
   title: string
+  searchPlaceholder?: string
   options: Array<{ value: string; label: string }>
   selectedValues: string[]
   useCustom: boolean
@@ -906,6 +897,20 @@ function MultiSelectModal({
   onToggleCustom: (checked: boolean) => void
   onCustomValueChange: (value: string) => void
 }) {
+  const [keyword, setKeyword] = useState('')
+
+  useEffect(() => {
+    if (!open) {
+      setKeyword('')
+    }
+  }, [open])
+
+  const filteredOptions = useMemo(() => {
+    const normalizedKeyword = keyword.trim().toLowerCase()
+    if (!normalizedKeyword) return options
+    return options.filter((option) => option.label.toLowerCase().includes(normalizedKeyword))
+  }, [keyword, options])
+
   if (!open) return null
 
   return (
@@ -939,8 +944,31 @@ function MultiSelectModal({
           </Button>
         </Box>
 
+        <Box
+          style={{
+            paddingLeft: 12 * wxScale,
+            paddingRight: 12 * wxScale,
+            marginBottom: 12 * wxScale,
+            borderRadius: 10 * wxScale,
+            backgroundColor: '#f3f4f6',
+          }}
+        >
+          <Input
+            value={keyword}
+            onChange={setKeyword}
+            placeholder={searchPlaceholder}
+            style={{
+              width: '100%',
+              height: 40 * wxScale,
+              fontSize: 14 * wxScale,
+              color: '#111827',
+              backgroundColor: 'transparent',
+            }}
+          />
+        </Box>
+
         <Box style={{ display: 'flex', flexDirection: 'column', gap: 10 * wxScale, maxHeight: '52vh', overflowY: 'auto' }}>
-          {options.length > 0 ? options.map((option) => {
+          {filteredOptions.length > 0 ? filteredOptions.map((option) => {
             const checked = selectedValues.includes(option.value)
             return (
               <Button

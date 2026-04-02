@@ -614,6 +614,20 @@ export interface Department {
   children?: Department[]
 }
 
+export interface DepartmentListItem {
+  id: string
+  name: string
+  parentId?: string | null
+  hospital?: {
+    id: string
+    name: string
+  } | null
+  parent?: {
+    id: string
+    name: string
+  } | null
+}
+
 /** 医生类型 */
 export interface Doctor {
   id: string
@@ -687,6 +701,29 @@ export const getHospitalDepartments = async (hospitalId: string): Promise<Depart
   } catch (error) {
     console.warn('[previewApi.getHospitalDepartments] 获取科室失败:', error)
     return []
+  }
+}
+
+/** 获取全量科室列表（不关联医院筛选） */
+export const getDepartments = async (params?: {
+  keyword?: string
+  page?: number
+  pageSize?: number
+  status?: string
+}): Promise<{ data: DepartmentListItem[]; total: number; page: number; pageSize: number }> => {
+  try {
+    const searchParams = new URLSearchParams()
+    if (params?.keyword) searchParams.append('keyword', params.keyword)
+    if (params?.status) searchParams.append('status', params.status)
+    if (params?.page) searchParams.append('page', String(params.page))
+    if (params?.pageSize) searchParams.append('pageSize', String(params.pageSize))
+    const query = searchParams.toString()
+    return await userRequest<{ data: DepartmentListItem[]; total: number; page: number; pageSize: number }>(
+      `/departments${query ? `?${query}` : ''}`
+    )
+  } catch (error) {
+    console.warn('[previewApi.getDepartments] 获取科室列表失败:', error)
+    return { data: [], total: 0, page: 1, pageSize: params?.pageSize || 100 }
   }
 }
 

@@ -296,6 +296,72 @@ export function DistributionInvitePage({
 
       {/* 内容区 */}
       <Box style={{ padding: 16 * wxScale }}>
+        {inviteData.showInviteStats !== false && (
+          <Box
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: 12 * wxScale,
+              marginBottom: 16 * wxScale,
+            }}
+          >
+            <Box
+              style={{
+                padding: 16 * wxScale,
+                borderRadius: 12 * wxScale,
+                backgroundColor: cardBg,
+              }}
+            >
+              <Text
+                style={{
+                  display: 'block',
+                  fontSize: 12 * wxScale,
+                  color: textSecondary,
+                  marginBottom: 8 * wxScale,
+                }}
+              >
+                累计邀请
+              </Text>
+              <Text
+                style={{
+                  fontSize: 22 * wxScale,
+                  fontWeight: 600,
+                  color: textPrimary,
+                }}
+              >
+                {inviteData.totalInvited}
+              </Text>
+            </Box>
+            <Box
+              style={{
+                padding: 16 * wxScale,
+                borderRadius: 12 * wxScale,
+                backgroundColor: cardBg,
+              }}
+            >
+              <Text
+                style={{
+                  display: 'block',
+                  fontSize: 12 * wxScale,
+                  color: textSecondary,
+                  marginBottom: 8 * wxScale,
+                }}
+              >
+                每次奖励
+              </Text>
+              <Text
+                style={{
+                  fontSize: 22 * wxScale,
+                  fontWeight: 600,
+                  color: textPrimary,
+                }}
+              >
+                {inviteData.rewardPerInvite}元
+              </Text>
+            </Box>
+          </Box>
+        )}
+
         {/* 邀请码 */}
         <Box
           style={{

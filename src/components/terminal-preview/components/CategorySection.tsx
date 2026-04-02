@@ -2,11 +2,9 @@
  * 服务分类区域组件
  */
 
-import { useRef, useState } from 'react'
 import type { ServiceCategory, ThemeSettings } from '../types'
-import { extractBaseColor } from '../utils'
-import { isBrowserEnvironment, isWxEnvironment } from '../platform/env'
-import { Box, ScrollView, Text, Icon } from '../ui/primitives'
+import { isWxEnvironment } from '../platform/env'
+import { Box, Text, Icon } from '../ui/primitives'
 import { getIconName } from '../icons'
 
 // 小程序环境的缩放比例
@@ -20,19 +18,15 @@ interface CategorySectionProps {
   onCategoryClick?: (categoryId: string) => void
 }
 
-// 隐藏滚动条的样式
-const hideScrollbarStyle = `
-  .category-scroll::-webkit-scrollbar {
-    display: none;
+function chunkIntoRows<T>(items: T[], size: number): T[][] {
+  const rows: T[][] = []
+  for (let i = 0; i < items.length; i += size) {
+    rows.push(items.slice(i, i + size))
   }
-  .category-scroll {
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-  }
-`
+  return rows
+}
 
-// 置顶分类卡片
-function PinnedCategoryCard({
+function CategoryCard({
   category,
   index,
   primaryColor,
@@ -96,57 +90,6 @@ function PinnedCategoryCard({
   )
 }
 
-// 非置顶分类标签
-function CategoryTag({
-  category,
-  primaryColor,
-  isDarkMode = false,
-  onClick,
-}: {
-  category: ServiceCategory
-  primaryColor: string
-  isDarkMode?: boolean
-  onClick?: () => void
-}) {
-  const baseColor = extractBaseColor(category.color, primaryColor)
-
-  return (
-    <Box
-      className='cursor-pointer transition-all active:scale-[0.98]'
-      style={{
-        display: 'flex',
-        flexShrink: 0,
-        alignItems: 'center',
-        gap: 6 * wxScale,
-        borderRadius: 20,
-        paddingLeft: 12 * wxScale,
-        paddingRight: 12 * wxScale,
-        paddingTop: 8 * wxScale,
-        paddingBottom: 8 * wxScale,
-        backgroundColor: isDarkMode ? '#3a3a3a' : '#f3f4f6',
-      }}
-      onClick={onClick}
-    >
-      <Box
-        style={{
-          display: 'flex',
-          width: 20 * wxScale,
-          height: 20 * wxScale,
-          alignItems: 'center',
-          justifyContent: 'center',
-          borderRadius: 8,
-          backgroundColor: `${baseColor}15`,
-        }}
-      >
-        <Icon name={getIconName(category.icon || category.name || '')} size={12 * wxScale} color={baseColor} />
-      </Box>
-      <Text style={{ fontSize: 13 * wxScale, fontWeight: 500, color: isDarkMode ? '#e5e7eb' : '#374151' }}>
-        {category.name}
-      </Text>
-    </Box>
-  )
-}
-
 // 占位分类（无数据时显示）
 function PlaceholderCategories({
   primaryColor,
@@ -155,132 +98,82 @@ function PlaceholderCategories({
   primaryColor: string
   isDarkMode?: boolean
 }) {
-  const isWeb = isBrowserEnvironment()
   const cardBg = isDarkMode ? '#2a2a2a' : '#ffffff'
-  const tagBg = isDarkMode ? '#3a3a3a' : '#f3f4f6'
   const descColor = isDarkMode ? '#6b7280' : '#9ca3af'
-  const textColor = isDarkMode ? '#e5e7eb' : '#374151'
+  const placeholderCategories = [
+    { name: '陪诊服务', description: '专业陪诊全程服务', color: primaryColor, icon: 'stethoscope' },
+    { name: '代办服务', description: '快捷代办省时省心', color: '#22c55e', icon: 'truck' },
+    { name: '全程陪诊', description: '就医流程贴心陪护', color: primaryColor, icon: 'stethoscope' },
+    { name: '代办挂号', description: '快速协助预约挂号', color: '#f59e0b', icon: 'calendar' },
+    { name: '代取报告', description: '报告资料安心代取', color: '#3b82f6', icon: 'file-text' },
+    { name: '代办病历', description: '病历整理高效省心', color: '#8b5cf6', icon: 'folder' },
+  ]
+  const placeholderRows = chunkIntoRows(placeholderCategories, 2)
 
   return (
-    <>
-      {/* 占位置顶分类 */}
-      <Box style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
+    <Box>
+      {placeholderRows.map((row, rowIndex) => (
         <Box
+          key={`placeholder-row-${rowIndex}`}
           style={{
             display: 'flex',
-            flex: 1,
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 12,
-            borderRadius: 16,
-            paddingLeft: 12,
-            paddingRight: 12,
-            paddingTop: 20,
-            paddingBottom: 20,
-            backgroundColor: cardBg,
+            marginBottom: rowIndex === placeholderRows.length - 1 ? 0 : 10 * wxScale,
           }}
         >
-          <Box style={{ flex: 1 }}>
-            <Box style={{ marginBottom: 6 }}>
-              {/* #20: 增大分类标题字号 18 -> 22 */}
-              <Text style={{ fontSize: 22, fontWeight: 600, color: primaryColor }}>陪诊服务</Text>
-            </Box>
-            <Text style={{ fontSize: 13, color: descColor }}>专业陪诊全程服务</Text>
-          </Box>
-          <Box
-            style={{
-              display: 'flex',
-              width: 36,
-              height: 36,
-              flexShrink: 0,
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: 12,
-              backgroundColor: `${primaryColor}15`,
-            }}
-          >
-            <Icon name={getIconName('stethoscope')} size={18} color={primaryColor} />
-          </Box>
-        </Box>
-        <Box
-          style={{
-            display: 'flex',
-            flex: 1,
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 12,
-            borderRadius: 16,
-            paddingLeft: 12,
-            paddingRight: 12,
-            paddingTop: 20,
-            paddingBottom: 20,
-            backgroundColor: cardBg,
-          }}
-        >
-          <Box style={{ flex: 1 }}>
-            <Box style={{ marginBottom: 6 }}>
-              {/* #20: 增大分类标题字号 18 -> 22 */}
-              <Text style={{ fontSize: 22, fontWeight: 600, color: '#22c55e' }}>代办服务</Text>
-            </Box>
-            <Text style={{ fontSize: 13, color: descColor }}>快捷代办省时省心</Text>
-          </Box>
-          <Box
-            style={{
-              display: 'flex',
-              width: 36,
-              height: 36,
-              flexShrink: 0,
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: 12,
-              backgroundColor: 'rgba(34, 197, 94, 0.1)',
-            }}
-          >
-            <Icon name={getIconName('truck')} size={18} color="#22c55e" />
-          </Box>
-        </Box>
-      </Box>
-      {/* 占位非置顶分类 */}
-      <Box style={{ borderRadius: 16, padding: 12, backgroundColor: cardBg }}>
-        {isWeb ? <style>{hideScrollbarStyle}</style> : null}
-        <ScrollView scrollX style={{ whiteSpace: 'nowrap' }}>
-          <Box style={{ display: 'inline-flex', flexDirection: 'row', gap: 10 }}>
-            {['全程陪诊', '代办挂号', '代取报告', '代办病历'].map((name, i) => (
+          {row.map((category, columnIndex) => (
+            <Box
+              key={category.name}
+              style={{
+                display: 'flex',
+                flex: 1,
+                minWidth: 0,
+                marginRight: columnIndex === 0 && row.length > 1 ? 10 * wxScale : 0,
+              }}
+            >
               <Box
-                key={i}
                 style={{
                   display: 'flex',
-                  flexShrink: 0,
+                  flex: 1,
                   alignItems: 'center',
-                  gap: 6,
-                  borderRadius: 20,
-                  paddingLeft: 12,
-                  paddingRight: 12,
-                  paddingTop: 8,
-                  paddingBottom: 8,
-                  backgroundColor: tagBg,
+                  justifyContent: 'space-between',
+                  gap: 12 * wxScale,
+                  borderRadius: 16,
+                  paddingLeft: 12 * wxScale,
+                  paddingRight: 12 * wxScale,
+                  paddingTop: 20 * wxScale,
+                  paddingBottom: 20 * wxScale,
+                  backgroundColor: cardBg,
                 }}
               >
+                <Box style={{ flex: 1, minWidth: 0 }}>
+                  <Box style={{ marginBottom: 6 * wxScale }}>
+                    <Text style={{ fontSize: 22 * wxScale, fontWeight: 600, color: category.color }}>
+                      {category.name}
+                    </Text>
+                  </Box>
+                  <Text style={{ fontSize: 13 * wxScale, color: descColor }}>{category.description}</Text>
+                </Box>
                 <Box
                   style={{
                     display: 'flex',
-                    width: 20,
-                    height: 20,
+                    width: 36 * wxScale,
+                    height: 36 * wxScale,
+                    flexShrink: 0,
                     alignItems: 'center',
                     justifyContent: 'center',
-                    borderRadius: 8,
-                    backgroundColor: `${primaryColor}15`,
+                    borderRadius: 12,
+                    backgroundColor: `${category.color}15`,
                   }}
                 >
-                  <Icon name={getIconName(name)} size={12} color={primaryColor} />
+                  <Icon name={getIconName(category.icon)} size={18 * wxScale} color={category.color} />
                 </Box>
-                <Text style={{ fontSize: 13, fontWeight: 500, color: textColor }}>{name}</Text>
               </Box>
-            ))}
-          </Box>
-        </ScrollView>
-      </Box>
-    </>
+            </Box>
+          ))}
+          {row.length === 1 ? <Box style={{ flex: 1 }} /> : null}
+        </Box>
+      ))}
+    </Box>
   )
 }
 
@@ -290,45 +183,19 @@ export function CategorySection({
   isDarkMode = false,
   onCategoryClick,
 }: CategorySectionProps) {
-  const isWeb = isBrowserEnvironment()
   // 置顶分类
   const pinnedCategories = categories.filter((c) => c.isPinned).slice(0, 2)
   // 非置顶分类
   const otherCategories = categories.filter((c) => !c.isPinned)
-
-  // 横向触控拖动
-  const scrollRef = useRef<HTMLDivElement>(null)
-  const [isDragging, setIsDragging] = useState(false)
-  const [startX, setStartX] = useState(0)
-  const [scrollLeft, setScrollLeft] = useState(0)
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (!scrollRef.current) return
-    setIsDragging(true)
-    setStartX(e.pageX - scrollRef.current.offsetLeft)
-    setScrollLeft(scrollRef.current.scrollLeft)
-  }
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging || !scrollRef.current) return
-    e.preventDefault()
-    const x = e.pageX - scrollRef.current.offsetLeft
-    const walk = (x - startX) * 1.5
-    scrollRef.current.scrollLeft = scrollLeft - walk
-  }
-
-  const handleMouseUp = () => setIsDragging(false)
-  const handleMouseLeave = () => setIsDragging(false)
+  const otherCategoryRows = chunkIntoRows(otherCategories, 2)
 
   return (
     <Box style={{ position: 'relative', zIndex: 10, paddingLeft: 12 * wxScale, paddingRight: 12 * wxScale, paddingTop: 12 * wxScale, paddingBottom: 12 * wxScale }}>
-      {isWeb ? <style>{hideScrollbarStyle}</style> : null}
-
       {/* 置顶分类 - 左右两个大卡片 */}
       {pinnedCategories.length > 0 && (
         <Box style={{ display: 'flex', gap: 10 * wxScale, marginBottom: 12 * wxScale }}>
           {pinnedCategories.map((category, index) => (
-            <PinnedCategoryCard
+            <CategoryCard
               key={category.id}
               category={category}
               index={index}
@@ -340,50 +207,39 @@ export function CategorySection({
         </Box>
       )}
 
-      {/* 非置顶分类 - 横向滚动标签 */}
+      {/* 非置顶分类 - 同样的大卡片布局，置顶项仍单独显示在最上方 */}
       {otherCategories.length > 0 && (
-        <Box
-          style={{
-            borderRadius: 16,
-            padding: 10 * wxScale,
-            backgroundColor: isDarkMode ? '#2a2a2a' : '#ffffff',
-          }}
-        >
-          {isWeb ? (
+        <Box>
+          {otherCategoryRows.map((row, rowIndex) => (
             <Box
-              ref={scrollRef}
-              className='category-scroll'
-              style={{ display: 'flex', gap: 8 * wxScale, overflowX: 'auto' }}
-              onMouseDown={handleMouseDown}
-              onMouseMove={handleMouseMove}
-              onMouseUp={handleMouseUp}
-              onMouseLeave={handleMouseLeave}
+              key={`other-row-${rowIndex}`}
+              style={{
+                display: 'flex',
+                marginBottom: rowIndex === otherCategoryRows.length - 1 ? 0 : 10 * wxScale,
+              }}
             >
-              {otherCategories.map((category) => (
-                <CategoryTag
+              {row.map((category, columnIndex) => (
+                <Box
                   key={category.id}
-                  category={category}
-                  primaryColor={themeSettings.primaryColor}
-                  isDarkMode={isDarkMode}
-                  onClick={() => onCategoryClick?.(category.id)}
-                />
-              ))}
-            </Box>
-          ) : (
-            <ScrollView scrollX style={{ whiteSpace: 'nowrap' }}>
-              <Box style={{ display: 'inline-flex', flexDirection: 'row', gap: 8 * wxScale }}>
-                {otherCategories.map((category) => (
-                  <CategoryTag
-                    key={category.id}
+                  style={{
+                    display: 'flex',
+                    flex: 1,
+                    minWidth: 0,
+                    marginRight: columnIndex === 0 && row.length > 1 ? 10 * wxScale : 0,
+                  }}
+                >
+                  <CategoryCard
                     category={category}
+                    index={otherCategories.indexOf(category) + pinnedCategories.length}
                     primaryColor={themeSettings.primaryColor}
                     isDarkMode={isDarkMode}
                     onClick={() => onCategoryClick?.(category.id)}
                   />
-                ))}
-              </Box>
-            </ScrollView>
-          )}
+                </Box>
+              ))}
+              {row.length === 1 ? <Box style={{ flex: 1 }} /> : null}
+            </Box>
+          ))}
         </Box>
       )}
 

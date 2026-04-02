@@ -23,6 +23,7 @@ interface InviteData {
   qrCodeUrl?: string
   totalInvited: number
   rewardPerInvite: number
+  showInviteStats?: boolean
   inviteRules?: string[]
 }
 

@@ -374,6 +374,7 @@ export class AdminDistributionController {
         l2CommissionRate: 3,
         l3CommissionRate: 1,
         directInviteBonus: 50,
+        showInviteStats: true,
         l2PromotionConfig: {
           minOrders: 50,
           minRating: 4.5,
@@ -394,6 +395,7 @@ export class AdminDistributionController {
     return {
       ...config,
       directInviteBonus: Number(config.directInviteBonus),
+      showInviteStats: config.showInviteStats,
       maxMonthlyDistribution: config.maxMonthlyDistribution
         ? Number(config.maxMonthlyDistribution)
         : null,
@@ -418,6 +420,7 @@ export class AdminDistributionController {
           l2CommissionRate: body.l2CommissionRate,
           l3CommissionRate: body.l3CommissionRate,
           directInviteBonus: body.directInviteBonus,
+          showInviteStats: body.showInviteStats,
           l2PromotionConfig: body.l2PromotionConfig,
           l1PromotionConfig: body.l1PromotionConfig,
           maxMonthlyDistribution: body.maxMonthlyDistribution,
@@ -427,10 +430,11 @@ export class AdminDistributionController {
       // 创建新配置
       return this.prisma.distributionConfig.create({
         data: {
-          l1CommissionRate: body.l1CommissionRate || 2,
-          l2CommissionRate: body.l2CommissionRate || 3,
-          l3CommissionRate: body.l3CommissionRate || 1,
-          directInviteBonus: body.directInviteBonus || 50,
+          l1CommissionRate: body.l1CommissionRate ?? 2,
+          l2CommissionRate: body.l2CommissionRate ?? 3,
+          l3CommissionRate: body.l3CommissionRate ?? 1,
+          directInviteBonus: body.directInviteBonus ?? 50,
+          showInviteStats: body.showInviteStats ?? true,
           l2PromotionConfig: body.l2PromotionConfig || {
             minOrders: 50,
             minRating: 4.5,

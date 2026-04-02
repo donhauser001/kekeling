@@ -1,0 +1,102 @@
+---
+description: 科科灵小程序架构、页面模式与构建规则。在 miniapp-shell/ 或 terminal-preview 相关文件中工作时自动应用。
+globs: miniapp-shell/**, src/components/terminal-preview/**
+alwaysApply: false
+---
+
+# 科科灵 小程序架构规则
+
+小程序不是独立前端，而是 WeChat 宿主 + Taro 页面 Wrapper + 共享 terminal-preview 页面。
+
+## 技术栈
+
+- 宿主: `miniapp-shell/` / 框架: Taro 4 + React 18
+- 共享页面: `src/components/terminal-preview/`
+- 构建: `pnpm miniapp:build` 或 `cd miniapp-shell && pnpm build:weapp`
+
+## 项目结构
+
+```
+miniapp-shell/
+├── src/app.tsx                  # 启动、bridge注入、主题预加载、iconfont加载
+├── src/app.config.ts            # pages + subPackages + preloadRule
+├── src/runtime/                 # 运行时桥接和环境注入
+├── src/components/TerminalPreviewLite.tsx  # 轻量首页
+├── src/packageA/                # 服务流程
+├── src/packageB/                # 用户流程
+├── src/packageC/                # 陪诊员流程
+└── src/packageE/                # 分销流程
+```
+
+## 核心设计原则
+
+- 优先复用共享页面 → 添加小程序 wrapper → 仅在必要时注入原生能力
+- **不要** 为小程序分叉独立 UI 流程（除非用户明确接受）
+- 业务逻辑保留在共享 terminal-preview 页面中
+- WeChat 原生能力隔离在 runtime 或 wrapper 边界代码中
+
+## Wrapper 页面标准模式
+
+1. Wrapper 位于 `miniapp-shell/src/package*/pages/...`
+2. 导入共享页面 `@terminal-preview/components/pages/...`
+3. Wrapper 获取主题设置或最小启动数据
+4. Wrapper 注入: `themeSettings`, `isDarkMode={false}`, `onBack`, `onNavigate`
+5. 仅在边界处使用 `Taro.navigateTo` / `redirectTo` / `reLaunch`
+
+## 路由与分包
+
+| 分包 | 用途 |
+|------|------|
+| 主包 | `pages/main/index` (仅首页) |
+| packageA | 服务、服务详情、创建订单、搜索 |
+| packageB | 个人、就诊人、订单、反馈、帮助、客服、活动、评价 |
+| packageC | 工作台、订单池、收益、提现、设置、资料编辑 |
+| packageE | 分销中心和记录 |
+
+规则：
+- 新页面必须在正确分包中声明路由
+- 使用明确分包路径跳转（如 `/packageB/pages/patients/index`）
+- 主包保持精简，高频入口放在主包或预加载路径
+
+## 页面注册完整性
+
+共享 terminal-preview 页面需要:
+- `PreviewPage` 中的 page key
+- `PAGE_METADATA` 中的元数据
+- `PreviewPageParamsMap` 中的参数类型
+- `terminal-preview/index.tsx` 中的 switch 渲染
+- 至少一个可达的导航入口
+
+Wrapper 页面还需要:
+- `app.config.ts` 中声明路由
+- 正确分包中的路径
+- 导航映射指向真实包路径
+
+## 当前例外（已知但不要扩散）
+
+- `miniapp-shell/src/api/request.ts` 直接使用 `Taro.request`
+- `miniapp-shell/src/api/auth.ts` 直接使用 `Taro.login`
+- Wrapper 页面普遍直接使用 `Taro.navigateTo` 等
+- 如需新宿主能力 → 优先走 runtime 抽象；如触及已有直接调用 → 局部修改不做借机重写
+
+## 大文件拆分规则
+
+超过以下阈值时先拆分再改：
+- 500+ 行 / 3+ 个弹窗选择器 / 2+ 数据交互流程 / 1+ 可复用大段
+- 目标结构: `index.tsx` + `types.ts` + `hooks.ts` + `components/`
+
+## 构建与包大小
+
+- 主包保持精简，首页有意做轻量化
+- 出现 `80051` 错误时先检查分包策略，再调 DevTools 设置
+- 清理构建: `pnpm miniapp:build:clean`
+
+## 实现检查清单
+
+- [ ] 变更在 shell/wrapper 职责内（除非确实需要修改共享页面）
+- [ ] 复用了共享业务逻辑而非重复实现
+- [ ] 新路由在正确分包中声明
+- [ ] 导航路径指向真实配置页面
+- [ ] 布局关键样式在 `style` 中（非仅 `className`）
+- [ ] 图标使用 iconfont 组件和 `size` 属性
+- [ ] 异步数据有 loading/skeleton 状态

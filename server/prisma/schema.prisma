@@ -816,6 +816,7 @@ model DistributionConfig {
 
   // 直推奖励（新陪诊员首单）
   directInviteBonus Decimal @default(50) @map("direct_invite_bonus") @db.Decimal(10, 2)
+  showInviteStats  Boolean @default(true) @map("show_invite_stats")
 
   // 晋升条件配置 - 保留兼容旧数据
   l2PromotionConfig Json? @map("l2_promotion_config")

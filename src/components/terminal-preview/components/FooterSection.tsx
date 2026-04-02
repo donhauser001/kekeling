@@ -9,7 +9,7 @@
  * - 第三行：客服热线
  */
 
-import { Box, Text, Image } from '../ui/primitives'
+import { Box, Text, Image, Icon } from '../ui/primitives'
 import type { ThemeSettings, FooterVisiblePage } from '../types'
 import { getResourceUrl } from '../utils'
 import { isWxEnvironment } from '../platform/env'
@@ -137,7 +137,7 @@ export function FooterSection({ themeSettings, isDarkMode, currentPage = 'home' 
               marginTop: 4 * wxScale,
             }}
           >
-            <Text style={{ fontSize: 12 * wxScale, color: textColor }}>📞</Text>
+            <Icon name="phone-telephone" size={12 * wxScale} color={textColor} />
             <Text style={{ fontSize: 12 * wxScale, color: textColor }}>
               客服热线：{servicePhone}
             </Text>

@@ -539,10 +539,38 @@ export interface EscortListItem {
   status: 'available' | 'offline'
 }
 
+/** 陪诊员关联医院 */
+export interface EscortHospital {
+  id: string
+  name: string
+  address?: string
+  familiarDepts?: string[]
+  isPrimary?: boolean
+}
+
+/** 陪诊员评价 */
+export interface EscortReview {
+  id: string
+  rating: number
+  content?: string
+  tags?: string[]
+  isAnonymous?: boolean
+  createdAt: string
+}
+
 /** 陪诊员详情 */
 export interface EscortDetail extends EscortListItem {
   bio?: string
+  phone?: string
+  gender?: string
+  introduction?: string
   experience: number
+  orderCount?: number
+  ratingCount?: number
+  workStatus?: string
+  certificates?: Array<{ name: string; url?: string; verified?: boolean }>
+  hospitals?: EscortHospital[]
+  recentReviews?: EscortReview[]
   serviceAreas?: string[]
 }
 

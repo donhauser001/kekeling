@@ -78,6 +78,7 @@ function MyOrderDetailPageContent() {
         orderId={orderId}
         themeSettings={themeSettings}
         isDarkMode={false}
+        effectiveViewerRole='escort'
         onBack={handleBack}
         onNavigate={handleNavigate}
       />
@@ -92,4 +93,3 @@ export default function MyOrderDetailPage() {
     </QueryClientProvider>
   )
 }
-

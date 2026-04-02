@@ -105,6 +105,66 @@ const orderStatusConfig: Record<string, { label: string; color: string }> = {
   refunded: { label: '已退款', color: 'text-red-600 bg-red-50' },
 }
 
+const weekdayMap: Record<string, string> = {
+  mon: '周一',
+  tue: '周二',
+  wed: '周三',
+  thu: '周四',
+  fri: '周五',
+  sat: '周六',
+  sun: '周日',
+}
+
+function formatDateTime(value?: string | null, fallback = '未记录') {
+  if (!value) return fallback
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return fallback
+  return date.toLocaleString()
+}
+
+function formatDate(value?: string | null, fallback = '未记录') {
+  if (!value) return fallback
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return fallback
+  return date.toLocaleDateString()
+}
+
+function formatServiceHours(
+  value?: string | Record<string, Array<{ start: string; end: string }>> | null
+) {
+  if (!value) return []
+
+  let parsed: Record<string, Array<{ start: string; end: string }>>
+  if (typeof value === 'string') {
+    try {
+      parsed = JSON.parse(value) as Record<string, Array<{ start: string; end: string }>>
+    } catch {
+      return []
+    }
+  } else {
+    parsed = value
+  }
+
+  return Object.entries(parsed)
+    .filter(([, slots]) => Array.isArray(slots) && slots.length > 0)
+    .map(([day, slots]) => ({
+      day: weekdayMap[day] || day,
+      text: slots.map((slot) => `${slot.start}-${slot.end}`).join('、'),
+    }))
+}
+
+function formatLocation(lat?: number | null, lng?: number | null) {
+  if (lat == null || lng == null) return '未记录'
+  return `${lat.toFixed(6)}, ${lng.toFixed(6)}`
+}
+
+function formatMoney(value: number | string | null | undefined, fallback = '0.00') {
+  if (value == null || value === '') return fallback
+  const amount = typeof value === 'number' ? value : Number(value)
+  if (Number.isNaN(amount)) return fallback
+  return amount.toFixed(2)
+}
+
 export function EscortDetail() {
   const { escortId } = useParams({ from: '/_authenticated/escorts/$escortId' })
   const navigate = useNavigate()
@@ -137,7 +197,7 @@ export function EscortDetail() {
 
   // 获取接单记录
   const { data: ordersData, isLoading: ordersLoading } = useQuery({
-    queryKey: ['escort-orders', escortId, orderPage],
+    queryKey: ['escort-orders', escortId, orderPage, orderPageSize],
     queryFn: () => orderApi.getList({ escortId, page: orderPage, pageSize: orderPageSize }),
     enabled: !!escort,
   })
@@ -148,7 +208,7 @@ export function EscortDetail() {
 
   // 获取钱包流水（收入明细）
   const { data: incomeData, isLoading: incomeLoading } = useQuery({
-    queryKey: ['escort-wallet-transactions', escortId, incomePage],
+    queryKey: ['escort-wallet-transactions', escortId, incomePage, incomePageSize],
     queryFn: () => escortApi.getWalletTransactions(escortId, {
       page: incomePage,
       pageSize: incomePageSize,
@@ -162,7 +222,7 @@ export function EscortDetail() {
 
   // 获取提现记录
   const { data: withdrawalData, isLoading: withdrawalLoading } = useQuery({
-    queryKey: ['escort-withdrawals', escortId, withdrawalPage],
+    queryKey: ['escort-withdrawals', escortId, escort?.phone, withdrawalPage, withdrawalPageSize],
     queryFn: () => withdrawalApi.getList({
       keyword: escort?.phone, // 通过手机号搜索
       page: withdrawalPage,
@@ -253,6 +313,10 @@ export function EscortDetail() {
   const levelInfo = levelConfig[escortLevel.code] || { label: '未知', color: 'bg-gray-400' }
   const statusInfo = statusConfig[escort.status] || { label: '未知', color: '' }
   const workStatusInfo = workStatusConfig[escort.workStatus] || { label: '未知', color: '' }
+  const serviceHours = formatServiceHours(escort.serviceHours)
+  const reviewCount = escort.ratingCount ?? escort._count?.reviews ?? 0
+  const professionalDepartments = escort.application?.departments || []
+  const professionalHospitals = escort.application?.hospitals || []
 
   // 分销等级信息
   const distLevelConfig = distributionInfo
@@ -406,10 +470,10 @@ export function EscortDetail() {
           {/* 基础信息 Tab */}
           <TabsContent value="basic" className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
-              {/* 个人信息 */}
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base">个人信息</CardTitle>
+                  <CardDescription>基础身份、联系方式与账号绑定状态</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="flex justify-between">
@@ -425,6 +489,22 @@ export function EscortDetail() {
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">手机号</span>
                     <span>{escort.phone}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between gap-4">
+                    <span className="text-muted-foreground">绑定用户</span>
+                    <span className="text-right">
+                      {escort.user
+                        ? `${escort.user.nickname || '未命名用户'}${escort.user.phone ? ` / ${escort.user.phone}` : ''}`
+                        : '未绑定'}
+                    </span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">用户 ID</span>
+                    <span className="max-w-[220px] truncate text-right font-mono text-xs">
+                      {escort.userId || '未绑定'}
+                    </span>
                   </div>
                   <Separator />
                   <div className="flex justify-between">
@@ -446,13 +526,28 @@ export function EscortDetail() {
                     <span className="text-muted-foreground">外语能力</span>
                     <span>{escort.foreignLanguage || '未填写'}</span>
                   </div>
+                  <Separator />
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">创建时间</span>
+                    <span>{formatDateTime(escort.createdAt)}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">最近活跃</span>
+                    <span>{formatDateTime(escort.lastActiveAt)}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">最后更新</span>
+                    <span>{formatDateTime(escort.updatedAt)}</span>
+                  </div>
                 </CardContent>
               </Card>
 
-              {/* 工作信息 */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">工作信息</CardTitle>
+                  <CardTitle className="text-base">服务与履约</CardTitle>
+                  <CardDescription>服务能力、接单配置与核心统计</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="flex justify-between">
@@ -476,7 +571,7 @@ export function EscortDetail() {
                     <span className="text-muted-foreground">服务评分</span>
                     <span className="flex items-center gap-1">
                       <Star className="h-4 w-4 text-yellow-500" />
-                      {escort.rating.toFixed(1)}
+                      {escort.rating.toFixed(1)} / {reviewCount} 条评价
                     </span>
                   </div>
                   <Separator />
@@ -484,10 +579,44 @@ export function EscortDetail() {
                     <span className="text-muted-foreground">完成订单</span>
                     <span>{escort.orderCount} 单</span>
                   </div>
+                  <Separator />
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">累计订单</span>
+                    <span>{escort.totalOrders ?? escort.orderCount} 单</span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">服务半径</span>
+                    <span>{escort.serviceRadius ?? 0} km</span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">每日接单上限</span>
+                    <span>{escort.maxDailyOrders ?? 0} 单</span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">今日已接单</span>
+                    <span>{escort.currentDailyOrders ?? 0} 单</span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">从业经验</span>
+                    <span>{escort.experience || '未填写'}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between gap-4">
+                    <span className="text-muted-foreground">最近定位</span>
+                    <span className="text-right">{formatLocation(escort.lastLatitude, escort.lastLongitude)}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">定位更新时间</span>
+                    <span>{formatDateTime(escort.lastLocationAt)}</span>
+                  </div>
                 </CardContent>
               </Card>
 
-              {/* 标签 */}
               {escort.tags && escort.tags.length > 0 && (
                 <Card>
                   <CardHeader>
@@ -505,24 +634,180 @@ export function EscortDetail() {
                 </Card>
               )}
 
-              {/* 熟悉的医院 */}
               {escort.hospitals && escort.hospitals.length > 0 && (
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-base">熟悉的医院</CardTitle>
+                    <CardDescription>医院及熟悉科室信息</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {escort.hospitals.map((hospital) => (
-                        <div key={hospital.id} className="flex items-center gap-2">
-                          <Building2 className="h-4 w-4 text-muted-foreground" />
-                          <span>{hospital.name}</span>
+                        <div key={hospital.id} className="rounded-lg border p-3">
+                          <div className="flex items-center gap-2">
+                            <Building2 className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium">{hospital.name}</span>
+                          </div>
+                          {hospital.address && (
+                            <p className="mt-1 text-sm text-muted-foreground">{hospital.address}</p>
+                          )}
+                          <p className="mt-2 text-sm text-muted-foreground">
+                            熟悉科室：{hospital.familiarDepts?.length ? hospital.familiarDepts.join('、') : '未填写'}
+                          </p>
                         </div>
                       ))}
                     </div>
                   </CardContent>
                 </Card>
               )}
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">排班与服务时段</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {serviceHours.length > 0 ? (
+                    <div className="space-y-3">
+                      {serviceHours.map((item) => (
+                        <div key={item.day} className="flex items-start justify-between gap-4">
+                          <span className="text-muted-foreground">{item.day}</span>
+                          <span className="text-right">{item.text}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">暂未配置服务时段</p>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">健康与紧急联系人</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">紧急联系人</span>
+                    <span>{escort.emergencyContact || '未填写'}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">紧急联系电话</span>
+                    <span>{escort.emergencyPhone || '未填写'}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">健康证到期</span>
+                    <span>{formatDate(escort.healthCertExpiry)}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">最近体检时间</span>
+                    <span>{formatDate(escort.lastHealthCheck)}</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">专业信息</CardTitle>
+                  <CardDescription>来自陪诊员申请档案的专业能力信息</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">申请年龄</span>
+                    <span>{escort.application?.age ?? '未填写'}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between gap-4">
+                    <span className="text-muted-foreground">服务医院</span>
+                    <span className="text-right">
+                      {professionalHospitals.length > 0 ? professionalHospitals.join('、') : '未填写'}
+                    </span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between gap-4">
+                    <span className="text-muted-foreground">擅长科室</span>
+                    <span className="text-right">
+                      {professionalDepartments.length > 0 ? professionalDepartments.join('、') : '未填写'}
+                    </span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between gap-4">
+                    <span className="text-muted-foreground">擅长病种</span>
+                    <span className="text-right">{escort.application?.specialties || '未填写'}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between gap-4">
+                    <span className="text-muted-foreground">服务领域</span>
+                    <span className="text-right">{escort.application?.serviceAreas || '未填写'}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">申请档案创建时间</span>
+                    <span>{formatDateTime(escort.application?.createdAt)}</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">资质证书</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {escort.certificates && escort.certificates.length > 0 ? (
+                    <div className="space-y-3">
+                      {escort.certificates.map((certificate, index) => (
+                        <div key={`${certificate.name}-${index}`} className="rounded-lg border p-3">
+                          <div className="flex items-center justify-between gap-3">
+                            <div>
+                              <p className="font-medium">{certificate.name}</p>
+                              <p className="text-sm text-muted-foreground">
+                                到期时间：{formatDate(certificate.expireDate ?? null, '未填写')}
+                              </p>
+                            </div>
+                            <Badge variant={certificate.verified ? 'default' : 'secondary'}>
+                              {certificate.verified ? '已核验' : '未核验'}
+                            </Badge>
+                          </div>
+                          <p className="mt-2 break-all text-xs text-muted-foreground">
+                            {certificate.url}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">暂无证书信息</p>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">审核与状态记录</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">审核时间</span>
+                    <span>{formatDateTime(escort.reviewedAt)}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">审核人</span>
+                    <span>{escort.reviewedBy || '未记录'}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between gap-4">
+                    <span className="text-muted-foreground">审核备注</span>
+                    <span className="text-right">{escort.reviewNote || '无'}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between gap-4">
+                    <span className="text-muted-foreground">停用/暂停原因</span>
+                    <span className="text-right">{escort.inactiveReason || '无'}</span>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
 
@@ -701,7 +986,7 @@ export function EscortDetail() {
                         <div>
                           <p className="text-sm text-muted-foreground">累计分润</p>
                           <p className="font-semibold text-green-600">
-                            ¥{distributionInfo?.wallet?.totalEarned?.toFixed(2) || '0.00'}
+                            ¥{formatMoney(escort.totalDistributionAmount ?? distributionInfo?.wallet?.totalEarned ?? 0)}
                           </p>
                         </div>
                       </div>
@@ -825,7 +1110,7 @@ export function EscortDetail() {
                     <div>
                       <p className="text-sm text-muted-foreground">可用余额</p>
                       <p className="font-semibold text-green-600">
-                        ¥{distributionInfo?.wallet?.balance?.toFixed(2) || '0.00'}
+                        ¥{formatMoney(escort.wallet?.balance)}
                       </p>
                     </div>
                   </div>
@@ -840,7 +1125,7 @@ export function EscortDetail() {
                     <div>
                       <p className="text-sm text-muted-foreground">累计收入</p>
                       <p className="font-semibold">
-                        ¥{distributionInfo?.wallet?.totalEarned?.toFixed(2) || '0.00'}
+                        ¥{formatMoney(escort.wallet?.totalEarned)}
                       </p>
                     </div>
                   </div>
@@ -855,7 +1140,7 @@ export function EscortDetail() {
                     <div>
                       <p className="text-sm text-muted-foreground">冻结金额</p>
                       <p className="font-semibold">
-                        ¥0.00
+                        ¥{formatMoney(escort.wallet?.frozenBalance)}
                       </p>
                     </div>
                   </div>
@@ -870,10 +1155,12 @@ export function EscortDetail() {
                     <div>
                       <p className="text-sm text-muted-foreground">已提现</p>
                       <p className="font-semibold">
-                        ¥{withdrawalData?.data
-                          ?.filter((w: Withdrawal) => w.status === 'completed')
-                          .reduce((sum: number, w: Withdrawal) => sum + w.actualAmount, 0)
-                          .toFixed(2) || '0.00'}
+                        ¥{formatMoney(escort.wallet?.totalWithdrawn)
+                          || withdrawalData?.data
+                            ?.filter((w: Withdrawal) => w.status === 'completed')
+                            .reduce((sum: number, w: Withdrawal) => sum + w.actualAmount, 0)
+                            .toFixed(2)
+                          || '0.00'}
                       </p>
                     </div>
                   </div>

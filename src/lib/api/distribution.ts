@@ -77,6 +77,7 @@ export interface DistributionConfig {
   l2CommissionRate: number
   l3CommissionRate: number
   directInviteBonus: number
+  showInviteStats: boolean
   l2PromotionConfig: {
     minOrders: number
     minRating: number
@@ -101,6 +102,7 @@ export interface UpdateDistributionConfigData {
   l2CommissionRate?: number
   l3CommissionRate?: number
   directInviteBonus?: number
+  showInviteStats?: boolean
   l2PromotionConfig?: {
     minOrders?: number
     minRating?: number

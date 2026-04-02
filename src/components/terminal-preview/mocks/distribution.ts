@@ -247,6 +247,7 @@ export function getMockDistributionInvite(): DistributionInvite {
     qrCodeUrl: 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=DIST2024ABC',
     totalInvited: 28,
     rewardPerInvite: 50,
+    showInviteStats: true,
   }
 }
 
@@ -325,4 +326,3 @@ export function getMockDistributionPromotionZeroProgress(): DistributionPromotio
     },
   }
 }
-

@@ -218,24 +218,6 @@ export interface WxUploadFileResult {
   statusCode: number
 }
 
-/** 定位参数 */
-export interface WxGetLocationParams {
-  type?: 'wgs84' | 'gcj02'
-  altitude?: boolean
-  isHighAccuracy?: boolean
-}
-
-/** 定位结果 */
-export interface WxLocationResult {
-  latitude: number
-  longitude: number
-  speed?: number
-  accuracy?: number
-  altitude?: number
-  verticalAccuracy?: number
-  horizontalAccuracy?: number
-}
-
 /** 扫码参数 */
 export interface WxScanCodeParams {
   onlyFromCamera?: boolean
@@ -290,7 +272,6 @@ export interface WxBridge {
   chooseImage(params?: WxChooseImageParams): Promise<WxChooseImageResult>
   uploadFile(params: WxUploadFileParams): Promise<WxUploadFileResult>
   previewImage(urls: string[], current?: string): void
-  getLocation(params?: WxGetLocationParams): Promise<WxLocationResult>
   scanCode(params?: WxScanCodeParams): Promise<WxScanCodeResult>
   storage: WxStorage
   navigateTo(url: string): void
@@ -478,33 +459,6 @@ export const realWxBridge: WxBridge = {
     wx.previewImage({
       urls,
       current: current || urls[0],
-    })
-  },
-
-  // ==================== 定位 ====================
-
-  /**
-   * 获取当前地理位置
-   *
-   * @wx-api wx.getLocation
-   * @see https://developers.weixin.qq.com/miniprogram/dev/api/location/wx.getLocation.html
-   *
-   * 注意：需要在 app.json 中声明 permission.scope.userLocation
-   *
-   * @param params 定位参数
-   * @returns 位置信息（经纬度等）
-   * @throws BridgeError 定位失败或用户拒绝授权时抛出
-   */
-  async getLocation(params?: WxGetLocationParams): Promise<WxLocationResult> {
-    return new Promise((resolve, reject) => {
-      // @ts-expect-error wx 在小程序环境中存在
-      wx.getLocation({
-        type: params?.type || 'gcj02',
-        altitude: params?.altitude,
-        isHighAccuracy: params?.isHighAccuracy,
-        success: (res: WxLocationResult) => resolve(res),
-        fail: (err: WxError) => reject(parseWxError(err, '获取位置失败')),
-      })
     })
   },
 

@@ -27,7 +27,9 @@ const queryClient = new QueryClient({
 
 const PAGE_ROUTE_MAP: Record<string, string> = {
   'my-order-detail': '/packageC/pages/my-order-detail/index',
+  'workbench-my-order-detail': '/packageC/pages/my-order-detail/index',
   'order-detail': '/packageC/pages/order-detail/index',
+  'workbench-order-detail': '/packageC/pages/order-detail/index',
   'workbench': '/packageC/pages/workbench/index',
 }
 

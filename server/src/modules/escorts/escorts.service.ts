@@ -118,6 +118,7 @@ export class EscortsService {
       id: escort.id,
       name: escort.name,
       avatar: escort.avatar,
+      phone: escort.phone,
       gender: escort.gender,
       level: escort.level,
       experience: escort.experience,

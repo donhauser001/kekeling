@@ -18,8 +18,6 @@ import type {
   WxChooseImageResult,
   WxUploadFileParams,
   WxUploadFileResult,
-  WxGetLocationParams,
-  WxLocationResult,
   WxScanCodeParams,
   WxScanCodeResult,
   WxStorage,
@@ -239,50 +237,6 @@ export const mockWxBridge: WxBridge = {
     }
   },
 
-  // ==================== 定位 ====================
-
-  async getLocation(params?: WxGetLocationParams): Promise<WxLocationResult> {
-    console.log('[mockWxBridge] 模拟获取定位', params)
-
-    // 使用浏览器 Geolocation API
-    return new Promise((resolve) => {
-      if (!navigator.geolocation) {
-        // 返回默认位置（北京）
-        resolve({
-          latitude: 39.9042,
-          longitude: 116.4074,
-          accuracy: 100,
-        })
-        return
-      }
-
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          resolve({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-            accuracy: position.coords.accuracy,
-            altitude: position.coords.altitude ?? undefined,
-            speed: position.coords.speed ?? undefined,
-          })
-        },
-        (error) => {
-          console.warn('[mockWxBridge] 定位失败:', error)
-          // 返回默认位置
-          resolve({
-            latitude: 39.9042,
-            longitude: 116.4074,
-            accuracy: 100,
-          })
-        },
-        {
-          enableHighAccuracy: params?.isHighAccuracy || false,
-          timeout: 10000,
-        }
-      )
-    })
-  },
-
   // ==================== 扫码 ====================
 
   async scanCode(params?: WxScanCodeParams): Promise<WxScanCodeResult> {
@@ -466,18 +420,6 @@ export const realWxBridge: WxBridge = {
     wx!.previewImage({
       urls,
       current: current || urls[0],
-    })
-  },
-
-  async getLocation(params?: WxGetLocationParams): Promise<WxLocationResult> {
-    return new Promise((resolve, reject) => {
-      wx!.getLocation({
-        type: params?.type || 'gcj02',
-        altitude: params?.altitude,
-        isHighAccuracy: params?.isHighAccuracy,
-        success: (res: WxLocationResult) => resolve(res),
-        fail: (err: Error) => reject(err),
-      })
     })
   },
 

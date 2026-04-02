@@ -104,6 +104,9 @@ const TAB_TO_SUBPACKAGE: Record<string, string> = {
   profile: '/packageB/pages/profile/index',
 }
 
+// 首页搜索框临时隐藏，保留组件和跳转逻辑，后续可直接恢复
+const SHOW_HOME_SEARCH_BAR = false
+
 // ============================================================================
 // 主组件
 // ============================================================================
@@ -363,7 +366,13 @@ export function TerminalPreviewLite({
         </Box>
 
         {/* 搜索框 */}
-        <SearchBar isDarkMode={isDarkMode} themeSettings={themeSettings} onSearchClick={handleSearchClick} />
+        {SHOW_HOME_SEARCH_BAR ? (
+          <SearchBar
+            isDarkMode={isDarkMode}
+            themeSettings={themeSettings}
+            onSearchClick={handleSearchClick}
+          />
+        ) : null}
 
         {/* 服务分类区域 */}
         <CategorySection

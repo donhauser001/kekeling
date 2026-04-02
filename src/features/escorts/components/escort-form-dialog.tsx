@@ -121,7 +121,7 @@ export function EscortFormDialog({
         phone: escort.phone,
         idCard: escort.idCard || '',
         cityCode: escort.cityCode,
-        level: escort.level,
+        level: typeof escort.level === 'string' ? escort.level : escort.level?.code || 'trainee',
         experience: escort.experience || '',
         introduction: escort.introduction || '',
         foreignLanguage: escort.foreignLanguage || '',
@@ -214,8 +214,8 @@ export function EscortFormDialog({
         toast.success('创建成功')
       }
       onSuccess()
-    } catch (err: any) {
-      toast.error(err.message || '操作失败')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '操作失败')
     }
   }
 
@@ -503,4 +503,3 @@ export function EscortFormDialog({
     </Dialog>
   )
 }
-

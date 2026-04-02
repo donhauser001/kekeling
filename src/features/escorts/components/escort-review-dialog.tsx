@@ -17,6 +17,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 import { useReviewEscort } from '@/hooks/use-api'
 import type { Escort } from '@/lib/api'
+import { normalizeLevel } from '@/lib/utils'
 
 interface EscortReviewDialogProps {
   open: boolean
@@ -51,8 +52,8 @@ export function EscortReviewDialog({
       toast.success(action === 'approve' ? '审核通过' : '已拒绝申请')
       setNote('')
       onSuccess()
-    } catch (err: any) {
-      toast.error(err.message || '操作失败')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '操作失败')
     }
   }
 
@@ -62,6 +63,7 @@ export function EscortReviewDialog({
     junior: '初级',
     trainee: '实习',
   }
+  const escortLevel = escort ? normalizeLevel(escort.level) : null
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -84,7 +86,9 @@ export function EscortReviewDialog({
               <div>
                 <div className='flex items-center gap-2'>
                   <span className='text-lg font-semibold'>{escort.name}</span>
-                  <Badge variant='secondary'>{levelLabels[escort.level] || escort.level}</Badge>
+                  <Badge variant='secondary'>
+                    {escortLevel ? levelLabels[escortLevel.code] || escortLevel.name : '未知'}
+                  </Badge>
                 </div>
                 <div className='text-muted-foreground text-sm'>{escort.phone}</div>
                 <div className='text-muted-foreground text-xs'>

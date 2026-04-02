@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -31,24 +31,25 @@ import { distributionApi } from '@/lib/api'
 
 const configSchema = z.object({
   // 各等级分润比例
-  l1CommissionRate: z.number().min(0).max(100),
-  l2CommissionRate: z.number().min(0).max(100),
-  l3CommissionRate: z.number().min(0).max(100),
+  l1CommissionRate: z.coerce.number().min(0).max(100),
+  l2CommissionRate: z.coerce.number().min(0).max(100),
+  l3CommissionRate: z.coerce.number().min(0).max(100),
   // 直推奖励和上限
-  directInviteBonus: z.number().min(0),
-  maxMonthlyDistribution: z.number().min(0).nullable(),
+  directInviteBonus: z.coerce.number().min(0),
+  showInviteStats: z.boolean(),
+  maxMonthlyDistribution: z.coerce.number().min(0).nullable(),
   // L2 晋升条件（L3 → L2）
   l2PromotionConfig: z.object({
-    minOrders: z.number().min(0),
-    minRating: z.number().min(0).max(5),
-    minDirectInvites: z.number().min(0),
-    minActiveMonths: z.number().min(0),
+    minOrders: z.coerce.number().min(0),
+    minRating: z.coerce.number().min(0).max(5),
+    minDirectInvites: z.coerce.number().min(0),
+    minActiveMonths: z.coerce.number().min(0),
   }),
   // L1 晋升条件（L2 → L1）
   l1PromotionConfig: z.object({
-    minTeamSize: z.number().min(0),
-    minTeamMonthlyOrders: z.number().min(0),
-    minPersonalMonthlyOrders: z.number().min(0),
+    minTeamSize: z.coerce.number().min(0),
+    minTeamMonthlyOrders: z.coerce.number().min(0),
+    minPersonalMonthlyOrders: z.coerce.number().min(0),
     requireTraining: z.boolean(),
     byInvitation: z.boolean(),
   }),
@@ -63,6 +64,7 @@ interface ConfigDialogProps {
 
 export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
   const queryClient = useQueryClient()
+  const [activeTab, setActiveTab] = useState('commission')
 
   const { data: config, isLoading } = useQuery({
     queryKey: ['distribution-config'],
@@ -77,6 +79,7 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
       l2CommissionRate: 3,
       l3CommissionRate: 1,
       directInviteBonus: 50,
+      showInviteStats: true,
       maxMonthlyDistribution: null,
       l2PromotionConfig: {
         minOrders: 50,
@@ -95,12 +98,19 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
   })
 
   useEffect(() => {
+    if (!open) {
+      setActiveTab('commission')
+    }
+  }, [open])
+
+  useEffect(() => {
     if (config) {
       form.reset({
-        l1CommissionRate: config.l1CommissionRate,
-        l2CommissionRate: config.l2CommissionRate,
-        l3CommissionRate: config.l3CommissionRate,
-        directInviteBonus: config.directInviteBonus,
+        l1CommissionRate: Number(config.l1CommissionRate ?? 2),
+        l2CommissionRate: Number(config.l2CommissionRate ?? 3),
+        l3CommissionRate: Number(config.l3CommissionRate ?? 1),
+        directInviteBonus: Number(config.directInviteBonus ?? 50),
+        showInviteStats: config.showInviteStats ?? true,
         maxMonthlyDistribution: config.maxMonthlyDistribution,
         l2PromotionConfig: config.l2PromotionConfig || {
           minOrders: 50,
@@ -135,6 +145,40 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
     updateMutation.mutate(data)
   }
 
+  const onInvalid = () => {
+    const errorFields = Object.keys(form.formState.errors)
+    const fieldPaths = Object.keys(form.formState.errors).flatMap((key) => {
+      if (key === 'l2PromotionConfig') {
+        return Object.keys(form.formState.errors.l2PromotionConfig || {}).map(
+          (childKey) => `l2PromotionConfig.${childKey}`
+        )
+      }
+      if (key === 'l1PromotionConfig') {
+        return Object.keys(form.formState.errors.l1PromotionConfig || {}).map(
+          (childKey) => `l1PromotionConfig.${childKey}`
+        )
+      }
+      return [key]
+    })
+    const firstErrorField = fieldPaths[0]
+
+    if (errorFields.includes('l2PromotionConfig')) {
+      setActiveTab('l2-promotion')
+    } else if (errorFields.includes('l1PromotionConfig')) {
+      setActiveTab('l1-promotion')
+    } else {
+      setActiveTab('commission')
+    }
+
+    toast.error('请先修正表单中的配置项')
+
+    if (firstErrorField) {
+      window.requestAnimationFrame(() => {
+        form.setFocus(firstErrorField as keyof ConfigFormValues)
+      })
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -149,8 +193,8 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
           </div>
         ) : (
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <Tabs defaultValue="commission" className="w-full">
+            <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="space-y-4">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="grid w-full grid-cols-3">
                   <TabsTrigger value="commission">分润设置</TabsTrigger>
                   <TabsTrigger value="l2-promotion">团队长晋升</TabsTrigger>
@@ -252,6 +296,26 @@ export function ConfigDialog({ open, onOpenChange }: ConfigDialogProps) {
                             </FormControl>
                             <FormDescription>邀请新成员完成首单后发放</FormDescription>
                             <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="showInviteStats"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 md:col-span-2">
+                            <div className="space-y-1">
+                              <FormLabel>显示邀请统计</FormLabel>
+                              <FormDescription>
+                                关闭后，小程序邀请好友页隐藏累计邀请和每次奖励
+                              </FormDescription>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
                           </FormItem>
                         )}
                       />

@@ -28,7 +28,7 @@ export interface InviteData {
   qrCodeUrl?: string
   totalInvited: number
   rewardPerInvite: number
+  showInviteStats?: boolean
   /** 邀请规则（从后端配置获取） */
   inviteRules?: string[]
 }
-

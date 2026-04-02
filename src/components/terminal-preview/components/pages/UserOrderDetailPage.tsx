@@ -446,6 +446,10 @@ export function UserOrderDetailPage({
     }
   }
 
+  const handleContactService = () => {
+    onNavigate?.('customer-service', { orderId: order.id, source: 'user-order-detail' })
+  }
+
   return (
     <Box
       style={{
@@ -799,6 +803,13 @@ export function UserOrderDetailPage({
 
         {/* 操作按钮 */}
         <Box style={{ display: 'flex', alignItems: 'center', gap: 8 * wxScale }}>
+          <ActionButton
+            label="联系客服"
+            borderColor={borderColor}
+            textColor={textSecondary}
+            onClick={handleContactService}
+          />
+
           {order.status === 'pending' && (
             <>
               {!order.hasPatientInfo && (
@@ -910,7 +921,6 @@ export function UserOrderDetailPage({
                 textColor={textSecondary}
                 onClick={() => onNavigate?.('order-complaint', { id: order.id })}
               />
-              <ActionButton label="联系客服" borderColor={borderColor} textColor={textSecondary} />
             </>
           )}
           {order.status === 'completed' && (
@@ -921,7 +931,12 @@ export function UserOrderDetailPage({
                 textColor={textSecondary}
                 onClick={() => onNavigate?.('order-complaint', { id: order.id })}
               />
-              <ActionButton label="再次预约" borderColor={borderColor} textColor={textSecondary} />
+              <ActionButton
+                label="联系客服"
+                borderColor={borderColor}
+                textColor={textSecondary}
+                onClick={handleContactService}
+              />
               <ActionButton label="去评价" backgroundColor={primaryColor} textColor="#fff" />
             </>
           )}

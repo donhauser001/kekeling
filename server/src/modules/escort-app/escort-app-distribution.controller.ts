@@ -307,6 +307,7 @@ export class EscortAppDistributionController {
       where: { status: 'active' },
     });
     const rewardPerInvite = config ? Number(config.directInviteBonus) : 50;
+    const showInviteStats = config ? config.showInviteStats : true;
 
     // 小程序页面路径（用于微信分享和二维码）
     const miniappPath = `packageB/pages/escort-apply/index`;
@@ -334,6 +335,7 @@ export class EscortAppDistributionController {
       qrCodeUrl,
       totalInvited,
       rewardPerInvite,
+      showInviteStats,
       inviteRules,
     };
   }
@@ -589,6 +591,5 @@ export class EscortAppDistributionController {
     return requirements;
   }
 }
-
 
 

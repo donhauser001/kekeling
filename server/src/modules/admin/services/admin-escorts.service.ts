@@ -112,7 +112,10 @@ export class AdminEscortsService {
             select: { balance: true, totalEarned: true },
           },
         },
-        orderBy: [{ rating: 'desc' }, { orderCount: 'desc' }],
+        orderBy: [
+          { createdAt: 'desc' },
+          { id: 'desc' },
+        ],
         skip: (page - 1) * pageSize,
         take: pageSize,
       }),
@@ -149,6 +152,20 @@ export class AdminEscortsService {
         },
         level: true, // 包含等级信息
         wallet: true, // 包含钱包信息
+        application: {
+          select: {
+            id: true,
+            age: true,
+            hospitals: true,
+            departments: true,
+            specialties: true,
+            serviceAreas: true,
+            foreignLanguage: true,
+            education: true,
+            createdAt: true,
+            reviewedAt: true,
+          },
+        },
         _count: {
           select: { orders: true, reviews: true },
         },
@@ -200,7 +217,10 @@ export class AdminEscortsService {
           include: { hospital: { select: { id: true, name: true } } },
         },
       },
-      orderBy: [{ rating: 'desc' }, { orderCount: 'desc' }],
+      orderBy: [
+        { createdAt: 'desc' },
+        { id: 'desc' },
+      ],
     });
 
     return data.map((escort) => ({

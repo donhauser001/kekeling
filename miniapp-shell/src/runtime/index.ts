@@ -38,8 +38,6 @@ export type {
     WxChooseImageResult,
     WxUploadFileParams,
     WxUploadFileResult,
-    WxGetLocationParams,
-    WxLocationResult,
     WxScanCodeParams,
     WxScanCodeResult,
     WxStorage,
