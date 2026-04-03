@@ -628,6 +628,14 @@ export interface DepartmentListItem {
   } | null
 }
 
+export interface DepartmentTemplateListItem {
+  id: string
+  name: string
+  category: string
+  parentId?: string | null
+  status?: string
+}
+
 /** 医生类型 */
 export interface Doctor {
   id: string
@@ -724,6 +732,29 @@ export const getDepartments = async (params?: {
   } catch (error) {
     console.warn('[previewApi.getDepartments] 获取科室列表失败:', error)
     return { data: [], total: 0, page: 1, pageSize: params?.pageSize || 100 }
+  }
+}
+
+/** 获取云端科室库模板（平铺） */
+export const getDepartmentTemplatesFlat = async (params?: {
+  category?: string
+  keyword?: string
+  page?: number
+  pageSize?: number
+}): Promise<{ data: DepartmentTemplateListItem[]; total: number; page: number; pageSize: number }> => {
+  try {
+    const searchParams = new URLSearchParams()
+    if (params?.category) searchParams.append('category', params.category)
+    if (params?.keyword) searchParams.append('keyword', params.keyword)
+    if (params?.page) searchParams.append('page', String(params.page))
+    if (params?.pageSize) searchParams.append('pageSize', String(params.pageSize))
+    const query = searchParams.toString()
+    return await userRequest<{ data: DepartmentTemplateListItem[]; total: number; page: number; pageSize: number }>(
+      `/department-templates/flat${query ? `?${query}` : ''}`
+    )
+  } catch (error) {
+    console.warn('[previewApi.getDepartmentTemplatesFlat] 获取云端科室库失败:', error)
+    return { data: [], total: 0, page: 1, pageSize: params?.pageSize || 500 }
   }
 }
 

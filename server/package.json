@@ -24,7 +24,8 @@
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
     "db:upsert:escort-terms": "ts-node prisma/scripts/upsert-escort-terms-page.ts",
-    "db:upsert:terms": "ts-node prisma/scripts/upsert-terms-page.ts"
+    "db:upsert:terms": "ts-node prisma/scripts/upsert-terms-page.ts",
+    "db:upsert:department-templates": "ts-node prisma/scripts/upsert-department-templates-from-json.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",

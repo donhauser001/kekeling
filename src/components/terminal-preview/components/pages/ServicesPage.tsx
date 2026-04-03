@@ -45,6 +45,8 @@ interface ServicesPageProps {
   initialCategory?: string
   /** 初始搜索关键词（从搜索结果跳转时传入） */
   initialKeyword?: string
+  /** 是否显示顶部搜索组件 */
+  showTopSearch?: boolean
 }
 
 // 排序选项配置（纯文字，无图标）
@@ -65,6 +67,7 @@ export function ServicesPage({
   effectiveViewerRole = 'user',
   initialCategory,
   initialKeyword = '',
+  showTopSearch = true,
 }: ServicesPageProps) {
   // 调试日志
   console.log('[ServicesPage] 组件渲染, 初始分类:', initialCategory)
@@ -231,50 +234,55 @@ export function ServicesPage({
   const textSecondary = isDarkMode ? '#9ca3af' : '#6b7280'
   const textMuted = isDarkMode ? '#6b7280' : '#9ca3af'
   const borderColor = isDarkMode ? '#3a3a3a' : '#e5e7eb'
+  const miniTopReserved = isWxEnvironment() ? 88 * wxScale : 0
+  const stickyTopOffset = showTopSearch ? 0 : miniTopReserved
 
   return (
     <Box
       style={{
         minHeight: '100%',
         paddingBottom: 56 * wxScale,
+        paddingTop: showTopSearch ? 0 : miniTopReserved,
         backgroundColor: bgColor,
       }}
     >
       {/* 搜索框（顶部留出小程序胶囊按钮空间） */}
-      <Box
-        style={{
-          marginLeft: 16 * wxScale,
-          marginRight: 16 * wxScale,
-          marginTop: 88 * wxScale, // 状态栏(44) + 胶囊按钮高度(32) + 间距(12)
-          marginBottom: 12 * wxScale,
-        }}
-      >
-        <Button
-          onClick={onSearchClick}
+      {showTopSearch && (
+        <Box
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            borderRadius: 22 * wxScale,
-            paddingLeft: 12 * wxScale,
-            paddingRight: 16 * wxScale,
-            paddingTop: 10 * wxScale,
-            paddingBottom: 10 * wxScale,
-            backgroundColor: isDarkMode ? '#2a2a2a' : '#f3f4f6',
+            marginLeft: 16 * wxScale,
+            marginRight: 16 * wxScale,
+            marginTop: 88 * wxScale, // 状态栏(44) + 胶囊按钮高度(32) + 间距(12)
+            marginBottom: 12 * wxScale,
           }}
         >
-          <Search size={16 * wxScale} color={textMuted} />
-          <Text
-            style={{ 
-              flex: 1,
-              marginLeft: 8 * wxScale,
-              fontSize: 14 * wxScale, 
-              color: isSearchMode ? textPrimary : textMuted,
+          <Button
+            onClick={onSearchClick}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              borderRadius: 22 * wxScale,
+              paddingLeft: 12 * wxScale,
+              paddingRight: 16 * wxScale,
+              paddingTop: 10 * wxScale,
+              paddingBottom: 10 * wxScale,
+              backgroundColor: isDarkMode ? '#2a2a2a' : '#f3f4f6',
             }}
           >
-            {isSearchMode ? searchKeyword : '搜索服务、医院、医生'}
-          </Text>
-        </Button>
-      </Box>
+            <Search size={16 * wxScale} color={textMuted} />
+            <Text
+              style={{ 
+                flex: 1,
+                marginLeft: 8 * wxScale,
+                fontSize: 14 * wxScale, 
+                color: isSearchMode ? textPrimary : textMuted,
+              }}
+            >
+              {isSearchMode ? searchKeyword : '搜索服务、医院、医生'}
+            </Text>
+          </Button>
+        </Box>
+      )}
 
       {/* 轮播图区域 */}
       {!isSearchMode && bannerData?.enabled && bannerData.items && bannerData.items.length > 0 && (
@@ -308,7 +316,7 @@ export function ServicesPage({
           className='services-category-scroll'
           style={{
             position: 'sticky',
-            top: 0,
+            top: stickyTopOffset,
             zIndex: 10,
             paddingLeft: 12 * wxScale,
             paddingRight: 12 * wxScale,

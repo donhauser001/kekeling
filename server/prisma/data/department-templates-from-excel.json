@@ -1,0 +1,762 @@
+[
+  {
+    "name": "普通内科",
+    "category": "内科",
+    "sort": 0
+  },
+  {
+    "name": "普通外科",
+    "category": "外科",
+    "sort": 1
+  },
+  {
+    "name": "妇产科",
+    "category": "妇产科",
+    "sort": 2
+  },
+  {
+    "name": "呼吸内科",
+    "category": "内科",
+    "sort": 3
+  },
+  {
+    "name": "泌尿外科",
+    "category": "外科",
+    "sort": 4
+  },
+  {
+    "name": "妇科",
+    "category": "妇产科",
+    "sort": 5
+  },
+  {
+    "name": "心血管内科",
+    "category": "内科",
+    "sort": 6
+  },
+  {
+    "name": "心血管外科",
+    "category": "外科",
+    "sort": 7
+  },
+  {
+    "name": "产科",
+    "category": "妇产科",
+    "sort": 8
+  },
+  {
+    "name": "消化内科",
+    "category": "内科",
+    "sort": 9
+  },
+  {
+    "name": "肝胆外科",
+    "category": "外科",
+    "sort": 10
+  },
+  {
+    "name": "妇科肿瘤",
+    "category": "妇产科",
+    "sort": 11
+  },
+  {
+    "name": "神经内科",
+    "category": "内科",
+    "sort": 12
+  },
+  {
+    "name": "神经外科",
+    "category": "外科",
+    "sort": 13
+  },
+  {
+    "name": "计划生育科",
+    "category": "妇产科",
+    "sort": 14
+  },
+  {
+    "name": "血液内科",
+    "category": "内科",
+    "sort": 15
+  },
+  {
+    "name": "胸外科",
+    "category": "外科",
+    "sort": 16
+  },
+  {
+    "name": "遗传咨询科",
+    "category": "妇产科",
+    "sort": 17
+  },
+  {
+    "name": "内分泌科",
+    "category": "内科",
+    "sort": 18
+  },
+  {
+    "name": "甲状腺乳腺外科",
+    "category": "外科",
+    "sort": 19
+  },
+  {
+    "name": "妇女保健科",
+    "category": "妇产科",
+    "sort": 20
+  },
+  {
+    "name": "肾内科",
+    "category": "内科",
+    "sort": 21
+  },
+  {
+    "name": "结直肠科",
+    "category": "外科",
+    "sort": 22
+  },
+  {
+    "name": "妇产科其他",
+    "category": "妇产科",
+    "sort": 23
+  },
+  {
+    "name": "变态反应科",
+    "category": "内科",
+    "sort": 24
+  },
+  {
+    "name": "整形外科",
+    "category": "外科",
+    "sort": 25
+  },
+  {
+    "name": "风湿免疫科",
+    "category": "内科",
+    "sort": 26
+  },
+  {
+    "name": "烧伤科",
+    "category": "外科",
+    "sort": 27
+  },
+  {
+    "name": "小儿普通科",
+    "category": "儿科",
+    "sort": 28
+  },
+  {
+    "name": "老年医学科",
+    "category": "内科",
+    "sort": 29
+  },
+  {
+    "name": "外科其他",
+    "category": "外科",
+    "sort": 30
+  },
+  {
+    "name": "新生儿科",
+    "category": "儿科",
+    "sort": 31
+  },
+  {
+    "name": "睡眠科",
+    "category": "内科",
+    "sort": 32
+  },
+  {
+    "name": "胃肠外科",
+    "category": "外科",
+    "sort": 33
+  },
+  {
+    "name": "小儿呼吸科",
+    "category": "儿科",
+    "sort": 34
+  },
+  {
+    "name": "感染病科",
+    "category": "内科",
+    "sort": 35
+  },
+  {
+    "name": "肛肠科",
+    "category": "外科",
+    "sort": 36
+  },
+  {
+    "name": "小儿消化科",
+    "category": "儿科",
+    "sort": 37
+  },
+  {
+    "name": "内科其他",
+    "category": "内科",
+    "sort": 38
+  },
+  {
+    "name": "小儿神经内科",
+    "category": "儿科",
+    "sort": 39
+  },
+  {
+    "name": "心内科",
+    "category": "内科",
+    "sort": 40
+  },
+  {
+    "name": "小儿普通外科",
+    "category": "小儿外科",
+    "sort": 41
+  },
+  {
+    "name": "小儿心脏内科",
+    "category": "儿科",
+    "sort": 42
+  },
+  {
+    "name": "小儿眼科",
+    "category": "小儿外科",
+    "sort": 43
+  },
+  {
+    "name": "小儿肾病科",
+    "category": "儿科",
+    "sort": 44
+  },
+  {
+    "name": "眼科",
+    "category": "眼科",
+    "sort": 45
+  },
+  {
+    "name": "小儿胸外科",
+    "category": "小儿外科",
+    "sort": 46
+  },
+  {
+    "name": "小儿内分泌科",
+    "category": "儿科",
+    "sort": 47
+  },
+  {
+    "name": "眼底科",
+    "category": "眼科",
+    "sort": 48
+  },
+  {
+    "name": "小儿神经外科",
+    "category": "小儿外科",
+    "sort": 49
+  },
+  {
+    "name": "小儿免疫科",
+    "category": "儿科",
+    "sort": 50
+  },
+  {
+    "name": "眼角膜科",
+    "category": "眼科",
+    "sort": 51
+  },
+  {
+    "name": "小儿皮肤科",
+    "category": "小儿外科",
+    "sort": 52
+  },
+  {
+    "name": "小儿血液病科",
+    "category": "儿科",
+    "sort": 53
+  },
+  {
+    "name": "青光眼科",
+    "category": "眼科",
+    "sort": 54
+  },
+  {
+    "name": "小儿泌尿外科",
+    "category": "小儿外科",
+    "sort": 55
+  },
+  {
+    "name": "小儿感染科",
+    "category": "儿科",
+    "sort": 56
+  },
+  {
+    "name": "白内障科",
+    "category": "眼科",
+    "sort": 57
+  },
+  {
+    "name": "小儿骨科",
+    "category": "小儿外科",
+    "sort": 58
+  },
+  {
+    "name": "小儿遗传病科",
+    "category": "儿科",
+    "sort": 59
+  },
+  {
+    "name": "眼外伤科",
+    "category": "眼科",
+    "sort": 60
+  },
+  {
+    "name": "小儿耳鼻喉科",
+    "category": "小儿外科",
+    "sort": 61
+  },
+  {
+    "name": "小儿内科其他",
+    "category": "儿科",
+    "sort": 62
+  },
+  {
+    "name": "眼肿瘤科",
+    "category": "眼科",
+    "sort": 63
+  },
+  {
+    "name": "小儿口腔科",
+    "category": "小儿外科",
+    "sort": 64
+  },
+  {
+    "name": "眼整形科",
+    "category": "眼科",
+    "sort": 65
+  },
+  {
+    "name": "小儿外科其他",
+    "category": "小儿外科",
+    "sort": 66
+  },
+  {
+    "name": "耳鼻喉头颈外科",
+    "category": "耳鼻喉头颈外科",
+    "sort": 67
+  },
+  {
+    "name": "视光学科",
+    "category": "眼科",
+    "sort": 68
+  },
+  {
+    "name": "耳科",
+    "category": "耳鼻喉头颈外科",
+    "sort": 69
+  },
+  {
+    "name": "屈光科",
+    "category": "眼科",
+    "sort": 70
+  },
+  {
+    "name": "口腔科",
+    "category": "口腔科",
+    "sort": 71
+  },
+  {
+    "name": "鼻科",
+    "category": "耳鼻喉头颈外科",
+    "sort": 72
+  },
+  {
+    "name": "眼科其他",
+    "category": "眼科",
+    "sort": 73
+  },
+  {
+    "name": "正畸科",
+    "category": "口腔科",
+    "sort": 74
+  },
+  {
+    "name": "咽喉科",
+    "category": "耳鼻喉头颈外科",
+    "sort": 75
+  },
+  {
+    "name": "牙周科",
+    "category": "口腔科",
+    "sort": 76
+  },
+  {
+    "name": "骨科",
+    "category": "骨科",
+    "sort": 77
+  },
+  {
+    "name": "牙体牙髓科",
+    "category": "口腔科",
+    "sort": 78
+  },
+  {
+    "name": "肿瘤科",
+    "category": "肿瘤科",
+    "sort": 79
+  },
+  {
+    "name": "关节外科",
+    "category": "骨科",
+    "sort": 80
+  },
+  {
+    "name": "种植科",
+    "category": "口腔科",
+    "sort": 81
+  },
+  {
+    "name": "肿瘤内科",
+    "category": "肿瘤科",
+    "sort": 82
+  },
+  {
+    "name": "脊椎外科",
+    "category": "骨科",
+    "sort": 83
+  },
+  {
+    "name": "口腔黏膜科",
+    "category": "口腔科",
+    "sort": 84
+  },
+  {
+    "name": "肿瘤外科",
+    "category": "肿瘤科",
+    "sort": 85
+  },
+  {
+    "name": "手外科",
+    "category": "骨科",
+    "sort": 86
+  },
+  {
+    "name": "颌面外科",
+    "category": "口腔科",
+    "sort": 87
+  },
+  {
+    "name": "足踝外科",
+    "category": "骨科",
+    "sort": 88
+  },
+  {
+    "name": "口腔修复科",
+    "category": "口腔科",
+    "sort": 89
+  },
+  {
+    "name": "男科",
+    "category": "其他科",
+    "sort": 90
+  },
+  {
+    "name": "矫形外科",
+    "category": "骨科",
+    "sort": 91
+  },
+  {
+    "name": "口腔预防保健科",
+    "category": "口腔科",
+    "sort": 92
+  },
+  {
+    "name": "医疗美容科",
+    "category": "其他科",
+    "sort": 93
+  },
+  {
+    "name": "创伤骨科",
+    "category": "骨科",
+    "sort": 94
+  },
+  {
+    "name": "口腔科其他",
+    "category": "口腔科",
+    "sort": 95
+  },
+  {
+    "name": "康复医学科",
+    "category": "其他科",
+    "sort": 96
+  },
+  {
+    "name": "运动医学科",
+    "category": "骨科",
+    "sort": 97
+  },
+  {
+    "name": "理疗科",
+    "category": "其他科",
+    "sort": 98
+  },
+  {
+    "name": "骨与软组织肿瘤科",
+    "category": "骨科",
+    "sort": 99
+  },
+  {
+    "name": "精神科",
+    "category": "精神科",
+    "sort": 100
+  },
+  {
+    "name": "麻醉科",
+    "category": "其他科",
+    "sort": 101
+  },
+  {
+    "name": "骨科其他",
+    "category": "骨科",
+    "sort": 102
+  },
+  {
+    "name": "心理咨询科",
+    "category": "精神科",
+    "sort": 103
+  },
+  {
+    "name": "全科医学科",
+    "category": "其他科",
+    "sort": 104
+  },
+  {
+    "name": "药物依赖科",
+    "category": "精神科",
+    "sort": 105
+  },
+  {
+    "name": "预防保健科",
+    "category": "其他科",
+    "sort": 106
+  },
+  {
+    "name": "儿童心理科",
+    "category": "儿童保健科",
+    "sort": 107
+  },
+  {
+    "name": "青少年精神心理科",
+    "category": "精神科",
+    "sort": 108
+  },
+  {
+    "name": "疫苗接种科",
+    "category": "其他科",
+    "sort": 109
+  },
+  {
+    "name": "儿童保健科",
+    "category": "儿童保健科",
+    "sort": 110
+  },
+  {
+    "name": "疼痛科",
+    "category": "其他科",
+    "sort": 111
+  },
+  {
+    "name": "儿童康复科",
+    "category": "儿童保健科",
+    "sort": 112
+  },
+  {
+    "name": "传染科",
+    "category": "传染科",
+    "sort": 113
+  },
+  {
+    "name": "中西医结合科",
+    "category": "其他科",
+    "sort": 114
+  },
+  {
+    "name": "儿童营养科",
+    "category": "儿童保健科",
+    "sort": 115
+  },
+  {
+    "name": "肝病科",
+    "category": "传染科",
+    "sort": 116
+  },
+  {
+    "name": "病理科",
+    "category": "其他科",
+    "sort": 117
+  },
+  {
+    "name": "儿童生长发育科",
+    "category": "儿童保健科",
+    "sort": 118
+  },
+  {
+    "name": "结核病科",
+    "category": "传染科",
+    "sort": 119
+  },
+  {
+    "name": "地方病科",
+    "category": "其他科",
+    "sort": 120
+  },
+  {
+    "name": "民族医学科",
+    "category": "其他科",
+    "sort": 121
+  },
+  {
+    "name": "发热门诊",
+    "category": "急诊科",
+    "sort": 122
+  },
+  {
+    "name": "影像科",
+    "category": "医学影像科",
+    "sort": 123
+  },
+  {
+    "name": "职业病科",
+    "category": "其他科",
+    "sort": 124
+  },
+  {
+    "name": "肠道门诊",
+    "category": "急诊科",
+    "sort": 125
+  },
+  {
+    "name": "超声科",
+    "category": "医学影像科",
+    "sort": 126
+  },
+  {
+    "name": "重症医学科",
+    "category": "其他科",
+    "sort": 127
+  },
+  {
+    "name": "核医学科",
+    "category": "医学影像科",
+    "sort": 128
+  },
+  {
+    "name": "安宁疗护与关怀科",
+    "category": "其他科",
+    "sort": 129
+  },
+  {
+    "name": "中医科",
+    "category": "中医科",
+    "sort": 130
+  },
+  {
+    "name": "多学科联合门诊",
+    "category": "其他科",
+    "sort": 131
+  },
+  {
+    "name": "中医儿科",
+    "category": "中医科",
+    "sort": 132
+  },
+  {
+    "name": "营养咨询门诊",
+    "category": "营养科",
+    "sort": 133
+  },
+  {
+    "name": "心身医学科",
+    "category": "其他科",
+    "sort": 134
+  },
+  {
+    "name": "中医眼科",
+    "category": "中医科",
+    "sort": 135
+  },
+  {
+    "name": "健康管理门诊",
+    "category": "营养科",
+    "sort": 136
+  },
+  {
+    "name": "体检中心",
+    "category": "其他科",
+    "sort": 137
+  },
+  {
+    "name": "针灸科",
+    "category": "中医科",
+    "sort": 138
+  },
+  {
+    "name": "减重门诊",
+    "category": "营养科",
+    "sort": 139
+  },
+  {
+    "name": "药剂科",
+    "category": "其他科",
+    "sort": 140
+  },
+  {
+    "name": "中医按摩科",
+    "category": "中医科",
+    "sort": 141
+  },
+  {
+    "name": "医技科",
+    "category": "其他科",
+    "sort": 142
+  },
+  {
+    "name": "中医推拿科",
+    "category": "中医科",
+    "sort": 143
+  },
+  {
+    "name": "皮肤性病科",
+    "category": "皮肤性病科",
+    "sort": 144
+  },
+  {
+    "name": "医学检验科",
+    "category": "其他科",
+    "sort": 145
+  },
+  {
+    "name": "针刀科",
+    "category": "中医科",
+    "sort": 146
+  },
+  {
+    "name": "皮肤病科",
+    "category": "皮肤性病科",
+    "sort": 147
+  },
+  {
+    "name": "特需门诊",
+    "category": "其他科",
+    "sort": 148
+  },
+  {
+    "name": "治未病科",
+    "category": "中医科",
+    "sort": 149
+  },
+  {
+    "name": "性传播疾病科",
+    "category": "皮肤性病科",
+    "sort": 150
+  },
+  {
+    "name": "传统医学科",
+    "category": "中医科",
+    "sort": 151
+  }
+]

@@ -108,6 +108,7 @@ export const previewApi = {
   getHospitals: userApi.getHospitals,
   getHospital: userApi.getHospital,
   getDepartments: userApi.getDepartments,
+  getDepartmentTemplatesFlat: userApi.getDepartmentTemplatesFlat,
   getHospitalDepartments: userApi.getHospitalDepartments,
   getHospitalDoctors: userApi.getHospitalDoctors,
   getDoctor: userApi.getDoctor,

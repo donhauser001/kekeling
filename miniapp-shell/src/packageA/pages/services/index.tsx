@@ -111,6 +111,7 @@ function ServicesPageContent() {
           isDarkMode={false}
           onServiceClick={handleServiceClick}
           onSearchClick={handleSearchClick}
+          showTopSearch={false}
           effectiveViewerRole="user"
           initialCategory={initialCategoryId}
           initialKeyword={initialKeyword}

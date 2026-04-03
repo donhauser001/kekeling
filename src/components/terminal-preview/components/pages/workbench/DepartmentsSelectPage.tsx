@@ -23,6 +23,7 @@ import { isWxEnvironment } from '../../../platform/env'
 import type { ThemeSettings, PreviewViewerRole } from '../../../types'
 import { previewApi } from '../../../api'
 import { PermissionPrompt } from '../../PermissionPrompt'
+import { DEPARTMENT_LIST, normalizeDepartmentName } from './department-options'
 
 // ============================================================================
 // 常量定义
@@ -30,28 +31,6 @@ import { PermissionPrompt } from '../../PermissionPrompt'
 
 const wxScale = isWxEnvironment() ? 1.1 : 1
 const wxSafeAreaTop = isWxEnvironment() ? 44 : 0
-
-// 预设科室列表
-const DEPARTMENT_LIST = [
-  { id: '1', name: '内科', icon: 'stethoscope' },
-  { id: '2', name: '外科', icon: 'stethoscope' },
-  { id: '3', name: '妇产科', icon: 'stethoscope' },
-  { id: '4', name: '儿科', icon: 'stethoscope' },
-  { id: '5', name: '骨科', icon: 'stethoscope' },
-  { id: '6', name: '眼科', icon: 'stethoscope' },
-  { id: '7', name: '耳鼻喉科', icon: 'stethoscope' },
-  { id: '8', name: '口腔科', icon: 'stethoscope' },
-  { id: '9', name: '皮肤科', icon: 'stethoscope' },
-  { id: '10', name: '神经内科', icon: 'stethoscope' },
-  { id: '11', name: '心血管内科', icon: 'stethoscope' },
-  { id: '12', name: '消化内科', icon: 'stethoscope' },
-  { id: '13', name: '呼吸内科', icon: 'stethoscope' },
-  { id: '14', name: '内分泌科', icon: 'stethoscope' },
-  { id: '15', name: '肿瘤科', icon: 'stethoscope' },
-  { id: '16', name: '中医科', icon: 'stethoscope' },
-  { id: '17', name: '康复科', icon: 'stethoscope' },
-  { id: '18', name: '急诊科', icon: 'stethoscope' },
-]
 
 // ============================================================================
 // 类型定义
@@ -199,7 +178,7 @@ export function DepartmentsSelectPage({
   const textSecondary = isDarkMode ? '#9ca3af' : '#6b7280'
 
   // 数据状态
-  const [departments] = useState<DepartmentItem[]>(DEPARTMENT_LIST)
+  const [departments, setDepartments] = useState<DepartmentItem[]>(DEPARTMENT_LIST)
   const [loading, setLoading] = useState(true)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [saving, setSaving] = useState(false)
@@ -211,15 +190,28 @@ export function DepartmentsSelectPage({
       return
     }
 
-    // 获取已选择的科室
-    previewApi
-      .getWorkbenchSettings()
-      .then((settings) => {
+    Promise.all([
+      previewApi.getDepartmentTemplatesFlat({ pageSize: 1000 }),
+      previewApi.getWorkbenchSettings(),
+    ])
+      .then(([templateRes, settings]) => {
+        const cloudItems = (templateRes?.data || [])
+          .filter((item) => !item.parentId && item.status !== 'inactive')
+          .map((item) => ({
+            id: item.id,
+            name: item.name,
+            icon: 'stethoscope',
+          }))
+
+        const effectiveDepartments = cloudItems.length > 0 ? cloudItems : DEPARTMENT_LIST
+        setDepartments(effectiveDepartments)
+
         const selected = settings.preferences?.departments || []
         // 将科室名称转换为 ID
         const selectedSet = new Set<string>()
         selected.forEach((name: string) => {
-          const dept = DEPARTMENT_LIST.find(d => d.name === name)
+          const normalizedName = normalizeDepartmentName(name)
+          const dept = effectiveDepartments.find(d => d.name === normalizedName)
           if (dept) {
             selectedSet.add(dept.id)
           } else {
@@ -250,7 +242,7 @@ export function DepartmentsSelectPage({
     try {
       // 将选中的 ID 转换为科室名称
       const selectedNames = Array.from(selectedIds).map(id => {
-        const dept = DEPARTMENT_LIST.find(d => d.id === id)
+        const dept = departments.find(d => d.id === id)
         return dept?.name || id
       })
       await previewApi.updateWorkbenchPreferences({
@@ -520,5 +512,3 @@ export function DepartmentsSelectPage({
     </Box>
   )
 }
-
-
