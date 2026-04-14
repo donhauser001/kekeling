@@ -1521,6 +1521,7 @@ export const submitEscortApplication = async (data: {
 
   return await userRequest<any>('/escort-apply', {
     method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(normalizedData),
   })
 }

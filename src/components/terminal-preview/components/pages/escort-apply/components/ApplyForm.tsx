@@ -716,7 +716,7 @@ export function ApplyForm({
             borderRadius: 4 * wxScale,
             borderWidth: 1,
             borderStyle: 'solid',
-            borderColor: agreedToTerms ? primaryColor : colors.borderColor,
+            borderColor: agreedToTerms ? primaryColor : colors.border,
             backgroundColor: agreedToTerms ? primaryColor : colors.cardBg,
             display: 'flex',
             alignItems: 'center',

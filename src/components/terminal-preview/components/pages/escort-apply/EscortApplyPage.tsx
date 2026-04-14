@@ -51,12 +51,14 @@ export function EscortApplyPage({
       // 如果没有申请或被驳回，显示表单
       if (!result || result.status === 'rejected') {
         setShowForm(true)
+      } else {
+        setShowForm(false)
       }
 
       // 获取用户资料（手机号、头像、性别）
       const profile = await previewApi.getUserProfile()
       if (profile) {
-        if (profile.phone) {
+        if (profile.phone && !profile.phone.includes('*')) {
           setUserPhone(profile.phone)
         }
         if (profile.avatar) {
@@ -118,7 +120,6 @@ export function EscortApplyPage({
       }
       await previewApi.submitEscortApplication(submitData as any)
       await showToast('申请提交成功', 'success')
-      // 重新加载申请状态
       await loadApplication()
       setShowForm(false)
     } catch (error: any) {
