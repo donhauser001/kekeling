@@ -238,21 +238,6 @@ export default defineConfig<'webpack5'>(async (merge) => {
             generateScopedName: '[name]__[local]___[hash:base64:5]'
           }
         },
-        // CSS 优化：移除未使用的样式，减少主包体积
-        cssnano: {
-          enable: true,
-          config: {
-            preset: [
-              'default',
-              {
-                discardComments: { removeAll: true },
-                normalizeWhitespace: true,
-                minifyFontValues: true,
-                minifySelectors: true,
-              }
-            ]
-          }
-        }
       }
     },
     h5: {

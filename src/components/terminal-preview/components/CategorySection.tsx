@@ -63,8 +63,19 @@ function CategoryCard({
         <Box className='flex-1 min-w-0' style={{ flex: 1, minWidth: 0 }}>
           {/* 标题 */}
           <Box className='mb-1.5' style={{ marginBottom: 6 * wxScale }}>
-            {/* #20: 增大分类标题字号 18 -> 22 */}
-            <Text style={{ fontSize: 22 * wxScale, fontWeight: 600, color }}>{category.name}</Text>
+            <Text
+              style={{
+                display: 'block',
+                fontSize: 18 * wxScale,
+                fontWeight: 600,
+                color,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {category.name}
+            </Text>
           </Box>
           {/* 描述 */}
           <Text style={{ fontSize: 13 * wxScale, color: isDarkMode ? '#6b7280' : '#9ca3af' }}>
@@ -147,7 +158,17 @@ function PlaceholderCategories({
               >
                 <Box style={{ flex: 1, minWidth: 0 }}>
                   <Box style={{ marginBottom: 6 * wxScale }}>
-                    <Text style={{ fontSize: 22 * wxScale, fontWeight: 600, color: category.color }}>
+                    <Text
+                      style={{
+                        display: 'block',
+                        fontSize: 18 * wxScale,
+                        fontWeight: 600,
+                        color: category.color,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
                       {category.name}
                     </Text>
                   </Box>
